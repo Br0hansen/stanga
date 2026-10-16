@@ -185,6 +185,14 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
 .swapbox .txt{flex:1 1 100%;background:var(--iron);border:1px solid var(--line);border-radius:10px;color:var(--chalk);font:500 16px var(--body);padding:10px 12px}
 .chk{display:flex;align-items:center;gap:10px;color:var(--chalk-2)}
 .chk input{width:22px;height:22px;accent-color:var(--accent)}
+.notebox{gap:12px}
+.notebox textarea{min-height:88px;font:15px/1.45 var(--body)}
+.lbl{font:600 12px/1.2 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--chalk-2)}
+.tog{justify-self:start;border:1px solid var(--line);background:transparent;color:var(--chalk-2);border-radius:999px;padding:10px 16px;font:600 14px var(--body);cursor:pointer}
+.tog[aria-pressed="true"]{background:var(--amrap);border-color:var(--amrap);color:var(--accent-ink)}
+.pill.mc{background:var(--amrap);color:var(--accent-ink);justify-self:start}
+.sess-note{display:grid;gap:6px;padding-top:8px;border-top:1px solid var(--line)}
+.sess-note p{font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
 .wu{font-size:14px;color:var(--chalk-2);font-variant-numeric:tabular-nums;margin:0}
 .wu b{color:var(--chalk);font-weight:600;margin-right:8px}
 .rpe{display:grid;gap:8px}
@@ -219,7 +227,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 9;   // øk sammen med CACHE i sw.js
+const APP_VERSION = 10;   // øk sammen med CACHE i sw.js
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -543,6 +551,7 @@ const prog = id => PROGRAMS.find(p => p.id === id);
 const inc = (p, lift) => (p.inc && p.inc[lift]) || 2.5;
 const liftName = l => LIFTS[l] ? LIFTS[l].n : l;
 const keyLabel = k => { const [l,t] = k.split('.'); return liftName(l) + (t ? ' · ' + t : ''); };
+const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
 const dateFmt = t => new Date(t).toLocaleDateString('nb-NO',{weekday:'short',day:'numeric',month:'short'});
 
 /* ---------- Lagring ---------- */
@@ -652,7 +661,7 @@ function finish(){
   const p = prog(S.active.programId), s = S.draft;
   const notes = progress(p, S.active, s);
   const vol = s.ex.reduce((sum,e) => sum + e.sets.reduce((v,x) => v + (x.d||0)*x.w, 0), 0);
-  S.history.unshift({date:Date.now(), programId:p.id, day:s.day, sub:s.sub,
+  S.history.unshift({date:Date.now(), programId:p.id, day:s.day, sub:s.sub, note:(s.note||'').trim(), metcon:!!s.metcon,
     ex: s.ex.map(e => ({lift:e.lift, tag:e.tag, rpe:e.rpe, q:e.q, sets:e.sets.map(x => ({t:x.t, w:x.w, d:x.d}))}))});
   S.active.idx++;
   S.draft = null;
@@ -689,13 +698,27 @@ function plateHTML(w){
 }
 
 /* ---------- Visninger ---------- */
+function vFree(){
+  return `<button class="link" data-a="freecancel">‹ Tilbake</button>
+    <header class="head"><p class="eyebrow">Uten program</p><h1>Fri økt</h1>
+      <p class="muted small">Påvirker ikke programmet ditt. Lagres i loggen med dagens dato.</p></header>
+    <div class="box notebox">
+      <label for="freeNote" class="lbl">Hva gjorde du?</label>
+      <textarea id="freeNote" placeholder="For eksempel: 20 min AMRAP med 5 pull-ups, 10 push-ups og 15 air squats. 9 runder.">${esc(ui.freeNote)}</textarea>
+      <button class="tog" data-a="freemc" aria-pressed="${ui.freeMc !== false}">Metcon</button>
+    </div>
+    <button class="btn" data-a="freesave">Lagre fri økt</button>`;
+}
+
 function vToday(){
+  if (ui.free) return vFree();
   if (!S.active) return `
     <div class="empty">
       <div class="bar" aria-hidden="true"></div>
       <h1>Ingen program ennå</h1>
       <p class="muted">Velg et styrkeprogram, legg inn startvektene dine, så lager appen øktene for deg.</p>
       <button class="btn" data-a="tab:programs">Velg program</button>
+      <button class="link" data-a="free">+ Logg fri økt uten program</button>
     </div>`;
   const p = prog(S.active.programId);
   const over = p.total && S.active.idx >= p.total && !S.draft;
@@ -747,7 +770,13 @@ function vToday(){
       ${e.sp ? spExtras(e, ei) : ''}
     </section>`;
   });
+  h += `<section class="box notebox">
+      <label for="note" class="lbl">Notat</label>
+      <textarea id="note" placeholder="For eksempel metcon etter økta, dagsform eller en teknikkdetalj">${esc(s.note)}</textarea>
+      <button class="tog" data-a="metcon" aria-pressed="${!!s.metcon}">Metcon i dag</button>
+    </section>`;
   h += `<button class="btn" data-a="finish" ${anyTouched ? '' : 'disabled'}>Fullfør økt</button>`;
+  h += `<button class="link" data-a="free">+ Logg fri økt uten program</button>`;
   return h;
 }
 
@@ -811,7 +840,7 @@ function spark(vals){
 
 function vLog(){
   let h = `<header class="head"><p class="eyebrow">${S.history.length} økter</p><h1>Logg</h1></header>`;
-  if (!S.history.length) return h + `<p class="muted">Øktene du fullfører havner her, med vekt og reps for hvert sett.</p>`;
+  if (!S.history.length) return h + `<p class="muted">Øktene du fullfører havner her, med vekt, reps og notater.</p>`;
   const series = {};
   [...S.history].reverse().forEach(sess => sess.ex.forEach(e => {
     if (/BBB|T2|T3|Lett|Backoff|Deload/.test(e.tag || '')) return;
@@ -822,8 +851,17 @@ function vLog(){
   h += `<h3>Toppvekt per økt</h3>`;
   h += rows.length ? `<div class="box trend">${rows.map(([l,v]) => `<div class="tr"><b>${liftName(l)}</b>${spark(v)}<span>${fmt(v[0])} → ${fmt(v[v.length-1])} kg</span></div>`).join('')}</div>`
                    : `<p class="muted small">Kurvene dukker opp når du har logget samme løft to ganger.</p>`;
+  const mcCount = S.history.filter(x => x.metcon).length;
   h += `<h3>Økter</h3>`;
-  h += S.history.slice(0, 60).map(sess => {
+  if (mcCount) h += `<div class="seg" role="group" aria-label="Filter">
+      <button data-a="logf:all" aria-pressed="${ui.logF !== 'mc'}">Alle</button>
+      <button data-a="logf:mc" aria-pressed="${ui.logF === 'mc'}">Med metcon (${mcCount})</button></div>`;
+  const list = ui.logF === 'mc' ? S.history.filter(x => x.metcon) : S.history;
+  h += list.slice(0, 60).map(sess => {
+    const noteH = (sess.metcon || sess.note) ? `<div class="sess-note">${sess.metcon ? '<span class="pill mc">Metcon</span>' : ''}${sess.note ? `<p>${esc(sess.note)}</p>` : ''}</div>` : '';
+    if (sess.free) return `<article class="sess">
+      <div class="top"><h2 style="font-size:19px">Fri økt</h2><span class="muted small">${dateFmt(sess.date)}</span></div>
+      ${noteH}</article>`;
     const p = prog(sess.programId);
     const vol = sess.ex.reduce((s,e) => s + e.sets.reduce((v,x) => v + (x.d||0)*x.w, 0), 0);
     return `<article class="sess">
@@ -835,6 +873,7 @@ function vLog(){
         const right = ws.length === 1 ? reps.join(' ') + ' × ' + fmt(ws[0]) + ' kg' : e.sets.map(x => (x.d == null ? '–' : x.d) + '×' + fmt(x.w)).join(' · ');
         return `<div class="ln"><span>${liftName(e.lift)}${e.tag ? ' <span class="muted">'+e.tag+(e.rpe != null ? ' · RPE '+fmt(e.rpe) : '')+'</span>' : ''}</span><span>${right}</span></div>`;
       }).join('')}
+      ${noteH}
     </article>`;
   }).join('');
   return h;
@@ -923,7 +962,7 @@ document.addEventListener('click', ev => {
   const b = ev.target.closest('[data-a]'); if (!b || b.disabled) return;
   const [a, ...r] = b.dataset.a.split(':');
   switch (a) {
-    case 'tab': ui.tab = r[0]; ui.detail = null; ui.confirm = null; render(); toTop(); break;
+    case 'tab': ui.tab = r[0]; ui.detail = null; ui.confirm = null; ui.free = false; render(); toTop(); break;
     case 'open': ui.detail = r[0]; render(); toTop(); break;
     case 'back': ui.detail = null; render(); break;
     case 'activate': activate(r[0]); break;
@@ -940,6 +979,19 @@ document.addEventListener('click', ev => {
     case 'w': { const e = S.draft.ex[+r[0]]; e.sets.forEach(x => x.w = Math.max(20, x.w + 2.5*(+r[1]))); save(); render(); break; }
     case 'cut': { const e = S.draft.ex[+r[0]]; if (e.sets.length > 1 && e.sets[e.sets.length-1].d == null) { e.sets.pop(); e.cut = (e.cut||0) + 1; } save(); render(); break; }
     case 'doswap': doSwap(r[0]); break;
+    case 'metcon': S.draft.metcon = !S.draft.metcon; save(); render(); break;
+    case 'free': ui.free = true; ui.freeNote = ui.freeNote || ''; render(); toTop(); break;
+    case 'freecancel': ui.free = false; render(); break;
+    case 'freemc': ui.freeMc = ui.freeMc === false; render(); break;
+    case 'freesave': {
+      const note = (ui.freeNote || '').trim(), mc = ui.freeMc !== false;
+      if (!note) { toast('Skriv kort hva du gjorde'); break; }
+      S.history.unshift({date:Date.now(), free:true, day:'Fri økt', sub:'', ex:[], note, metcon:mc});
+      ui.free = false; ui.freeNote = ''; ui.freeMc = true; ui.tab = 'log'; ui.logF = 'all';
+      save(); render(); toTop(); toast('Fri økt lagret');
+      break;
+    }
+    case 'logf': ui.logF = r[0]; render(); break;
     case 'finish': finish(); break;
     case 'dismiss': ui.summary = null; render(); break;
     case 'skip': ui.rest = null; updateRest(); break;
@@ -981,6 +1033,11 @@ function fitViewport(){
 fitViewport();
 addEventListener('resize', fitViewport);
 addEventListener('orientationchange', () => setTimeout(fitViewport, 300));
+
+document.addEventListener('input', ev => {
+  if (ev.target.id === 'note' && S.draft) { S.draft.note = ev.target.value; save(); }
+  else if (ev.target.id === 'freeNote') ui.freeNote = ev.target.value;
+});
 
 document.addEventListener('change', ev => {
   const s = ev.target.closest('[data-swap]'); if (!s) return;
