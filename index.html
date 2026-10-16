@@ -219,7 +219,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 7;   // øk sammen med CACHE i sw.js
+const APP_VERSION = 8;   // øk sammen med CACHE i sw.js
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -840,6 +840,19 @@ function vLog(){
   return h;
 }
 
+// Måling til feilsøking: hva rapporterer telefonen om skjerm og trygge soner?
+function diag(){
+  try {
+    const d = document.createElement('div');
+    d.style.cssText = 'position:fixed;left:0;bottom:0;visibility:hidden;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)';
+    document.body.appendChild(d);
+    const cs = getComputedStyle(d), t = Math.round(parseFloat(cs.paddingTop)), b = Math.round(parseFloat(cs.paddingBottom));
+    d.remove();
+    const app = document.querySelector('.app').getBoundingClientRect();
+    return 'Skjerm ' + screen.height + ' · vindu ' + innerHeight + ' · app ' + Math.round(app.height) + ' · topp ' + t + ' · bunn ' + b;
+  } catch(e) { return ''; }
+}
+
 function vMore(){
   const p = S.active && prog(S.active.programId);
   return `<header class="head"><p class="eyebrow">Innstillinger</p><h1>Mer</h1></header>
@@ -864,7 +877,7 @@ function vMore(){
     <div class="box">${ui.confirm === 'reset'
       ? `<p class="small">Logg, program og innstillinger slettes fra telefonen. Dette kan ikke angres.</p><div class="row"><button class="btn danger sm" data-a="reset">Slett alt</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div>`
       : `<button class="btn danger sm" data-a="confirm:reset">Slett alle data</button>`}</div>
-    <p class="muted small" style="text-align:center">Stanga versjon ${APP_VERSION}</p>`;
+    <p class="muted small" style="text-align:center">Stanga versjon ${APP_VERSION}<br>${diag()}</p>`;
 }
 
 function render(){
