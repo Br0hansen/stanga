@@ -1,0 +1,953 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Stanga">
+<meta name="theme-color" content="#111317">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<style>:root{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Stanga</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: én smal kolonne som et treningskort, fast fanelinje nederst.
+   Mørk jernflate; skivefargene (25 rød, 20 blå, 15 gul, 10 grønn) brukes som betydning, ikke pynt. */
+:root{
+  --iron:#111317; --iron-2:#191C22; --iron-3:#232730; --line:#2E333C;
+  --chalk:#ECEAE4; --chalk-2:#A4A8B1; --chalk-3:#6F747E;
+  --accent:#4C86F0; --accent-ink:#08111F;
+  --ok:#3FB872; --ok-ink:#06150C; --miss:#E5533F; --amrap:#EDBE3A;
+  --p25:#D93A2F; --p20:#2F6FDB; --p15:#E3B42B; --p10:#2E9E5B; --p5:#E6E4DE; --p2:#B8413A; --p1:#A9AEB6;
+  --display:'Barlow Condensed','Arial Narrow','Helvetica Neue',sans-serif;
+  --body:'Barlow',-apple-system,system-ui,'Segoe UI',sans-serif;
+  color-scheme:dark;
+}
+html,body{background:var(--iron);color:var(--chalk)}
+body{font:16px/1.45 var(--body);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--iron);z-index:30}
+*{box-sizing:border-box}
+button{font-family:inherit;touch-action:manipulation}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.wrap{max-width:560px;margin:0 auto;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:20px calc(160px + env(safe-area-inset-bottom,0px));
+  display:grid;gap:16px}
+
+.eyebrow{font:600 12px/1.2 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--chalk-2);margin:0}
+h1{font:700 42px/.95 var(--display);text-transform:uppercase;letter-spacing:.01em;margin:6px 0 0;text-wrap:balance}
+h2{font:700 22px/1.05 var(--display);text-transform:uppercase;letter-spacing:.02em;margin:0;text-wrap:balance}
+h3{font:600 12px/1.2 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--chalk-2);margin:8px 0 0}
+p{margin:0}
+.muted{color:var(--chalk-2)}
+.small{font-size:14px}
+.head{display:grid;gap:4px;padding-top:4px}
+
+/* Knapper */
+.btn{appearance:none;border:0;border-radius:12px;background:var(--accent);color:var(--accent-ink);
+  font:700 19px/1 var(--display);letter-spacing:.06em;text-transform:uppercase;padding:17px 20px;width:100%;cursor:pointer}
+.btn[disabled]{opacity:.35;cursor:default}
+.btn.ghost{background:var(--iron-3);color:var(--chalk)}
+.btn.danger{background:transparent;box-shadow:inset 0 0 0 1px var(--miss);color:var(--miss)}
+.btn.sm{font-size:16px;padding:12px 14px;width:auto}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row>.btn{flex:1 1 140px}
+.link{appearance:none;background:none;border:0;color:var(--chalk-2);font:600 15px var(--body);padding:8px 0;cursor:pointer;display:inline-flex;align-items:center;gap:6px;justify-self:start}
+
+/* Øvelseskort */
+.ex{background:var(--iron-2);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:14px}
+.ex-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.ex-head>div{min-width:0}
+.tag{font:700 11px/1 var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:6px}
+.kg{font:700 36px/1 var(--display);font-variant-numeric:tabular-nums;white-space:nowrap}
+.kg small{font-size:16px;color:var(--chalk-2);margin-left:3px;letter-spacing:.04em}
+
+.chips{display:flex;flex-wrap:wrap;gap:10px}
+.cw{display:grid;justify-items:center;gap:4px}
+.cw small{font-size:12px;color:var(--chalk-3);font-variant-numeric:tabular-nums}
+.chip{width:54px;height:54px;border-radius:50%;border:2px solid var(--line);background:transparent;color:var(--chalk-3);
+  font:700 23px/1 var(--display);font-variant-numeric:tabular-nums;cursor:pointer;position:relative;transition:transform .08s}
+.chip:active{transform:scale(.93)}
+.chip.ok{background:var(--ok);border-color:var(--ok);color:var(--ok-ink)}
+.chip.miss{border-color:var(--miss);color:var(--miss)}
+.chip.am{border-style:dashed;border-color:var(--amrap)}
+.chip.am.ok{border-style:solid;background:var(--amrap);border-color:var(--amrap);color:var(--accent-ink)}
+.chip sup{position:absolute;top:7px;right:9px;font-size:13px}
+
+.amrap{display:flex;align-items:center;gap:12px;background:var(--iron-3);border-radius:12px;padding:8px 8px 8px 14px}
+.amrap span{flex:1;font-size:14px;color:var(--chalk-2)}
+.amrap b{font:700 26px/1 var(--display);min-width:2ch;text-align:center;font-variant-numeric:tabular-nums}
+.step{width:44px;height:44px;border-radius:10px;border:0;background:var(--iron-2);color:var(--chalk);font:600 24px/1 var(--body);cursor:pointer}
+
+/* Skiver per side */
+.platesrow{display:flex;align-items:center;gap:12px;min-height:30px;color:var(--chalk-2);font-size:13px;flex-wrap:wrap}
+.plates{display:flex;align-items:center;gap:2px;height:32px;position:relative;padding-left:16px}
+.plates::before{content:"";position:absolute;left:0;top:50%;width:16px;height:5px;margin-top:-2.5px;background:var(--chalk-3);border-radius:2px}
+.pl{display:block;border-radius:2px}
+.p25{width:9px;height:32px;background:var(--p25)} .p20{width:8px;height:32px;background:var(--p20)}
+.p15{width:7px;height:32px;background:var(--p15)} .p10{width:6px;height:32px;background:var(--p10)}
+.p5{width:5px;height:20px;background:var(--p5)} .p2{width:4px;height:15px;background:var(--p2)} .p1{width:3px;height:12px;background:var(--p1)}
+.pl-txt{font-variant-numeric:tabular-nums}
+
+/* Fullført-kort */
+.done{background:var(--iron-3);border-radius:14px;padding:18px;display:grid;gap:12px}
+.done .big{font:700 34px/1 var(--display);font-variant-numeric:tabular-nums}
+.notes{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.notes li{display:flex;gap:10px;align-items:baseline;font-size:15px}
+.notes li b{font-weight:600;min-width:7.5em}
+.notes .up{color:var(--ok)} .notes .down{color:var(--miss)} .notes .same{color:var(--chalk-2)} .notes .stage{color:var(--amrap)}
+
+/* Programkort */
+.list{display:grid;gap:12px}
+.card{appearance:none;text-align:left;width:100%;background:var(--iron-2);border:1px solid var(--line);border-radius:14px;padding:16px;color:var(--chalk);display:grid;gap:8px;cursor:pointer}
+.card:active{background:var(--iron-3)}
+.card .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.meta{display:flex;flex-wrap:wrap;gap:6px}
+.pill{font:600 12px/1 var(--body);letter-spacing:.04em;padding:6px 9px;border-radius:999px;background:var(--iron-3);color:var(--chalk-2)}
+.pill.on{background:var(--accent);color:var(--accent-ink)}
+.box{background:var(--iron-2);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:10px}
+.days{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.day{background:var(--iron-2);border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:6px}
+.day h4{margin:0;font:700 17px/1 var(--display);text-transform:uppercase;letter-spacing:.03em}
+.day div{font-size:14px;display:flex;justify-content:space-between;gap:8px}
+.day div span{color:var(--chalk-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.day b{color:var(--accent);font-size:12px;margin-right:4px}
+
+.field{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
+.field:last-child{border-bottom:0}
+.field label{font-weight:500}
+.inp{display:flex;align-items:center;gap:6px;color:var(--chalk-2)}
+.inp input{width:92px;background:var(--iron);border:1px solid var(--line);border-radius:10px;color:var(--chalk);
+  font:700 21px/1 var(--display);padding:9px 10px;text-align:right;font-variant-numeric:tabular-nums}
+
+/* Logg */
+.sess{background:var(--iron-2);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:grid;gap:8px}
+.sess .top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.sess .ln{display:flex;justify-content:space-between;gap:12px;font-size:14px}
+.sess .ln>span:last-child{color:var(--chalk-2);text-align:right;font-variant-numeric:tabular-nums;min-width:0}
+.trend{display:grid;gap:4px}
+.tr{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
+.tr:last-child{border-bottom:0}
+.tr b{flex:1;font-weight:500}
+.tr span{font-variant-numeric:tabular-nums;color:var(--chalk-2);font-size:14px;white-space:nowrap}
+.tr svg{flex:none}
+
+/* Mer */
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{flex:1 1 56px;border:0;border-radius:10px;padding:12px 0;background:var(--iron-3);color:var(--chalk);font:700 18px/1 var(--display);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+textarea{width:100%;min-height:110px;background:var(--iron);border:1px solid var(--line);border-radius:10px;color:var(--chalk);font:13px/1.4 ui-monospace,Menlo,monospace;padding:10px;resize:vertical}
+.warn{background:var(--iron-3);border-radius:12px;padding:12px 14px;font-size:14px;color:var(--amrap)}
+
+.empty{display:grid;gap:14px;padding:28px 0}
+.empty .bar{height:6px;width:120px;background:var(--chalk-3);border-radius:3px;position:relative;margin:8px 0 6px 18px}
+.empty .bar::before,.empty .bar::after{content:"";position:absolute;top:-17px;width:9px;height:40px;border-radius:2px;background:var(--p20)}
+.empty .bar::before{left:6px;box-shadow:-11px 0 0 var(--p25)} .empty .bar::after{right:6px;box-shadow:11px 0 0 var(--p25)}
+
+/* Pausetimer og faner */
+.rest{position:fixed;left:0;right:0;z-index:21;bottom:calc(66px + env(safe-area-inset-bottom,0px));
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.rest-in{max-width:528px;margin:0 auto 8px;background:var(--chalk);color:var(--iron);border-radius:12px;overflow:hidden;position:relative;display:flex;align-items:center;gap:12px;padding:10px 10px 10px 16px}
+.rest-in .fill{position:absolute;left:0;bottom:0;height:4px;background:var(--accent);transition:width .25s linear}
+.rest-in b{font:700 26px/1 var(--display);font-variant-numeric:tabular-nums;min-width:3.2ch}
+.rest-in span{flex:1;font-size:14px;font-weight:600}
+.rest-in button{border:0;background:var(--iron);color:var(--chalk);border-radius:8px;padding:9px 12px;font:600 14px var(--body);cursor:pointer}
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--iron);border-top:1px solid var(--line);
+  padding-bottom:env(safe-area-inset-bottom,0px);padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}
+.tabs-in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
+.tab{appearance:none;background:none;border:0;color:var(--chalk-3);font:600 12px/1 var(--body);letter-spacing:.03em;
+  display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 0 12px;cursor:pointer}
+.tab svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tab[aria-current="page"]{color:var(--chalk)}
+.tab[aria-current="page"] svg{stroke:var(--accent)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);top:calc(14px + env(safe-area-inset-top,0px));z-index:40;background:var(--chalk);color:var(--iron);font-weight:600;padding:10px 16px;border-radius:999px;font-size:14px}
+select{background:var(--iron);border:1px solid var(--line);border-radius:10px;color:var(--chalk);font:500 16px var(--body);padding:9px 10px;width:58%;min-width:0}
+.swapbox{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:4px 0 12px;border-bottom:1px solid var(--line)}
+.swapbox>label,.swapbox>span.small{flex:1 1 100%}
+.swapbox .inp{flex:1}
+.swapbox .txt{flex:1 1 100%;background:var(--iron);border:1px solid var(--line);border-radius:10px;color:var(--chalk);font:500 16px var(--body);padding:10px 12px}
+.chk{display:flex;align-items:center;gap:10px;color:var(--chalk-2)}
+.chk input{width:22px;height:22px;accent-color:var(--accent)}
+.wu{font-size:14px;color:var(--chalk-2);font-variant-numeric:tabular-nums;margin:0}
+.wu b{color:var(--chalk);font-weight:600;margin-right:8px}
+.rpe{display:grid;gap:8px}
+.rpe>span{font-size:14px;color:var(--chalk-2)}
+.rpe .seg button{font-size:16px;padding:11px 4px;flex:1 1 30%}
+.rpe .seg.num button{flex:1 1 30px;font-size:17px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main class="wrap" id="view"></main>
+<div class="rest" id="rest" hidden><div class="rest-in"><b id="restT">1:30</b><span id="restL">Pause</span><button data-a="skip">Hopp over</button><i class="fill" id="restF"></i></div></div>
+<div class="toast" id="toast" hidden></div>
+<nav class="tabs" aria-label="Faner"><div class="tabs-in">
+  <button class="tab" data-a="tab:today"><svg viewBox="0 0 24 24"><path d="M2 12h20M5 8v8M8 6v12M16 6v12M19 8v8"/></svg>Økt</button>
+  <button class="tab" data-a="tab:programs"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h10"/></svg>Programmer</button>
+  <button class="tab" data-a="tab:log"><svg viewBox="0 0 24 24"><path d="M3 19h18M5 15l4-4 4 3 6-7"/></svg>Logg</button>
+  <button class="tab" data-a="tab:more"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg>Mer</button>
+</div></nav>
+
+<script>
+/* =====================================================================
+   STANGA – treningslogg med lokal lagring
+   Tre lag:
+   1) MALER   (PROGRAMS)  – programmene slik de er skrevet. Endres aldri.
+   2) INSTANS (S.active)  – din kopi: vekter, trinn, hvor langt du har kommet.
+   3) LOGG    (S.history) – det du faktisk løftet.
+   ===================================================================== */
+
+const KEY = 'stanga.v1';
+
+const LIFTS = {
+  squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
+  ohp:{n:'Militærpress',bar:1}, deadlift:{n:'Markløft',bar:1},
+  pulldown:{n:'Nedtrekk'}, dbrow:{n:'Hantelroing'}, clean:{n:'Power clean',bar:1},
+  // Alternativer: alt = hvilket løft de kan erstatte, r = omtrent hvor tungt det er i forhold til originalen
+  frontsquat:{n:'Frontbøy',bar:1,alt:'squat',r:.82}, ssb:{n:'Safety bar-knebøy',bar:1,alt:'squat',r:.92}, pausesquat:{n:'Pauseknebøy',bar:1,alt:'squat',r:.88},
+  boxsquat:{n:'Boksknebøy',bar:1,alt:'squat',r:.9}, temposquat:{n:'Tempoknebøy',bar:1,alt:'squat',r:.8},
+  pausebench:{n:'Pausebenk',bar:1,alt:'bench',r:.93}, closegrip:{n:'Smal benkpress',bar:1,alt:'bench',r:.9}, incline:{n:'Skråbenk',bar:1,alt:'bench',r:.8},
+  larsen:{n:'Larsen-press',bar:1,alt:'bench',r:.9}, spoto:{n:'Spoto-press',bar:1,alt:'bench',r:.9}, floorpress:{n:'Gulvpress',bar:1,alt:'bench',r:.9},
+  sumo:{n:'Sumomarkløft',bar:1,alt:'deadlift',r:1}, trapbar:{n:'Trap bar-markløft',alt:'deadlift',r:1.05}, rdl:{n:'Rumensk markløft',bar:1,alt:'deadlift',r:.7},
+  deficit:{n:'Underskuddsmarkløft',bar:1,alt:'deadlift',r:.9}, blockpull:{n:'Markløft fra blokk',bar:1,alt:'deadlift',r:1.05}, pausedl:{n:'Pausemarkløft',bar:1,alt:'deadlift',r:.85},
+  pushpress:{n:'Push press',bar:1,alt:'ohp',r:1.2}, pushjerk:{n:'Push jerk',bar:1,alt:'ohp',r:1.25}, seatedpress:{n:'Sittende press',bar:1,alt:'ohp',r:.9}, zpress:{n:'Z-press',bar:1,alt:'ohp',r:.75},
+  pendlay:{n:'Pendlay-roing',bar:1,alt:'row',r:.95}, sealrow:{n:'Sealroing',bar:1,alt:'row',r:.9}, yatesrow:{n:'Yates-roing',bar:1,alt:'row',r:1.05},
+  squatclean:{n:'Clean',bar:1,alt:'clean',r:1.1}, hangsquatclean:{n:'Hang clean',bar:1,alt:'clean',r:1}, hangclean:{n:'Hang power clean',bar:1,alt:'clean',r:.92},
+  blockclean:{n:'Power clean fra blokk',bar:1,alt:'clean',r:.97}, powersnatch:{n:'Power snatch',bar:1,alt:'clean',r:.78}
+};
+const ALTS = slot => Object.keys(LIFTS).filter(k => LIFTS[k].alt === slot);
+const sw = (a, slot) => (a.swaps && a.swaps[slot]) || slot;   // hvilket løft ligger i plassen nå?
+
+// GZCLP-trinn: [sett, reps]. Bommer du, går du ett trinn ned i reps.
+const T1S = [[5,3],[6,2],[10,1]];
+const T2S = [[3,10],[3,8],[3,6]];
+// 5/3/1: [andel av treningsmaks, reps, maks-reps-sett?] for uke 1–4
+const W531 = [
+  [[.65,5],[.75,5],[.85,5,1]],
+  [[.70,3],[.80,3],[.90,3,1]],
+  [[.75,5],[.85,3],[.95,1,1]],
+  [[.40,5],[.50,5],[.60,5]]
+];
+
+/* ---------- Strength & Power (12 uker) ----------
+   RPE-tabell: andel av 1RM når du tar r reps og har (10 − RPE) reps i reserve.
+   Indeks = reps + reps i reserve. Eksempel: 3 reps @ RPE 8 → 5 → 86,3 % av 1RM. */
+const RTS = [1,.955,.922,.892,.863,.837,.811,.786,.762,.739,.707,.68];
+function pctOf(reps, rpe){
+  const r = Math.max(1, reps + (10 - rpe)), lo = Math.floor(r), hi = Math.ceil(r);
+  const g = i => RTS[Math.min(i,12) - 1];
+  return g(lo) + (g(hi) - g(lo)) * (r - lo);
+}
+const est1 = (w, reps, rpe) => w / pctOf(reps, rpe);   // estimert 1RM fra ett sett
+
+// [sett, reps, andel av aktuell 1RM] for toppsett og backoff i hver fase
+const SP = {
+  phaseName: {p1:'Volum og grunnstyrke', d4:'Deload', p2:'Maksimal styrke', d8:'Deload', p3:'Toppstyrke', test:'Testuke'},
+  scheme: {
+    bench: {p1:{top:[1,3,.82], back:[5,5,.73]}, p2:{top:[1,2,.88], back:[5,3,.80]}, p3:{top:[1,1,.91], back:[5,2,.82]}},
+    squat: {p1:{top:[1,3,.82], back:[5,4,.73]}, p2:{top:[1,2,.88], back:[5,3,.80]}, p3:{top:[1,1,.91], back:[5,2,.82]}},
+    clean: {p1:{top:[3,1,.80], back:[6,2,.70]}, p2:{top:[4,1,.85], back:[5,2,.72]}, p3:{top:[5,1,.88], back:[4,2,.75]}}
+  },
+  // Deload: omtrent halvparten av settene, 13 % lettere enn siste backoff-vekt i fasen før
+  deload: {d4:{from:'p1', bench:[3,5], squat:[3,4], clean:[4,2]}, d8:{from:'p2', bench:[3,3], squat:[3,3], clean:[4,2]}}
+};
+/* ---------- Cube Method (10 uker) ----------
+   Hver uke har hvert løft én rolle. Rollene roterer, så ingen to løft er tunge samme uke.
+   Sett skrives som [andel av 1RM, reps, antall sett, maks reps i siste sett?] per bølge. */
+const CUBE = {
+  rot: [['heavy','expl','rep'], ['expl','rep','heavy'], ['rep','heavy','expl']],   // uke 1, 2, 3 i bølgen × dag
+  tag: {heavy:'Tung', expl:'Eksplosiv', rep:'Reps', test:'Test'},
+  rest: {heavy:180, expl:90, rep:150, test:240},
+  sets: {
+    heavy: [[[.8,2,5]], [[.85,2,3]], [[.9,1,1],[.925,1,1],[.95,1,1],[.8,3,1,1]]],
+    expl:  [[[.6,3,8]], [[.65,2,6]], [[.7,2,5]]],
+    rep:   [[[.7,8,3,1]], [[.8,6,3,1]], [[.85,3,3,1]]]
+  },
+  test: [[.9,1,1],[.975,1,1],[1.025,1,1]]
+};
+function cubeSets(list, max){
+  const out = [];
+  list.forEach(([pc,r,n,am]) => { for (let j = 0; j < n; j++) out.push({t:r, w:r25(max*pc), am: !!(am && j === n-1), d:null}); });
+  return out;
+}
+function buildCube(p, a){
+  const i = a.idx, wk = Math.floor(i/3) + 1, day = p.days[i % 3], slot = day.lift, L = sw(a, slot);
+  const role = wk === 10 ? 'test' : CUBE.rot[(wk-1) % 3][i % 3], wave = Math.floor((wk-1)/3);
+  const sets = cubeSets(role === 'test' ? CUBE.test : CUBE.sets[role][wave], a.e1rm[L]);
+  const hint = role === 'expl' ? 'Flytt stanga så raskt du kan. Stopp settet hvis farten faller.'
+             : role === 'test' ? 'Tre forsøk: åpning, andre og tredje. Juster vekten etter hvordan forrige løft gikk.' : '';
+  return {programId:p.id, day:day.name, sub: wk === 10 ? 'Uke 10 av 10 · Test' : 'Uke ' + wk + ' av 10 · Bølge ' + (wave+1),
+    ex:[{key:L, lift:L, slot, part:'cube', sp:1, rest:CUBE.rest[role], tag:CUBE.tag[role], hint, sets}], started:Date.now()};
+}
+function progressCube(p, a, s){
+  const e = s.ex[0], name = liftName(e.lift), notes = [];
+  if (e.tag === 'Test') {
+    const ok = e.sets.filter(x => x.d >= 1);
+    if (ok.length) {
+      const best = Math.max(...ok.map(x => x.w)), old = a.e1rm[e.lift];
+      a.e1rm[e.lift] = Math.max(best, old);
+      notes.push({name, text: best > old ? 'Ny 1RM: ' + fmt(old) + ' → ' + fmt(best) + ' kg' : 'Beste løft ' + fmt(best) + ' kg, 1RM står på ' + fmt(old) + ' kg', kind: best > old ? 'up' : 'same'});
+    }
+    return notes;
+  }
+  const am = e.sets.find(x => x.am && x.d != null);
+  if (am) notes.push({name, text: am.d + ' reps på ' + fmt(am.w) + ' kg i siste sett', kind: am.d >= am.t ? 'up' : 'same'});
+  else if (e.sets.some(x => x.d != null)) notes.push({name, text:'Vektene følger prosentplanen', kind:'same'});
+  return notes;
+}
+
+/* ---------- Bytte løft ----------
+   Vekten lagres på LØFTET, ikke på plassen. Frontbøy får sin egen vekt, og knebøyvektene
+   ligger urørt hvis du bytter tilbake. */
+function refValue(p, a, L){
+  if (p.prog === 'linear') return a.lifts[L] && a.lifts[L].w;
+  if (p.prog === 'gzclp') return (a.lifts[L+'.T1'] || a.lifts[L+'.T2'] || {}).w;
+  if (p.prog === '531') return a.tm[L];
+  return a.e1rm && a.e1rm[L];
+}
+const refLabel = p => ({linear:'Arbeidsvekt', gzclp:'T1-vekt', '531':'Treningsmaks'})[p.prog] || '1RM';
+const ratio = L => LIFTS[L].r || 1;
+const estFor = (p, a, from, to) => r25(refValue(p, a, from) / ratio(from) * ratio(to));
+const slotsOf = p => [...new Set(p.days.flatMap(d => d.ex ? d.ex.map(e => e.lift) : [d.lift]))].filter(s => ALTS(s).length);
+
+function doSwap(slot){
+  const a = S.active, p = prog(a.programId), A = sw(a, slot);
+  let B = ui.swapSel.lift;
+  const W = parseFloat(String(($('#swW') || {}).value || '').replace(',', '.'));
+  if (B === '__new') {
+    const nm = String(($('#swName') || {}).value || '').replace(/[<>&"]/g, '').trim().slice(0, 40);
+    if (!nm) { toast('Skriv inn et navn på øvelsen'); return; }
+    if (!(W > 0)) { toast('Skriv inn en vekt for ' + nm.toLowerCase()); return; }
+    const id = 'c_' + Date.now().toString(36);
+    S.custom = S.custom || {};
+    S.custom[id] = {n: nm, bar: ($('#swBar') || {}).checked ? 1 : 0, alt: slot};
+    mergeCustom();
+    B = ui.swapSel.lift = id;
+  }
+  if (refValue(p, a, B) == null) {
+    if (!(W > 0)) { toast('Skriv inn en vekt for ' + liftName(B).toLowerCase()); return; }
+    const k = W / refValue(p, a, A);
+    Object.keys(a.lifts).forEach(key => {
+      if (key !== A && !key.startsWith(A + '.')) return;
+      const nk = B + key.slice(A.length), v = a.lifts[key];
+      if (!a.lifts[nk]) a.lifts[nk] = Object.assign({}, v, {w: r25(v.w*k), fails:0, stage:0, last: v.last != null ? r25(v.last*k) : undefined});
+    });
+    if (p.prog === '531') a.tm[B] = r25(W);
+    if (a.e1rm) { a.e1rm[B] = W; a.base[B] = W; }
+  }
+  a.swaps = a.swaps || {};
+  if (B === slot) delete a.swaps[slot]; else a.swaps[slot] = B;
+  const started = S.draft && S.draft.ex.some(e => e.sets.some(x => x.d != null));
+  if (!started) S.draft = null;
+  ui.swapSel = null; save(); render();
+  toast(liftName(B) + (started ? ' gjelder fra neste økt' : ' er lagt inn'));
+}
+
+function swapRows(p, a){
+  const slots = slotsOf(p);
+  if (!slots.length) return '';
+  return `<h3>Løft i programmet</h3><div class="box" style="gap:0">${slots.map(slot => {
+    const cur = sw(a, slot), sel = ui.swapSel && ui.swapSel.slot === slot ? ui.swapSel.lift : cur;
+    let h = `<div class="field"><label for="sw-${slot}">${liftName(slot)}</label>
+      <select id="sw-${slot}" data-swap="${slot}">${[slot, ...ALTS(slot)].map(l => `<option value="${l}"${l === sel ? ' selected' : ''}>${liftName(l)}</option>`).join('')}
+        <option value="__new"${sel === '__new' ? ' selected' : ''}>+ Egen øvelse …</option></select></div>`;
+    if (sel === '__new') {
+      h += `<div class="swapbox">
+        <label for="swName" class="small">Navn på øvelsen</label>
+        <input id="swName" class="txt" type="text" maxlength="40" placeholder="For eksempel hang snatch" autocomplete="off">
+        <label class="chk small"><input id="swBar" type="checkbox" checked> Vanlig stang på 20 kg (viser skiver per side)</label>
+        <label for="swW" class="small">${refLabel(p)} i øvelsen</label>
+        <span class="inp"><input id="swW" type="text" inputmode="decimal" value="${fmt(refValue(p, a, cur))}">kg</span>
+        <button class="btn sm" data-a="doswap:${slot}">Legg til</button>
+        <span class="small muted">Øvelsen følger reglene for ${liftName(slot).toLowerCase()} i programmet.</span></div>`;
+    } else if (sel !== cur) {
+      h += refValue(p, a, sel) != null
+        ? `<div class="swapbox"><span class="small muted">Vektene dine i ${liftName(sel).toLowerCase()} er lagret fra før.</span><button class="btn sm" data-a="doswap:${slot}">Bytt</button></div>`
+        : `<div class="swapbox"><label for="swW" class="small">${refLabel(p)} i ${liftName(sel).toLowerCase()} (forslag ut fra ${liftName(cur).toLowerCase()})</label>
+           <span class="inp"><input id="swW" type="text" inputmode="decimal" value="${fmt(estFor(p, a, cur, sel))}">kg</span><button class="btn sm" data-a="doswap:${slot}">Bytt</button></div>`;
+    }
+    return h;
+  }).join('')}</div>
+  <p class="muted small">Hvert løft har sin egen vekt. Bytter du tilbake, fortsetter du der du slapp.</p>`;
+}
+
+const spPhase = wk => wk <= 3 ? 'p1' : wk === 4 ? 'd4' : wk <= 7 ? 'p2' : wk === 8 ? 'd8' : wk <= 11 ? 'p3' : 'test';
+
+function buildSP(p, a){
+  const i = a.idx, wk = Math.floor(i/3) + 1, day = p.days[i % 3], slot = day.lift, L = sw(a, slot), pc = slot === 'clean';
+  const ph = spPhase(wk), rest = pc ? 150 : 210, ex = [];
+  if (ph[0] === 'p') {
+    const sc = SP.scheme[slot][ph];
+    ['top','back'].forEach(part => {
+      const [n, r, pct] = sc[part], key = L + '.' + ph + '.' + part;
+      if (!a.lifts[key]) a.lifts[key] = {w: r25(a.e1rm[L] * pct)};   // ny fase: start fra aktuell 1RM
+      ex.push({key, lift:L, slot, part, sp:1, rest, rpe:null, q:null, cut:0,
+               tag: part === 'back' ? 'Backoff' : (n > 1 ? 'Singler' : 'Toppsett'), sets: mk(n, r, a.lifts[key].w)});
+    });
+  } else if (ph[0] === 'd') {
+    const D = SP.deload[ph], src = a.lifts[L + '.' + D.from + '.back'];
+    const base = src ? (src.last != null ? src.last : src.w) : r25(a.e1rm[L] * SP.scheme[slot][D.from].back[2]);
+    ex.push({key:L+'.deload', lift:L, slot, part:'deload', sp:1, rest, tag:'Deload', sets: mk(D[slot][0], D[slot][1], Math.max(20, r25(base * .87)))});
+  } else {
+    ex.push({key:L+'.test', lift:L, slot, part:'test', sp:1, rest, tag: pc ? 'Beste single' : 'Test 3RM',
+             sets: mk(1, pc ? 1 : 3, r25(a.e1rm[L] * (pc ? .95 : .92)))});
+  }
+  return {programId:p.id, day: day.name, sub: 'Uke ' + wk + ' av 12 · ' + SP.phaseName[ph], ex, started:Date.now()};
+}
+
+function progressSP(p, a, s){
+  const notes = [];
+  s.ex.forEach(e => {
+    if (!e.sets.some(x => x.d != null)) return;
+    const name = liftName(e.lift) + ' · ' + e.tag.toLowerCase();
+    const used = e.sets[0].w, allHit = e.sets.every(x => x.d != null && x.d >= x.t);
+    if (e.part === 'deload') { notes.push({name, text:'Lett uke, ingen endring', kind:'same'}); return; }
+    if (e.part === 'test') {
+      const x = e.sets[0];
+      if (x.d > 0) {
+        const est = e.slot === 'clean' ? x.w : est1(x.w, x.d, 10);
+        a.e1rm[e.lift] = Math.round(est*10)/10;
+        notes.push({name, text: e.slot === 'clean' ? 'Beste rene single: ' + fmt(x.w) + ' kg'
+          : x.d + ' × ' + fmt(x.w) + ' kg. Estimert 1RM ' + fmt(Math.round(est*2)/2) + ' kg', kind:'up'});
+      }
+      return;
+    }
+    const st = a.lifts[e.key]; st.last = used;
+    let next = used, kind = 'same', why;
+    if (e.slot === 'clean') {
+      if (!allHit || e.q === 'teknisk') { next = used - 2.5; kind = 'down'; why = allHit ? 'Teknikken sviktet' : 'Bom på reps'; }
+      else if (e.q === 'god') {
+        next = used + 2.5; kind = 'up'; why = 'Raske og rene løft';
+        if (e.part === 'top' && used / .92 > a.e1rm[e.lift]) a.e1rm[e.lift] = r25(used / .92);
+      }
+      else if (e.q === 'treg') why = 'Farten falt';
+      else why = 'Ingen vurdering registrert';
+    } else {
+      const r = e.rpe;
+      if (!allHit) { next = used - 2.5; kind = 'down'; why = 'Ikke alle reps'; }
+      else if (r == null) why = 'Ingen RPE registrert';
+      else if (r <= 7) { next = used + (e.slot === 'squat' && r <= 6 ? 5 : 2.5); kind = 'up'; why = 'RPE ' + fmt(r); }
+      else if (r <= 8.5) why = 'RPE ' + fmt(r) + ', på mål';
+      else if (r <= 9) why = 'RPE 9, gjenta';
+      else { next = used - 2.5; kind = 'down'; why = 'RPE ' + fmt(r); }
+      if (e.part === 'top' && allHit && r != null) a.e1rm[e.lift] = Math.round(est1(used, e.sets[0].d, r)*10)/10;
+    }
+    st.w = next = Math.max(20, next);
+    notes.push({name, text: why + ': ' + (next === used ? 'samme vekt, ' + fmt(used) + ' kg' : fmt(used) + ' → ' + fmt(next) + ' kg'), kind});
+  });
+  return notes;
+}
+
+// Oppvarming (teller ikke som arbeidssett): stiger mot dagens første arbeidsvekt
+function warmups(lift, W){
+  const steps = lift === 'clean' ? [[0,5],[.4,3],[.55,2],[.7,1],[.8,1]] : [[0,10],[.45,6],[.65,4],[.8,2]];
+  const out = [];
+  steps.forEach(([f,r]) => {
+    const w = Math.max(20, f ? r25(W*f) : 20);
+    if (w >= W || (out.length && out[out.length-1][0] >= w)) return;
+    out.push([w, r]);
+  });
+  return out;
+}
+
+function spExtras(e, ei){
+  let h = `<div class="amrap"><span>Juster vekt etter dagsform</span>
+    <button class="step" data-a="w:${ei}:-1" aria-label="2,5 kg lettere">−</button>
+    <button class="step" data-a="w:${ei}:1" aria-label="2,5 kg tyngre">+</button></div>`;
+  const all = e.sets.every(x => x.d != null);
+  if ((e.part === 'top' || e.part === 'back') && all) {
+    if (e.slot === 'clean') h += `<div class="rpe"><span>Hvordan gikk løftene?</span><div class="seg">${
+      [['god','Raske og rene'],['treg','Tregere'],['teknisk','Teknikk sviktet']].map(([v,l]) => `<button data-a="q:${ei}:${v}" aria-pressed="${e.q === v}">${l}</button>`).join('')}</div></div>`;
+    else h += `<div class="rpe"><span>RPE for ${e.part === 'top' ? 'toppsettet' : 'backoff-settene'}</span><div class="seg num">${
+      [6,7,7.5,8,8.5,9,9.5,10].map(v => `<button data-a="rpe:${ei}:${v}" aria-pressed="${e.rpe === v}">${fmt(v)}</button>`).join('')}</div></div>`;
+  }
+  if (e.part === 'back' && !all && (e.cut||0) < 2 && e.sets.length > 1 && e.sets[e.sets.length-1].d == null)
+    h += `<button class="link" data-a="cut:${ei}">Kutt ett backoff-sett etter tung metcon</button>`;
+  return h;
+}
+
+const PROGRAMS = [
+  { id:'sl5x5', name:'StrongLifts 5×5', origin:'Mehdi Hadim', level:'Nybegynner', perWeek:'3', prog:'linear',
+    summary:'To økter, A og B, som du bytter på. Fem sett à fem reps, alltid med knebøy først.',
+    rule:'Klarer du alle reps, går vekten opp 2,5 kg neste økt (markløft 5 kg). Bommer du tre økter på rad på samme løft, går vekten ned 10 %.',
+    days:[
+      {name:'Økt A', ex:[{lift:'squat',sets:5,reps:5},{lift:'bench',sets:5,reps:5},{lift:'row',sets:5,reps:5}]},
+      {name:'Økt B', ex:[{lift:'squat',sets:5,reps:5},{lift:'ohp',sets:5,reps:5},{lift:'deadlift',sets:1,reps:5}]}],
+    inputs:{squat:40,bench:30,row:30,ohp:20,deadlift:50}, inputLabel:'Startvekt', inc:{deadlift:5} },
+
+  { id:'ss', name:'Starting Strength', origin:'Mark Rippetoe', level:'Nybegynner', perWeek:'3', prog:'linear',
+    summary:'Tre sett à fem på de store stangløftene. Mindre volum enn 5×5, så det er lettere å øke vekten hver gang.',
+    rule:'Samme motor som 5×5: +2,5 kg når alle reps sitter (markløft +5 kg), ned 10 % etter tre bom på rad.',
+    days:[
+      {name:'Økt A', ex:[{lift:'squat',sets:3,reps:5},{lift:'bench',sets:3,reps:5},{lift:'deadlift',sets:1,reps:5}]},
+      {name:'Økt B', ex:[{lift:'squat',sets:3,reps:5},{lift:'ohp',sets:3,reps:5},{lift:'deadlift',sets:1,reps:5}]}],
+    inputs:{squat:40,bench:30,ohp:20,deadlift:50}, inputLabel:'Startvekt', inc:{deadlift:5} },
+
+  { id:'gzclp', name:'GZCLP', origin:'Cody Lefever', level:'Nybegynner til middels', perWeek:'3–4', prog:'gzclp',
+    summary:'Fire økter i rotasjon. Hver økt har ett tungt løft (T1), ett volumløft (T2) og en lett øvelse (T3).',
+    rule:'T1 og T2 øker når alle reps sitter (+2,5 kg overkropp, +5 kg knebøy og markløft). Bommer du, går du til neste trinn med samme vekt: T1 5×3 → 6×2 → 10×1 og T2 3×10 → 3×8 → 3×6. Bommer du på siste trinn, starter du på nytt med 85 % av vekten. T3 øker 2,5 kg når siste sett blir 25 reps eller mer.',
+    days:[
+      {name:'Dag 1', ex:[{lift:'squat',tier:'T1'},{lift:'bench',tier:'T2'},{lift:'pulldown',tier:'T3'}]},
+      {name:'Dag 2', ex:[{lift:'ohp',tier:'T1'},{lift:'deadlift',tier:'T2'},{lift:'dbrow',tier:'T3'}]},
+      {name:'Dag 3', ex:[{lift:'bench',tier:'T1'},{lift:'squat',tier:'T2'},{lift:'pulldown',tier:'T3'}]},
+      {name:'Dag 4', ex:[{lift:'deadlift',tier:'T1'},{lift:'ohp',tier:'T2'},{lift:'dbrow',tier:'T3'}]}],
+    inputs:{'squat.T1':60,'bench.T1':40,'ohp.T1':30,'deadlift.T1':70,'squat.T2':40,'bench.T2':27.5,'ohp.T2':20,'deadlift.T2':50,'pulldown.T3':30,'dbrow.T3':14},
+    inputLabel:'Startvekt', inc:{squat:5,deadlift:5} },
+
+  { id:'531', name:'5/3/1 BBB', origin:'Jim Wendler', level:'Middels', perWeek:'4', prog:'531',
+    summary:'Fire økter med ett hovedløft hver. Vektene er prosent av en treningsmaks (90 % av 1RM), og etterpå tar du 5×10 på 50 %.',
+    rule:'En syklus er fire uker: 5-ere, 3-ere, 5/3/1 og en lett uke. Siste sett i uke 1–3 tar du så mange reps du klarer. Etter hver syklus øker treningsmaksen 2,5 kg på overkropp og 5 kg på knebøy og markløft.',
+    days:[{name:'Pressdag',lift:'ohp'},{name:'Markløftdag',lift:'deadlift'},{name:'Benkdag',lift:'bench'},{name:'Knebøydag',lift:'squat'}],
+    inputs:{ohp:50,deadlift:120,bench:80,squat:100}, inputLabel:'1RM', inc:{squat:5,deadlift:5} },
+
+  { id:'cube', name:'Cube Method', origin:'Brandon Lilly', level:'Middels til erfaren', perWeek:'3', prog:'cube', total:30,
+    summary:'10 uker for knebøy, benk og markløft. Hver uke er ett løft tungt, ett eksplosivt og ett på reps, og rollene roterer. Originalen har også en fjerde dag med kroppsbygging som du gjør på egen hånd.',
+    rule:'Vektene er prosent av 1RM og stiger for hver bølge på tre uker. Tung: 5×2 på 80 %, så 3×2 på 85 %, så singler på 90–95 %. Eksplosiv: 8×3 på 60 %, så 6×2 på 65 %, så 5×2 på 70 %. Reps: 3×8 på 70 %, så 3×6 på 80 %, så 3×3 på 85 %, med maks reps i siste sett. Uke 10 er test med tre forsøk, og beste løft blir ny 1RM.',
+    days:[{name:'Markløftdag',lift:'deadlift'},{name:'Benkdag',lift:'bench'},{name:'Knebøydag',lift:'squat'}],
+    inputs:{deadlift:160,bench:100,squat:140}, inputLabel:'1RM' },
+
+  { id:'sp12', name:'Strength & Power', origin:'Egen modell', level:'Erfaren', perWeek:'3', prog:'sp12', total:36,
+    summary:'12 uker med ett løft per økt: benkpress mandag, knebøy onsdag og power clean fredag. Toppsett pluss backoff-sett, deload i uke 4 og 8, og test i uke 12. Metcons kommer i tillegg.',
+    rule:'Benk og knebøy styres av RPE. Alle reps og RPE 7 eller lavere gir +2,5 kg (knebøy +5 kg ved RPE 6 eller lavere). RPE 7,5–9 gir samme vekt. Bom eller RPE over 9 gir −2,5 kg. Power clean øker 2,5 kg når alle løft er raske og rene, står stille når farten faller og går ned 2,5 kg ved teknisk svikt. Toppsett og backoff har hver sin vekt i hver fase. Når en ny fase starter, regnes vektene ut fra estimert 1RM.',
+    days:[{name:'Mandag',lift:'bench'},{name:'Onsdag',lift:'squat'},{name:'Fredag',lift:'clean'}],
+    inputs:{bench:110,squat:135,clean:100}, inputLabel:'1RM' }
+];
+
+/* ---------- Hjelpere ---------- */
+const $ = s => document.querySelector(s);
+const r25 = x => Math.round(x/2.5)*2.5;
+const fmt = n => (Math.round(n*100)/100).toLocaleString('nb-NO');
+const prog = id => PROGRAMS.find(p => p.id === id);
+const inc = (p, lift) => (p.inc && p.inc[lift]) || 2.5;
+const liftName = l => LIFTS[l] ? LIFTS[l].n : l;
+const keyLabel = k => { const [l,t] = k.split('.'); return liftName(l) + (t ? ' · ' + t : ''); };
+const dateFmt = t => new Date(t).toLocaleDateString('nb-NO',{weekday:'short',day:'numeric',month:'short'});
+
+/* ---------- Lagring ---------- */
+function fresh(){ return {v:1, active:null, draft:null, history:[], settings:{rest:90}}; }
+function load(){
+  const d = fresh();
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw) { const o = JSON.parse(raw); return Object.assign(d, o, {settings:Object.assign(d.settings, o.settings||{})}); }
+  } catch(e) {}
+  return d;
+}
+function save(){
+  try { localStorage.setItem(KEY, JSON.stringify(S)); ui.storageOK = true; }
+  catch(e) { ui.storageOK = false; }
+}
+
+let S = load();
+// Egne øvelser lagres i S.custom og legges inn i LIFTS, så resten av appen ser dem som vanlige løft
+function mergeCustom(){
+  Object.keys(LIFTS).filter(k => k.startsWith('c_')).forEach(k => delete LIFTS[k]);
+  Object.assign(LIFTS, S.custom || {});
+}
+mergeCustom();
+const ui = {tab: S.active ? 'today' : 'programs', detail:null, rest:null, summary:null, confirm:null, exportText:'', storageOK:true};
+try { localStorage.setItem(KEY+'.t','1'); localStorage.removeItem(KEY+'.t'); } catch(e){ ui.storageOK = false; }
+
+/* ---------- Motor: lag dagens økt fra mal + instans ---------- */
+function mk(n, reps, w, lastAm){
+  return Array.from({length:n}, (_,j) => ({t:reps, w, am: !!(lastAm && j === n-1), d:null}));
+}
+function buildSession(p, a){
+  if (p.prog === 'sp12') return buildSP(p, a);
+  if (p.prog === 'cube') return buildCube(p, a);
+  const i = a.idx, n = p.days.length, day = p.days[i % n];
+  let ex = [], sub = 'Økt ' + (i+1);
+  if (p.prog === 'linear') {
+    ex = day.ex.map(e => { const L = sw(a, e.lift);
+      return {key:L, lift:L, slot:e.lift, tag:'', sets: mk(e.sets, e.reps, a.lifts[L].w)}; });
+  } else if (p.prog === 'gzclp') {
+    ex = day.ex.map(e => {
+      const L = sw(a, e.lift), key = L + '.' + e.tier, st = a.lifts[key]; let sets;
+      if (e.tier === 'T1') { const [s,r] = T1S[st.stage]; sets = mk(s, r, st.w, true); }
+      else if (e.tier === 'T2') { const [s,r] = T2S[st.stage]; sets = mk(s, r, st.w); }
+      else sets = mk(3, 15, st.w, true);
+      return {key, lift:L, slot:e.lift, tag:e.tier, sets};
+    });
+  } else {
+    const L = sw(a, day.lift), wk = Math.floor(i/n) % 4, cyc = Math.floor(i/(n*4)) + 1, tm = a.tm[L];
+    ex = [{key:L, lift:L, slot:day.lift, tag: wk === 3 ? 'Lett uke' : 'Hovedløft',
+           sets: W531[wk].map(([pc,r,am]) => ({t:r, w:r25(tm*pc), am:!!am, d:null}))}];
+    if (wk < 3) ex.push({key:L+'.bbb', lift:L, slot:day.lift, tag:'BBB · 50 %', sets: mk(5, 10, r25(tm*.5))});
+    sub = 'Syklus ' + cyc + ' · Uke ' + (wk+1);
+  }
+  return {programId:p.id, day:day.name, sub, ex, started:Date.now()};
+}
+
+/* ---------- Motor: oppdater instansen etter en økt ---------- */
+function progress(p, a, s){
+  if (p.prog === 'sp12') return progressSP(p, a, s);
+  if (p.prog === 'cube') return progressCube(p, a, s);
+  const notes = [];
+  const hit = x => x.d != null && x.d >= x.t;
+  const touched = e => e.sets.some(x => x.d != null);
+  const note = (e, text, kind) => notes.push({name: keyLabel(e.key), text, kind});
+
+  if (p.prog === 'linear') {
+    s.ex.forEach(e => {
+      if (!touched(e)) return;
+      const st = a.lifts[e.key], old = st.w;
+      if (e.sets.every(hit)) { st.w = old + inc(p, e.slot); st.fails = 0; note(e, fmt(old)+' → '+fmt(st.w)+' kg', 'up'); }
+      else {
+        st.fails = (st.fails||0) + 1;
+        if (st.fails >= 3) { st.w = r25(old*.9); st.fails = 0; note(e, 'Ned 10 % til '+fmt(st.w)+' kg', 'down'); }
+        else note(e, 'Samme vekt neste gang (bom '+st.fails+' av 3)', 'same');
+      }
+    });
+  } else if (p.prog === 'gzclp') {
+    s.ex.forEach(e => {
+      if (!touched(e)) return;
+      const st = a.lifts[e.key], old = st.w;
+      if (e.tag === 'T3') {
+        const last = e.sets[e.sets.length-1];
+        if (last.d != null && last.d >= 25) { st.w = old + 2.5; note(e, fmt(old)+' → '+fmt(st.w)+' kg', 'up'); }
+        else note(e, 'Samme vekt, mål: 25 reps i siste sett', 'same');
+        return;
+      }
+      const S_ = e.tag === 'T1' ? T1S : T2S;
+      if (e.sets.every(hit)) { st.w = old + inc(p, e.slot); note(e, fmt(old)+' → '+fmt(st.w)+' kg', 'up'); }
+      else if (st.stage < 2) { st.stage++; const [ss,rr] = S_[st.stage]; note(e, 'Neste trinn: '+ss+'×'+rr+' på '+fmt(old)+' kg', 'stage'); }
+      else { st.stage = 0; st.w = r25(old*.85); const [ss,rr] = S_[0]; note(e, 'Ny runde: '+ss+'×'+rr+' på '+fmt(st.w)+' kg', 'down'); }
+    });
+  } else {
+    const per = p.days.length * 4;
+    if ((a.idx + 1) % per === 0) {
+      p.days.forEach(d => { const l = sw(a, d.lift), old = a.tm[l]; a.tm[l] = old + inc(p, d.lift);
+        notes.push({name: liftName(l), text:'Treningsmaks '+fmt(old)+' → '+fmt(a.tm[l])+' kg', kind:'up'}); });
+    } else {
+      const amr = s.ex[0].sets.find(x => x.am);
+      if (amr && amr.d != null) notes.push({name: liftName(s.ex[0].lift), text: amr.d+' reps på '+fmt(amr.w)+' kg i siste sett', kind: amr.d >= amr.t ? 'up' : 'same'});
+    }
+  }
+  return notes;
+}
+
+function finish(){
+  const p = prog(S.active.programId), s = S.draft;
+  const notes = progress(p, S.active, s);
+  const vol = s.ex.reduce((sum,e) => sum + e.sets.reduce((v,x) => v + (x.d||0)*x.w, 0), 0);
+  S.history.unshift({date:Date.now(), programId:p.id, day:s.day, sub:s.sub,
+    ex: s.ex.map(e => ({lift:e.lift, tag:e.tag, rpe:e.rpe, q:e.q, sets:e.sets.map(x => ({t:x.t, w:x.w, d:x.d}))}))});
+  S.active.idx++;
+  S.draft = null;
+  ui.summary = {day:s.day, notes, vol};
+  ui.rest = null; updateRest();
+  save(); render(); scrollTo(0,0);
+}
+
+function activate(id){
+  const p = prog(id), a = {programId:id, startedAt:Date.now(), idx:0, lifts:{}, tm:{}};
+  if (p.prog === 'sp12' || p.prog === 'cube') { a.e1rm = {}; a.base = {}; }
+  Object.keys(p.inputs).forEach((k,i) => {
+    const el = $('#in-'+i); let v = parseFloat(String(el && el.value || '').replace(',', '.'));
+    if (!isFinite(v) || v < 0) v = p.inputs[k];
+    if (p.prog === '531') a.tm[k] = r25(v*.9);
+    else if (a.e1rm) { a.e1rm[k] = v; a.base[k] = v; }
+    else a.lifts[k] = {w:v, fails:0, stage:0};
+  });
+  S.active = a; S.draft = null;
+  ui.detail = null; ui.summary = null; ui.tab = 'today';
+  save(); render(); scrollTo(0,0); toast(p.name+' er aktivert');
+}
+
+/* ---------- Skiver per side (20 kg stang) ---------- */
+const PL = [[25,'p25'],[20,'p20'],[15,'p15'],[10,'p10'],[5,'p5'],[2.5,'p2'],[1.25,'p1']];
+function plateHTML(w){
+  let side = (w - 20) / 2;
+  if (side <= 0) return '<span class="pl-txt">Bare stanga (20 kg)</span>';
+  const out = [];
+  for (const [kg,c] of PL) while (side >= kg - 1e-6) { out.push([kg,c]); side -= kg; }
+  const txt = out.map(x => fmt(x[0])).join(' + ');
+  return '<span class="plates" aria-hidden="true">' + out.map(([kg,c]) => '<i class="pl '+c+'"></i>').join('') +
+         '</span><span class="pl-txt">'+txt+' per side</span>';
+}
+
+/* ---------- Visninger ---------- */
+function vToday(){
+  if (!S.active) return `
+    <div class="empty">
+      <div class="bar" aria-hidden="true"></div>
+      <h1>Ingen program ennå</h1>
+      <p class="muted">Velg et styrkeprogram, legg inn startvektene dine, så lager appen øktene for deg.</p>
+      <button class="btn" data-a="tab:programs">Velg program</button>
+    </div>`;
+  const p = prog(S.active.programId);
+  const over = p.total && S.active.idx >= p.total && !S.draft;
+  if (!S.draft && !over) { S.draft = buildSession(p, S.active); save(); }
+  const s = S.draft;
+  let h = '';
+  if (ui.summary) {
+    const u = ui.summary;
+    h += `<section class="done" aria-live="polite">
+      <p class="eyebrow">${u.day} fullført</p>
+      <div class="big">${fmt(Math.round(u.vol))} kg <span class="muted small">løftet totalt</span></div>
+      <ul class="notes">${u.notes.map(n => `<li><b>${n.name}</b><span class="${n.kind}">${n.text}</span></li>`).join('')}</ul>
+      <button class="link" data-a="dismiss">Lukk</button>
+    </section>`;
+  }
+  if (over) {
+    const a = S.active;
+    return h + `<header class="head"><p class="eyebrow">${p.name}</p><h1>Programmet er fullført</h1></header>
+      ${a.e1rm ? `<div class="box trend">${Object.keys(a.e1rm).map(l => `<div class="tr"><b>${liftName(l)}</b><span>${fmt(a.base[l])} → ${fmt(Math.round(a.e1rm[l]*2)/2)} kg</span></div>`).join('')}</div>
+      <p class="muted small">Startverdi mot estimert 1RM nå.</p>` : ''}
+      <button class="btn" data-a="tab:programs">Velg neste program</button>`;
+  }
+  const anyTouched = s.ex.some(e => e.sets.some(x => x.d != null));
+  h += `<header class="head">
+      <p class="eyebrow">${p.name} · ${s.sub}</p>
+      <h1>${s.day}</h1>
+      ${S.active.e1rm ? `<p class="muted small">${p.prog === 'sp12' ? 'Estimert 1RM' : '1RM'} ${liftName(s.ex[0].lift).toLowerCase()}: ${fmt(Math.round(S.active.e1rm[s.ex[0].lift]*2)/2)} kg</p>` : ''}
+      <p class="muted small">Trykk på et sett når det er gjort. Trykk igjen for å trekke fra én rep.</p>
+    </header>`;
+  s.ex.forEach((e,ei) => {
+    const top = Math.max(...e.sets.map(x => x.w));
+    const varies = new Set(e.sets.map(x => x.w)).size > 1;
+    const amIdx = e.sets.findIndex(x => x.am && x.d != null);
+    h += `<section class="ex">
+      <div class="ex-head"><div>${e.tag ? `<span class="tag">${e.tag}</span>` : ''}<h2>${liftName(e.lift)}</h2></div>
+        <div class="kg">${fmt(top)}<small>KG</small></div></div>
+      ${LIFTS[e.lift].bar ? `<div class="platesrow">${plateHTML(top)}</div>` : ''}
+      ${e.sp && ei === 0 ? (wu => wu.length ? `<p class="wu"><b>Oppvarming</b>${wu.map(([w,r]) => fmt(w)+'×'+r).join(' · ')}</p>` : '')(warmups(e.slot, e.sets[0].w)) : ''}
+      ${e.hint ? `<p class="wu">${e.hint}</p>` : ''}
+      <div class="chips">${e.sets.map((x,si) => {
+        const st = x.d == null ? '' : (x.d >= x.t ? 'ok' : 'miss');
+        const lbl = 'Sett '+(si+1)+': '+(x.d == null ? 'ikke gjort, mål '+x.t+' reps' : x.d+' reps')+(x.am ? ', så mange du klarer' : '');
+        return `<div class="cw"><button class="chip ${st} ${x.am?'am':''}" data-a="set:${ei}:${si}" aria-label="${lbl}">${x.d == null ? x.t : x.d}${x.am ? '<sup>+</sup>' : ''}</button>${varies ? `<small>${fmt(x.w)}</small>` : ''}</div>`;
+      }).join('')}</div>
+      ${amIdx > -1 ? `<div class="amrap"><span>Siste sett, så mange du klarer</span>
+        <button class="step" data-a="am:${ei}:${amIdx}:-1" aria-label="Én rep mindre">−</button>
+        <b>${e.sets[amIdx].d}</b>
+        <button class="step" data-a="am:${ei}:${amIdx}:1" aria-label="Én rep mer">+</button></div>` : ''}
+      ${e.sp ? spExtras(e, ei) : ''}
+    </section>`;
+  });
+  h += `<button class="btn" data-a="finish" ${anyTouched ? '' : 'disabled'}>Fullfør økt</button>`;
+  return h;
+}
+
+function dayLines(p, d){
+  if (p.prog === 'cube') {
+    const di = p.days.indexOf(d);
+    return [`<div><span style="color:var(--chalk)">${liftName(d.lift)}</span></div>`,
+      ...['1 · 4 · 7','2 · 5 · 8','3 · 6 · 9'].map((u,k) => `<div>Uke ${u}<span>${CUBE.tag[CUBE.rot[k][di]]}</span></div>`),
+      `<div>Uke 10<span>Test</span></div>`];
+  }
+  if (p.prog === 'sp12') {
+    const sc = SP.scheme[d.lift], f = x => x[0] + '×' + x[1];
+    return [`<div><span style="color:var(--chalk)">${liftName(d.lift)}</span></div>`,
+      ...['p1','p2','p3'].map((ph,k) => `<div>Uke ${['1–3','5–7','9–11'][k]}<span>${f(sc[ph].top)} + ${f(sc[ph].back)}</span></div>`),
+      `<div>Uke 4 og 8<span>Deload</span></div>`, `<div>Uke 12<span>${d.lift === 'clean' ? 'Beste single' : 'Test 3RM'}</span></div>`];
+  }
+  if (p.prog === 'linear') return d.ex.map(e => `<div>${liftName(e.lift)}<span>${e.sets}×${e.reps}</span></div>`);
+  if (p.prog === 'gzclp') return d.ex.map(e => `<div><span style="color:var(--chalk)"><b>${e.tier}</b>${liftName(e.lift)}</span><span>${e.tier==='T1'?'5×3+':e.tier==='T2'?'3×10':'3×15+'}</span></div>`);
+  return [`<div>${liftName(d.lift)}<span>3 sett</span></div>`, `<div>${liftName(d.lift)}<span>5×10</span></div>`];
+}
+
+function vPrograms(){
+  return `<header class="head"><p class="eyebrow">Bibliotek</p><h1>Programmer</h1>
+    <p class="muted small">Kjente styrkeprogrammer og din egen modell. Trykk på ett for å se øktene og aktivere det.</p></header>
+    <div class="list">${PROGRAMS.map(p => `
+      <button class="card" data-a="open:${p.id}">
+        <div class="top"><h2>${p.name}</h2>${S.active && S.active.programId === p.id ? '<span class="pill on">Aktivt</span>' : ''}</div>
+        <div class="meta"><span class="pill">${p.level}</span><span class="pill">${p.perWeek} økter/uke</span><span class="pill">${p.origin}</span></div>
+        <p class="muted small">${p.summary}</p>
+      </button>`).join('')}</div>`;
+}
+
+function vDetail(p){
+  const isActive = S.active && S.active.programId === p.id;
+  const other = S.active && !isActive ? prog(S.active.programId) : null;
+  return `<button class="link" data-a="back">‹ Programmer</button>
+    <header class="head"><p class="eyebrow">${p.origin}</p><h1>${p.name}</h1>
+      <div class="meta" style="margin-top:8px"><span class="pill">${p.level}</span><span class="pill">${p.perWeek} økter/uke</span></div></header>
+    <p>${p.summary}</p>
+    <div class="box"><h3 style="margin:0">Slik øker vekten</h3><p class="small">${p.rule}</p></div>
+    <h3>Øktene</h3>
+    <div class="days">${p.days.map(d => `<div class="day"><h4>${d.name}</h4>${dayLines(p,d).join('')}</div>`).join('')}</div>
+    <h3>${p.inputLabel === '1RM' ? 'Din 1RM (tyngste løft på én rep)' : 'Startvekter'}</h3>
+    <div class="box" style="gap:0">${Object.keys(p.inputs).map((k,i) => `
+      <div class="field"><label for="in-${i}">${keyLabel(k)}</label>
+        <span class="inp"><input id="in-${i}" type="text" inputmode="decimal" value="${fmt(p.inputs[k])}">kg</span></div>`).join('')}</div>
+    <p class="muted small">${p.prog === '531' ? 'Appen regner ut treningsmaks som 90 % av dette.' : p.prog === 'sp12' ? 'Startvektene regnes ut fra dette. Etter hvert styrer RPE-en din vektene.' : p.prog === 'cube' ? 'Alle vekter regnes ut som prosent av dette.' : 'Start lett. Teknikken skal sitte før vekten blir tung.'}
+      ${slotsOf(p).length ? ' Vil du bytte et løft, gjør du det under Mer når programmet er aktivt.' : ''}
+      ${other ? ' Dette erstatter '+other.name+'. Loggen din blir liggende.' : ''}${isActive ? ' Programmet er aktivt. Aktiverer du på nytt, starter det fra økt 1 med vektene over.' : ''}</p>
+    <button class="btn" data-a="activate:${p.id}">${isActive ? 'Start på nytt' : 'Aktiver program'}</button>`;
+}
+
+function spark(vals){
+  const w = 96, h = 28, min = Math.min(...vals), max = Math.max(...vals), rng = max - min || 1;
+  const pts = vals.map((v,i) => [ (i/(vals.length-1))*(w-6)+3, h-3-((v-min)/rng)*(h-6) ]);
+  const last = pts[pts.length-1];
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true">
+    <polyline points="${pts.map(p => p.join(',')).join(' ')}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${last[0]}" cy="${last[1]}" r="3" fill="var(--chalk)"/></svg>`;
+}
+
+function vLog(){
+  let h = `<header class="head"><p class="eyebrow">${S.history.length} økter</p><h1>Logg</h1></header>`;
+  if (!S.history.length) return h + `<p class="muted">Øktene du fullfører havner her, med vekt og reps for hvert sett.</p>`;
+  const series = {};
+  [...S.history].reverse().forEach(sess => sess.ex.forEach(e => {
+    if (/BBB|T2|T3|Lett|Backoff|Deload/.test(e.tag || '')) return;
+    const done = e.sets.filter(x => x.d > 0); if (!done.length) return;
+    (series[e.lift] = series[e.lift] || []).push(Math.max(...done.map(x => x.w)));
+  }));
+  const rows = Object.entries(series).filter(([,v]) => v.length > 1);
+  h += `<h3>Toppvekt per økt</h3>`;
+  h += rows.length ? `<div class="box trend">${rows.map(([l,v]) => `<div class="tr"><b>${liftName(l)}</b>${spark(v)}<span>${fmt(v[0])} → ${fmt(v[v.length-1])} kg</span></div>`).join('')}</div>`
+                   : `<p class="muted small">Kurvene dukker opp når du har logget samme løft to ganger.</p>`;
+  h += `<h3>Økter</h3>`;
+  h += S.history.slice(0, 60).map(sess => {
+    const p = prog(sess.programId);
+    const vol = sess.ex.reduce((s,e) => s + e.sets.reduce((v,x) => v + (x.d||0)*x.w, 0), 0);
+    return `<article class="sess">
+      <div class="top"><h2 style="font-size:19px">${sess.day}</h2><span class="muted small">${dateFmt(sess.date)}</span></div>
+      <p class="muted small">${p ? p.name : ''} · ${sess.sub} · ${fmt(Math.round(vol))} kg totalt</p>
+      ${sess.ex.map(e => {
+        const ws = [...new Set(e.sets.map(x => x.w))];
+        const reps = e.sets.map(x => x.d == null ? '–' : x.d);
+        const right = ws.length === 1 ? reps.join(' ') + ' × ' + fmt(ws[0]) + ' kg' : e.sets.map(x => (x.d == null ? '–' : x.d) + '×' + fmt(x.w)).join(' · ');
+        return `<div class="ln"><span>${liftName(e.lift)}${e.tag ? ' <span class="muted">'+e.tag+(e.rpe != null ? ' · RPE '+fmt(e.rpe) : '')+'</span>' : ''}</span><span>${right}</span></div>`;
+      }).join('')}
+    </article>`;
+  }).join('');
+  return h;
+}
+
+function vMore(){
+  const p = S.active && prog(S.active.programId);
+  return `<header class="head"><p class="eyebrow">Innstillinger</p><h1>Mer</h1></header>
+    <h3>Pause mellom sett</h3>
+    <div class="seg">${[60,90,120,180,300].map(s => `<button data-a="rest:${s}" aria-pressed="${S.settings.rest === s}">${s < 120 ? s+'s' : (s/60)+' min'}</button>`).join('')}</div>
+    <h3>Aktivt program</h3>
+    <div class="box">${p ? `<p><b>${p.name}</b> <span class="muted">· ${S.active.idx} økter fullført siden ${dateFmt(S.active.startedAt)}</span></p>
+      ${ui.confirm === 'quit' ? `<div class="row"><button class="btn danger sm" data-a="quit">Ja, avslutt</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div>`
+        : `<button class="btn ghost sm" data-a="confirm:quit">Avslutt program</button>`}`
+      : `<p class="muted">Ingen program er aktivt.</p>`}</div>
+    ${p ? swapRows(p, S.active) : ''}
+    <h3>Sikkerhetskopi</h3>
+    <div class="box">
+      <p class="small muted">Dataene ligger bare på denne telefonen. Kopier teksten under og lagre den i Notater eller iCloud Drive av og til.</p>
+      ${ui.exportText ? `<textarea id="exportBox" readonly aria-label="Eksportert data">${ui.exportText.replace(/</g,'&lt;')}</textarea>
+        <button class="btn ghost sm" data-a="copy">Kopier</button>` : `<button class="btn ghost sm" data-a="export">Lag eksport</button>`}
+      <label for="importBox" class="small" style="margin-top:6px">Gjenopprett fra kopi</label>
+      <textarea id="importBox" placeholder="Lim inn en eksport her"></textarea>
+      <button class="btn ghost sm" data-a="import">Importer</button>
+    </div>
+    <h3>Alle data</h3>
+    <div class="box">${ui.confirm === 'reset'
+      ? `<p class="small">Logg, program og innstillinger slettes fra telefonen. Dette kan ikke angres.</p><div class="row"><button class="btn danger sm" data-a="reset">Slett alt</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div>`
+      : `<button class="btn danger sm" data-a="confirm:reset">Slett alle data</button>`}</div>`;
+}
+
+function render(){
+  let h = ui.storageOK ? '' : `<div class="warn">Lagring er ikke tilgjengelig her. Endringer forsvinner når siden lukkes.</div>`;
+  if (ui.tab === 'today') h += vToday();
+  else if (ui.tab === 'programs') h += ui.detail ? vDetail(prog(ui.detail)) : vPrograms();
+  else if (ui.tab === 'log') h += vLog();
+  else h += vMore();
+  $('#view').innerHTML = h;
+  document.querySelectorAll('.tab').forEach(t => {
+    if (t.dataset.a === 'tab:' + ui.tab) t.setAttribute('aria-current','page'); else t.removeAttribute('aria-current');
+  });
+}
+
+/* ---------- Pausetimer, skjerm-på, toast ---------- */
+function startRest(sec){ sec = sec || S.settings.rest; ui.rest = {end: Date.now() + sec*1000, total: sec}; updateRest(); }
+function updateRest(){
+  const el = $('#rest');
+  if (!ui.rest) { el.hidden = true; return; }
+  const left = Math.ceil((ui.rest.end - Date.now())/1000);
+  if (left <= -4) { ui.rest = null; el.hidden = true; return; }
+  el.hidden = false;
+  const l = Math.max(0, left);
+  $('#restT').textContent = Math.floor(l/60) + ':' + String(l%60).padStart(2,'0');
+  $('#restL').textContent = l > 0 ? 'Pause' : 'Klar for neste sett';
+  $('#restF').style.width = (100 * (1 - l/ui.rest.total)) + '%';
+}
+setInterval(updateRest, 250);
+
+let lock = null;
+async function wake(){
+  try { if (!lock && navigator.wakeLock) { lock = await navigator.wakeLock.request('screen'); lock.addEventListener('release', () => lock = null); } } catch(e) {}
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && ui.tab === 'today' && S.draft) wake(); });
+
+let toastT;
+function toast(msg){ const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 2200); }
+
+/* ---------- Handlinger ---------- */
+document.addEventListener('click', ev => {
+  const b = ev.target.closest('[data-a]'); if (!b || b.disabled) return;
+  const [a, ...r] = b.dataset.a.split(':');
+  switch (a) {
+    case 'tab': ui.tab = r[0]; ui.detail = null; ui.confirm = null; render(); scrollTo(0,0); break;
+    case 'open': ui.detail = r[0]; render(); scrollTo(0,0); break;
+    case 'back': ui.detail = null; render(); break;
+    case 'activate': activate(r[0]); break;
+    case 'set': {
+      const ex = S.draft.ex[+r[0]], x = ex.sets[+r[1]];
+      if (x.am) x.d = x.d == null ? x.t : null;
+      else x.d = x.d == null ? x.t : (x.d > 0 ? x.d - 1 : null);
+      if (x.d != null) startRest(ex.rest);
+      save(); render(); wake(); break;
+    }
+    case 'am': { const x = S.draft.ex[+r[0]].sets[+r[1]]; x.d = Math.max(0, Math.min(99, x.d + (+r[2]))); save(); render(); break; }
+    case 'rpe': S.draft.ex[+r[0]].rpe = +r[1]; save(); render(); break;
+    case 'q': S.draft.ex[+r[0]].q = r[1]; save(); render(); break;
+    case 'w': { const e = S.draft.ex[+r[0]]; e.sets.forEach(x => x.w = Math.max(20, x.w + 2.5*(+r[1]))); save(); render(); break; }
+    case 'cut': { const e = S.draft.ex[+r[0]]; if (e.sets.length > 1 && e.sets[e.sets.length-1].d == null) { e.sets.pop(); e.cut = (e.cut||0) + 1; } save(); render(); break; }
+    case 'doswap': doSwap(r[0]); break;
+    case 'finish': finish(); break;
+    case 'dismiss': ui.summary = null; render(); break;
+    case 'skip': ui.rest = null; updateRest(); break;
+    case 'rest': S.settings.rest = +r[0]; save(); render(); break;
+    case 'confirm': ui.confirm = r[0]; render(); break;
+    case 'cancel': ui.confirm = null; render(); break;
+    case 'quit': S.active = null; S.draft = null; ui.summary = null; ui.confirm = null; save(); render(); toast('Programmet er avsluttet'); break;
+    case 'reset': S = fresh(); mergeCustom(); ui.summary = null; ui.confirm = null; ui.exportText = ''; save(); ui.tab = 'programs'; render(); toast('Alle data er slettet'); break;
+    case 'export': ui.exportText = JSON.stringify(S); render(); break;
+    case 'copy': {
+      const ta = $('#exportBox');
+      const fallback = () => { ta.focus(); ta.select(); toast('Teksten er merket. Kopier den manuelt.'); };
+      try { navigator.clipboard.writeText(ta.value).then(() => toast('Kopiert'), fallback); } catch(e) { fallback(); }
+      break;
+    }
+    case 'import': {
+      try {
+        const o = JSON.parse($('#importBox').value);
+        if (!o || !Array.isArray(o.history)) throw 0;
+        S = Object.assign(fresh(), o); mergeCustom(); save(); render(); toast(o.history.length + ' økter importert');
+      } catch(e) { toast('Teksten ble ikke gjenkjent som en Stanga-eksport'); }
+      break;
+    }
+  }
+});
+
+document.addEventListener('change', ev => {
+  const s = ev.target.closest('[data-swap]'); if (!s) return;
+  ui.swapSel = {slot: s.dataset.swap, lift: s.value}; render();
+});
+
+render();
+
+/* ---------- PWA: offline og varig lagring (virker når siden ligger på din egen nettadresse) ---------- */
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch(e) {}
+</script>
+</body>
+</html>
