@@ -219,7 +219,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 8;   // øk sammen med CACHE i sw.js
+const APP_VERSION = 9;   // øk sammen med CACHE i sw.js
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -849,7 +849,7 @@ function diag(){
     const cs = getComputedStyle(d), t = Math.round(parseFloat(cs.paddingTop)), b = Math.round(parseFloat(cs.paddingBottom));
     d.remove();
     const app = document.querySelector('.app').getBoundingClientRect();
-    return 'Skjerm ' + screen.height + ' · vindu ' + innerHeight + ' · app ' + Math.round(app.height) + ' · topp ' + t + ' · bunn ' + b;
+    return 'Skjerm ' + screen.height + ' · vindu ' + innerHeight + ' · app ' + Math.round(app.height) + ' · topp ' + t + ' · bunn ' + b + ' · justert ' + (ui.gapFix || 0);
   } catch(e) { return ''; }
 }
 
@@ -965,6 +965,22 @@ document.addEventListener('click', ev => {
     }
   }
 });
+
+/* iOS gir av og til hjemskjerm-appen et vindu som slutter over skjermkanten.
+   Da måler vi avstanden og strekker app-skallet ned til kanten. */
+function fitViewport(){
+  try {
+    const standalone = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+    const portrait = innerHeight > innerWidth;
+    const gap = Math.round(screen.height - innerHeight);
+    const fix = standalone && portrait && gap > 0 && gap < 140 ? gap : 0;
+    document.querySelector('.app').style.bottom = fix ? (-fix) + 'px' : '';
+    ui.gapFix = fix;
+  } catch(e) {}
+}
+fitViewport();
+addEventListener('resize', fitViewport);
+addEventListener('orientationchange', () => setTimeout(fitViewport, 300));
 
 document.addEventListener('change', ev => {
   const s = ev.target.closest('[data-swap]'); if (!s) return;
