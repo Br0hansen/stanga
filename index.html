@@ -153,7 +153,7 @@ p{margin:0}
 .seg{display:flex;gap:6px;flex-wrap:wrap}
 .seg button{flex:1 1 56px;border:0;border-radius:10px;padding:12px 0;background:var(--iron-3);color:var(--chalk);font:700 18px/1 var(--display);cursor:pointer}
 .seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
-textarea{width:100%;min-height:110px;background:var(--iron);border:1px solid var(--line);border-radius:10px;color:var(--chalk);font:13px/1.4 ui-monospace,Menlo,monospace;padding:10px;resize:vertical}
+textarea{width:100%;min-height:110px;background:var(--iron);border:1px solid var(--line);border-radius:10px;color:var(--chalk);font:16px/1.4 ui-monospace,Menlo,monospace;padding:10px;resize:vertical}
 .warn{background:var(--iron-3);border-radius:12px;padding:12px 14px;font-size:14px;color:var(--amrap)}
 
 .empty{display:grid;gap:14px;padding:28px 0}
@@ -189,7 +189,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
 .quick{border:1px solid var(--line);background:var(--iron-2);color:var(--chalk);border-radius:999px;padding:10px 16px;font:600 14px var(--body);cursor:pointer}
 .quick:active{background:var(--iron-3)}
 .notebox{gap:12px}
-.notebox textarea{min-height:88px;font:15px/1.45 var(--body)}
+.notebox textarea{min-height:88px;font:16px/1.45 var(--body)}
 .lbl{font:600 12px/1.2 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--chalk-2)}
 .tog{justify-self:start;border:1px solid var(--line);background:transparent;color:var(--chalk-2);border-radius:999px;padding:10px 16px;font:600 14px var(--body);cursor:pointer}
 .tog[aria-pressed="true"]{background:var(--amrap);border-color:var(--amrap);color:var(--accent-ink)}
@@ -230,7 +230,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 11;   // øk sammen med CACHE i sw.js
+const APP_VERSION = 12;   // øk sammen med CACHE i sw.js
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -1022,7 +1022,9 @@ document.addEventListener('click', ev => {
 
 /* iOS gir av og til hjemskjerm-appen et vindu som slutter over skjermkanten.
    Da måler vi avstanden og strekker app-skallet ned til kanten. */
+const isTyping = () => { const a = document.activeElement; return !!a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName); };
 function fitViewport(){
+  if (isTyping()) return;          // tastaturet er oppe: ikke mål nå
   try {
     const standalone = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
     const portrait = innerHeight > innerWidth;
@@ -1032,9 +1034,16 @@ function fitViewport(){
     ui.gapFix = fix;
   } catch(e) {}
 }
+let fitT;
+function scheduleFit(ms){
+  clearTimeout(fitT);
+  fitT = setTimeout(() => { if (isTyping()) return; scrollTo(0, 0); fitViewport(); }, ms || 250);
+}
 fitViewport();
-addEventListener('resize', fitViewport);
-addEventListener('orientationchange', () => setTimeout(fitViewport, 300));
+addEventListener('resize', () => scheduleFit());
+if (window.visualViewport) visualViewport.addEventListener('resize', () => scheduleFit());
+addEventListener('orientationchange', () => scheduleFit(400));
+document.addEventListener('focusout', () => scheduleFit(350));   // tastaturet lukkes
 
 document.addEventListener('input', ev => {
   if (ev.target.id === 'note' && S.draft) { S.draft.note = ev.target.value; save(); }
