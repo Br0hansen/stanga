@@ -1,6 +1,6 @@
 // Service worker: gjør at appen virker uten nett.
 // Når du endrer index.html: øk versjonsnummeret under, så henter telefonen den nye versjonen.
-const CACHE = 'stanga-v4';
+const CACHE = 'stanga-v5';
 const FILES = ['./', './index.html', './manifest.json', './icon-180.png', './icon-192.png', './icon-512.png'];
 
 // 1) Installasjon: legg alle filene i mellomlageret.
