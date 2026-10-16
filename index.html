@@ -185,6 +185,9 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
 .swapbox .txt{flex:1 1 100%;background:var(--iron);border:1px solid var(--line);border-radius:10px;color:var(--chalk);font:500 16px var(--body);padding:10px 12px}
 .chk{display:flex;align-items:center;gap:10px;color:var(--chalk-2)}
 .chk input{width:22px;height:22px;accent-color:var(--accent)}
+.topbar{display:flex;justify-content:flex-end;margin-bottom:-8px}
+.quick{border:1px solid var(--line);background:var(--iron-2);color:var(--chalk);border-radius:999px;padding:10px 16px;font:600 14px var(--body);cursor:pointer}
+.quick:active{background:var(--iron-3)}
 .notebox{gap:12px}
 .notebox textarea{min-height:88px;font:15px/1.45 var(--body)}
 .lbl{font:600 12px/1.2 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--chalk-2)}
@@ -227,7 +230,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 10;   // øk sammen med CACHE i sw.js
+const APP_VERSION = 11;   // øk sammen med CACHE i sw.js
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -718,13 +721,13 @@ function vToday(){
       <h1>Ingen program ennå</h1>
       <p class="muted">Velg et styrkeprogram, legg inn startvektene dine, så lager appen øktene for deg.</p>
       <button class="btn" data-a="tab:programs">Velg program</button>
-      <button class="link" data-a="free">+ Logg fri økt uten program</button>
+      <button class="btn ghost" data-a="free">+ Logg fri økt</button>
     </div>`;
   const p = prog(S.active.programId);
   const over = p.total && S.active.idx >= p.total && !S.draft;
   if (!S.draft && !over) { S.draft = buildSession(p, S.active); save(); }
   const s = S.draft;
-  let h = '';
+  let h = `<div class="topbar"><button class="quick" data-a="free">+ Logg fri økt</button></div>`;
   if (ui.summary) {
     const u = ui.summary;
     h += `<section class="done" aria-live="polite">
@@ -776,7 +779,6 @@ function vToday(){
       <button class="tog" data-a="metcon" aria-pressed="${!!s.metcon}">Metcon i dag</button>
     </section>`;
   h += `<button class="btn" data-a="finish" ${anyTouched ? '' : 'disabled'}>Fullfør økt</button>`;
-  h += `<button class="link" data-a="free">+ Logg fri økt uten program</button>`;
   return h;
 }
 
