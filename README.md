@@ -27,9 +27,9 @@ Styrkeprogrammer (StrongLifts 5×5, Starting Strength, GZCLP, 5/3/1 BBB) og tren
 
 ## Når du endrer koden
 
-1. Endre `index.html` og last den opp på nytt.
-2. Øk `CACHE = 'stanga-v1'` til `'stanga-v2'` i `sw.js` og last opp den også.
-3. Åpne appen to ganger. Første gang hentes den nye versjonen, andre gang vises den.
+1. Endre `index.html` og øk `APP_VERSION` øverst i skriptet.
+2. Øk `CACHE = 'stanga-v6'` til neste nummer i `sw.js`.
+3. Last opp begge filene. Neste gang du åpner appen med nett, får du den nye versjonen. Versjonsnummeret står nederst under Mer.
 
 ## Hvordan koden henger sammen
 
