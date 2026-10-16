@@ -38,7 +38,9 @@ body{height:100%;overflow:hidden;
   font:16px/1.45 var(--body);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
 *{box-sizing:border-box}
 .app{position:fixed;inset:0;display:flex;flex-direction:column;background:var(--iron);
-  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+  padding-top:env(safe-area-inset-top,0px);
+  /* iOS oppgir av og til en altfor stor bunnsone i hjemskjerm-apper. 34 px er hjemmelinjen på iPhone. */
+  padding-bottom:min(env(safe-area-inset-bottom,0px),34px)}
 .stage{flex:1 1 auto;min-height:0;position:relative}
 .scroller{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain}
 button{font-family:inherit;touch-action:manipulation}
@@ -217,7 +219,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 6;   // øk sammen med CACHE i sw.js
+const APP_VERSION = 7;   // øk sammen med CACHE i sw.js
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
