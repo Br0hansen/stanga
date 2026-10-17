@@ -255,7 +255,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 16;   // øk sammen med CACHE i sw.js
+const APP_VERSION = 17;   // øk sammen med CACHE i sw.js
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -567,7 +567,8 @@ const PROGRAMS = [
     days:[
       {name:'Økt A', ex:[{lift:'squat',sets:5,reps:5},{lift:'bench',sets:5,reps:5},{lift:'row',sets:5,reps:5}]},
       {name:'Økt B', ex:[{lift:'squat',sets:5,reps:5},{lift:'ohp',sets:5,reps:5},{lift:'deadlift',sets:1,reps:5}]}],
-    inputs:{squat:40,bench:30,row:30,ohp:20,deadlift:50}, inputLabel:'Startvekt', inc:{deadlift:5} },
+    inputs:{squat:40,bench:30,row:30,ohp:20,deadlift:50}, inputLabel:'Startvekt', inc:{deadlift:5},
+    orm:{squat:135, bench:110, row:80, ohp:70, deadlift:160}, derive:(key, orm) => Math.max(20, r25(orm * .55)), ormNote:'Appen regner ut startvekten som ca. 55 % av 1RM. Da får du noen uker med jevn økning før det blir tungt.' },
 
   { id:'ss', name:'Starting Strength', origin:'Mark Rippetoe', level:'Nybegynner', perWeek:'3', prog:'linear',
     summary:'Tre sett à fem på de store stangløftene. Mindre volum enn 5×5, så det er lettere å øke vekten hver gang.',
@@ -575,7 +576,9 @@ const PROGRAMS = [
     days:[
       {name:'Økt A', ex:[{lift:'squat',sets:3,reps:5},{lift:'bench',sets:3,reps:5},{lift:'deadlift',sets:1,reps:5}]},
       {name:'Økt B', ex:[{lift:'squat',sets:3,reps:5},{lift:'ohp',sets:3,reps:5},{lift:'deadlift',sets:1,reps:5}]}],
-    inputs:{squat:40,bench:30,ohp:20,deadlift:50}, inputLabel:'Startvekt', inc:{deadlift:5} },
+    inputs:{squat:40,bench:30,ohp:20,deadlift:50}, inputLabel:'Startvekt', inc:{deadlift:5},
+    orm:{squat:135, bench:110, ohp:70, deadlift:160}, derive:(key, orm) => Math.max(20, r25(orm * .55)),
+    ormNote:'Appen regner ut startvekten som ca. 55 % av 1RM. Da får du noen uker med jevn økning før det blir tungt.' },
 
   { id:'gzclp', name:'GZCLP', origin:'Cody Lefever', level:'Nybegynner til middels', perWeek:'3–4', prog:'gzclp',
     summary:'Fire økter i rotasjon. Hver økt har ett tungt løft (T1), ett volumløft (T2) og en lett øvelse (T3).',
@@ -588,6 +591,7 @@ const PROGRAMS = [
     inputs:{'squat.T1':60,'bench.T1':40,'ohp.T1':30,'deadlift.T1':70,'squat.T2':40,'bench.T2':27.5,'ohp.T2':20,'deadlift.T2':50,'pulldown.T3':30,'dbrow.T3':14},
     orm:{squat:135, bench:110, deadlift:160, ohp:70},   // 1RM: startvektene regnes ut fra disse
     derive:(key, orm) => { const t = key.split('.')[1]; return t === 'T1' ? Math.max(20, r25(orm * .73)) : t === 'T2' ? Math.max(20, r25(orm * .55)) : null; },
+    ormNote:'Appen regner ut startvektene: T1 (5×3) er ca. 73 % og T2 (3×10) ca. 55 % av 1RM. T3 starter lett og justerer seg selv.',
     inputLabel:'Startvekt', inc:{squat:5,deadlift:5} },
 
   { id:'531fsl', name:'5/3/1 FSL', origin:'Jim Wendler', level:'Middels', perWeek:'3–4', prog:'531', fsl:true,
@@ -606,13 +610,13 @@ const PROGRAMS = [
     summary:'Fire økter med ett hovedløft hver. Vektene er prosent av en treningsmaks (90 % av 1RM), og etterpå tar du 5×10 på 50 %.',
     rule:'En syklus er fire uker: 5-ere, 3-ere, 5/3/1 og en lett uke. Siste sett i uke 1–3 tar du så mange reps du klarer. Etter hver syklus øker treningsmaksen 2,5 kg på overkropp og 5 kg på knebøy og markløft.',
     days:[{name:'Pressdag',lift:'ohp'},{name:'Markløftdag',lift:'deadlift'},{name:'Benkdag',lift:'bench'},{name:'Knebøydag',lift:'squat'}],
-    inputs:{ohp:50,deadlift:120,bench:80,squat:100}, inputLabel:'1RM', inc:{squat:5,deadlift:5} },
+    inputs:{ohp:70,deadlift:160,bench:110,squat:135}, inputLabel:'1RM', inc:{squat:5,deadlift:5} },
 
   { id:'cube', name:'Cube Method', origin:'Brandon Lilly', level:'Middels til erfaren', perWeek:'3', prog:'cube', total:30,
     summary:'10 uker for knebøy, benk og markløft. Hver uke er ett løft tungt, ett eksplosivt og ett på reps, og rollene roterer. Originalen har også en fjerde dag med kroppsbygging som du gjør på egen hånd.',
     rule:'Vektene er prosent av 1RM og stiger for hver bølge på tre uker. Tung: 5×2 på 80 %, så 3×2 på 85 %, så singler på 90–95 %. Eksplosiv: 8×3 på 60 %, så 6×2 på 65 %, så 5×2 på 70 %. Reps: 3×8 på 70 %, så 3×6 på 80 %, så 3×3 på 85 %, med maks reps i siste sett. Uke 10 er test med tre forsøk, og beste løft blir ny 1RM.',
     days:[{name:'Markløftdag',lift:'deadlift'},{name:'Benkdag',lift:'bench'},{name:'Knebøydag',lift:'squat'}],
-    inputs:{deadlift:160,bench:100,squat:140}, inputLabel:'1RM' },
+    inputs:{deadlift:160,bench:110,squat:135}, inputLabel:'1RM' },
 
   { id:'sp12', name:'Strength & Power', origin:'Egen modell', level:'Erfaren', perWeek:'3', prog:'sp12', total:36,
     summary:'12 uker med ett løft per økt: benkpress på dag 1, knebøy på dag 2 og power clean på dag 3. Toppsett pluss backoff-sett, deload i uke 4 og 8, og test i uke 12. Metcons kommer i tillegg.',
@@ -633,7 +637,7 @@ const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({'&':'&amp;
 const dateFmt = t => new Date(t).toLocaleDateString('nb-NO',{weekday:'short',day:'numeric',month:'short'});
 
 /* ---------- Lagring ---------- */
-function fresh(){ return {v:1, active:null, draft:null, history:[], settings:{rest:90}}; }
+function fresh(){ return {v:1, active:null, draft:null, history:[], settings:{rest:90}, maxes:{}}; }
 function load(){
   const d = fresh();
   try {
@@ -648,6 +652,8 @@ function save(){
 }
 
 let S = load();
+S.maxes = S.maxes || {};
+const myMax = (lift, dflt) => (S.maxes && S.maxes[lift] > 0) ? S.maxes[lift] : dflt;
 // Egne øvelser lagres i S.custom og legges inn i LIFTS, så resten av appen ser dem som vanlige løft
 function mergeCustom(){
   Object.keys(LIFTS).filter(k => k.startsWith('c_')).forEach(k => delete LIFTS[k]);
@@ -764,6 +770,10 @@ function activate(id){
     else if (a.e1rm) { a.e1rm[k] = v; a.base[k] = v; }
     else a.lifts[k] = {w:v, fails:0, stage:0};
   });
+  // Husk maksløftene, så neste program fylles ut automatisk
+  const num = el => { const v = parseFloat(String(el && el.value || '').replace(',', '.')); return v > 0 ? v : null; };
+  if (p.orm) Object.keys(p.orm).forEach(l => { const v = num($('#orm-' + l)); if (v) S.maxes[l] = v; });
+  else if (p.inputLabel === '1RM') Object.keys(p.inputs).forEach((k, i) => { const v = num($('#in-' + i)); if (v) S.maxes[k] = v; });
   S.active = a; S.draft = null;
   ui.detail = null; ui.summary = null; ui.tab = 'today';
   save(); render(); toTop(); toast(p.name+' er aktivert');
@@ -1053,11 +1063,12 @@ function vDetail(p){
     ${p.orm ? `<h3>Din 1RM (tyngste løft på én rep)</h3>
     <div class="box" style="gap:0">${Object.keys(p.orm).map(l => `
       <div class="field"><label for="orm-${l}">${liftName(l)}</label>
-        <span class="inp"><input id="orm-${l}" data-orm="${l}" type="text" inputmode="decimal" value="${fmt(p.orm[l])}">kg</span></div>`).join('')}</div>
-    <p class="muted small">Appen regner ut startvektene: T1 (5×3) er ca. 73 % og T2 (3×10) ca. 55 % av 1RM. T3 starter lett og justerer seg selv.</p>
+        <span class="inp"><input id="orm-${l}" data-orm="${l}" type="text" inputmode="decimal" value="${fmt(myMax(l, p.orm[l]))}">kg</span></div>`).join('')}</div>
+    <p class="muted small">${p.ormNote}</p>
     <details class="box adj"><summary>Se og juster startvektene</summary>` : `<h3>${p.inputLabel === '1RM' ? 'Din 1RM (tyngste løft på én rep)' : 'Startvekter'}</h3>
     <div class="box" style="gap:0">`}${Object.keys(p.inputs).map((k,i) => {
-      const [l] = k.split('.'), v = p.orm && p.orm[l] != null && p.derive(k, p.orm[l]) != null ? p.derive(k, p.orm[l]) : p.inputs[k];
+      const [l] = k.split('.'), om = p.orm && p.orm[l] != null ? myMax(l, p.orm[l]) : null;
+      const v = om != null && p.derive(k, om) != null ? p.derive(k, om) : p.inputLabel === '1RM' ? myMax(k, p.inputs[k]) : p.inputs[k];
       return `
       <div class="field"><label for="in-${i}">${keyLabel(k)}</label>
         <span class="inp"><input id="in-${i}" data-key="${k}" type="text" inputmode="decimal" value="${fmt(v)}">kg</span></div>`; }).join('')}${p.orm ? '</details>' : '</div>'}
@@ -1135,6 +1146,12 @@ function diag(){
 function vMore(){
   const p = S.active && prog(S.active.programId);
   return `<header class="head"><p class="eyebrow">Innstillinger</p><h1>Mer</h1></header>
+    <h3>Mine maksløft (1RM)</h3>
+    <div class="box" style="gap:0">${Object.keys(S.maxes).length ? Object.keys(S.maxes).map(l => `
+      <div class="field"><label for="max-${l}">${liftName(l)}</label>
+        <span class="inp"><input id="max-${l}" data-max="${l}" type="text" inputmode="decimal" value="${fmt(S.maxes[l])}">kg</span></div>`).join('')
+      : '<p class="muted small">Fylles ut første gang du aktiverer et program. Alle programmer bruker samme tall.</p>'}</div>
+    ${Object.keys(S.maxes).length ? '<p class="muted small">Endringer her brukes neste gang du aktiverer et program. Det aktive programmet påvirkes ikke.</p>' : ''}
     <h3>Pause mellom sett</h3>
     <div class="seg">${[60,90,120,180,300].map(s => `<button data-a="rest:${s}" aria-pressed="${S.settings.rest === s}">${s < 120 ? s+'s' : (s/60)+' min'}</button>`).join('')}</div>
     <h3>Aktivt program</h3>
@@ -1342,6 +1359,11 @@ document.addEventListener('input', ev => {
 });
 
 document.addEventListener('change', ev => {
+  if (ev.target.dataset && ev.target.dataset.max) {
+    const v = parseFloat(String(ev.target.value).replace(',', '.'));
+    if (v > 0) { S.maxes[ev.target.dataset.max] = v; save(); toast('Lagret'); } else { ev.target.value = fmt(S.maxes[ev.target.dataset.max]); }
+    return;
+  }
   if (ev.target.dataset && ev.target.dataset.bf) { ui.bf[ev.target.dataset.bf] = ev.target.value; ui.bankN = 30; render(); return; }
   const s = ev.target.closest('[data-swap]'); if (!s) return;
   ui.swapSel = {slot: s.dataset.swap, lift: s.value}; render();
