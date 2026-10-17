@@ -186,6 +186,9 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
 .chk{display:flex;align-items:center;gap:10px;color:var(--chalk-2)}
 .chk input{width:22px;height:22px;accent-color:var(--accent)}
 .bankctl{display:grid;gap:10px}
+.themes{display:flex;flex-wrap:wrap;gap:8px}
+.randlbl{font:600 12px/1.2 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--amrap);margin:0}
+.quick2 .btn{font-size:17px}
 .selrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .selrow select{width:100%;max-width:none;font-size:16px;padding:10px 8px}
 .bankctl .txt,.wodbox .txt{width:100%;background:var(--iron);border:1px solid var(--line);border-radius:10px;color:var(--chalk);font:500 16px var(--body);padding:11px 12px}
@@ -250,7 +253,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 13;   // øk sammen med CACHE i sw.js
+const APP_VERSION = 14;   // øk sammen med CACHE i sw.js
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -729,8 +732,37 @@ function loadBank(){
   if (BANK || ui.bankLoading) return;
   ui.bankLoading = true; bankErr = false;
   fetch('okter.json').then(r => { if (!r.ok) throw 0; return r.json(); })
-    .then(d => { BANK = d.okter; ui.bankLoading = false; render(); })
+    .then(d => { BANK = d.okter; ui.bankLoading = false;
+      if (ui.pendingRand) { const rp = ui.pendingRand; ui.pendingRand = null; showRandom(rp); } else render(); })
     .catch(() => { bankErr = true; ui.bankLoading = false; render(); });
+}
+/* Tilfeldig: solo-WOD, temaøkt eller blant filtrene. Hopper over økter gjort de siste 60 dagene. */
+const THEMES = ['HYROX / X-RACE', 'Max Metcon', 'Basic', 'TriErg'];
+const themeLabel = t => t === 'HYROX / X-RACE' ? 'HYROX' : t;
+function poolFor(rp){
+  if (rp.kind === 'solo') return BANK.filter(w => w.t === 'WOD' && !w.lag);
+  if (rp.kind === 'theme') return BANK.filter(w => rp.theme ? w.t === rp.theme : THEMES.includes(w.t));
+  return bankFilter();
+}
+function poolLabel(rp){
+  if (rp.kind === 'solo') return 'Tilfeldig solo-metcon';
+  if (rp.kind === 'theme') return 'Tilfeldig temaøkt' + (rp.theme ? ' · ' + themeLabel(rp.theme) : '');
+  return 'Tilfeldig blant filtrene';
+}
+function pickRandom(rp){
+  const pool = poolFor(rp);
+  if (!pool.length) return null;
+  const recent = new Set(S.history.filter(h => h.wod && Date.now() - h.date < 60 * 864e5).map(h => h.wod.id));
+  const notSame = pool.filter(w => w.i !== ui.wod);
+  const fresh = notSame.filter(w => !recent.has(w.i));
+  const src = fresh.length ? fresh : notSame.length ? notSame : pool;
+  return src[Math.floor(Math.random() * src.length)];
+}
+function showRandom(rp){
+  const w = pickRandom(rp);
+  if (!w) { toast('Ingen økter passer'); return; }
+  ui.wod = w.i; ui.wodRand = true; ui.randPool = rp;
+  render(); toTop();
 }
 const LENGTHS = ['Kort (≤12 min)', 'Middels (13–25 min)', 'Lang (26+ min)', 'Ukjent lengde'];
 const wodTitle = w => w.n || w.x.split('\n')[0].replace(/^\s*(metcon|wod)\s*[:\-–]\s*/i, '').trim().slice(0, 48) || w.t;
@@ -770,6 +802,7 @@ function vWod(w){
   if (!w) { ui.wod = null; return vBank(); }
   const fav = (S.fav || []).includes(w.i);
   return `<button class="link" data-a="wodback">‹ Øktbanken</button>
+    ${ui.wodRand && ui.randPool ? `<p class="randlbl">${esc(poolLabel(ui.randPool))}</p>` : ''}
     <header class="head"><p class="eyebrow">${esc(w.t)}${w.c > 1 ? ` · kjørt ${w.c} ganger` : ''} · sist ${esc(w.s.split('-').reverse().join('.'))}</p>
       <h1>${esc(wodTitle(w))}</h1></header>
     <div class="meta">${wodChips(w)}${w.u.map(u => `<span class="pill">${esc(u)}</span>`).join('')}</div>
@@ -794,7 +827,12 @@ function vBank(){
   const sel = (k, label, vals) => `<select data-bf="${k}" aria-label="${label}"><option value="">${label}</option>${vals.map(v => `<option${f[k] === v ? ' selected' : ''}>${esc(v)}</option>`).join('')}</select>`;
   const uq = a => [...new Set(a)].sort();
   return back + `<header class="head"><p class="eyebrow">${BANK.length} metcons fra Functional Fitness Sarpsborg</p><h1>Øktbank</h1></header>
-    <button class="btn" data-a="wodrand">Gi meg en økt</button>
+    <div class="row">
+      <button class="btn" data-a="rand:solo">Tilfeldig solo-metcon</button>
+      <button class="btn ghost" data-a="themes" aria-expanded="${!!ui.showThemes}">Tilfeldig temaøkt</button>
+    </div>
+    ${ui.showThemes ? `<div class="themes">${THEMES.map((t, i) => `<button class="tog" data-a="rand:theme:${i}">${esc(themeLabel(t))}</button>`).join('')}
+      <button class="tog" data-a="rand:theme:all">Alle temaer</button></div>` : ''}
     <div class="bankctl">
       <input id="bq" class="txt" type="search" placeholder="Søk, f.eks. wallball eller burpees" value="${esc(f.q || '')}" autocomplete="off">
       <div class="selrow">${sel('t', 'Type time', uq(BANK.map(w => w.t)))}${sel('f', 'Format', uq(BANK.map(w => w.f)))}${sel('l', 'Lengde', LENGTHS)}</div>
@@ -804,6 +842,7 @@ function vBank(){
         <button data-a="bfl:lag" aria-pressed="${f.lag === 'lag'}">Lag</button></div>
       <div class="row"><button class="tog" data-a="bft:fav" aria-pressed="${!!f.fav}">★ Favoritter</button>
         <button class="tog" data-a="bft:ny" aria-pressed="${!!f.ny}">Ikke gjort før</button></div>
+      <button class="link" data-a="rand:filter">↻ Tilfeldig blant disse filtrene</button>
     </div>
     <div id="bankList" class="list">${bankListHTML()}</div>`;
 }
@@ -817,6 +856,11 @@ function wodBox(w, ctx){
       ${prevResults(w.id)}
     </section>`;
 }
+function quickPick(ctx){
+  return `<div class="row quick2">
+      <button class="btn ghost" data-a="qr:${ctx}">Tilfeldig solo-metcon</button>
+      <button class="btn ghost" data-a="bank:${ctx}">Øktbank</button></div>`;
+}
 function openBank(forWhat){
   ui.bank = true; ui.bankFor = forWhat; ui.wod = null; ui.wodRand = false; ui.bankN = 30;
   ui.bf = ui.bf || {};
@@ -828,7 +872,7 @@ function vFree(){
   return `<button class="link" data-a="freecancel">‹ Tilbake</button>
     <header class="head"><p class="eyebrow">Uten program</p><h1>Fri økt</h1>
       <p class="muted small">Påvirker ikke programmet ditt. Lagres i loggen med dagens dato.</p></header>
-    ${ui.freeWod ? wodBox(ui.freeWod, 'free') : `<button class="btn ghost" data-a="bank:free">Velg metcon fra øktbanken</button>`}
+    ${ui.freeWod ? wodBox(ui.freeWod, 'free') : quickPick('free')}
     <div class="box notebox">
       <label for="freeNote" class="lbl">${ui.freeWod ? 'Notat' : 'Hva gjorde du?'}</label>
       <textarea id="freeNote" placeholder="For eksempel: 20 min AMRAP med 5 pull-ups, 10 push-ups og 15 air squats. 9 runder.">${esc(ui.freeNote)}</textarea>
@@ -898,7 +942,7 @@ function vToday(){
       ${e.sp ? spExtras(e, ei) : ''}
     </section>`;
   });
-  h += s.wod ? wodBox(s.wod, 'session') : `<button class="btn ghost" data-a="bank:session">Velg metcon fra øktbanken</button>`;
+  h += s.wod ? wodBox(s.wod, 'session') : quickPick('session');
   h += `<section class="box notebox">
       <label for="note" class="lbl">Notat</label>
       <textarea id="note" placeholder="For eksempel metcon etter økta, dagsform eller en teknikkdetalj">${esc(s.note)}</textarea>
@@ -1131,11 +1175,16 @@ document.addEventListener('click', ev => {
     case 'bft': ui.bf[r[0]] = !ui.bf[r[0]]; ui.bankN = 30; render(); break;
     case 'wod': ui.wod = r[0]; ui.wodRand = false; render(); toTop(); break;
     case 'wodback': ui.wod = null; ui.wodRand = false; render(); break;
-    case 'wodrand': {
-      const l = bankFilter(); if (!l.length) { toast('Ingen økter passer filtrene'); break; }
-      let pick = l[Math.floor(Math.random() * l.length)];
-      if (l.length > 1 && pick.i === ui.wod) pick = l[(l.indexOf(pick) + 1) % l.length];
-      ui.wod = pick.i; ui.wodRand = true; render(); toTop(); break;
+    case 'wodrand': showRandom(ui.randPool || {kind:'filter'}); break;
+    case 'themes': ui.showThemes = !ui.showThemes; render(); break;
+    case 'rand': {
+      const rp = r[0] === 'theme' ? {kind:'theme', theme: r[1] === 'all' ? null : THEMES[+r[1]]} : {kind:r[0]};
+      showRandom(rp); break;
+    }
+    case 'qr': {
+      openBank(r[0]);
+      if (BANK) showRandom({kind:'solo'}); else ui.pendingRand = {kind:'solo'};
+      break;
     }
     case 'fav': {
       S.fav = S.fav || []; const k = S.fav.indexOf(r[0]);
