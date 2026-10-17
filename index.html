@@ -211,6 +211,8 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
 .topbar{display:flex;justify-content:flex-end;margin-bottom:-8px}
 .quick{border:1px solid var(--line);background:var(--iron-2);color:var(--chalk);border-radius:999px;padding:10px 16px;font:600 14px var(--body);cursor:pointer}
 .quick:active{background:var(--iron-3)}
+.adj summary{cursor:pointer;color:var(--chalk-2);font-weight:600;padding:2px 0}
+.adj[open] summary{margin-bottom:6px}
 .notebox{gap:12px}
 .notebox textarea{min-height:88px;font:16px/1.45 var(--body)}
 .lbl{font:600 12px/1.2 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--chalk-2)}
@@ -253,7 +255,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 15;   // øk sammen med CACHE i sw.js
+const APP_VERSION = 16;   // øk sammen med CACHE i sw.js
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -584,6 +586,8 @@ const PROGRAMS = [
       {name:'Dag 3', ex:[{lift:'bench',tier:'T1'},{lift:'squat',tier:'T2'},{lift:'pulldown',tier:'T3'}]},
       {name:'Dag 4', ex:[{lift:'deadlift',tier:'T1'},{lift:'ohp',tier:'T2'},{lift:'dbrow',tier:'T3'}]}],
     inputs:{'squat.T1':60,'bench.T1':40,'ohp.T1':30,'deadlift.T1':70,'squat.T2':40,'bench.T2':27.5,'ohp.T2':20,'deadlift.T2':50,'pulldown.T3':30,'dbrow.T3':14},
+    orm:{squat:135, bench:110, deadlift:160, ohp:70},   // 1RM: startvektene regnes ut fra disse
+    derive:(key, orm) => { const t = key.split('.')[1]; return t === 'T1' ? Math.max(20, r25(orm * .73)) : t === 'T2' ? Math.max(20, r25(orm * .55)) : null; },
     inputLabel:'Startvekt', inc:{squat:5,deadlift:5} },
 
   { id:'531fsl', name:'5/3/1 FSL', origin:'Jim Wendler', level:'Middels', perWeek:'3–4', prog:'531', fsl:true,
@@ -1046,10 +1050,17 @@ function vDetail(p){
     <div class="box"><h3 style="margin:0">Slik øker vekten</h3><p class="small">${p.rule}</p></div>
     <h3>Øktene</h3>
     <div class="days">${p.days.map(d => `<div class="day"><h4>${d.name}</h4>${dayLines(p,d).join('')}</div>`).join('')}</div>
-    <h3>${p.inputLabel === '1RM' ? 'Din 1RM (tyngste løft på én rep)' : 'Startvekter'}</h3>
-    <div class="box" style="gap:0">${Object.keys(p.inputs).map((k,i) => `
+    ${p.orm ? `<h3>Din 1RM (tyngste løft på én rep)</h3>
+    <div class="box" style="gap:0">${Object.keys(p.orm).map(l => `
+      <div class="field"><label for="orm-${l}">${liftName(l)}</label>
+        <span class="inp"><input id="orm-${l}" data-orm="${l}" type="text" inputmode="decimal" value="${fmt(p.orm[l])}">kg</span></div>`).join('')}</div>
+    <p class="muted small">Appen regner ut startvektene: T1 (5×3) er ca. 73 % og T2 (3×10) ca. 55 % av 1RM. T3 starter lett og justerer seg selv.</p>
+    <details class="box adj"><summary>Se og juster startvektene</summary>` : `<h3>${p.inputLabel === '1RM' ? 'Din 1RM (tyngste løft på én rep)' : 'Startvekter'}</h3>
+    <div class="box" style="gap:0">`}${Object.keys(p.inputs).map((k,i) => {
+      const [l] = k.split('.'), v = p.orm && p.orm[l] != null && p.derive(k, p.orm[l]) != null ? p.derive(k, p.orm[l]) : p.inputs[k];
+      return `
       <div class="field"><label for="in-${i}">${keyLabel(k)}</label>
-        <span class="inp"><input id="in-${i}" type="text" inputmode="decimal" value="${fmt(p.inputs[k])}">kg</span></div>`).join('')}</div>
+        <span class="inp"><input id="in-${i}" data-key="${k}" type="text" inputmode="decimal" value="${fmt(v)}">kg</span></div>`; }).join('')}${p.orm ? '</details>' : '</div>'}
     <p class="muted small">${p.prog === '531' ? 'Appen regner ut treningsmaks som 90 % av dette.' : p.prog === 'jugg' ? 'Appen regner ut arbeidsmaks som 90 % av dette.' : p.prog === 'sp12' ? 'Startvektene regnes ut fra dette. Etter hvert styrer RPE-en din vektene.' : p.prog === 'cube' ? 'Alle vekter regnes ut som prosent av dette.' : 'Start lett. Teknikken skal sitte før vekten blir tung.'}
       ${slotsOf(p).length ? ' Vil du bytte et løft, gjør du det under Mer når programmet er aktivt.' : ''}
       ${other ? ' Dette erstatter '+other.name+'. Loggen din blir liggende.' : ''}${isActive ? ' Programmet er aktivt. Aktiverer du på nytt, starter det fra økt 1 med vektene over.' : ''}</p>
@@ -1311,6 +1322,15 @@ document.addEventListener('focusout', () => scheduleFit(350));   // tastaturet l
 document.addEventListener('input', ev => {
   if (ev.target.id === 'note' && S.draft) { S.draft.note = ev.target.value; save(); }
   else if (ev.target.id === 'freeNote') ui.freeNote = ev.target.value;
+  else if (ev.target.dataset && ev.target.dataset.orm && ui.detail) {
+    const p = prog(ui.detail), l = ev.target.dataset.orm, orm = parseFloat(String(ev.target.value).replace(',', '.'));
+    if (!(orm > 0) || !p.derive) return;
+    document.querySelectorAll('[data-key]').forEach(inp => {
+      const k = inp.dataset.key; if (k.split('.')[0] !== l || inp.dataset.edited) return;
+      const v = p.derive(k, orm); if (v != null) inp.value = fmt(v);
+    });
+  }
+  else if (ev.target.dataset && ev.target.dataset.key) ev.target.dataset.edited = '1';
   else if (ev.target.id === 'wodRes') {
     if (ev.target.dataset.ctx === 'session' && S.draft && S.draft.wod) { S.draft.wod.resultat = ev.target.value; save(); }
     else if (ui.freeWod) ui.freeWod.resultat = ev.target.value;
