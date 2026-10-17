@@ -253,7 +253,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 14;   // øk sammen med CACHE i sw.js
+const APP_VERSION = 15;   // øk sammen med CACHE i sw.js
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -352,16 +352,52 @@ function progressCube(p, a, s){
   return notes;
 }
 
+/* ---------- Juggernaut Method (16 uker, Chad Wesley Smith) ----------
+   Fire bølger: 10-ere, 8-ere, 5-ere, 3-ere. Hver bølge: akkumulering, intensivering,
+   realisering (test) og deload. Prosentene er av arbeidsmaks (90 % av 1RM).
+   Sett skrives som [andel, reps, antall sett, maks reps?], samme format som Cube. */
+const JUG = [
+  {std:10, acc:[[.60,10,5]], int:[[.55,5,1],[.625,5,1],[.675,10,3]], real:[[.50,5,1],[.60,3,1],[.70,1,1],[.75,10,1,1]]},
+  {std:8,  acc:[[.65,8,5]],  int:[[.60,3,1],[.675,3,1],[.725,8,3]],  real:[[.50,5,1],[.60,3,1],[.70,2,1],[.75,1,1],[.80,8,1,1]]},
+  {std:5,  acc:[[.70,5,6]],  int:[[.65,2,1],[.725,2,1],[.775,5,4]],  real:[[.50,5,1],[.60,3,1],[.70,2,1],[.75,1,1],[.80,1,1],[.85,5,1,1]]},
+  {std:3,  acc:[[.75,3,7]],  int:[[.70,1,1],[.775,1,1],[.825,3,5]],  real:[[.50,5,1],[.60,3,1],[.70,2,1],[.75,1,1],[.80,1,1],[.85,1,1],[.90,3,1,1]]}
+];
+const JUG_DELOAD = [[.40,5,1],[.50,5,1],[.60,5,1]];
+const JUG_WAVE = ['10-ere', '8-ere', '5-ere', '3-ere'];
+const JUG_PHASE = ['Akkumulering', 'Intensivering', 'Realisering', 'Deload'];
+const jugInc = slot => (slot === 'squat' || slot === 'deadlift') ? 2.5 : 1.25;   // per ekstra rep
+
+function buildJug(p, a){
+  const i = a.idx, n = p.days.length, day = p.days[i % n], slot = day.lift, L = sw(a, slot);
+  const week = Math.floor(i / n), wave = Math.min(3, Math.floor(week / 4)), phase = week % 4, W = JUG[wave];
+  const list = phase === 0 ? W.acc : phase === 1 ? W.int : phase === 2 ? W.real : JUG_DELOAD;
+  const hint = phase === 2 ? `Siste sett: så mange reps du klarer. Hver rep over ${W.std} øker arbeidsmaksen med ${fmt(jugInc(slot))} kg (maks 10 reps teller).`
+             : phase === 0 && wave === 0 ? 'Lett start er meningen. Ikke øk vekten selv.' : '';
+  return {programId:p.id, day:day.name, sub:`Bølge ${JUG_WAVE[wave]} · ${JUG_PHASE[phase]} · uke ${week + 1} av 16`,
+    ex:[{key:L, lift:L, slot, tag:JUG_PHASE[phase], rest: phase === 2 ? 180 : phase === 3 ? 90 : 150, hint,
+         sets: cubeSets(list, a.tm[L])}], started:Date.now()};
+}
+function progressJug(p, a, s){
+  const e = s.ex[0], n = p.days.length, week = Math.floor(a.idx / n), wave = Math.min(3, Math.floor(week / 4));
+  if (week % 4 !== 2) return [];
+  const am = e.sets.find(x => x.am);
+  if (!am || am.d == null) return [{name:liftName(e.lift), text:'Testsettet er ikke registrert. Arbeidsmaksen står stille.', kind:'same'}];
+  const extra = Math.min(10, am.d - JUG[wave].std), old = a.tm[e.lift];
+  if (extra <= 0) return [{name:liftName(e.lift), text:`${am.d} reps (mål ${JUG[wave].std}). Arbeidsmaksen står på ${fmt(old)} kg`, kind:'same'}];
+  a.tm[e.lift] = old + extra * jugInc(e.slot);
+  return [{name:liftName(e.lift), text:`${am.d} reps, ${extra} over målet: arbeidsmaks ${fmt(old)} → ${fmt(a.tm[e.lift])} kg`, kind:'up'}];
+}
+
 /* ---------- Bytte løft ----------
    Vekten lagres på LØFTET, ikke på plassen. Frontbøy får sin egen vekt, og knebøyvektene
    ligger urørt hvis du bytter tilbake. */
 function refValue(p, a, L){
   if (p.prog === 'linear') return a.lifts[L] && a.lifts[L].w;
   if (p.prog === 'gzclp') return (a.lifts[L+'.T1'] || a.lifts[L+'.T2'] || {}).w;
-  if (p.prog === '531') return a.tm[L];
+  if (p.prog === '531' || p.prog === 'jugg') return a.tm[L];
   return a.e1rm && a.e1rm[L];
 }
-const refLabel = p => ({linear:'Arbeidsvekt', gzclp:'T1-vekt', '531':'Treningsmaks'})[p.prog] || '1RM';
+const refLabel = p => ({linear:'Arbeidsvekt', gzclp:'T1-vekt', '531':'Treningsmaks', jugg:'Arbeidsmaks'})[p.prog] || '1RM';
 const ratio = L => LIFTS[L].r || 1;
 const estFor = (p, a, from, to) => r25(refValue(p, a, from) / ratio(from) * ratio(to));
 const slotsOf = p => [...new Set(p.days.flatMap(d => d.ex ? d.ex.map(e => e.lift) : [d.lift]))].filter(s => ALTS(s).length);
@@ -388,7 +424,7 @@ function doSwap(slot){
       const nk = B + key.slice(A.length), v = a.lifts[key];
       if (!a.lifts[nk]) a.lifts[nk] = Object.assign({}, v, {w: r25(v.w*k), fails:0, stage:0, last: v.last != null ? r25(v.last*k) : undefined});
     });
-    if (p.prog === '531') a.tm[B] = r25(W);
+    if (p.prog === '531' || p.prog === 'jugg') a.tm[B] = r25(W);
     if (a.e1rm) { a.e1rm[B] = W; a.base[B] = W; }
   }
   a.swaps = a.swaps || {};
@@ -550,6 +586,18 @@ const PROGRAMS = [
     inputs:{'squat.T1':60,'bench.T1':40,'ohp.T1':30,'deadlift.T1':70,'squat.T2':40,'bench.T2':27.5,'ohp.T2':20,'deadlift.T2':50,'pulldown.T3':30,'dbrow.T3':14},
     inputLabel:'Startvekt', inc:{squat:5,deadlift:5} },
 
+  { id:'531fsl', name:'5/3/1 FSL', origin:'Jim Wendler', level:'Middels', perWeek:'3–4', prog:'531', fsl:true,
+    summary:'Fire økter med ett hovedløft hver. Etter hovedsettene tar du 5×5 på samme vekt som første sett. Mindre volum enn BBB, så det passer godt sammen med metcons.',
+    rule:'En syklus er fire uker: 5-ere, 3-ere, 5/3/1 og en lett uke. Siste hovedsett i uke 1–3 tar du så mange reps du klarer. FSL er 5×5 på første setts prosent: 65, 70 og 75 %. Ingen FSL i den lette uka. Etter hver syklus øker treningsmaksen 2,5 kg på overkropp og 5 kg på knebøy og markløft.',
+    days:[{name:'Pressdag',lift:'ohp'},{name:'Markløftdag',lift:'deadlift'},{name:'Benkdag',lift:'bench'},{name:'Knebøydag',lift:'squat'}],
+    inputs:{ohp:70,deadlift:160,bench:110,squat:135}, inputLabel:'1RM', inc:{squat:5,deadlift:5} },
+
+  { id:'jugg', name:'Juggernaut Method', origin:'Chad Wesley Smith', level:'Middels', perWeek:'3–4', prog:'jugg', total:64,
+    summary:'16 uker i fire bølger: 10-ere, 8-ere, 5-ere og 3-ere. Hver bølge bygger volum, blir tyngre, tester deg og hviler. Ett hovedløft per økt.',
+    rule:'Hver bølge har fire uker: akkumulering, intensivering, realisering og deload. I realiseringsuka tar du siste sett for maks reps. Hver rep over målet (10, 8, 5 eller 3) øker arbeidsmaksen med 2,5 kg på knebøy og markløft og 1,25 kg på benk og press. Maks 10 ekstra reps teller. Arbeidsmaks er 90 % av 1RM.',
+    days:[{name:'Knebøydag',lift:'squat'},{name:'Benkdag',lift:'bench'},{name:'Markløftdag',lift:'deadlift'},{name:'Pressdag',lift:'ohp'}],
+    inputs:{squat:135,bench:110,deadlift:160,ohp:70}, inputLabel:'1RM' },
+
   { id:'531', name:'5/3/1 BBB', origin:'Jim Wendler', level:'Middels', perWeek:'4', prog:'531',
     summary:'Fire økter med ett hovedløft hver. Vektene er prosent av en treningsmaks (90 % av 1RM), og etterpå tar du 5×10 på 50 %.',
     rule:'En syklus er fire uker: 5-ere, 3-ere, 5/3/1 og en lett uke. Siste sett i uke 1–3 tar du så mange reps du klarer. Etter hver syklus øker treningsmaksen 2,5 kg på overkropp og 5 kg på knebøy og markløft.',
@@ -612,6 +660,7 @@ function mk(n, reps, w, lastAm){
 function buildSession(p, a){
   if (p.prog === 'sp12') return buildSP(p, a);
   if (p.prog === 'cube') return buildCube(p, a);
+  if (p.prog === 'jugg') return buildJug(p, a);
   const i = a.idx, n = p.days.length, day = p.days[i % n];
   let ex = [], sub = 'Økt ' + (i+1);
   if (p.prog === 'linear') {
@@ -629,7 +678,10 @@ function buildSession(p, a){
     const L = sw(a, day.lift), wk = Math.floor(i/n) % 4, cyc = Math.floor(i/(n*4)) + 1, tm = a.tm[L];
     ex = [{key:L, lift:L, slot:day.lift, tag: wk === 3 ? 'Lett uke' : 'Hovedløft',
            sets: W531[wk].map(([pc,r,am]) => ({t:r, w:r25(tm*pc), am:!!am, d:null}))}];
-    if (wk < 3) ex.push({key:L+'.bbb', lift:L, slot:day.lift, tag:'BBB · 50 %', sets: mk(5, 10, r25(tm*.5))});
+    if (wk < 3) {
+      if (p.fsl) { const pc = W531[wk][0][0]; ex.push({key:L+'.fsl', lift:L, slot:day.lift, tag:`FSL · ${Math.round(pc*100)} %`, sets: mk(5, 5, r25(tm*pc))}); }
+      else ex.push({key:L+'.bbb', lift:L, slot:day.lift, tag:'BBB · 50 %', sets: mk(5, 10, r25(tm*.5))});
+    }
     sub = 'Syklus ' + cyc + ' · Uke ' + (wk+1);
   }
   return {programId:p.id, day:day.name, sub, ex, started:Date.now()};
@@ -639,6 +691,7 @@ function buildSession(p, a){
 function progress(p, a, s){
   if (p.prog === 'sp12') return progressSP(p, a, s);
   if (p.prog === 'cube') return progressCube(p, a, s);
+  if (p.prog === 'jugg') return progressJug(p, a, s);
   const notes = [];
   const hit = x => x.d != null && x.d >= x.t;
   const touched = e => e.sets.some(x => x.d != null);
@@ -703,7 +756,7 @@ function activate(id){
   Object.keys(p.inputs).forEach((k,i) => {
     const el = $('#in-'+i); let v = parseFloat(String(el && el.value || '').replace(',', '.'));
     if (!isFinite(v) || v < 0) v = p.inputs[k];
-    if (p.prog === '531') a.tm[k] = r25(v*.9);
+    if (p.prog === '531' || p.prog === 'jugg') a.tm[k] = r25(v*.9);
     else if (a.e1rm) { a.e1rm[k] = v; a.base[k] = v; }
     else a.lifts[k] = {w:v, fails:0, stage:0};
   });
@@ -967,7 +1020,9 @@ function dayLines(p, d){
   }
   if (p.prog === 'linear') return d.ex.map(e => `<div>${liftName(e.lift)}<span>${e.sets}×${e.reps}</span></div>`);
   if (p.prog === 'gzclp') return d.ex.map(e => `<div><span style="color:var(--chalk)"><b>${e.tier}</b>${liftName(e.lift)}</span><span>${e.tier==='T1'?'5×3+':e.tier==='T2'?'3×10':'3×15+'}</span></div>`);
-  return [`<div>${liftName(d.lift)}<span>3 sett</span></div>`, `<div>${liftName(d.lift)}<span>5×10</span></div>`];
+  if (p.prog === 'jugg') return [`<div><span style="color:var(--chalk)">${liftName(d.lift)}</span></div>`,
+    ...JUG_WAVE.map((w, k) => `<div>Uke ${k*4+1}–${k*4+4}<span>${w}</span></div>`)];
+  return [`<div>${liftName(d.lift)}<span>3 sett</span></div>`, `<div>${liftName(d.lift)}<span>${p.fsl ? 'FSL 5×5' : '5×10'}</span></div>`];
 }
 
 function vPrograms(){
@@ -995,7 +1050,7 @@ function vDetail(p){
     <div class="box" style="gap:0">${Object.keys(p.inputs).map((k,i) => `
       <div class="field"><label for="in-${i}">${keyLabel(k)}</label>
         <span class="inp"><input id="in-${i}" type="text" inputmode="decimal" value="${fmt(p.inputs[k])}">kg</span></div>`).join('')}</div>
-    <p class="muted small">${p.prog === '531' ? 'Appen regner ut treningsmaks som 90 % av dette.' : p.prog === 'sp12' ? 'Startvektene regnes ut fra dette. Etter hvert styrer RPE-en din vektene.' : p.prog === 'cube' ? 'Alle vekter regnes ut som prosent av dette.' : 'Start lett. Teknikken skal sitte før vekten blir tung.'}
+    <p class="muted small">${p.prog === '531' ? 'Appen regner ut treningsmaks som 90 % av dette.' : p.prog === 'jugg' ? 'Appen regner ut arbeidsmaks som 90 % av dette.' : p.prog === 'sp12' ? 'Startvektene regnes ut fra dette. Etter hvert styrer RPE-en din vektene.' : p.prog === 'cube' ? 'Alle vekter regnes ut som prosent av dette.' : 'Start lett. Teknikken skal sitte før vekten blir tung.'}
       ${slotsOf(p).length ? ' Vil du bytte et løft, gjør du det under Mer når programmet er aktivt.' : ''}
       ${other ? ' Dette erstatter '+other.name+'. Loggen din blir liggende.' : ''}${isActive ? ' Programmet er aktivt. Aktiverer du på nytt, starter det fra økt 1 med vektene over.' : ''}</p>
     <button class="btn" data-a="activate:${p.id}">${isActive ? 'Start på nytt' : 'Aktiver program'}</button>`;
@@ -1015,7 +1070,7 @@ function vLog(){
   if (!S.history.length) return h + `<p class="muted">Øktene du fullfører havner her, med vekt, reps og notater.</p>`;
   const series = {};
   [...S.history].reverse().forEach(sess => sess.ex.forEach(e => {
-    if (/BBB|T2|T3|Lett|Backoff|Deload/.test(e.tag || '')) return;
+    if (/BBB|FSL|T2|T3|Lett|Backoff|Deload/.test(e.tag || '')) return;
     const done = e.sets.filter(x => x.d > 0); if (!done.length) return;
     (series[e.lift] = series[e.lift] || []).push(Math.max(...done.map(x => x.w)));
   }));
