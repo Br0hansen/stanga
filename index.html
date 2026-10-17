@@ -185,6 +185,26 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
 .swapbox .txt{flex:1 1 100%;background:var(--iron);border:1px solid var(--line);border-radius:10px;color:var(--chalk);font:500 16px var(--body);padding:10px 12px}
 .chk{display:flex;align-items:center;gap:10px;color:var(--chalk-2)}
 .chk input{width:22px;height:22px;accent-color:var(--accent)}
+.bankctl{display:grid;gap:10px}
+.selrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.selrow select{width:100%;max-width:none;font-size:16px;padding:10px 8px}
+.bankctl .txt,.wodbox .txt{width:100%;background:var(--iron);border:1px solid var(--line);border-radius:10px;color:var(--chalk);font:500 16px var(--body);padding:11px 12px}
+.bankitem{appearance:none;text-align:left;width:100%;background:var(--iron-2);border:1px solid var(--line);border-radius:14px;padding:14px 16px;color:var(--chalk);display:grid;gap:8px;cursor:pointer;font:inherit}
+.bankitem:active{background:var(--iron-3)}
+.bi-top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.bi-top b{font:700 18px/1.1 var(--display);text-transform:uppercase;letter-spacing:.02em;min-width:0;overflow-wrap:anywhere}
+.bi-top span{color:var(--amrap);font-weight:600;white-space:nowrap}
+.bi-txt{white-space:pre-line;color:var(--chalk-2);font-size:14px;overflow-wrap:anywhere}
+.wodtxt{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font:15px/1.5 var(--body);color:var(--chalk)}
+.wodbox{gap:10px;border-color:var(--amrap)}
+.wodbox h2{font-size:20px}
+.wodbox .top{display:flex;justify-content:space-between;align-items:center}
+.prev{display:grid;gap:4px}
+.prev .ln{display:flex;justify-content:space-between;gap:12px;font-size:14px;color:var(--chalk-2);font-variant-numeric:tabular-nums}
+.sess-wod{display:grid;gap:4px}
+.sess-wod p{font-size:15px}
+.sess-wod .res{color:var(--amrap);font-weight:600}
+.sess-wod summary{cursor:pointer;color:var(--chalk-2);font-size:13px}
 .topbar{display:flex;justify-content:flex-end;margin-bottom:-8px}
 .quick{border:1px solid var(--line);background:var(--iron-2);color:var(--chalk);border-radius:999px;padding:10px 16px;font:600 14px var(--body);cursor:pointer}
 .quick:active{background:var(--iron-3)}
@@ -230,7 +250,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 12;   // øk sammen med CACHE i sw.js
+const APP_VERSION = 13;   // øk sammen med CACHE i sw.js
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -664,7 +684,8 @@ function finish(){
   const p = prog(S.active.programId), s = S.draft;
   const notes = progress(p, S.active, s);
   const vol = s.ex.reduce((sum,e) => sum + e.sets.reduce((v,x) => v + (x.d||0)*x.w, 0), 0);
-  S.history.unshift({date:Date.now(), programId:p.id, day:s.day, sub:s.sub, note:(s.note||'').trim(), metcon:!!s.metcon,
+  S.history.unshift({date:Date.now(), programId:p.id, day:s.day, sub:s.sub, note:(s.note||'').trim(), metcon:!!(s.metcon || s.wod),
+    wod: s.wod ? {id:s.wod.id, navn:s.wod.navn, tekst:s.wod.tekst, resultat:(s.wod.resultat||'').trim()} : undefined,
     ex: s.ex.map(e => ({lift:e.lift, tag:e.tag, rpe:e.rpe, q:e.q, sets:e.sets.map(x => ({t:x.t, w:x.w, d:x.d}))}))});
   S.active.idx++;
   S.draft = null;
@@ -700,13 +721,116 @@ function plateHTML(w){
          '</span><span class="pl-txt">'+txt+' per side</span>';
 }
 
+/* ---------- Øktbank: metcons fra SugarWOD (egen fil, okter.json) ----------
+   Banken er en mal-fil som aldri endres av appen. Det som lagres hos deg, er bare
+   hvilken økt du valgte, resultatet ditt og favorittene dine. */
+let BANK = null, bankErr = false;
+function loadBank(){
+  if (BANK || ui.bankLoading) return;
+  ui.bankLoading = true; bankErr = false;
+  fetch('okter.json').then(r => { if (!r.ok) throw 0; return r.json(); })
+    .then(d => { BANK = d.okter; ui.bankLoading = false; render(); })
+    .catch(() => { bankErr = true; ui.bankLoading = false; render(); });
+}
+const LENGTHS = ['Kort (≤12 min)', 'Middels (13–25 min)', 'Lang (26+ min)', 'Ukjent lengde'];
+const wodTitle = w => w.n || w.x.split('\n')[0].replace(/^\s*(metcon|wod)\s*[:\-–]\s*/i, '').trim().slice(0, 48) || w.t;
+function doneMap(){
+  const m = {};
+  S.history.forEach(h => { if (h.wod && h.wod.id) (m[h.wod.id] = m[h.wod.id] || []).push(h); });
+  return m;
+}
+function bankFilter(){
+  const f = ui.bf, q = (f.q || '').trim().toLowerCase(), fav = new Set(S.fav || []), done = doneMap();
+  return BANK.filter(w =>
+    (!f.t || w.t === f.t) && (!f.f || w.f === f.f) && (!f.l || (w.l || 'Ukjent lengde') === f.l) &&
+    (!f.lag || (f.lag === 'lag' ? w.lag : !w.lag)) && (!f.fav || fav.has(w.i)) && (!f.ny || !done[w.i]) &&
+    (!q || (w.x + ' ' + (w.n || '')).toLowerCase().includes(q)));
+}
+function wodChips(w){
+  return [w.t, w.f, w.m ? w.m + ' min' : null, w.lag ? 'Lag' : null].filter(Boolean).map(c => `<span class="pill">${esc(c)}</span>`).join('');
+}
+function bankListHTML(){
+  const list = bankFilter(), n = ui.bankN || 30, fav = new Set(S.fav || []), done = doneMap();
+  if (!list.length) return `<p class="muted small">Ingen økter passer filtrene.</p>`;
+  return `<p class="count muted small">${list.length} økter</p>` + list.slice(0, n).map(w => {
+    const lines = w.x.split('\n').filter(Boolean).slice(0, 3).join('\n');
+    const d = done[w.i];
+    return `<button class="bankitem" data-a="wod:${w.i}">
+      <span class="bi-top"><b>${esc(wodTitle(w))}</b><span>${fav.has(w.i) ? '★' : ''}${d ? ` ✓${d.length > 1 ? d.length : ''}` : ''}</span></span>
+      <span class="meta">${wodChips(w)}</span>
+      <span class="bi-txt">${esc(lines)}</span></button>`;
+  }).join('') + (list.length > n ? `<button class="btn ghost" data-a="bankmore">Vis flere (${list.length - n} igjen)</button>` : '');
+}
+function prevResults(id){
+  const d = doneMap()[id];
+  if (!d) return '';
+  return `<div class="prev"><span class="lbl">Tidligere</span>${d.slice(0, 5).map(h => `<div class="ln"><span>${dateFmt(h.date)}</span><span>${esc(h.wod.resultat || 'Uten resultat')}</span></div>`).join('')}</div>`;
+}
+function vWod(w){
+  if (!w) { ui.wod = null; return vBank(); }
+  const fav = (S.fav || []).includes(w.i);
+  return `<button class="link" data-a="wodback">‹ Øktbanken</button>
+    <header class="head"><p class="eyebrow">${esc(w.t)}${w.c > 1 ? ` · kjørt ${w.c} ganger` : ''} · sist ${esc(w.s.split('-').reverse().join('.'))}</p>
+      <h1>${esc(wodTitle(w))}</h1></header>
+    <div class="meta">${wodChips(w)}${w.u.map(u => `<span class="pill">${esc(u)}</span>`).join('')}</div>
+    <section class="box"><pre class="wodtxt">${esc(w.x)}</pre></section>
+    ${prevResults(w.i)}
+    <div class="row">
+      <button class="btn" data-a="wodpick:${w.i}">Velg denne økta</button>
+      <button class="btn ghost" data-a="fav:${w.i}" aria-pressed="${fav}">${fav ? '★ Favoritt' : '☆ Favoritt'}</button>
+    </div>
+    ${ui.wodRand ? `<button class="link" data-a="wodrand">↻ Gi meg en annen</button>` : ''}`;
+}
+function vBank(){
+  const back = `<button class="link" data-a="bankclose">‹ ${ui.bankFor === 'session' ? 'Tilbake til økta' : 'Tilbake'}</button>`;
+  if (!BANK) {
+    loadBank();
+    return back + `<header class="head"><p class="eyebrow">Metcons</p><h1>Øktbank</h1></header>
+      <p class="muted">${bankErr ? 'Øktbanken kunne ikke lastes. Åpne appen med nett én gang, så lagres den for bruk uten nett.' : 'Laster øktbanken …'}</p>
+      ${bankErr ? '<button class="btn ghost" data-a="bankretry">Prøv igjen</button>' : ''}`;
+  }
+  if (ui.wod) return vWod(BANK.find(w => w.i === ui.wod));
+  const f = ui.bf;
+  const sel = (k, label, vals) => `<select data-bf="${k}" aria-label="${label}"><option value="">${label}</option>${vals.map(v => `<option${f[k] === v ? ' selected' : ''}>${esc(v)}</option>`).join('')}</select>`;
+  const uq = a => [...new Set(a)].sort();
+  return back + `<header class="head"><p class="eyebrow">${BANK.length} metcons fra Functional Fitness Sarpsborg</p><h1>Øktbank</h1></header>
+    <button class="btn" data-a="wodrand">Gi meg en økt</button>
+    <div class="bankctl">
+      <input id="bq" class="txt" type="search" placeholder="Søk, f.eks. wallball eller burpees" value="${esc(f.q || '')}" autocomplete="off">
+      <div class="selrow">${sel('t', 'Type time', uq(BANK.map(w => w.t)))}${sel('f', 'Format', uq(BANK.map(w => w.f)))}${sel('l', 'Lengde', LENGTHS)}</div>
+      <div class="seg" role="group" aria-label="Alene eller lag">
+        <button data-a="bfl:" aria-pressed="${!f.lag}">Alle</button>
+        <button data-a="bfl:alene" aria-pressed="${f.lag === 'alene'}">Alene</button>
+        <button data-a="bfl:lag" aria-pressed="${f.lag === 'lag'}">Lag</button></div>
+      <div class="row"><button class="tog" data-a="bft:fav" aria-pressed="${!!f.fav}">★ Favoritter</button>
+        <button class="tog" data-a="bft:ny" aria-pressed="${!!f.ny}">Ikke gjort før</button></div>
+    </div>
+    <div id="bankList" class="list">${bankListHTML()}</div>`;
+}
+function wodBox(w, ctx){
+  return `<section class="box wodbox">
+      <div class="top"><span class="lbl">Dagens metcon</span><button class="link" data-a="wodrm:${ctx}">Fjern</button></div>
+      <h2>${esc(w.navn)}</h2>
+      <pre class="wodtxt">${esc(w.tekst)}</pre>
+      <label for="wodRes" class="lbl">Resultat</label>
+      <input id="wodRes" class="txt" type="text" data-ctx="${ctx}" placeholder="For eksempel 12:34, 8 runder + 5 eller 60 kg" value="${esc(w.resultat)}" autocomplete="off">
+      ${prevResults(w.id)}
+    </section>`;
+}
+function openBank(forWhat){
+  ui.bank = true; ui.bankFor = forWhat; ui.wod = null; ui.wodRand = false; ui.bankN = 30;
+  ui.bf = ui.bf || {};
+  render(); toTop();
+}
+
 /* ---------- Visninger ---------- */
 function vFree(){
   return `<button class="link" data-a="freecancel">‹ Tilbake</button>
     <header class="head"><p class="eyebrow">Uten program</p><h1>Fri økt</h1>
       <p class="muted small">Påvirker ikke programmet ditt. Lagres i loggen med dagens dato.</p></header>
+    ${ui.freeWod ? wodBox(ui.freeWod, 'free') : `<button class="btn ghost" data-a="bank:free">Velg metcon fra øktbanken</button>`}
     <div class="box notebox">
-      <label for="freeNote" class="lbl">Hva gjorde du?</label>
+      <label for="freeNote" class="lbl">${ui.freeWod ? 'Notat' : 'Hva gjorde du?'}</label>
       <textarea id="freeNote" placeholder="For eksempel: 20 min AMRAP med 5 pull-ups, 10 push-ups og 15 air squats. 9 runder.">${esc(ui.freeNote)}</textarea>
       <button class="tog" data-a="freemc" aria-pressed="${ui.freeMc !== false}">Metcon</button>
     </div>
@@ -714,6 +838,7 @@ function vFree(){
 }
 
 function vToday(){
+  if (ui.bank) return vBank();
   if (ui.free) return vFree();
   if (!S.active) return `
     <div class="empty">
@@ -773,6 +898,7 @@ function vToday(){
       ${e.sp ? spExtras(e, ei) : ''}
     </section>`;
   });
+  h += s.wod ? wodBox(s.wod, 'session') : `<button class="btn ghost" data-a="bank:session">Velg metcon fra øktbanken</button>`;
   h += `<section class="box notebox">
       <label for="note" class="lbl">Notat</label>
       <textarea id="note" placeholder="For eksempel metcon etter økta, dagsform eller en teknikkdetalj">${esc(s.note)}</textarea>
@@ -860,9 +986,11 @@ function vLog(){
       <button data-a="logf:mc" aria-pressed="${ui.logF === 'mc'}">Med metcon (${mcCount})</button></div>`;
   const list = ui.logF === 'mc' ? S.history.filter(x => x.metcon) : S.history;
   h += list.slice(0, 60).map(sess => {
-    const noteH = (sess.metcon || sess.note) ? `<div class="sess-note">${sess.metcon ? '<span class="pill mc">Metcon</span>' : ''}${sess.note ? `<p>${esc(sess.note)}</p>` : ''}</div>` : '';
+    const wodH = sess.wod ? `<div class="sess-wod"><p><b>${esc(sess.wod.navn)}</b>${sess.wod.resultat ? ` · <span class="res">${esc(sess.wod.resultat)}</span>` : ''}</p>
+      <details><summary>Vis økta</summary><pre class="wodtxt">${esc(sess.wod.tekst)}</pre></details></div>` : '';
+    const noteH = (sess.metcon || sess.note || sess.wod) ? `<div class="sess-note">${sess.metcon ? '<span class="pill mc">Metcon</span>' : ''}${wodH}${sess.note ? `<p>${esc(sess.note)}</p>` : ''}</div>` : '';
     if (sess.free) return `<article class="sess">
-      <div class="top"><h2 style="font-size:19px">Fri økt</h2><span class="muted small">${dateFmt(sess.date)}</span></div>
+      <div class="top"><h2 style="font-size:19px">${sess.wod ? 'Metcon' : 'Fri økt'}</h2><span class="muted small">${dateFmt(sess.date)}</span></div>
       ${noteH}</article>`;
     const p = prog(sess.programId);
     const vol = sess.ex.reduce((s,e) => s + e.sets.reduce((v,x) => v + (x.d||0)*x.w, 0), 0);
@@ -964,7 +1092,7 @@ document.addEventListener('click', ev => {
   const b = ev.target.closest('[data-a]'); if (!b || b.disabled) return;
   const [a, ...r] = b.dataset.a.split(':');
   switch (a) {
-    case 'tab': ui.tab = r[0]; ui.detail = null; ui.confirm = null; ui.free = false; render(); toTop(); break;
+    case 'tab': ui.tab = r[0]; ui.detail = null; ui.confirm = null; ui.free = false; ui.bank = false; ui.wod = null; render(); toTop(); break;
     case 'open': ui.detail = r[0]; render(); toTop(); break;
     case 'back': ui.detail = null; render(); break;
     case 'activate': activate(r[0]); break;
@@ -986,14 +1114,45 @@ document.addEventListener('click', ev => {
     case 'freecancel': ui.free = false; render(); break;
     case 'freemc': ui.freeMc = ui.freeMc === false; render(); break;
     case 'freesave': {
-      const note = (ui.freeNote || '').trim(), mc = ui.freeMc !== false;
-      if (!note) { toast('Skriv kort hva du gjorde'); break; }
-      S.history.unshift({date:Date.now(), free:true, day:'Fri økt', sub:'', ex:[], note, metcon:mc});
-      ui.free = false; ui.freeNote = ''; ui.freeMc = true; ui.tab = 'log'; ui.logF = 'all';
+      const note = (ui.freeNote || '').trim(), mc = ui.freeMc !== false, w = ui.freeWod;
+      if (!note && !w) { toast('Velg en metcon eller skriv kort hva du gjorde'); break; }
+      S.history.unshift({date:Date.now(), free:true, day:'Fri økt', sub:'', ex:[], note, metcon: mc || !!w,
+        wod: w ? {id:w.id, navn:w.navn, tekst:w.tekst, resultat:(w.resultat||'').trim()} : undefined});
+      ui.free = false; ui.freeNote = ''; ui.freeMc = true; ui.freeWod = null; ui.tab = 'log'; ui.logF = 'all';
       save(); render(); toTop(); toast('Fri økt lagret');
       break;
     }
     case 'logf': ui.logF = r[0]; render(); break;
+    case 'bank': openBank(r[0]); break;
+    case 'bankclose': ui.bank = false; ui.wod = null; render(); toTop(); break;
+    case 'bankretry': loadBank(); render(); break;
+    case 'bankmore': ui.bankN = (ui.bankN || 30) + 30; $('#bankList').innerHTML = bankListHTML(); break;
+    case 'bfl': ui.bf.lag = r[0] || ''; ui.bankN = 30; render(); break;
+    case 'bft': ui.bf[r[0]] = !ui.bf[r[0]]; ui.bankN = 30; render(); break;
+    case 'wod': ui.wod = r[0]; ui.wodRand = false; render(); toTop(); break;
+    case 'wodback': ui.wod = null; ui.wodRand = false; render(); break;
+    case 'wodrand': {
+      const l = bankFilter(); if (!l.length) { toast('Ingen økter passer filtrene'); break; }
+      let pick = l[Math.floor(Math.random() * l.length)];
+      if (l.length > 1 && pick.i === ui.wod) pick = l[(l.indexOf(pick) + 1) % l.length];
+      ui.wod = pick.i; ui.wodRand = true; render(); toTop(); break;
+    }
+    case 'fav': {
+      S.fav = S.fav || []; const k = S.fav.indexOf(r[0]);
+      if (k > -1) S.fav.splice(k, 1); else S.fav.push(r[0]);
+      save(); render(); break;
+    }
+    case 'wodpick': {
+      const w = BANK.find(x => x.i === r[0]); if (!w) break;
+      const pick = {id:w.i, navn:wodTitle(w), tekst:w.x, resultat:''};
+      if (ui.bankFor === 'session' && S.draft) { S.draft.wod = pick; S.draft.metcon = true; save(); }
+      else { ui.free = true; ui.freeWod = pick; ui.freeMc = true; }
+      ui.bank = false; ui.wod = null; ui.wodRand = false; render(); toTop(); toast('Metcon valgt');
+      break;
+    }
+    case 'wodrm':
+      if (r[0] === 'session' && S.draft) { delete S.draft.wod; save(); } else ui.freeWod = null;
+      render(); break;
     case 'finish': finish(); break;
     case 'dismiss': ui.summary = null; render(); break;
     case 'skip': ui.rest = null; updateRest(); break;
@@ -1048,9 +1207,18 @@ document.addEventListener('focusout', () => scheduleFit(350));   // tastaturet l
 document.addEventListener('input', ev => {
   if (ev.target.id === 'note' && S.draft) { S.draft.note = ev.target.value; save(); }
   else if (ev.target.id === 'freeNote') ui.freeNote = ev.target.value;
+  else if (ev.target.id === 'wodRes') {
+    if (ev.target.dataset.ctx === 'session' && S.draft && S.draft.wod) { S.draft.wod.resultat = ev.target.value; save(); }
+    else if (ui.freeWod) ui.freeWod.resultat = ev.target.value;
+  }
+  else if (ev.target.id === 'bq') {
+    clearTimeout(ui.bqT);
+    ui.bqT = setTimeout(() => { ui.bf.q = ev.target.value; ui.bankN = 30; const el = $('#bankList'); if (el) el.innerHTML = bankListHTML(); }, 150);
+  }
 });
 
 document.addEventListener('change', ev => {
+  if (ev.target.dataset && ev.target.dataset.bf) { ui.bf[ev.target.dataset.bf] = ev.target.value; ui.bankN = 30; render(); return; }
   const s = ev.target.closest('[data-swap]'); if (!s) return;
   ui.swapSel = {slot: s.dataset.swap, lift: s.value}; render();
 });
