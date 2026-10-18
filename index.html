@@ -227,6 +227,51 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
 .rpe>span{font-size:14px;color:var(--chalk-2)}
 .rpe .seg button{font-size:16px;padding:11px 4px;flex:1 1 30%}
 .rpe .seg.num button{flex:1 1 30px;font-size:17px}
+/* Sekundærøvelser i øktoversikten */
+.day .xs{color:var(--chalk-2);font-size:13px}
+
+/* Metcon-logg */
+.mc-sum{display:flex;gap:16px}
+.mc-sum>div{flex:1;display:grid;gap:2px}
+.mc-sum b{font:700 30px/1 var(--display);font-variant-numeric:tabular-nums}
+.mc-sum span{font-size:13px;color:var(--chalk-2)}
+.meter{height:6px;border-radius:3px;background:var(--iron-3);overflow:hidden}
+.meter i{display:block;height:100%;background:var(--accent);border-radius:3px}
+.meter i.over{background:var(--miss)}
+.mc-form{display:grid;gap:10px;padding-top:4px}
+.mc-type button{display:grid;gap:3px;padding:10px 8px;flex:1 1 45%;text-align:left}
+.mc-type button b{font:700 16px/1 var(--display);text-transform:uppercase;letter-spacing:.03em}
+.mc-type button small{font:500 12px/1.25 var(--body);color:inherit;opacity:.75}
+.x{appearance:none;border:0;background:none;color:var(--chalk-3);font:600 22px/1 var(--body);padding:4px 6px;cursor:pointer}
+.warn-t{color:var(--amrap)} .ok-t{color:var(--ok)}
+
+/* Valg om lett uke */
+.dl .tr span{font-size:13px}
+.crit{margin:0;padding-left:18px;display:grid;gap:4px;color:var(--chalk-2)}
+
+/* Programguide */
+.guide-card{border-color:var(--accent)}
+.guide{gap:12px}
+.gk{display:grid;gap:3px}
+.gk>span{font:600 12px/1.2 var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.gk p{font-size:15px}
+.acc{gap:12px}
+.acc summary{cursor:pointer;font:700 17px/1.1 var(--display);text-transform:uppercase;letter-spacing:.03em;list-style:none;display:flex;justify-content:space-between;align-items:center}
+.acc summary::-webkit-details-marker{display:none}
+.acc summary::after{content:"+";font:600 22px/1 var(--body);color:var(--chalk-2)}
+.acc[open] summary::after{content:"−"}
+.claims{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.claims li{display:flex;gap:10px;align-items:flex-start;font-size:15px}
+.lvl{flex:none;width:24px;height:24px;border-radius:6px;display:grid;place-items:center;font:700 13px/1 var(--body);margin-top:1px}
+.lvl-A{background:var(--ok);color:var(--ok-ink)}
+.lvl-B{background:var(--accent);color:var(--accent-ink)}
+.lvl-C{background:var(--amrap);color:var(--accent-ink)}
+.lvl-H{background:var(--iron-3);color:var(--chalk);box-shadow:inset 0 0 0 1px var(--line)}
+.refs{color:var(--chalk-3);font-size:13px}
+.refs a,.reflist a{color:var(--chalk-2);text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:2px}
+.reflist{margin:0;padding-left:18px;display:grid;gap:6px;color:var(--chalk-2)}
+.link.inl{padding:0;font-size:inherit;text-decoration:underline;display:inline}
+
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -255,7 +300,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 17;   // øk sammen med CACHE i sw.js
+const APP_VERSION = 18;   // øk sammen med CACHE i sw.js
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -271,7 +316,9 @@ const LIFTS = {
   pushpress:{n:'Push press',bar:1,alt:'ohp',r:1.2}, pushjerk:{n:'Push jerk',bar:1,alt:'ohp',r:1.25}, seatedpress:{n:'Sittende press',bar:1,alt:'ohp',r:.9}, zpress:{n:'Z-press',bar:1,alt:'ohp',r:.75},
   pendlay:{n:'Pendlay-roing',bar:1,alt:'row',r:.95}, sealrow:{n:'Sealroing',bar:1,alt:'row',r:.9}, yatesrow:{n:'Yates-roing',bar:1,alt:'row',r:1.05},
   squatclean:{n:'Clean',bar:1,alt:'clean',r:1.1}, hangsquatclean:{n:'Hang clean',bar:1,alt:'clean',r:1}, hangclean:{n:'Hang power clean',bar:1,alt:'clean',r:.92},
-  blockclean:{n:'Power clean fra blokk',bar:1,alt:'clean',r:.97}, powersnatch:{n:'Power snatch',bar:1,alt:'clean',r:.78}
+  blockclean:{n:'Power clean fra blokk',bar:1,alt:'clean',r:.97}, powersnatch:{n:'Power snatch',bar:1,alt:'clean',r:.78},
+  // Trekk uten catch. Ingen alt, så det dukker ikke opp som erstatning for power clean.
+  cleanpull:{n:'Clean pull',bar:1}
 };
 const ALTS = slot => Object.keys(LIFTS).filter(k => LIFTS[k].alt === slot);
 const sw = (a, slot) => (a.swaps && a.swaps[slot]) || slot;   // hvilket løft ligger i plassen nå?
@@ -300,7 +347,21 @@ const est1 = (w, reps, rpe) => w / pctOf(reps, rpe);   // estimert 1RM fra ett s
 
 // [sett, reps, andel av aktuell 1RM] for toppsett og backoff i hver fase
 const SP = {
-  phaseName: {p1:'Volum og grunnstyrke', d4:'Deload', p2:'Maksimal styrke', d8:'Deload', p3:'Toppstyrke', test:'Testuke'},
+  phaseName: {p1:'Volum og grunnstyrke', d4:'Lett uke', p2:'Maksimal styrke', d8:'Lett uke', p3:'Toppstyrke', tap:'Taper', test:'Testuke'},
+  // Sekundærøvelser: [løft, sett, reps, andel av løftets estimerte 1RM].
+  // 1RM i sekundærløftet regnes fra hovedløftet med forholdstallet r i LIFTS (pausebenk ≈ 93 % av benk).
+  // Gir benk og knebøy to eksponeringer i uka og gir power clean tunge trekk.
+  extras: {
+    bench: {},
+    squat: {p1:[['pausebench',3,5,.76]], p2:[['closegrip',3,4,.81]], p3:[['pausebench',2,3,.81]], tap:[['pausebench',2,3,.70]]},
+    clean: {p1:[['cleanpull',3,3,.90],['frontsquat',3,5,.76]], p2:[['cleanpull',3,3,1],['frontsquat',3,3,.84]],
+            p3:[['cleanpull',2,2,1],['frontsquat',2,3,.82]], tap:[['frontsquat',2,2,.75]]}
+  },
+  base: {pausebench:'bench', closegrip:'bench', frontsquat:'squat', cleanpull:'clean'},
+  // Uke 11: volumet halveres, intensiteten holdes. Ingen vektendring etter taperøktene.
+  taper: {bench:{top:[1,1,.90], back:[2,3,.80]}, squat:{top:[1,1,.90], back:[2,2,.80]}, clean:{top:[3,1,.85]}},
+  // Metcon-budsjett i minutter arbeid per 7 dager, per fase
+  budget: {p1:50, d4:20, p2:40, d8:20, p3:25, tap:10, test:10},
   scheme: {
     bench: {p1:{top:[1,3,.82], back:[5,5,.73]}, p2:{top:[1,2,.88], back:[5,3,.80]}, p3:{top:[1,1,.91], back:[5,2,.82]}},
     squat: {p1:{top:[1,3,.82], back:[5,4,.73]}, p2:{top:[1,2,.88], back:[5,3,.80]}, p3:{top:[1,1,.91], back:[5,2,.82]}},
@@ -465,11 +526,40 @@ function swapRows(p, a){
   <p class="muted small">Hvert løft har sin egen vekt. Bytter du tilbake, fortsetter du der du slapp.</p>`;
 }
 
-const spPhase = wk => wk <= 3 ? 'p1' : wk === 4 ? 'd4' : wk <= 7 ? 'p2' : wk === 8 ? 'd8' : wk <= 11 ? 'p3' : 'test';
+// Uke 4 og 8 er lette uker. Hopper du over en av dem, kjøres fasen før én uke til.
+const spPhase = (wk, a) => {
+  const skip = (a && a.skipDl) || {};
+  if (wk <= 3) return 'p1';
+  if (wk === 4) return skip.d4 ? 'p1' : 'd4';
+  if (wk <= 7) return 'p2';
+  if (wk === 8) return skip.d8 ? 'p2' : 'd8';
+  if (wk <= 10) return 'p3';
+  return wk === 11 ? 'tap' : 'test';
+};
+const spWeek = a => Math.floor(a.idx/3) + 1;
+
+// 1RM i et sekundærløft, regnet fra hovedløftet i samme mønster
+function extraMax(a, X){
+  const M = sw(a, SP.base[X]);
+  return a.e1rm[M] / ratio(M) * ratio(X);
+}
+function spExtraEx(a, slot, ph, opt){
+  const list = (SP.extras[slot] || {})[opt && opt.from || ph] || [];
+  return list.map(([X, n, r, pct]) => {
+    const key = 'x.' + X + '.' + (opt && opt.from || ph);
+    if (!a.lifts[key]) a.lifts[key] = {w: Math.max(20, r25(extraMax(a, X) * pct))};
+    let w = a.lifts[key].w, sets = n, reps = r;
+    if (opt && opt.light) { sets = Math.max(1, Math.round(n/2)); w = Math.max(20, r25(w * .9)); }
+    if (ph === 'tap') w = Math.max(20, r25(extraMax(a, X) * pct));
+    return {key, lift:X, slot:X, part: ph === 'tap' || (opt && opt.light) ? 'extra-fixed' : 'extra', sp:1, rest:150,
+            rpe:null, tag:'Sekundær', hint: X === 'cleanpull' ? 'Trekk eksplosivt til full strekk. Ingen catch.' : '', sets: mk(sets, reps, w)};
+  });
+}
 
 function buildSP(p, a){
-  const i = a.idx, wk = Math.floor(i/3) + 1, day = p.days[i % 3], slot = day.lift, L = sw(a, slot), pc = slot === 'clean';
-  const ph = spPhase(wk), rest = pc ? 150 : 210, ex = [];
+  const i = a.idx, wk = spWeek(a), day = p.days[i % 3], slot = day.lift, L = sw(a, slot), pc = slot === 'clean';
+  const ph = spPhase(wk, a), rest = pc ? 150 : 210, ex = [];
+  const skipped = (wk === 4 || wk === 8) && ph[0] === 'p';
   if (ph[0] === 'p') {
     const sc = SP.scheme[slot][ph];
     ['top','back'].forEach(part => {
@@ -478,15 +568,39 @@ function buildSP(p, a){
       ex.push({key, lift:L, slot, part, sp:1, rest, rpe:null, q:null, cut:0,
                tag: part === 'back' ? 'Backoff' : (n > 1 ? 'Singler' : 'Toppsett'), sets: mk(n, r, a.lifts[key].w)});
     });
+    ex.push(...spExtraEx(a, slot, ph));
   } else if (ph[0] === 'd') {
     const D = SP.deload[ph], src = a.lifts[L + '.' + D.from + '.back'];
     const base = src ? (src.last != null ? src.last : src.w) : r25(a.e1rm[L] * SP.scheme[slot][D.from].back[2]);
-    ex.push({key:L+'.deload', lift:L, slot, part:'deload', sp:1, rest, tag:'Deload', sets: mk(D[slot][0], D[slot][1], Math.max(20, r25(base * .87)))});
+    ex.push({key:L+'.deload', lift:L, slot, part:'deload', sp:1, rest, tag:'Lett uke', sets: mk(D[slot][0], D[slot][1], Math.max(20, r25(base * .87)))});
+    ex.push(...spExtraEx(a, slot, ph, {from: D.from, light: true}));
+  } else if (ph === 'tap') {
+    const T = SP.taper[slot];
+    ex.push({key:L+'.taper', lift:L, slot, part:'taper', sp:1, rest, tag: pc ? 'Taper · singler' : 'Taper · toppsett', sets: mk(T.top[0], T.top[1], r25(a.e1rm[L] * T.top[2]))});
+    if (T.back) ex.push({key:L+'.taper.b', lift:L, slot, part:'taper', sp:1, rest, tag:'Taper · backoff', sets: mk(T.back[0], T.back[1], r25(a.e1rm[L] * T.back[2]))});
+    ex.push(...spExtraEx(a, slot, ph));
   } else {
     ex.push({key:L+'.test', lift:L, slot, part:'test', sp:1, rest, tag: pc ? 'Beste single' : 'Test 3RM',
              sets: mk(1, pc ? 1 : 3, r25(a.e1rm[L] * (pc ? .95 : .92)))});
   }
-  return {programId:p.id, day: day.name, sub: 'Uke ' + wk + ' av 12 · ' + SP.phaseName[ph], ex, started:Date.now()};
+  return {programId:p.id, day: day.name, ph, wk,
+          sub: 'Uke ' + wk + ' av 12 · ' + (skipped ? SP.phaseName[ph] + ' (ekstra uke)' : SP.phaseName[ph]), ex, started:Date.now()};
+}
+
+// Siste vurdering av toppsettet per hovedløft, og om estimert 1RM har holdt seg eller steget
+function spReadiness(a){
+  const p = prog('sp12');
+  return p.days.map(d => {
+    const L = sw(a, d.lift), hist = (a.e1log && a.e1log[L]) || [];
+    const last = S.history.find(h => h.programId === 'sp12' && h.date >= a.startedAt &&
+      h.ex.some(e => e.lift === L && /Toppsett|Singler/.test(e.tag || '')));
+    const e = last && last.ex.find(e => e.lift === L && /Toppsett|Singler/.test(e.tag || ''));
+    const eff = !e ? null : d.lift === 'clean' ? (e.q === 'god' ? 'raske og rene' : e.q === 'treg' ? 'tregere' : e.q === 'teknisk' ? 'teknikk sviktet' : null)
+                                               : (e.rpe != null ? 'RPE ' + fmt(e.rpe) : null);
+    const effOk = !e ? null : d.lift === 'clean' ? e.q === 'god' : (e.rpe != null && e.rpe <= 9);
+    const trendOk = hist.length < 2 ? null : hist[hist.length-1] >= hist[Math.max(0, hist.length-3)] * .99;
+    return {name: liftName(L), eff, effOk, trendOk};
+  });
 }
 
 function progressSP(p, a, s){
@@ -496,6 +610,20 @@ function progressSP(p, a, s){
     const name = liftName(e.lift) + ' · ' + e.tag.toLowerCase();
     const used = e.sets[0].w, allHit = e.sets.every(x => x.d != null && x.d >= x.t);
     if (e.part === 'deload') { notes.push({name, text:'Lett uke, ingen endring', kind:'same'}); return; }
+    if (e.part === 'taper' || e.part === 'extra-fixed') { notes.push({name, text: e.part === 'taper' ? 'Taper, ingen endring' : 'Lett variant, ingen endring', kind:'same'}); return; }
+    if (e.part === 'extra') {
+      // Sekundærøvelser skal ligge rundt RPE 6–7,5: litt lettere enn hovedløftet
+      const st = a.lifts[e.key], r = e.rpe; let next = used, kind = 'same', why;
+      if (!allHit) { next = used - 2.5; kind = 'down'; why = 'Ikke alle reps'; }
+      else if (r == null) why = 'Ingen RPE registrert';
+      else if (r <= 6) { next = used + 2.5; kind = 'up'; why = 'RPE ' + fmt(r); }
+      else if (r <= 7.5) why = 'RPE ' + fmt(r) + ', på mål';
+      else { next = used - 2.5; kind = 'down'; why = 'RPE ' + fmt(r) + ', for tungt for en sekundærøvelse'; }
+      st.last = used; st.w = next = Math.max(20, next);
+      notes.push({name, text: why + ': ' + (next === used ? 'samme vekt, ' + fmt(used) + ' kg' : fmt(used) + ' → ' + fmt(next) + ' kg'), kind});
+      return;
+    }
+
     if (e.part === 'test') {
       const x = e.sets[0];
       if (x.d > 0) {
@@ -528,6 +656,11 @@ function progressSP(p, a, s){
     }
     st.w = next = Math.max(20, next);
     notes.push({name, text: why + ': ' + (next === used ? 'samme vekt, ' + fmt(used) + ' kg' : fmt(used) + ' → ' + fmt(next) + ' kg'), kind});
+    // Logg estimert 1RM etter hvert toppsett, så appen kan se trenden før en lett uke
+    if (e.part === 'top') {
+      a.e1log = a.e1log || {};
+      a.e1log[e.lift] = (a.e1log[e.lift] || []).concat(a.e1rm[e.lift]).slice(-8);
+    }
   });
   return notes;
 }
@@ -549,8 +682,12 @@ function spExtras(e, ei){
     <button class="step" data-a="w:${ei}:-1" aria-label="2,5 kg lettere">−</button>
     <button class="step" data-a="w:${ei}:1" aria-label="2,5 kg tyngre">+</button></div>`;
   const all = e.sets.every(x => x.d != null);
+  if (e.part === 'extra' && all) {
+    h += `<div class="rpe"><span>RPE for ${liftName(e.lift).toLowerCase()} (mål 6–7,5)</span><div class="seg num">${
+      [6,7,7.5,8,8.5,9,9.5,10].map(v => `<button data-a="rpe:${ei}:${v}" aria-pressed="${e.rpe === v}">${fmt(v)}</button>`).join('')}</div></div>`;
+  }
   if ((e.part === 'top' || e.part === 'back') && all) {
-    if (e.slot === 'clean') h += `<div class="rpe"><span>Hvordan gikk løftene?</span><div class="seg">${
+    if (e.slot === 'clean') h +=`<div class="rpe"><span>Hvordan gikk løftene?</span><div class="seg">${
       [['god','Raske og rene'],['treg','Tregere'],['teknisk','Teknikk sviktet']].map(([v,l]) => `<button data-a="q:${ei}:${v}" aria-pressed="${e.q === v}">${l}</button>`).join('')}</div></div>`;
     else h += `<div class="rpe"><span>RPE for ${e.part === 'top' ? 'toppsettet' : 'backoff-settene'}</span><div class="seg num">${
       [6,7,7.5,8,8.5,9,9.5,10].map(v => `<button data-a="rpe:${ei}:${v}" aria-pressed="${e.rpe === v}">${fmt(v)}</button>`).join('')}</div></div>`;
@@ -619,11 +756,228 @@ const PROGRAMS = [
     inputs:{deadlift:160,bench:110,squat:135}, inputLabel:'1RM' },
 
   { id:'sp12', name:'Strength & Power', origin:'Egen modell', level:'Erfaren', perWeek:'3', prog:'sp12', total:36,
-    summary:'12 uker med ett løft per økt: benkpress på dag 1, knebøy på dag 2 og power clean på dag 3. Toppsett pluss backoff-sett, deload i uke 4 og 8, og test i uke 12. Metcons kommer i tillegg.',
-    rule:'Benk og knebøy styres av RPE. Alle reps og RPE 7 eller lavere gir +2,5 kg (knebøy +5 kg ved RPE 6 eller lavere). RPE 7,5–9 gir samme vekt. Bom eller RPE over 9 gir −2,5 kg. Power clean øker 2,5 kg når alle løft er raske og rene, står stille når farten faller og går ned 2,5 kg ved teknisk svikt. Toppsett og backoff har hver sin vekt i hver fase. Når en ny fase starter, regnes vektene ut fra estimert 1RM.',
+    summary:'12 uker med ett hovedløft per økt: benkpress på dag 1, knebøy på dag 2 og power clean på dag 3. Toppsett pluss backoff-sett, korte sekundærøvelser, lette uker i uke 4 og 8, taper i uke 11 og test i uke 12. Metcons logges i appen med et ukebudsjett.',
+    rule:'Benk og knebøy styres av RPE. Alle reps og RPE 7 eller lavere gir +2,5 kg (knebøy +5 kg ved RPE 6 eller lavere). RPE 7,5–9 gir samme vekt. Bom eller RPE over 9 gir −2,5 kg. Power clean øker 2,5 kg når alle løft er raske og rene, står stille når farten faller og går ned 2,5 kg ved teknisk svikt. Sekundærøvelsene skal ligge på RPE 6–7,5: RPE 6 eller lavere gir +2,5 kg, RPE 8 eller mer gir −2,5 kg. Når en ny fase starter, regnes vektene ut fra estimert 1RM. Uke 4 og 8 kan hoppes over hvis appen ser at du er i rute. Uke 11 halverer volumet og holder intensiteten, så du er uthvilt til testen.',
     days:[{name:'Dag 1',lift:'bench'},{name:'Dag 2',lift:'squat'},{name:'Dag 3',lift:'clean'}],
     inputs:{bench:110,squat:135,clean:100}, inputLabel:'1RM' }
 ];
+
+/* ---------- Programguide ----------
+   Tekst for brukerne: hva programmene gjør, hva de fokuserer på og hva man kan forvente.
+   Hver påstand har et evidensnivå:
+   A = godt dokumentert, B = moderat, C = svak, H = trenererfaring eller logikk, ikke testet direkte.
+   Alle kilder er slått opp i PubMed 2026-10-18. Ingen av de navngitte programmene er testet i
+   kontrollerte studier, så vurderingene bygger på prinsippene programmene bruker. */
+const REFS = {
+  currier:  {a:'Currier mfl. 2023', j:'Br J Sports Med', doi:'10.1136/bjsports-2023-106807', t:'Tung last, flere sett og tre økter i uka rangerte høyest for styrke'},
+  lopez:    {a:'Lopez mfl. 2021', j:'Med Sci Sports Exerc', doi:'10.1249/MSS.0000000000002585', t:'Høy og moderat last gir mer styrke enn lett last'},
+  pelland:  {a:'Pelland mfl. 2026', j:'Sports Med', doi:'10.1007/s40279-025-02344-w', t:'Mer volum og frekvens gir mer styrke, men gevinsten flater ut'},
+  ralston:  {a:'Ralston mfl. 2017', j:'Sports Med', doi:'10.1007/s40279-017-0762-7', t:'Flere ukentlige sett gir mer styrke enn få'},
+  schoen:   {a:'Schoenfeld mfl. 2017', j:'J Sports Sci', doi:'10.1080/02640414.2016.1210197', t:'Mer volum gir mer muskelvekst'},
+  moes:     {a:'Moesgaard mfl. 2022', j:'Sports Med', doi:'10.1007/s40279-021-01636-1', t:'Variasjon i last over uka gir litt mer 1RM hos trente, ikke hos utrente'},
+  williams: {a:'Williams mfl. 2017', j:'Sports Med', doi:'10.1007/s40279-017-0734-y', t:'Periodisert trening gir mer 1RM enn ikke-periodisert'},
+  grgic:    {a:'Grgic mfl. 2022', j:'J Sport Health Sci', doi:'10.1016/j.jshs.2021.01.007', t:'Trening til failure er ikke nødvendig for styrke'},
+  robinson: {a:'Robinson mfl. 2024', j:'Sports Med', doi:'10.1007/s40279-024-02069-2', t:'Styrkegevinsten er lik over et bredt spenn av reps i reserve'},
+  moran:    {a:'Morán-Navarro mfl. 2017', j:'Eur J Appl Physiol', doi:'10.1007/s00421-017-3725-7', t:'Failure forsinker restitusjonen med 24–48 timer'},
+  pareja:   {a:'Pareja-Blanco mfl. 2017', j:'Scand J Med Sci Sports', doi:'10.1111/sms.12678', t:'Å stoppe før farten faller mye gir samme styrke med mindre tretthet'},
+  hickmott: {a:'Hickmott mfl. 2022', j:'Sports Med Open', doi:'10.1186/s40798-021-00404-9', t:'RPE-styrt og prosentstyrt last gir lik styrkeøkning'},
+  zourdos:  {a:'Zourdos mfl. 2016', j:'J Strength Cond Res', doi:'10.1519/JSC.0000000000001049', t:'RPE-skalaen basert på reps i reserve'},
+  andro:    {a:'Androulakis-Korakakis mfl. 2020', j:'Sports Med', doi:'10.1007/s40279-019-01236-0', t:'Selv svært lite volum gir litt styrkeøkning hos trente'},
+  kassiano: {a:'Kassiano mfl. 2022', j:'J Strength Cond Res', doi:'10.1519/JSC.0000000000004258', t:'For hyppig bytte av øvelser kan bremse utviklingen'},
+  petre:    {a:'Petré mfl. 2021', j:'Sports Med', doi:'10.1007/s40279-021-01426-9', t:'Kondisjon i samme økt hemmer beinstyrke hos trente, ikke hos utrente'},
+  schumann: {a:'Schumann mfl. 2022', j:'Sports Med', doi:'10.1007/s40279-021-01587-7', t:'Kondisjon hemmer maksimal styrke lite, men eksplosiv styrke noe'},
+  eddens:   {a:'Eddens mfl. 2018', j:'Sports Med', doi:'10.1007/s40279-017-0784-1', t:'Styrke før kondisjon i samme økt gir mer beinstyrke'},
+  coleman:  {a:'Coleman mfl. 2024', j:'PeerJ', doi:'10.7717/peerj.16777', t:'En fast lett uke midt i et program ga litt mindre beinstyrke'},
+  bosquet:  {a:'Bosquet mfl. 2007', j:'Med Sci Sports Exerc', doi:'10.1249/mss.0b013e31806010e0', t:'Kutt volumet 40–60 % før test og hold intensiteten'},
+  hackett:  {a:'Hackett mfl. 2016', j:'Br J Sports Med', doi:'10.1136/bjsports-2015-094951', t:'Olympiske løft gir høyere hopp enn vanlig styrketrening'},
+  suchomel: {a:'Suchomel mfl. 2020', j:'J Strength Cond Res', doi:'10.1519/JSC.0000000000003639', t:'Tunge trekk uten catch bygger styrke til clean'},
+  steele:   {a:'Steele mfl. 2023', j:'Res Q Exerc Sport', doi:'10.1080/02701367.2022.2070592', t:'14 690 personer med én kort økt i uka: 30–50 % sterkere første år, deretter flatere'},
+  latella24:{a:'Latella mfl. 2024', j:'Sports Med', doi:'10.1007/s40279-023-01962-6', t:'Powerløftere: 7,5–12,5 % første år, rundt 20 % etter ti år'},
+  latella22:{a:'Latella mfl. 2022', j:'Med Sci Sports Exerc', doi:'10.1249/MSS.0000000000002858', t:'Knebøy og markløft øker omtrent dobbelt så raskt som benk'},
+  latella20:{a:'Latella mfl. 2020', j:'J Strength Cond Res', doi:'10.1519/JSC.0000000000003657', t:'De sterkeste utvikler seg langsomst'},
+  hubal:    {a:'Hubal mfl. 2005', j:'Med Sci Sports Exerc', pmid:'15947721', t:'Fra 0 til +250 % styrke på samme program over 12 uker'},
+  colq:     {a:'Colquhoun mfl. 2018', j:'J Strength Cond Res', doi:'10.1519/JSC.0000000000002414', t:'Trente menn, seks uker: knebøy +17 kg, benk +8–9 kg'}
+};
+
+const GUIDE_GENERAL = {
+  levels: [['A','Godt dokumentert','Flere gode studier peker samme vei.'],['B','Moderat','God støtte, men med forbehold, for eksempel mest utrente deltakere.'],
+           ['C','Svak','Få eller små studier.'],['H','Trenererfaring','Bygger på praksis eller logikk og er ikke testet direkte.']],
+  common: [
+    ['Tung last gir mest styrke. Lett last bygger muskler, men gir mindre 1RM.','A',['currier','lopez']],
+    ['Du trenger ikke trene til failure. Styrken blir like god, og du restituerer raskere.','A',['grgic','robinson','moran']],
+    ['Mer volum gir mer styrke, men hvert ekstra sett gir mindre enn det forrige.','A',['pelland','ralston']],
+    ['Planlagt variasjon i last og reps slår å gjøre det samme hver uke, særlig for trente.','B',['williams','moes']],
+    ['RPE-styring og faste prosenter gir omtrent lik fremgang. RPE tilpasser seg dagsformen.','B',['hickmott','zourdos']]
+  ],
+  expect: [
+    ['Nybegynnere blir raskest sterkere. Et datasett med nesten 15 000 personer som trente én kort økt i uka, viste 30–50 % økning det første året. Deretter flatet kurven ut etter 1–2 år.','B',['steele']],
+    ['Erfarne løftere går mye saktere. Powerløftere øker i snitt 7,5–12,5 % det første året de konkurrerer, og rundt 20 % etter ti år.','B',['latella24']],
+    ['Knebøy og markløft øker omtrent dobbelt så fort som benk. De sterkeste løfterne øker langsomst.','B',['latella22','latella20']],
+    ['Korte studier viser større tall: trente menn la på 17 kg i knebøy og 8–9 kg i benk på seks uker. Slike tall varer ikke år etter år.','C',['colq']],
+    ['Folk responderer svært ulikt. Da 585 personer fulgte samme 12-ukers program for armene, gikk styrken opp alt fra 0 til 250 %. Sammenlign deg med deg selv.','B',['hubal']]
+  ]
+};
+
+// Per program: fokus, hvem det passer for, prinsipper med evidens, forventninger og kondisjon
+const GUIDE = {
+  sl5x5: {
+    focus:'Rask, lineær økning i de store stangløftene. Teknikk og grunnstyrke for nybegynnere.',
+    fits:'Deg som er ny med stang, eller kommer tilbake etter lang pause, og vil ha et enkelt program med tre økter i uka.',
+    notFor:'Erfarne løftere. Vekten kan ikke øke hver økt over tid.',
+    how:'Du bytter mellom økt A og B. Knebøy kommer først hver gang. Alle løft er 5 × 5, bortsett fra markløft som er 1 × 5. Vekten øker 2,5 kg hver gang alle reps sitter.',
+    science:[
+      ['Vekten øker jevnt, og det er kjernen i all styrkeutvikling.','A',['currier']],
+      ['Knebøy tre ganger i uka gir mange sett per uke. Mer volum og frekvens gir mer styrke, men med avtagende gevinst.','B',['pelland']],
+      ['For utrente gir avansert periodisering lite ekstra. Enkel lineær økning er nok i starten.','B',['moes']],
+      ['Selve programmet er ikke testet i studier.','H',[]]
+    ],
+    expect:[
+      ['De første månedene kan mange øke vekten nesten hver økt. Fremgangen bremser vanligvis etter 2–4 måneder, og da tar regelen om −10 % over.','H',[]],
+      ['Som nybegynner kan du realistisk bli 30–50 % sterkere det første året hvis du trener jevnt.','B',['steele']]
+    ],
+    metcon:'Hos utrente hemmer kondisjon i liten grad styrkeutviklingen. Fem sett knebøy tre ganger i uka gir likevel slitne bein, så legg beintunge metcons på andre dager eller etter styrken.',
+    metconRefs:['petre','eddens'],
+    watch:'5 × 5 på tung vekt blir slitsomt. Når du bommer tre økter på rad, er det et tegn på at det er tid for et program med mer variasjon.'
+  },
+  ss: {
+    focus:'Lineær økning med minst mulig volum, så hver økt kan bli tyngre enn forrige.',
+    fits:'Nybegynnere som vil ha korte økter og rask økning i knebøy og markløft.',
+    notFor:'Deg som vil bygge mye muskelmasse, eller som har trent i flere år.',
+    how:'Tre sett à fem på knebøy og press, og ett sett à fem på markløft. Samme vektregel som 5 × 5: +2,5 kg når alle reps sitter.',
+    science:[
+      ['Tung last med få reps gir mest styrke per sett.','A',['currier','lopez']],
+      ['Mindre volum gir litt mindre styrke og muskelvekst enn mer volum, men økta blir kortere og restitusjonen raskere.','B',['ralston','schoen']],
+      ['Selve programmet er ikke testet i studier.','H',[]]
+    ],
+    expect:[
+      ['Rask økning de første månedene, omtrent som 5 × 5. Mindre volum gjør at mange orker å øke litt lenger før det stopper opp.','H',[]],
+      ['Benk og press øker saktere enn knebøy og markløft. Det er normalt.','B',['latella22']]
+    ],
+    metcon:'Korte økter gjør det lett å legge til kondisjon. Ta metcons etter styrken eller på andre dager.',
+    metconRefs:['eddens'],
+    watch:'Markløft hver økt blir tungt over tid. Mange bytter til markløft annenhver økt når vekten blir høy.'
+  },
+  gzclp: {
+    focus:'Tung trening og volumtrening i samme økt. Bygger både styrke og muskler.',
+    fits:'Nybegynnere og middels trente som vil ha mer variasjon enn 5 × 5, og som trener 3–4 dager i uka.',
+    notFor:'Deg som vil ha så korte og enkle økter som mulig.',
+    how:'Hver økt har ett tungt løft (T1, 5 × 3), ett volumløft (T2, 3 × 10) og en lett øvelse (T3, 3 × 15). Bommer du, går du til færre reps per sett med samme vekt i stedet for å gå ned i vekt.',
+    science:[
+      ['T1 gir tung last for styrke. T2 og T3 gir volum for muskelvekst.','A',['currier','schoen']],
+      ['Trinnene du går gjennom ved bom er en innebygd variasjon i last og reps.','B',['williams']],
+      ['Maks reps i siste sett kan ende i failure. Det gir ikke mer styrke og tar lengre tid å restituere.','A',['grgic','moran']],
+      ['Selve programmet er ikke testet i studier.','H',[]]
+    ],
+    expect:[
+      ['Litt tregere økning enn 5 × 5 i starten, men trinnene gjør at du kan fortsette lenger før du må starte på nytt.','H',[]],
+      ['Mer volum enn 5 × 5 gir trolig mer muskelvekst over tid.','B',['schoen']]
+    ],
+    metcon:'Fire økter i uka pluss metcons blir mye. Hold T3 lett og legg metcons på styrkedagene, etter styrken.',
+    metconRefs:['eddens'],
+    watch:'Stopp det siste settet når du har 1–2 reps igjen, så slipper du at restitusjonen tar for lang tid.'
+  },
+  '531fsl': {
+    focus:'Samme langsomme og jevne progresjon som 5/3/1, men med mindre tilleggsvolum. Laget for å passe sammen med kondisjon.',
+    fits:'Middels trente som vil ha ett hovedløft per økt og trener metcons ved siden av.',
+    notFor:'Nybegynnere, og deg som først og fremst vil bygge muskelmasse.',
+    how:'Hovedsettene er de samme som i 5/3/1: 5-ere, 3-ere og 5/3/1, med maks reps i siste sett og en lett fjerde uke. Etterpå tar du 5 × 5 på samme vekt som første sett, altså 65–75 % av treningsmaksen.',
+    science:[
+      ['Mer volum gir mer styrke, men gevinsten flater ut. Å gå fra BBB til FSL koster derfor lite styrke.','A',['pelland']],
+      ['FSL-settene ligger langt fra failure. Det gir god teknikktrening og lite tretthet, men mindre muskelvekst enn mer volum.','B',['robinson','schoen']],
+      ['Maks reps i siste sett kan ende i failure. Failure gir ikke mer styrke og tar lengre tid å restituere.','A',['grgic','moran']],
+      ['Selve programmet er ikke testet i studier.','H',[]]
+    ],
+    expect:[
+      ['Planlagt økning er den samme som i 5/3/1 BBB: rundt 30 kg på benk og 65 kg på knebøy i året. Det er mer enn erfarne løftere vanligvis klarer.','H',[]],
+      ['Regn heller med noen få prosent per syklus i starten, og senk treningsmaksen når siste sett går tregt.','B',['latella24','latella22']]
+    ],
+    metcon:'Det minste volumet av 5/3/1-variantene, og derfor den som passer best med metcons. Ta metcon etter styrken eller på andre dager.',
+    metconRefs:['eddens','petre'],
+    watch:'Klarer du bare de planlagte repsene i siste sett, er treningsmaksen trolig satt for høyt.'
+  },
+  jugg: {
+    focus:'16 uker i fire bølger der repsene går fra 10 til 3. Hver bølge bygger volum, blir tyngre, tester deg og hviler.',
+    fits:'Middels trente som vil ha en lang, strukturert plan og liker å teste seg med maks reps.',
+    notFor:'Nybegynnere, og deg som ikke liker tunge sett med mange reps.',
+    how:'Hver bølge har fire uker: akkumulering, intensivering, realisering og deload. I realiseringsuka tar du siste sett for maks reps. Repsene over målet øker arbeidsmaksen til neste bølge.',
+    science:[
+      ['Bølgene går fra mye volum til tung last. Det er en form for blokkperiodisering, som gir mer 1RM enn ingen variasjon.','B',['williams']],
+      ['10-er- og 8-er-bølgene gir mye volum, som bygger muskler. 5-er- og 3-er-bølgene gir tyngre last, som bygger mest styrke.','A',['schoen','currier']],
+      ['Testsettet styrer neste bølge. Det tilpasser vektene til deg, slik autoregulering gjør.','B',['hickmott']],
+      ['Testsettet tas til eller nær failure. Gjør det bare i realiseringsuka, slik programmet sier.','A',['grgic','moran']],
+      ['Selve programmet er ikke testet i studier.','H',[]]
+    ],
+    expect:[
+      ['De første ukene er bevisst lette. Fremgangen kommer i realiseringsukene.','H',[]],
+      ['For middels trente er noen prosent økning over 16 uker realistisk. Benk øker vanligvis saktere enn knebøy og markløft.','B',['latella24','latella22']]
+    ],
+    metcon:'10-er- og 8-er-bølgene gir mye beintretthet. Hold metconene korte og unngå beintunge metcons dagen før knebøy og markløft, særlig i realiseringsukene.',
+    metconRefs:['petre','schumann'],
+    watch:'Ikke øk vekten selv i starten. Den lette starten er en del av planen.'
+  },
+  '531': {
+    focus:'Langsom og jevn økning over måneder og år. BBB-delen gir mye volum for muskelvekst.',
+    fits:'Middels trente som har brukt opp lineær progresjon, og som kan trene fire dager i uka.',
+    notFor:'Nybegynnere. De kan øke raskere med et enklere program.',
+    how:'Vektene er prosent av en treningsmaks, som er 90 % av 1RM. Ukene går 5-ere, 3-ere, 5/3/1 og en lett uke. Siste sett tar du så mange reps du klarer. Etterpå kommer 5 × 10 på 50 %.',
+    science:[
+      ['Treningsmaksen under 1RM gjør at du sjelden løfter nær maks. Det gir en buffer mot dårlige dager og kondisjonstretthet.','H',[]],
+      ['Maks reps i siste sett gir deg en løpende styrketest, men kan ende i failure. Failure gir ikke mer styrke.','A',['grgic','robinson']],
+      ['5 × 10 på 50 % gir mye volum. Volum bygger muskler, men så lett vekt bygger lite styrke alene.','B',['schoen','lopez']],
+      ['En fast lett uke hver fjerde uke er ikke nødvendigvis bedre enn å trene videre når formen er god.','C',['coleman']],
+      ['Selve programmet er ikke testet i studier.','H',[]]
+    ],
+    expect:[
+      ['Programmet øker treningsmaksen med 2,5 kg på overkropp og 5 kg på underkropp hver fjerde uke. Det er omtrent 30 kg på benk og 65 kg på knebøy i året.','H',[]],
+      ['Det er raskere enn det erfarne løftere vanligvis klarer. Powerløftere øker benk med rundt 10–13 kg i året. Regn med å senke treningsmaksen innimellom.','B',['latella22','latella24']]
+    ],
+    metcon:'Den konservative treningsmaksen tåler kondisjon godt. Med mange metcons kan du kutte BBB til 3 × 10.',
+    metconRefs:['petre'],
+    watch:'Klarer du bare de planlagte repsene i siste sett, er treningsmaksen trolig satt for høyt.'
+  },
+  cube: {
+    focus:'Variert stimulus hver uke uten grinding: ett tungt løft, ett eksplosivt og ett med reps, og rollene roterer.',
+    fits:'Middels trente og erfarne som vil trene tre dager i uka med ett hovedløft per økt.',
+    notFor:'Nybegynnere. Prosentene forutsetter at du vet hva 1RM-en din er.',
+    how:'Hver uke har hvert løft én rolle. Tung dag gir få reps nær 80–95 %. Eksplosiv dag gir mange korte sett på 60–70 % med maksimal fart. Rep-dagen gir 3–8 reps med maks reps i siste sett. Uke 10 er test.',
+    science:[
+      ['Variasjon i last og reps fra uke til uke gir litt mer 1RM hos trente.','B',['moes']],
+      ['Eksplosive sett der du stopper før farten faller, gir god styrke med lite tretthet.','B',['pareja']],
+      ['Et hovedløft per økt gir lav frekvens per løft. Frekvens gir en liten, avtagende ekstragevinst.','B',['pelland']],
+      ['Selve programmet er ikke testet i studier.','H',[]]
+    ],
+    expect:[
+      ['For middels trente er noen prosent økning over en 10-ukers syklus realistisk. Langtidsdata viser 7,5–12,5 % for et helt år hos powerløftere.','B',['latella24']],
+      ['Du vil sjelden føle deg knust etter økta, og det er meningen.','H',[]]
+    ],
+    metcon:'Passer godt med metcons. Den eksplosive uka for et løft er naturlig lettere. Legg ikke beintunge metcons dagen før tung knebøy eller markløft.',
+    metconRefs:['schumann','petre'],
+    watch:'Ta den eksplosive dagen på alvor. Er farten borte, er settet ferdig, selv om repsene ikke er det.'
+  },
+  sp12: {
+    focus:'Maksimal styrke i benk, knebøy og power clean sammen med CrossFit-inspirerte metcons.',
+    fits:'Erfarne løftere som trener styrke tre dager i uka og har kondisjon ved siden av.',
+    notFor:'Nybegynnere. Power clean krever stabil teknikk, og RPE krever litt erfaring.',
+    how:'Hver økt har ett hovedløft med toppsett og backoff-sett, og 1–2 korte sekundærøvelser. Benk får pausebenk eller smal benk på knebøydagen. Clean-dagen har clean pull og frontbøy. Tre faser går fra volum til toppstyrke, med lette uker i uke 4 og 8, taper i uke 11 og test i uke 12.',
+    science:[
+      ['Toppsett på 82–91 % gir tung last, som gir mest 1RM.','A',['currier','lopez']],
+      ['Ingen sett til failure, og vekten styres av RPE.','A',['grgic','hickmott']],
+      ['Sekundærøvelsene gir benk og knebøy to eksponeringer i uka uten mye ekstra volum.','B',['pelland']],
+      ['Fasene går fra volum til tung last, som er en form for periodisering.','B',['williams']],
+      ['Lette uker kan hoppes over når tallene er gode, fordi faste lette uker ikke alltid hjelper.','C',['coleman']],
+      ['Uke 11 halverer volumet og holder vekten, slik forskningen på taper anbefaler.','B',['bosquet']],
+      ['Tunge trekk uten catch bygger styrke til power clean.','C',['suchomel']]
+    ],
+    expect:[
+      ['For erfarne er noen prosent økning i hvert løft over 12 uker et godt resultat. Benk øker ofte saktere enn knebøy.','B',['latella24','latella22']],
+      ['Power clean øker både med styrke og teknikk. Olympiske løft gir også høyere hopp.','B',['hackett']],
+      ['Metcons hemmer maksimal styrke lite, men kan bremse eksplosiv styrke, særlig i samme økt.','B',['schumann','petre']]
+    ],
+    metcon:'Når du merker «Metcon i dag», velger fra øktbanken eller logger en fri økt, legger du inn type, minutter og RPE. Appen viser ukebudsjettet for fasen, varsler når belastningen øker mer enn 15 % fra uka før, og sier fra hvis en metcon kolliderer med neste styrkeøkt.',
+    metconRefs:['schumann','petre','eddens'],
+    watch:'Ta aldri metcon før power clean samme dag. Beintunge metcons hører hjemme minst 48 timer før knebøy.'
+  }
+};
 
 /* ---------- Hjelpere ---------- */
 const $ = s => document.querySelector(s);
@@ -660,7 +1014,7 @@ function mergeCustom(){
   Object.assign(LIFTS, S.custom || {});
 }
 mergeCustom();
-const ui = {tab: S.active ? 'today' : 'programs', detail:null, rest:null, summary:null, confirm:null, exportText:'', storageOK:true};
+const ui = {tab: S.active ? 'today' : 'programs', detail:null, rest:null, summary:null, confirm:null, exportText:'', storageOK:true, keepDl:null};
 try { localStorage.setItem(KEY+'.t','1'); localStorage.removeItem(KEY+'.t'); } catch(e){ ui.storageOK = false; }
 
 /* ---------- Motor: lag dagens økt fra mal + instans ---------- */
@@ -750,7 +1104,7 @@ function finish(){
   const p = prog(S.active.programId), s = S.draft;
   const notes = progress(p, S.active, s);
   const vol = s.ex.reduce((sum,e) => sum + e.sets.reduce((v,x) => v + (x.d||0)*x.w, 0), 0);
-  S.history.unshift({date:Date.now(), programId:p.id, day:s.day, sub:s.sub, note:(s.note||'').trim(), metcon:!!(s.metcon || s.wod),
+  S.history.unshift({date:Date.now(), programId:p.id, day:s.day, sub:s.sub, note:(s.note||'').trim(), metcon:!!(s.metcon || s.wod), mc: (s.metcon || s.wod) ? mcSaved(s.mc) : undefined,
     wod: s.wod ? {id:s.wod.id, navn:s.wod.navn, tekst:s.wod.tekst, resultat:(s.wod.resultat||'').trim()} : undefined,
     ex: s.ex.map(e => ({lift:e.lift, tag:e.tag, rpe:e.rpe, q:e.q, sets:e.sets.map(x => ({t:x.t, w:x.w, d:x.d}))}))});
   S.active.idx++;
@@ -934,6 +1288,74 @@ function openBank(forWhat){
   render(); toTop();
 }
 
+/* ---------- Metcon-belastning ----------
+   Bygger på metcon-registreringen som finnes fra før: øktbanken, «Metcon i dag» og fri økt.
+   Til hver metcon kan du legge inn type, minutter arbeid og RPE (1–10). Belastning = minutter × RPE (session RPE).
+   Typen styrer rådene i Strength & Power: beintunge metcons og olympiske løft konkurrerer med knebøy
+   og clean, og pressende gymnastikk konkurrerer med benk. */
+const MC = {
+  M:{n:'Kondisjon', d:'Sykkel, ro, ski, løp'},
+  G:{n:'Gymnastikk', d:'Pull-ups, push-ups, HSPU, burpees'},
+  L:{n:'Beintung', d:'Thrusters, wall balls, lunges, bokshopp'},
+  O:{n:'Olympisk', d:'Cleans eller snatches for reps'}
+};
+const DAY = 864e5;
+// Forslag ut fra teksten i økta. Rekkefølge: olympisk, beintung, gymnastikk, ellers kondisjon.
+function mcGuess(text){
+  const t = String(text || '').toLowerCase();
+  if (/clean|snatch|c ?& ?j/.test(t)) return 'O';
+  if (/thruster|wall ?ball|squat|lunge|box ?jump|step[- ]?up|deadlift|markløft|knebøy|utfall|bokshopp|pistol/.test(t)) return 'L';
+  if (/push[- ]?up|hspu|handstand|pull[- ]?up|chin[- ]?up|toes[- ]?to[- ]?bar|t2b|burpee|\bdips?\b|muscle[- ]?up|ring row/.test(t)) return 'G';
+  return 'M';
+}
+const mcOf = ctx => ctx === 'session' ? (S.draft.mc = S.draft.mc || {}) : (ui.freeMcData = ui.freeMcData || {});
+const mcSaved = m => m && m.min > 0 ? {type: m.type || 'M', min: Math.round(+m.min), rpe: m.rpe || null} : undefined;
+function mcWindow(from, to){
+  const inWin = h => h.date > from && h.date <= to;
+  const list = S.history.filter(h => h.mc && inWin(h));
+  return {min: list.reduce((a,h) => a + h.mc.min, 0), load: list.reduce((a,h) => a + h.mc.min * (h.mc.rpe || 0), 0), n: list.length,
+          unknown: S.history.filter(h => h.metcon && !h.mc && inWin(h)).length};
+}
+// Hvilke metcon-typer bør ikke ligge dagen før dette løftet?
+const mcAvoid = slot => slot === 'squat' ? ['L'] : slot === 'clean' ? ['L','O'] : slot === 'bench' ? ['G'] : [];
+const mcAdvice = {
+  squat:'Neste styrkeøkt er knebøy. Unngå beintunge metcons dagen før.',
+  clean:'Neste styrkeøkt er power clean. Unngå beintunge metcons og olympiske løft dagen før, og ta aldri metcon før clean samme dag.',
+  bench:'Neste styrkeøkt er benk. Unngå mye push-ups og HSPU dagen før.'
+};
+const mcRecentConflict = slot => S.history.find(h => h.mc && Date.now() - h.date < 30*3600e3 && mcAvoid(slot).includes(h.mc.type));
+
+function mcFields(ctx, mc){
+  mc = mc || {};
+  return `<div class="mc-form">
+    <span class="lbl">Type metcon</span>
+    <div class="seg mc-type">${Object.entries(MC).map(([k,v]) => `<button data-a="mct:${ctx}:${k}" aria-pressed="${mc.type === k}" aria-label="${v.n}: ${v.d}"><b>${v.n}</b><small>${v.d}</small></button>`).join('')}</div>
+    <div class="field"><label for="mcMin-${ctx}">Minutter arbeid</label>
+      <span class="inp"><input id="mcMin-${ctx}" data-mcmin="${ctx}" type="text" inputmode="numeric" value="${esc(mc.min || '')}" placeholder="12">min</span></div>
+    <span class="lbl">Hvor hard var den? (RPE 1–10)</span>
+    <div class="seg num">${[3,4,5,6,7,8,9,10].map(v => `<button data-a="mcr:${ctx}:${v}" aria-pressed="${mc.rpe === v}">${v}</button>`).join('')}</div>
+    <p class="small muted">Brukes til ukebudsjettet for metcons. Uten minutter teller metconen ikke med.</p>
+  </div>`;
+}
+
+function vMetconBudget(p, s){
+  const now = Date.now(), cur = mcWindow(now - 7*DAY, now), prev = mcWindow(now - 14*DAY, now - 7*DAY);
+  const ph = p.prog === 'sp12' && s ? s.ph : null, bud = ph ? SP.budget[ph] : null;
+  if (!bud && !cur.n) return '';
+  const slot = s && s.ex[0] && s.ex[0].slot;
+  const grow = prev.load > 0 && cur.load > 0 ? Math.round((cur.load / prev.load - 1) * 100) : null;
+  let h = `<section class="box">
+    <span class="lbl">Metcons siste 7 dager</span>
+    <div class="mc-sum"><div><b>${fmt(cur.min)}</b><span>min${bud ? ' av ' + bud + ' i budsjett' : ''}</span></div>
+      <div><b>${fmt(cur.load)}</b><span>belastning${grow != null ? ' · ' + (grow > 0 ? '+' : '') + grow + ' % fra uka før' : ''}</span></div></div>`;
+  if (bud) h += `<div class="meter" role="img" aria-label="${fmt(cur.min)} av ${bud} minutter"><i style="width:${Math.min(100, cur.min / bud * 100)}%" class="${cur.min > bud ? 'over' : ''}"></i></div>`;
+  if (bud && cur.min > bud) h += `<p class="small warn-t">Over budsjettet for ${SP.phaseName[ph].toLowerCase()}. Kutt metcons før du kutter styrken.</p>`;
+  else if (grow != null && grow > 15) h += `<p class="small warn-t">Belastningen er ${grow} % høyere enn uka før. Hold den flat en stund når styrken er prioritert.</p>`;
+  if (cur.unknown) h += `<p class="small muted">${cur.unknown} ${cur.unknown === 1 ? 'metcon' : 'metcons'} uten minutter teller ikke med.</p>`;
+  if (p.prog === 'sp12' && mcAdvice[slot]) h += `<p class="small muted">${mcAdvice[slot]}</p>`;
+  return h + `</section>`;
+}
+
 /* ---------- Visninger ---------- */
 function vFree(){
   return `<button class="link" data-a="freecancel">‹ Tilbake</button>
@@ -944,6 +1366,7 @@ function vFree(){
       <label for="freeNote" class="lbl">${ui.freeWod ? 'Notat' : 'Hva gjorde du?'}</label>
       <textarea id="freeNote" placeholder="For eksempel: 20 min AMRAP med 5 pull-ups, 10 push-ups og 15 air squats. 9 runder.">${esc(ui.freeNote)}</textarea>
       <button class="tog" data-a="freemc" aria-pressed="${ui.freeMc !== false}">Metcon</button>
+      ${ui.freeMc !== false || ui.freeWod ? mcFields('free', ui.freeMcData) : ''}
     </div>
     <button class="btn" data-a="freesave">Lagre fri økt</button>`;
 }
@@ -987,6 +1410,11 @@ function vToday(){
       ${S.active.e1rm ? `<p class="muted small">${p.prog === 'sp12' ? 'Estimert 1RM' : '1RM'} ${liftName(s.ex[0].lift).toLowerCase()}: ${fmt(Math.round(S.active.e1rm[s.ex[0].lift]*2)/2)} kg</p>` : ''}
       <p class="muted small">Trykk på et sett når det er gjort. Trykk igjen for å trekke fra én rep.</p>
     </header>`;
+  if (p.prog === 'sp12') {
+    const c = mcRecentConflict(s.ex[0].slot);
+    if (c && !anyTouched) h += `<div class="warn">Du logget en ${MC[c.mc.type].n.toLowerCase()} metcon for ${Math.max(1, Math.round((Date.now() - c.date)/3600e3))} timer siden. Forvent høyere RPE i dag, og kutt gjerne ett backoff-sett.</div>`;
+    if ((s.ph === 'd4' || s.ph === 'd8') && !anyTouched && ui.keepDl !== s.ph) h += vDeloadChoice(s.ph);
+  }
   s.ex.forEach((e,ei) => {
     const top = Math.max(...e.sets.map(x => x.w));
     const varies = new Set(e.sets.map(x => x.w)).size > 1;
@@ -1009,14 +1437,35 @@ function vToday(){
       ${e.sp ? spExtras(e, ei) : ''}
     </section>`;
   });
+  h += vMetconBudget(p, s);
   h += s.wod ? wodBox(s.wod, 'session') : quickPick('session');
   h += `<section class="box notebox">
       <label for="note" class="lbl">Notat</label>
       <textarea id="note" placeholder="For eksempel metcon etter økta, dagsform eller en teknikkdetalj">${esc(s.note)}</textarea>
       <button class="tog" data-a="metcon" aria-pressed="${!!s.metcon}">Metcon i dag</button>
+      ${s.metcon || s.wod ? mcFields('session', s.mc) : ''}
     </section>`;
   h += `<button class="btn" data-a="finish" ${anyTouched ? '' : 'disabled'}>Fullfør økt</button>`;
   return h;
+}
+
+// Lett uke: vis tallene appen har, og la utøveren velge
+function vDeloadChoice(ph){
+  const rows = spReadiness(S.active);
+  const mark = v => v == null ? '<span class="muted">–</span>' : v ? '<span class="ok-t">✓</span>' : '<span class="warn-t">✗</span>';
+  const allOk = rows.every(r => r.effOk && r.trendOk);
+  return `<section class="box dl">
+    <h3 style="margin:0">Lett uke, eller én uke til?</h3>
+    <p class="small">Forskningen tyder på at en fast lett uke ikke alltid trengs. Hopp bare over den hvis alle punktene stemmer.</p>
+    <div class="trend">${rows.map(r => `<div class="tr"><b>${r.name}</b><span>${r.eff || 'ingen vurdering'}</span>${mark(r.effOk)}<span class="muted">1RM-trend</span>${mark(r.trendOk)}</div>`).join('')}</div>
+    <ul class="small crit">
+      <li>Estimert 1RM har stått stille eller steget de siste to ukene.</li>
+      <li>Toppsettene har ligget på RPE 9 eller lavere, og clean har vært rask og ren.</li>
+      <li>Du sover godt, føler deg uthvilt og har ingen smerter.</li>
+    </ul>
+    <p class="small ${allOk ? 'ok-t' : 'muted'}">${allOk ? 'Tallene i appen ser bra ut. Du avgjør punktet om søvn og smerter.' : 'Tallene peker mot å ta den lette uka.'}</p>
+    <div class="row"><button class="btn ghost sm" data-a="keepdl:${ph}">Ta lett uke</button><button class="btn ghost sm" data-a="skipdl:${ph}">Hopp over</button></div>
+  </section>`;
 }
 
 function dayLines(p, d){
@@ -1028,9 +1477,12 @@ function dayLines(p, d){
   }
   if (p.prog === 'sp12') {
     const sc = SP.scheme[d.lift], f = x => x[0] + '×' + x[1];
+    const xs = [...new Set(Object.values(SP.extras[d.lift] || {}).flat().map(x => liftName(x[0]).toLowerCase()))];
     return [`<div><span style="color:var(--chalk)">${liftName(d.lift)}</span></div>`,
-      ...['p1','p2','p3'].map((ph,k) => `<div>Uke ${['1–3','5–7','9–11'][k]}<span>${f(sc[ph].top)} + ${f(sc[ph].back)}</span></div>`),
-      `<div>Uke 4 og 8<span>Deload</span></div>`, `<div>Uke 12<span>${d.lift === 'clean' ? 'Beste single' : 'Test 3RM'}</span></div>`];
+      ...['p1','p2','p3'].map((ph,k) => `<div>Uke ${['1–3','5–7','9–10'][k]}<span>${f(sc[ph].top)} + ${f(sc[ph].back)}</span></div>`),
+      `<div>Uke 4 og 8<span>Lett uke</span></div>`, `<div>Uke 11<span>Taper</span></div>`,
+      `<div>Uke 12<span>${d.lift === 'clean' ? 'Beste single' : 'Test 3RM'}</span></div>`,
+      ...(xs.length ? [`<div class="xs">+ ${xs.join(' og ')}</div>`] : [])];
   }
   if (p.prog === 'linear') return d.ex.map(e => `<div>${liftName(e.lift)}<span>${e.sets}×${e.reps}</span></div>`);
   if (p.prog === 'gzclp') return d.ex.map(e => `<div><span style="color:var(--chalk)"><b>${e.tier}</b>${liftName(e.lift)}</span><span>${e.tier==='T1'?'5×3+':e.tier==='T2'?'3×10':'3×15+'}</span></div>`);
@@ -1039,9 +1491,68 @@ function dayLines(p, d){
   return [`<div>${liftName(d.lift)}<span>3 sett</span></div>`, `<div>${liftName(d.lift)}<span>${p.fsl ? 'FSL 5×5' : '5×10'}</span></div>`];
 }
 
+/* ---------- Guide-visninger ---------- */
+const lvl = l => `<span class="lvl lvl-${l}" title="Evidensnivå ${l}">${l}</span>`;
+const refLink = k => { const r = REFS[k]; if (!r) return '';
+  const url = r.doi ? 'https://doi.org/' + r.doi : 'https://pubmed.ncbi.nlm.nih.gov/' + r.pmid + '/';
+  return `<a href="${url}" target="_blank" rel="noopener">${r.a}</a>`; };
+const claim = ([text, l, refs]) => `<li>${lvl(l)}<span>${text}${refs.length ? ` <span class="refs">${refs.map(refLink).join(', ')}</span>` : ''}</span></li>`;
+const refList = keys => { const u = [...new Set(keys)].filter(k => REFS[k]);
+  return u.length ? `<ul class="reflist small">${u.map(k => `<li>${refLink(k)}. <i>${REFS[k].j}</i>. ${REFS[k].t}.</li>`).join('')}</ul>` : ''; };
+
+function vProgramGuide(p){
+  const g = GUIDE[p.id]; if (!g) return '';
+  const keys = [...g.science, ...g.expect].flatMap(c => c[2]).concat(g.metconRefs || []);
+  return `<h3>Om programmet</h3>
+    <div class="box guide">
+      <div class="gk"><span>Fokus</span><p>${g.focus}</p></div>
+      <div class="gk"><span>Passer for</span><p>${g.fits}</p></div>
+      <div class="gk"><span>Passer mindre for</span><p>${g.notFor}</p></div>
+      <div class="gk"><span>Slik virker det</span><p>${g.how}</p></div>
+    </div>
+    <details class="box acc" open><summary>Hva forskningen sier</summary><ul class="claims">${g.science.map(claim).join('')}</ul></details>
+    <details class="box acc" open><summary>Hva du kan forvente</summary><ul class="claims">${g.expect.map(claim).join('')}</ul></details>
+    <details class="box acc"><summary>Med metcons og kondisjon</summary><p class="small">${g.metcon}</p>${g.metconRefs && g.metconRefs.length ? `<p class="small refs">${g.metconRefs.map(refLink).join(', ')}</p>` : ''}</details>
+    <details class="box acc"><summary>Vær obs på</summary><p class="small">${g.watch}</p></details>
+    <details class="box acc"><summary>Kilder</summary>${refList(keys)}
+      <p class="small muted">Bokstavene viser hvor sikker kunnskapen er. Les mer i <button class="link inl" data-a="guide">programguiden</button>.</p></details>`;
+}
+
+function vGuide(){
+  const G = GUIDE_GENERAL;
+  const rows = PROGRAMS.map(p => `<button class="card" data-a="open:${p.id}">
+      <div class="top"><h2>${p.name}</h2><span class="pill">${p.perWeek}/uke</span></div>
+      <div class="meta"><span class="pill">${p.level}</span></div>
+      <p class="small">${GUIDE[p.id] ? GUIDE[p.id].focus : p.summary}</p></button>`).join('');
+  return `<button class="link" data-a="back">‹ Programmer</button>
+    <header class="head"><p class="eyebrow">Programguide</p><h1>Hvilket program passer?</h1>
+      <p class="muted small">Hva programmene gjør, hva de fokuserer på og hva du realistisk kan forvente. Basert på forskning slått opp i PubMed i oktober 2026.</p></header>
+    <h3>Kort oppsummert</h3>
+    <div class="box guide">
+      <div class="gk"><span>Helt ny</span><p>StrongLifts 5×5 eller Starting Strength. Enkle regler og rask økning.</p></div>
+      <div class="gk"><span>Litt erfaren</span><p>GZCLP. Mer variasjon og volum, og varer lenger før du står fast.</p></div>
+      <div class="gk"><span>Middels</span><p>5/3/1 FSL eller BBB for jevn, langsom progresjon. Juggernaut for 16 uker i bølger. Cube Method for tre dager med ett hovedløft.</p></div>
+      <div class="gk"><span>Erfaren + metcons</span><p>Strength & Power. Bygd for benk, knebøy og power clean sammen med CrossFit-inspirerte metcons.</p></div>
+    </div>
+    <h3>Slik leser du bokstavene</h3>
+    <div class="box"><ul class="claims">${G.levels.map(([l,n,d]) => `<li>${lvl(l)}<span><b>${n}.</b> ${d}</span></li>`).join('')}</ul>
+      <p class="small muted">Ingen av programmene er testet som helhet i kontrollerte studier. Vurderingene gjelder prinsippene de bygger på.</p></div>
+    <h3>Det alle gode programmer har felles</h3>
+    <div class="box"><ul class="claims">${G.common.map(claim).join('')}</ul></div>
+    <h3>Hva kan du forvente?</h3>
+    <div class="box"><ul class="claims">${G.expect.map(claim).join('')}</ul></div>
+    <h3>Programmene</h3>
+    <div class="list">${rows}</div>
+    <details class="box acc"><summary>Alle kilder</summary>${refList(Object.keys(REFS))}</details>`;
+}
+
 function vPrograms(){
   return `<header class="head"><p class="eyebrow">Bibliotek</p><h1>Programmer</h1>
     <p class="muted small">Kjente styrkeprogrammer og din egen modell. Trykk på ett for å se øktene og aktivere det.</p></header>
+    <button class="card guide-card" data-a="guide">
+      <div class="top"><h2>Programguide</h2><span class="pill on">Les</span></div>
+      <p class="muted small">Hvilket program passer for deg, hva forskningen sier, og hva du realistisk kan forvente.</p>
+    </button>
     <div class="list">${PROGRAMS.map(p => `
       <button class="card" data-a="open:${p.id}">
         <div class="top"><h2>${p.name}</h2>${S.active && S.active.programId === p.id ? '<span class="pill on">Aktivt</span>' : ''}</div>
@@ -1058,6 +1569,7 @@ function vDetail(p){
       <div class="meta" style="margin-top:8px"><span class="pill">${p.level}</span><span class="pill">${p.perWeek} økter/uke</span></div></header>
     <p>${p.summary}</p>
     <div class="box"><h3 style="margin:0">Slik øker vekten</h3><p class="small">${p.rule}</p></div>
+    ${vProgramGuide(p)}
     <h3>Øktene</h3>
     <div class="days">${p.days.map(d => `<div class="day"><h4>${d.name}</h4>${dayLines(p,d).join('')}</div>`).join('')}</div>
     ${p.orm ? `<h3>Din 1RM (tyngste løft på én rep)</h3>
@@ -1092,7 +1604,7 @@ function vLog(){
   if (!S.history.length) return h + `<p class="muted">Øktene du fullfører havner her, med vekt, reps og notater.</p>`;
   const series = {};
   [...S.history].reverse().forEach(sess => sess.ex.forEach(e => {
-    if (/BBB|FSL|T2|T3|Lett|Backoff|Deload/.test(e.tag || '')) return;
+    if (/BBB|FSL|T2|T3|Lett|Backoff|Deload|Sekundær|Taper/.test(e.tag || '')) return;
     const done = e.sets.filter(x => x.d > 0); if (!done.length) return;
     (series[e.lift] = series[e.lift] || []).push(Math.max(...done.map(x => x.w)));
   }));
@@ -1109,7 +1621,8 @@ function vLog(){
   h += list.slice(0, 60).map(sess => {
     const wodH = sess.wod ? `<div class="sess-wod"><p><b>${esc(sess.wod.navn)}</b>${sess.wod.resultat ? ` · <span class="res">${esc(sess.wod.resultat)}</span>` : ''}</p>
       <details><summary>Vis økta</summary><pre class="wodtxt">${esc(sess.wod.tekst)}</pre></details></div>` : '';
-    const noteH = (sess.metcon || sess.note || sess.wod) ? `<div class="sess-note">${sess.metcon ? '<span class="pill mc">Metcon</span>' : ''}${wodH}${sess.note ? `<p>${esc(sess.note)}</p>` : ''}</div>` : '';
+    const mcH = sess.mc && MC[sess.mc.type] ? `<span class="pill">${MC[sess.mc.type].n} · ${fmt(sess.mc.min)} min${sess.mc.rpe ? ' · RPE ' + sess.mc.rpe : ''}</span>` : '';
+    const noteH = (sess.metcon || sess.note || sess.wod) ? `<div class="sess-note">${sess.metcon ? '<span class="pill mc">Metcon</span>' : ''}${mcH}${wodH}${sess.note ? `<p>${esc(sess.note)}</p>` : ''}</div>` : '';
     if (sess.free) return `<article class="sess">
       <div class="top"><h2 style="font-size:19px">${sess.wod ? 'Metcon' : 'Fri økt'}</h2><span class="muted small">${dateFmt(sess.date)}</span></div>
       ${noteH}</article>`;
@@ -1179,7 +1692,7 @@ function vMore(){
 function render(){
   let h = ui.storageOK ? '' : `<div class="warn">Lagring er ikke tilgjengelig her. Endringer forsvinner når siden lukkes.</div>`;
   if (ui.tab === 'today') h += vToday();
-  else if (ui.tab === 'programs') h += ui.detail ? vDetail(prog(ui.detail)) : vPrograms();
+  else if (ui.tab === 'programs') h += ui.detail === 'guide' ? vGuide() : ui.detail ? vDetail(prog(ui.detail)) : vPrograms();
   else if (ui.tab === 'log') h += vLog();
   else h += vMore();
   $('#view').innerHTML = h;
@@ -1237,15 +1750,22 @@ document.addEventListener('click', ev => {
     case 'cut': { const e = S.draft.ex[+r[0]]; if (e.sets.length > 1 && e.sets[e.sets.length-1].d == null) { e.sets.pop(); e.cut = (e.cut||0) + 1; } save(); render(); break; }
     case 'doswap': doSwap(r[0]); break;
     case 'metcon': S.draft.metcon = !S.draft.metcon; save(); render(); break;
+    case 'mct': mcOf(r[0]).type = r[1]; if (r[0] === 'session') save(); render(); break;
+    case 'mcr': mcOf(r[0]).rpe = +r[1]; if (r[0] === 'session') save(); render(); break;
+    case 'keepdl': ui.keepDl = r[0]; render(); break;
+    case 'skipdl':
+      S.active.skipDl = Object.assign({}, S.active.skipDl, {[r[0]]: true});
+      S.draft = null; save(); render(); toTop(); toast('Lett uke hoppet over. Du kjører én uke til.'); break;
+    case 'guide': ui.detail = 'guide'; render(); toTop(); break;
     case 'free': ui.free = true; ui.freeNote = ui.freeNote || ''; render(); toTop(); break;
     case 'freecancel': ui.free = false; render(); break;
     case 'freemc': ui.freeMc = ui.freeMc === false; render(); break;
     case 'freesave': {
       const note = (ui.freeNote || '').trim(), mc = ui.freeMc !== false, w = ui.freeWod;
       if (!note && !w) { toast('Velg en metcon eller skriv kort hva du gjorde'); break; }
-      S.history.unshift({date:Date.now(), free:true, day:'Fri økt', sub:'', ex:[], note, metcon: mc || !!w,
+      S.history.unshift({date:Date.now(), free:true, day:'Fri økt', sub:'', ex:[], note, metcon: mc || !!w, mc: mc || w ? mcSaved(ui.freeMcData) : undefined,
         wod: w ? {id:w.id, navn:w.navn, tekst:w.tekst, resultat:(w.resultat||'').trim()} : undefined});
-      ui.free = false; ui.freeNote = ''; ui.freeMc = true; ui.freeWod = null; ui.tab = 'log'; ui.logF = 'all';
+      ui.free = false; ui.freeNote = ''; ui.freeMc = true; ui.freeWod = null; ui.freeMcData = null; ui.tab = 'log'; ui.logF = 'all';
       save(); render(); toTop(); toast('Fri økt lagret');
       break;
     }
@@ -1277,8 +1797,9 @@ document.addEventListener('click', ev => {
     case 'wodpick': {
       const w = BANK.find(x => x.i === r[0]); if (!w) break;
       const pick = {id:w.i, navn:wodTitle(w), tekst:w.x, resultat:''};
-      if (ui.bankFor === 'session' && S.draft) { S.draft.wod = pick; S.draft.metcon = true; save(); }
-      else { ui.free = true; ui.freeWod = pick; ui.freeMc = true; }
+      const guess = {type: mcGuess(w.x + ' ' + (w.n || '')), min: w.m || ''};   // forslag, kan endres
+      if (ui.bankFor === 'session' && S.draft) { S.draft.wod = pick; S.draft.metcon = true; S.draft.mc = Object.assign(guess, S.draft.mc && S.draft.mc.min ? S.draft.mc : {}); save(); }
+      else { ui.free = true; ui.freeWod = pick; ui.freeMc = true; ui.freeMcData = Object.assign(guess, ui.freeMcData && ui.freeMcData.min ? ui.freeMcData : {}); }
       ui.bank = false; ui.wod = null; ui.wodRand = false; render(); toTop(); toast('Metcon valgt');
       break;
     }
@@ -1338,6 +1859,10 @@ document.addEventListener('focusout', () => scheduleFit(350));   // tastaturet l
 
 document.addEventListener('input', ev => {
   if (ev.target.id === 'note' && S.draft) { S.draft.note = ev.target.value; save(); }
+  else if (ev.target.dataset && ev.target.dataset.mcmin) {
+    const ctx = ev.target.dataset.mcmin; if (ctx === 'session' && !S.draft) return;
+    mcOf(ctx).min = ev.target.value.replace(/[^\d]/g, '').slice(0, 3); if (ctx === 'session') save();
+  }
   else if (ev.target.id === 'freeNote') ui.freeNote = ev.target.value;
   else if (ev.target.dataset && ev.target.dataset.orm && ui.detail) {
     const p = prog(ui.detail), l = ev.target.dataset.orm, orm = parseFloat(String(ev.target.value).replace(',', '.'));

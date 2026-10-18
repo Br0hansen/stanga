@@ -1,6 +1,21 @@
 # Stanga – treningsapp på hjemskjermen
 
-Styrkeprogrammer (StrongLifts 5×5, Starting Strength, GZCLP, 5/3/1 BBB) og treningslogg. Alle data lagres lokalt på telefonen.
+Styrkeprogrammer (StrongLifts 5×5, Starting Strength, GZCLP, 5/3/1 FSL og BBB, Juggernaut, Cube Method og Strength & Power), øktbank med metcons og treningslogg. Alle data lagres lokalt på telefonen.
+
+## Programguide
+
+Under **Programmer → Programguide** står det hva hvert program fokuserer på, hvem det passer for, hva forskningen sier og hva man realistisk kan forvente. Hver påstand har et evidensnivå (A, B, C eller H) og lenke til kilden. Teksten ligger i `GUIDE`, `GUIDE_GENERAL` og `REFS` i `index.html`. Kildene ble slått opp i PubMed i oktober 2026.
+
+## Strength & Power
+
+- Ett hovedløft per økt: benk på dag 1, knebøy på dag 2 og power clean på dag 3.
+- Sekundærøvelser: pausebenk eller smal benk på knebøydagen, clean pull og frontbøy på clean-dagen. Vekten styres av RPE med mål 6–7,5.
+- Uke 4 og 8 er lette uker. Appen viser RPE og 1RM-trend, og du kan hoppe over uka hvis tallene er gode.
+- Uke 11 er taper med halvert volum. Uke 12 er test.
+
+## Metcon-budsjett
+
+Når du merker «Metcon i dag», velger en økt fra øktbanken eller logger en fri økt, kan du legge inn type, minutter og RPE. Fra øktbanken foreslår appen type og minutter ut fra økta. Appen viser minutter og belastning (minutter × RPE) for de siste sju dagene. I Strength & Power vises også budsjettet for fasen, og appen varsler når en metcon ligger for nær knebøy, clean eller benk.
 
 ## Filene
 
@@ -28,7 +43,7 @@ Styrkeprogrammer (StrongLifts 5×5, Starting Strength, GZCLP, 5/3/1 BBB) og tren
 ## Når du endrer koden
 
 1. Endre `index.html` og øk `APP_VERSION` øverst i skriptet.
-2. Øk `CACHE = 'stanga-v17'` til neste nummer i `sw.js`.
+2. Øk `CACHE = 'stanga-v18'` til neste nummer i `sw.js`.
 3. Last opp begge filene. Neste gang du åpner appen med nett, får du den nye versjonen. Versjonsnummeret står nederst under Mer.
 
 ## Hvordan koden henger sammen
