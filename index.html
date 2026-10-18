@@ -300,7 +300,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 18;   // øk sammen med CACHE i sw.js
+const APP_VERSION = 19;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -1898,8 +1898,41 @@ render();
 
 /* ---------- PWA: offline og varig lagring (virker når siden ligger på din egen nettadresse) ---------- */
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
+  // updateViaCache:'none': sjekk alltid sw.js direkte mot GitHub, ikke mot nettleserens lager
+  navigator.serviceWorker.register('sw.js', {updateViaCache:'none'}).catch(() => {});
 }
+
+/* ---------- Ny versjon uten å skrive versjon i adressen ----------
+   Når appen åpnes, hentes den alltid fra nettet (se sw.js). Men iPhone vekker ofte appen fra
+   bakgrunnen uten å laste den på nytt. Derfor sjekker vi APP_VERSION på GitHub når appen kommer
+   i forgrunnen, høyst én gang i minuttet. Er den høyere, laster appen seg selv på nytt.
+   Det er trygt: alt du trykker eller skriver, lagres med en gang. Holder du på å skrive, venter vi. */
+let lastCheck = 0, newVersion = 0;
+async function checkUpdate(){
+  if (location.protocol !== 'https:' || !navigator.onLine || Date.now() - lastCheck < 60e3) return;
+  lastCheck = Date.now();
+  try {
+    const res = await fetch('./index.html', {cache:'no-cache'});
+    if (!res.ok) return;
+    const m = (await res.text()).match(/APP_VERSION = (\d+)/);
+    if (m && +m[1] > APP_VERSION) { newVersion = +m[1]; reloadWhenIdle(); }
+  } catch(e) {}
+}
+function reloadWhenIdle(){
+  if (!newVersion || isTyping()) return;   // prøv igjen når tastaturet lukkes
+  try { sessionStorage.setItem(KEY + '.from', String(APP_VERSION)); } catch(e) {}
+  location.reload();
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkUpdate(); });
+addEventListener('pageshow', e => { if (e.persisted) checkUpdate(); });
+addEventListener('online', checkUpdate);
+document.addEventListener('focusout', () => setTimeout(reloadWhenIdle, 400));
+// Etter en oppdatering: si fra én gang
+try {
+  const from = +sessionStorage.getItem(KEY + '.from');
+  sessionStorage.removeItem(KEY + '.from');
+  if (from && from < APP_VERSION) setTimeout(() => toast('Stanga er oppdatert til versjon ' + APP_VERSION), 500);
+} catch(e) {}
 try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch(e) {}
 </script>
 </body>

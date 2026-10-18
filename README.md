@@ -42,9 +42,18 @@ Når du merker «Metcon i dag», velger en økt fra øktbanken eller logger en f
 
 ## Når du endrer koden
 
-1. Endre `index.html` og øk `APP_VERSION` øverst i skriptet.
-2. Øk `CACHE = 'stanga-v18'` til neste nummer i `sw.js`.
-3. Last opp begge filene. Neste gang du åpner appen med nett, får du den nye versjonen. Versjonsnummeret står nederst under Mer.
+1. Endre `index.html` og øk `APP_VERSION` øverst i skriptet med 1.
+2. Last opp `index.html`. Du trenger ikke endre `sw.js`.
+3. Appen henter nyeste versjon hver gang den åpnes med nett, og sjekker også når den vekkes fra bakgrunnen. Ingen trenger å skrive versjon i adressen. Versjonsnummeret står nederst under Mer.
+
+`sw.js` endres bare hvis selve offline-logikken eller listen over filer skal endres. Øk da `SHELL` i `sw.js`.
+
+## Slik legger andre appen til på hjemskjermen
+
+- **iPhone:** Åpne https://br0hansen.github.io/stanga/ i Safari, trykk Del-knappen og velg **Legg til på Hjem-skjerm**.
+- **Android:** Åpne adressen i Chrome, trykk menyen med tre prikker og velg **Installer app** eller **Legg til på startskjermen**.
+
+Hver person får sine egne data på sin egen telefon. Sletter man ikonet, forsvinner dataene, så bruk **Mer → Lag eksport** av og til.
 
 ## Hvordan koden henger sammen
 
