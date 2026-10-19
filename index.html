@@ -272,6 +272,28 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
 .reflist{margin:0;padding-left:18px;display:grid;gap:6px;color:var(--chalk-2)}
 .link.inl{padding:0;font-size:inherit;text-decoration:underline;display:inline}
 
+/* Oppvarming */
+.wu-block{background:transparent;border-style:dashed;gap:10px}
+.wu-list{display:grid;gap:8px}
+.wu-row{display:flex;align-items:center;gap:12px}
+.chip.sm{width:44px;height:44px;font-size:19px;flex:none}
+.wu-w{display:grid;gap:2px;min-width:0}
+.wu-w b{font:700 20px/1 var(--display);font-variant-numeric:tabular-nums}
+.wu-w .platesrow{min-height:24px}
+
+/* Hele planen */
+.plan-s summary{align-items:flex-start}
+.ps{display:grid;gap:3px;min-width:0;flex:1}
+.ps-top{display:flex;align-items:center;gap:8px}
+.ps-top b{font:700 18px/1.1 var(--display);text-transform:uppercase;letter-spacing:.03em}
+.ps>span:not(.ps-top){font:400 14px/1.35 var(--body);text-transform:none;letter-spacing:0}
+.ps .pill{font:600 12px/1 var(--body);text-transform:none;letter-spacing:.04em}
+.plan-s.done-s{opacity:.7}
+.plan-s.next-s{border-color:var(--accent)}
+.plan-ex{display:grid;gap:6px}
+.plan-ex .ln{display:flex;justify-content:space-between;gap:12px;font-size:14px}
+.plan-ex .ln>span:last-child{color:var(--chalk-2);text-align:right;font-variant-numeric:tabular-nums}
+
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -300,7 +322,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 19;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 20;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -665,9 +687,17 @@ function progressSP(p, a, s){
   return notes;
 }
 
-// Oppvarming (teller ikke som arbeidssett): stiger mot dagens første arbeidsvekt
-function warmups(lift, W){
-  const steps = lift === 'clean' ? [[0,5],[.4,3],[.55,2],[.7,1],[.8,1]] : [[0,10],[.45,6],[.65,4],[.8,2]];
+// Oppvarming (teller ikke som arbeidssett): stiger mot dagens første arbeidsvekt.
+// kind 'full' = hovedløft. kind 'short' = sekundærøvelse eller løft senere i økta, når kroppen er varm.
+// Er første arbeidssett 1–2 reps, legges det til en single på ca. 90 %.
+// Markløft starter ikke med tom stang, fordi stanga ligger for lavt uten skiver.
+// slot er plassen i programmet (f.eks. 'deadlift' også når du har byttet til sumo).
+function warmups(slot, W, reps, kind){
+  const single = reps <= 2 && W >= 60 ? [[.9,1]] : [];
+  const steps = kind === 'short' ? [[.5,5],[.75,3]]
+    : slot === 'clean' ? [[0,5],[.4,3],[.55,2],[.7,1],[.8,1]]
+    : slot === 'deadlift' ? [[.5,5],[.65,3],[.8,2]].concat(single)
+    : [[0,10],[.45,6],[.65,4],[.8,2]].concat(single);
   const out = [];
   steps.forEach(([f,r]) => {
     const w = Math.max(20, f ? r25(W*f) : 20);
@@ -675,6 +705,28 @@ function warmups(lift, W){
     out.push([w, r]);
   });
   return out;
+}
+
+// Hvilken oppvarming trenger øvelse nr. ei i økta? Bare stangøvelser får oppvarming.
+// Første løft og hovedløft: full. Sekundærøvelser og volumløft (T2/T3): kort. Samme løft igjen: ingen.
+function wuKind(s, ei){
+  const e = s.ex[ei];
+  if (!LIFTS[e.lift] || !LIFTS[e.lift].bar) return null;
+  if (s.ex.slice(0, ei).some(x => x.lift === e.lift)) return null;
+  if (ei === 0) return 'full';
+  return /Sekundær|T2|T3/.test(e.tag || '') ? 'short' : 'full';
+}
+function vWarmup(e, ei, wu){
+  const done = e.wuDone || [];
+  return `<section class="ex wu-block" aria-label="Oppvarming før ${liftName(e.lift).toLowerCase()}">
+    <div class="ex-head"><div><span class="tag">Oppvarming</span><h2>${liftName(e.lift)}</h2></div></div>
+    <div class="wu-list">${wu.map(([w, r]) => { const k = w + 'x' + r, ok = done.includes(k);
+      return `<div class="wu-row">
+        <button class="chip sm ${ok ? 'ok' : ''}" data-a="wu:${ei}:${k}" aria-label="Oppvarming: ${r} reps på ${fmt(w)} kg${ok ? ', gjort' : ''}">${r}</button>
+        <div class="wu-w"><b>${fmt(w)} kg</b><div class="platesrow">${plateHTML(w)}</div></div>
+      </div>`; }).join('')}</div>
+    <p class="small muted">Teller ikke som arbeidssett og lagres ikke i loggen.</p>
+  </section>`;
 }
 
 function spExtras(e, ei){
@@ -1114,8 +1166,9 @@ function finish(){
   save(); render(); toTop();
 }
 
-function activate(id){
-  const p = prog(id), a = {programId:id, startedAt:Date.now(), idx:0, lifts:{}, tm:{}};
+// Lager en ny instans fra tallene i feltene på programsiden. Brukes både til å aktivere og til å vise planen.
+function newInstance(p){
+  const a = {programId:p.id, startedAt:Date.now(), idx:0, lifts:{}, tm:{}};
   if (p.prog === 'sp12' || p.prog === 'cube') { a.e1rm = {}; a.base = {}; }
   Object.keys(p.inputs).forEach((k,i) => {
     const el = $('#in-'+i); let v = parseFloat(String(el && el.value || '').replace(',', '.'));
@@ -1124,6 +1177,11 @@ function activate(id){
     else if (a.e1rm) { a.e1rm[k] = v; a.base[k] = v; }
     else a.lifts[k] = {w:v, fails:0, stage:0};
   });
+  return a;
+}
+
+function activate(id){
+  const p = prog(id), a = newInstance(p);
   // Husk maksløftene, så neste program fylles ut automatisk
   const num = el => { const v = parseFloat(String(el && el.value || '').replace(',', '.')); return v > 0 ? v : null; };
   if (p.orm) Object.keys(p.orm).forEach(l => { const v = num($('#orm-' + l)); if (v) S.maxes[l] = v; });
@@ -1134,7 +1192,8 @@ function activate(id){
 }
 
 /* ---------- Skiver per side (20 kg stang) ---------- */
-const PL = [[25,'p25'],[20,'p20'],[15,'p15'],[10,'p10'],[5,'p5'],[2.5,'p2'],[1.25,'p1']];
+// Skivene på gymmet. 25 kg er bevisst utelatt: 20 kg er største skive.
+const PL = [[20,'p20'],[15,'p15'],[10,'p10'],[5,'p5'],[2.5,'p2'],[1.25,'p1']];
 function plateHTML(w){
   let side = (w - 20) / 2;
   if (side <= 0) return '<span class="pl-txt">Bare stanga (20 kg)</span>';
@@ -1356,6 +1415,64 @@ function vMetconBudget(p, s){
   return h + `</section>`;
 }
 
+/* ---------- Hele planen ----------
+   Kjører programmet framover på en kopi av instansen, som om alle økter går som planlagt.
+   Ekte data endres ikke. Fullførte økter hentes fra loggen. */
+const PLAN_NOTE = {
+  linear:'Planen viser vektene hvis du klarer alle reps hver gang. Bommer du, står vekten stille, og etter tre bom går den ned 10 %.',
+  gzclp:'Planen viser vektene hvis du klarer alle reps hver gang. Bommer du, går du til neste trinn med samme vekt.',
+  '531':'Treningsmaksen øker etter hver syklus på fire uker. Repsene i siste sett påvirker ikke planen.',
+  jugg:'Arbeidsmaksen øker bare med reps over målet i testsettene. Planen viser vektene hvis du akkurat når målet, så de blir høyere hvis du tar flere reps.',
+  cube:'Vektene er prosent av 1RM og endres ikke underveis. Uke 10 er test, og beste løft blir ny 1RM.',
+  sp12:'Planen viser vektene hvis toppsett og backoff går på RPE 7 og clean er rask og ren. Da øker vekten 2,5 kg fra uke til uke. Ved RPE 7,5–9 står vekten stille. Når en ny fase starter, regnes vektene ut fra estimert 1RM.'
+};
+const planPer = p => ['531','jugg','cube','sp12'].includes(p.prog) ? p.days.length : (parseInt(p.perWeek) || 3);
+function simulate(p, a0, n){
+  const a = JSON.parse(JSON.stringify(a0)), out = [];
+  while (out.length < n && !(p.total && a.idx >= p.total)) {
+    const s = buildSession(p, a);
+    out.push({idx: a.idx, s: JSON.parse(JSON.stringify(s))});
+    s.ex.forEach(e => { e.sets.forEach(x => x.d = x.t); e.rpe = 7; e.q = 'god'; });
+    progress(p, a, s);
+    a.idx++;
+  }
+  return out;
+}
+// Sett med lik vekt og reps slås sammen: «5×5 · 80 kg». Fullførte sett viser repsene du faktisk tok hvis de avvek.
+function setsLine(e, done){
+  const g = [];
+  e.sets.forEach(x => { const l = g[g.length-1];
+    if (l && l.w === x.w && l.t === x.t && !!l.am === !!x.am) { l.n++; l.d.push(x.d); } else g.push({w:x.w, t:x.t, am:x.am, n:1, d:[x.d]}); });
+  return g.map(x => done && x.d.some(d => d !== x.t)
+    ? x.d.map(d => d == null ? '–' : d).join(', ') + ' × ' + fmt(x.w) + ' kg'
+    : x.n + '×' + x.t + (x.am ? '+' : '') + ' · ' + fmt(x.w) + ' kg').join(' + ');
+}
+function vPlan(){
+  const P = ui.plan, p = prog(P.id), a = P.active ? S.active : P.inst;
+  if (!p || !a) { ui.plan = null; return ''; }
+  const per = planPer(p);
+  const N = p.total || Math.max(12 * per, a.idx + 4 * per);
+  const doneH = P.active ? S.history.filter(h => h.programId === p.id && !h.free && h.date >= a.startedAt).reverse().slice(-a.idx) : [];
+  const rows = doneH.map((h, k) => ({k, done:true, day:h.day, sub:h.sub, ex:h.ex}));
+  simulate(p, a, N - a.idx).forEach(f => {
+    const s = P.active && f.idx === a.idx && S.draft ? S.draft : f.s;
+    rows.push({k: f.idx, done:false, next: P.active && f.idx === a.idx, day:s.day, sub:s.sub, ex:s.ex});
+  });
+  const weeks = [];
+  rows.forEach(r => { const w = Math.floor(r.k / per); (weeks[w] = weeks[w] || []).push(r); });
+  return `<button class="link" data-a="planclose">‹ Tilbake</button>
+    <header class="head"><p class="eyebrow">${p.name}</p><h1>Hele planen</h1>
+      <p class="muted small">${PLAN_NOTE[p.prog] || ''}${P.active ? '' : ' Vektene er regnet ut fra tallene du har skrevet inn.'}${p.total ? '' : ' Programmet har ingen fast slutt, så planen viser 12 uker.'}</p></header>
+    ${weeks.map((list, w) => list ? `<h3>Uke ${w + 1}</h3><div class="list">${list.map(r => {
+      const m = r.ex[0];
+      return `<details class="box acc plan-s${r.done ? ' done-s' : ''}${r.next ? ' next-s' : ''}"${r.next ? ' open' : ''}>
+        <summary><span class="ps"><span class="ps-top"><b>${esc(r.day)}</b>${r.done ? '<span class="pill">✓ Gjort</span>' : r.next ? '<span class="pill on">Neste</span>' : ''}</span>
+          <span class="small muted">${esc(r.sub || '')}</span>
+          <span class="small">${m ? liftName(m.lift) + ' · ' + setsLine(m, r.done) : ''}</span></span></summary>
+        <div class="plan-ex">${r.ex.map(e => `<div class="ln"><span>${liftName(e.lift)}${e.tag ? ` <span class="muted">${e.tag}</span>` : ''}</span><span>${setsLine(e, r.done)}</span></div>`).join('')}</div>
+      </details>`; }).join('')}</div>` : '').join('')}`;
+}
+
 /* ---------- Visninger ---------- */
 function vFree(){
   return `<button class="link" data-a="freecancel">‹ Tilbake</button>
@@ -1409,6 +1526,7 @@ function vToday(){
       <h1>${s.day}</h1>
       ${S.active.e1rm ? `<p class="muted small">${p.prog === 'sp12' ? 'Estimert 1RM' : '1RM'} ${liftName(s.ex[0].lift).toLowerCase()}: ${fmt(Math.round(S.active.e1rm[s.ex[0].lift]*2)/2)} kg</p>` : ''}
       <p class="muted small">Trykk på et sett når det er gjort. Trykk igjen for å trekke fra én rep.</p>
+      <button class="link" data-a="plan">Se hele planen ›</button>
     </header>`;
   if (p.prog === 'sp12') {
     const c = mcRecentConflict(s.ex[0].slot);
@@ -1419,11 +1537,12 @@ function vToday(){
     const top = Math.max(...e.sets.map(x => x.w));
     const varies = new Set(e.sets.map(x => x.w)).size > 1;
     const amIdx = e.sets.findIndex(x => x.am && x.d != null);
+    const wk = wuKind(s, ei), wu = wk ? warmups(e.slot, e.sets[0].w, e.sets[0].t, wk) : [];
+    if (wu.length) h += vWarmup(e, ei, wu);
     h += `<section class="ex">
       <div class="ex-head"><div>${e.tag ? `<span class="tag">${e.tag}</span>` : ''}<h2>${liftName(e.lift)}</h2></div>
         <div class="kg">${fmt(top)}<small>KG</small></div></div>
       ${LIFTS[e.lift].bar ? `<div class="platesrow">${plateHTML(top)}</div>` : ''}
-      ${e.sp && ei === 0 ? (wu => wu.length ? `<p class="wu"><b>Oppvarming</b>${wu.map(([w,r]) => fmt(w)+'×'+r).join(' · ')}</p>` : '')(warmups(e.slot, e.sets[0].w)) : ''}
       ${e.hint ? `<p class="wu">${e.hint}</p>` : ''}
       <div class="chips">${e.sets.map((x,si) => {
         const st = x.d == null ? '' : (x.d >= x.t ? 'ok' : 'miss');
@@ -1587,6 +1706,7 @@ function vDetail(p){
     <p class="muted small">${p.prog === '531' ? 'Appen regner ut treningsmaks som 90 % av dette.' : p.prog === 'jugg' ? 'Appen regner ut arbeidsmaks som 90 % av dette.' : p.prog === 'sp12' ? 'Startvektene regnes ut fra dette. Etter hvert styrer RPE-en din vektene.' : p.prog === 'cube' ? 'Alle vekter regnes ut som prosent av dette.' : 'Start lett. Teknikken skal sitte før vekten blir tung.'}
       ${slotsOf(p).length ? ' Vil du bytte et løft, gjør du det under Mer når programmet er aktivt.' : ''}
       ${other ? ' Dette erstatter '+other.name+'. Loggen din blir liggende.' : ''}${isActive ? ' Programmet er aktivt. Aktiverer du på nytt, starter det fra økt 1 med vektene over.' : ''}</p>
+    <button class="btn ghost" data-a="planprev:${p.id}">Se hele planen</button>
     <button class="btn" data-a="activate:${p.id}">${isActive ? 'Start på nytt' : 'Aktiver program'}</button>`;
 }
 
@@ -1691,6 +1811,7 @@ function vMore(){
 
 function render(){
   let h = ui.storageOK ? '' : `<div class="warn">Lagring er ikke tilgjengelig her. Endringer forsvinner når siden lukkes.</div>`;
+  if (ui.plan) { const v = vPlan(); if (ui.plan) { $('#view').innerHTML = h + v; return; } }
   if (ui.tab === 'today') h += vToday();
   else if (ui.tab === 'programs') h += ui.detail === 'guide' ? vGuide() : ui.detail ? vDetail(prog(ui.detail)) : vPrograms();
   else if (ui.tab === 'log') h += vLog();
@@ -1732,7 +1853,7 @@ document.addEventListener('click', ev => {
   const b = ev.target.closest('[data-a]'); if (!b || b.disabled) return;
   const [a, ...r] = b.dataset.a.split(':');
   switch (a) {
-    case 'tab': ui.tab = r[0]; ui.detail = null; ui.confirm = null; ui.free = false; ui.bank = false; ui.wod = null; render(); toTop(); break;
+    case 'tab': ui.tab = r[0]; ui.detail = null; ui.plan = null; ui.confirm = null; ui.free = false; ui.bank = false; ui.wod = null; render(); toTop(); break;
     case 'open': ui.detail = r[0]; render(); toTop(); break;
     case 'back': ui.detail = null; render(); break;
     case 'activate': activate(r[0]); break;
@@ -1747,8 +1868,17 @@ document.addEventListener('click', ev => {
     case 'rpe': S.draft.ex[+r[0]].rpe = +r[1]; save(); render(); break;
     case 'q': S.draft.ex[+r[0]].q = r[1]; save(); render(); break;
     case 'w': { const e = S.draft.ex[+r[0]]; e.sets.forEach(x => x.w = Math.max(20, x.w + 2.5*(+r[1]))); save(); render(); break; }
+    case 'wu': {
+      const e = S.draft.ex[+r[0]], k = r[1]; e.wuDone = e.wuDone || [];
+      const j = e.wuDone.indexOf(k);
+      if (j > -1) e.wuDone.splice(j, 1); else { e.wuDone.push(k); startRest(60); }
+      save(); render(); wake(); break;
+    }
     case 'cut': { const e = S.draft.ex[+r[0]]; if (e.sets.length > 1 && e.sets[e.sets.length-1].d == null) { e.sets.pop(); e.cut = (e.cut||0) + 1; } save(); render(); break; }
     case 'doswap': doSwap(r[0]); break;
+    case 'plan': ui.plan = {id: S.active.programId, active: true}; render(); toTop(); break;
+    case 'planprev': { const pp = prog(r[0]); ui.plan = {id: pp.id, active: false, inst: newInstance(pp)}; render(); toTop(); break; }
+    case 'planclose': ui.plan = null; render(); toTop(); break;
     case 'metcon': S.draft.metcon = !S.draft.metcon; save(); render(); break;
     case 'mct': mcOf(r[0]).type = r[1]; if (r[0] === 'session') save(); render(); break;
     case 'mcr': mcOf(r[0]).rpe = +r[1]; if (r[0] === 'session') save(); render(); break;
