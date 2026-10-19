@@ -353,7 +353,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 22;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 23;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -751,9 +751,9 @@ function vWarmup(e, ei, wu){
   const done = e.wuDone || [];
   return `<section class="ex wu-block" aria-label="Oppvarming før ${liftName(e.lift).toLowerCase()}">
     <div class="ex-head"><div><span class="tag">Oppvarming</span><h2>${liftName(e.lift)}</h2></div></div>
-    <div class="wu-list">${wu.map(([w, r]) => { const k = w + 'x' + r, ok = done.includes(k);
+    <div class="wu-list">${wu.map(([w, r], wi) => { const k = w + 'x' + r, ok = done.includes(k), last = wi === wu.length - 1 ? 1 : 0;
       return `<div class="wu-row">
-        <button class="chip sm ${ok ? 'ok' : ''}" data-a="wu:${ei}:${k}" aria-label="Oppvarming: ${r} reps på ${fmt(w)} kg${ok ? ', gjort' : ''}">${r}</button>
+        <button class="chip sm ${ok ? 'ok' : ''}" data-a="wu:${ei}:${k}:${last}" aria-label="Oppvarming: ${r} reps på ${fmt(w)} kg${ok ? ', gjort' : ''}">${r}</button>
         <div class="wu-w"><b>${fmt(w)} kg</b><div class="platesrow">${plateHTML(w)}</div></div>
       </div>`; }).join('')}</div>
     <p class="small muted">Teller ikke som arbeidssett og lagres ikke i loggen.</p>
@@ -1101,6 +1101,19 @@ const ui = {tab: S.active ? 'today' : 'programs', detail:null, rest:null, summar
 try { localStorage.setItem(KEY+'.t','1'); localStorage.removeItem(KEY+'.t'); } catch(e){ ui.storageOK = false; }
 
 /* ---------- Motor: lag dagens økt fra mal + instans ---------- */
+/* ---------- Pauser ----------
+   Forskning: tunge sett (ca. 80 % av 1RM og mer) 3–5 min, volumsett ca. 2 min, lette hjelpeøvelser ca. 90 s
+   (Grgic 2018, Schoenfeld 2016, de Salles 2009, Singer 2024). Strength & Power, Cube og Juggernaut
+   har egne pauser i sine maler. Alle pauser skaleres med innstillingen «Kortere / Standard / Lengre». */
+const REST = {
+  linear: {sl5x5: {squat:180, deadlift:180, _:120}, ss: {_:180}},
+  gzclp: {T1:180, T2:120, T3:90},
+  w531: {main:180, light:90, fsl:120, bbb:90},
+  warmup:60, warmupLast:120
+};
+const linearRest = (p, slot) => { const t = REST.linear[p.id] || {}; return t[slot] || t._ || 120; };
+const REST_SCALE = [[.75,'Kortere'],[1,'Standard'],[1.25,'Lengre']];
+
 function mk(n, reps, w, lastAm){
   return Array.from({length:n}, (_,j) => ({t:reps, w, am: !!(lastAm && j === n-1), d:null}));
 }
@@ -1112,22 +1125,22 @@ function buildSession(p, a){
   let ex = [], sub = 'Økt ' + (i+1);
   if (p.prog === 'linear') {
     ex = day.ex.map(e => { const L = sw(a, e.lift);
-      return {key:L, lift:L, slot:e.lift, tag:'', sets: mk(e.sets, e.reps, a.lifts[L].w)}; });
+      return {key:L, lift:L, slot:e.lift, tag:'', rest: linearRest(p, e.lift), sets: mk(e.sets, e.reps, a.lifts[L].w)}; });
   } else if (p.prog === 'gzclp') {
     ex = day.ex.map(e => {
       const L = sw(a, e.lift), key = L + '.' + e.tier, st = a.lifts[key]; let sets;
       if (e.tier === 'T1') { const [s,r] = T1S[st.stage]; sets = mk(s, r, st.w, true); }
       else if (e.tier === 'T2') { const [s,r] = T2S[st.stage]; sets = mk(s, r, st.w); }
       else sets = mk(3, 15, st.w, true);
-      return {key, lift:L, slot:e.lift, tag:e.tier, sets};
+      return {key, lift:L, slot:e.lift, tag:e.tier, rest: REST.gzclp[e.tier], sets};
     });
   } else {
     const L = sw(a, day.lift), wk = Math.floor(i/n) % 4, cyc = Math.floor(i/(n*4)) + 1, tm = a.tm[L];
-    ex = [{key:L, lift:L, slot:day.lift, tag: wk === 3 ? 'Lett uke' : 'Hovedløft',
+    ex = [{key:L, lift:L, slot:day.lift, tag: wk === 3 ? 'Lett uke' : 'Hovedløft', rest: wk === 3 ? REST.w531.light : REST.w531.main,
            sets: W531[wk].map(([pc,r,am]) => ({t:r, w:r25(tm*pc), am:!!am, d:null}))}];
     if (wk < 3) {
-      if (p.fsl) { const pc = W531[wk][0][0]; ex.push({key:L+'.fsl', lift:L, slot:day.lift, tag:`FSL · ${Math.round(pc*100)} %`, sets: mk(5, 5, r25(tm*pc))}); }
-      else ex.push({key:L+'.bbb', lift:L, slot:day.lift, tag:'BBB · 50 %', sets: mk(5, 10, r25(tm*.5))});
+      if (p.fsl) { const pc = W531[wk][0][0]; ex.push({key:L+'.fsl', lift:L, slot:day.lift, tag:`FSL · ${Math.round(pc*100)} %`, rest: REST.w531.fsl, sets: mk(5, 5, r25(tm*pc))}); }
+      else ex.push({key:L+'.bbb', lift:L, slot:day.lift, tag:'BBB · 50 %', rest: REST.w531.bbb, sets: mk(5, 10, r25(tm*.5))});
     }
     sub = 'Syklus ' + cyc + ' · Uke ' + (wk+1);
   }
@@ -1950,7 +1963,8 @@ function vMore(){
     ${Object.keys(S.maxes).length ? '<p class="muted small">Endringer her brukes neste gang du aktiverer et program. Det aktive programmet påvirkes ikke.</p>' : ''}
     ${vPeteSettings()}
     <h3>Pause mellom sett</h3>
-    <div class="seg">${[60,90,120,180,300].map(s => `<button data-a="rest:${s}" aria-pressed="${S.settings.rest === s}">${s < 120 ? s+'s' : (s/60)+' min'}</button>`).join('')}</div>
+    <div class="seg">${REST_SCALE.map(([f, l]) => `<button data-a="restscale:${f}" aria-pressed="${(S.settings.restScale || 1) === f}">${l}</button>`).join('')}</div>
+    <p class="muted small">Hvert program har pauser etter hva slags sett det er: tunge sett 3 min eller mer, volumsett 2 min og lette hjelpeøvelser 90 s, slik forskningen anbefaler. Kortere gir 75 % og Lengre 125 % av alle pausene.</p>
     <button class="tog" data-a="sound" aria-pressed="${!!S.settings.sound}">Lyd når pausen er over</button>
     <p class="muted small">Hele skjermen viser pausen: fargen synker nedover og blinker grønt når pausen er over. På iPhone kan nettapper ikke vibrere, og lyd spilles ikke når skjermen er låst.</p>
     <h3>Aktivt program</h3>
@@ -2007,7 +2021,7 @@ function beep(){
   } catch(e) {}
 }
 function startRest(sec){
-  sec = sec || S.settings.rest; unlockAudio();
+  sec = Math.round((sec || 120) * (S.settings.restScale || 1)); unlockAudio();
   ui.rest = {end: Date.now() + sec*1000, total: sec, done: false};
   updateRest();
 }
@@ -2070,7 +2084,7 @@ document.addEventListener('click', ev => {
     case 'wu': {
       const e = S.draft.ex[+r[0]], k = r[1]; e.wuDone = e.wuDone || [];
       const j = e.wuDone.indexOf(k);
-      if (j > -1) e.wuDone.splice(j, 1); else { e.wuDone.push(k); startRest(60); }
+      if (j > -1) e.wuDone.splice(j, 1); else { e.wuDone.push(k); startRest(r[2] === '1' ? REST.warmupLast : REST.warmup); }
       save(); render(); wake(); break;
     }
     case 'cut': { const e = S.draft.ex[+r[0]]; if (e.sets.length > 1 && e.sets[e.sets.length-1].d == null) { e.sets.pop(); e.cut = (e.cut||0) + 1; } save(); render(); break; }
@@ -2150,7 +2164,7 @@ document.addEventListener('click', ev => {
     case 'finish': finish(); break;
     case 'dismiss': ui.summary = null; render(); break;
     case 'skip': ui.rest = null; updateRest(); break;
-    case 'rest': S.settings.rest = +r[0]; save(); render(); break;
+    case 'restscale': S.settings.restScale = +r[0]; save(); render(); break;
     case 'sound': S.settings.sound = !S.settings.sound; save(); unlockAudio(); render(); if (S.settings.sound) { beep(); toast('Lyd er på'); } break;
     case 'confirm': ui.confirm = r[0]; render(); break;
     case 'cancel': ui.confirm = null; render(); break;

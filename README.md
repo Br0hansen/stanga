@@ -5,6 +5,7 @@ Styrkeprogrammer (StrongLifts 5×5, Starting Strength, GZCLP, 5/3/1 FSL og BBB, 
 ## I økta
 
 - **Oppvarming** vises som en egen bolk før hvert stangløft, med vekt og skiver per side. Hovedløft får full oppvarming, sekundærøvelser to korte sett. Settene kan trykkes som gjort og gir 60 sekunders pause, men teller ikke som arbeidssett og lagres ikke i loggen.
+- **Pauser etter type sett**, slik forskningen anbefaler: tunge sett 3 min, volumsett 2 min og lette hjelpeøvelser 90 s. Strength & Power, Cube og Juggernaut har egne pauser. Oppvarming gir 60 s, og 2 min etter siste oppvarmingssett. Under Mer kan alle pauser skaleres til Kortere (75 %) eller Lengre (125 %).
 - **Pausen vises over hele skjermen.** Et svakt farget lag synker nedover mens pausen går: blått først, gult de siste 10 sekundene. Ved null blinker skjermen grønt én gang, og linjen nederst sier «Klar for neste sett». Går du over, teller tiden oppover og gult vokser tilbake. Lyd ved slutten kan slås på under Mer.
 - **Skiver per side** regnes ut med 20 kg stang og skivene 20, 15, 10, 5, 2,5 og 1,25 kg. 25 kg er bevisst utelatt.
 - **Hele planen** vises på programsiden før du aktiverer, og via «Se hele planen» i økta. Planen viser vektene hvis alt går som planlagt, fullførte økter viser det du faktisk løftet, og resten oppdateres etter hver økt. Programmer uten fast slutt vises 12 uker fram.
