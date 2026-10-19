@@ -24,7 +24,8 @@
   --iron:#111317; --iron-2:#191C22; --iron-3:#232730; --line:#2E333C;
   --chalk:#ECEAE4; --chalk-2:#A4A8B1; --chalk-3:#6F747E;
   --accent:#4C86F0; --accent-ink:#08111F;
-  --ok:#3FB872; --ok-ink:#06150C; --miss:#E5533F; --amrap:#EDBE3A;
+  --ok:#3FB872; --ok-ink:#06150C;
+  --tint-run:rgba(76,134,240,.20); --tint-warn:rgba(237,190,58,.22); --tint-over:rgba(237,190,58,.16); --miss:#E5533F; --amrap:#EDBE3A;
   --p25:#D93A2F; --p20:#2F6FDB; --p15:#E3B42B; --p10:#2E9E5B; --p5:#E6E4DE; --p2:#B8413A; --p1:#A9AEB6;
   --display:'Barlow Condensed','Arial Narrow','Helvetica Neue',sans-serif;
   --body:'Barlow',-apple-system,system-ui,'Segoe UI',sans-serif;
@@ -165,9 +166,22 @@ textarea{width:100%;min-height:110px;background:var(--iron);border:1px solid var
 .rest{position:absolute;left:0;right:0;z-index:21;bottom:0;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .rest-in{max-width:528px;margin:0 auto 8px;background:var(--chalk);color:var(--iron);border-radius:12px;overflow:hidden;position:relative;display:flex;align-items:center;gap:12px;padding:10px 10px 10px 16px}
-.rest-in .fill{position:absolute;left:0;bottom:0;height:4px;background:var(--accent);transition:width .25s linear}
-.rest-in b{font:700 26px/1 var(--display);font-variant-numeric:tabular-nums;min-width:3.2ch}
-.rest-in span{flex:1;font-size:14px;font-weight:600}
+.rest-in b{font:700 38px/1 var(--display);font-variant-numeric:tabular-nums;min-width:3.4ch}
+.rest-in span{flex:1;font-size:15px;font-weight:600}
+.stage[data-rest="over"] .rest-in{background:var(--ok);color:var(--ok-ink)}
+
+/* Pausen som farge over hele skjermen: et svakt lag som synker nedover mens pausen går.
+   Blått mens den går, gult mot slutten, grønt blink ved null, gult som vokser igjen ved overtid.
+   pointer-events:none, så alt under kan trykkes som før. */
+.rest-fill{position:absolute;left:0;right:0;bottom:0;height:var(--lvl,0%);z-index:20;pointer-events:none;display:none;
+  background:var(--tint-run);border-top:2px solid var(--accent);transition:height .25s linear}
+.stage[data-rest] .rest-fill{display:block}
+.stage[data-rest="warn"] .rest-fill{background:var(--tint-warn);border-top-color:var(--amrap)}
+.stage[data-rest="over"] .rest-fill{background:var(--tint-over);border-top:2px dashed var(--amrap)}
+.rest-flash{position:absolute;inset:0;z-index:22;pointer-events:none;background:var(--ok);opacity:0}
+.rest-flash.go{animation:restflash .9s ease-out}
+@keyframes restflash{0%{opacity:0}15%{opacity:.55}100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.rest-flash.go{animation:none}}
 .rest-in button{border:0;background:var(--iron);color:var(--chalk);border-radius:8px;padding:9px 12px;font:600 14px var(--body);cursor:pointer}
 .tabs{flex:none;background:var(--iron);border-top:1px solid var(--line);
   padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}
@@ -301,7 +315,9 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
 <div class="app">
 <div class="stage">
   <div class="scroller" id="scroller"><main class="wrap" id="view"></main></div>
-  <div class="rest" id="rest" hidden><div class="rest-in"><b id="restT">1:30</b><span id="restL">Pause</span><button data-a="skip">Hopp over</button><i class="fill" id="restF"></i></div></div>
+  <div class="rest-fill" id="restFill" aria-hidden="true"></div>
+  <div class="rest-flash" id="restFlash" aria-hidden="true"></div>
+  <div class="rest" id="rest" hidden role="timer"><div class="rest-in"><b id="restT">1:30</b><span id="restL">Pause</span><button data-a="skip">Hopp over</button></div></div>
 </div>
 <div class="toast" id="toast" hidden></div>
 <nav class="tabs" aria-label="Faner"><div class="tabs-in">
@@ -322,7 +338,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 20;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 21;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -1787,6 +1803,8 @@ function vMore(){
     ${Object.keys(S.maxes).length ? '<p class="muted small">Endringer her brukes neste gang du aktiverer et program. Det aktive programmet påvirkes ikke.</p>' : ''}
     <h3>Pause mellom sett</h3>
     <div class="seg">${[60,90,120,180,300].map(s => `<button data-a="rest:${s}" aria-pressed="${S.settings.rest === s}">${s < 120 ? s+'s' : (s/60)+' min'}</button>`).join('')}</div>
+    <button class="tog" data-a="sound" aria-pressed="${!!S.settings.sound}">Lyd når pausen er over</button>
+    <p class="muted small">Hele skjermen viser pausen: fargen synker nedover og blinker grønt når pausen er over. På iPhone kan nettapper ikke vibrere, og lyd spilles ikke når skjermen er låst.</p>
     <h3>Aktivt program</h3>
     <div class="box">${p ? `<p><b>${p.name}</b> <span class="muted">· ${S.active.idx} økter fullført siden ${dateFmt(S.active.startedAt)}</span></p>
       ${ui.confirm === 'quit' ? `<div class="row"><button class="btn danger sm" data-a="quit">Ja, avslutt</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div>`
@@ -1823,17 +1841,50 @@ function render(){
 }
 
 /* ---------- Pausetimer, skjerm-på, toast ---------- */
-function startRest(sec){ sec = sec || S.settings.rest; ui.rest = {end: Date.now() + sec*1000, total: sec}; updateRest(); }
+// Lyd når pausen er over (innstilling under Mer). Lyden må låses opp i et trykk, derfor skjer det i startRest.
+let audio = null;
+function unlockAudio(){
+  if (!S.settings.sound) return;
+  try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); if (audio.state === 'suspended') audio.resume(); } catch(e) {}
+}
+function beep(){
+  if (!S.settings.sound || !audio) return;
+  try {
+    [0, .18].forEach((d, i) => {
+      const o = audio.createOscillator(), g = audio.createGain(), t = audio.currentTime + d;
+      o.frequency.value = i ? 1180 : 880;
+      g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.25, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + .16);
+      o.connect(g).connect(audio.destination); o.start(t); o.stop(t + .18);
+    });
+  } catch(e) {}
+}
+function startRest(sec){
+  sec = sec || S.settings.rest; unlockAudio();
+  ui.rest = {end: Date.now() + sec*1000, total: sec, done: false};
+  updateRest();
+}
+// Gult de siste 10 sekundene, eller den siste femdelen hvis pausen er kortere enn 50 sekunder
+const restWarn = total => Math.min(10, total * .2);
+const mmss = s => Math.floor(s/60) + ':' + String(Math.floor(s % 60)).padStart(2,'0');
 function updateRest(){
-  const el = $('#rest');
-  if (!ui.rest) { el.hidden = true; return; }
-  const left = Math.ceil((ui.rest.end - Date.now())/1000);
-  if (left <= -4) { ui.rest = null; el.hidden = true; return; }
+  const el = $('#rest'), stage = document.querySelector('.stage');
+  if (!ui.rest) { el.hidden = true; delete stage.dataset.rest; return; }
+  const left = (ui.rest.end - Date.now()) / 1000;
+  if (left < -600) { ui.rest = null; updateRest(); return; }   // gi opp etter 10 minutter overtid
+  let lvl, state;
+  if (left > 0) { lvl = left / ui.rest.total; state = left <= restWarn(ui.rest.total) ? 'warn' : 'run'; }
+  else {
+    if (!ui.rest.done) {   // pausen er over: ett grønt blink og eventuelt lyd
+      ui.rest.done = true; beep();
+      const f = $('#restFlash'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
+    }
+    lvl = Math.min(1, -left / ui.rest.total); state = 'over';
+  }
   el.hidden = false;
-  const l = Math.max(0, left);
-  $('#restT').textContent = Math.floor(l/60) + ':' + String(l%60).padStart(2,'0');
-  $('#restL').textContent = l > 0 ? 'Pause' : 'Klar for neste sett';
-  $('#restF').style.width = (100 * (1 - l/ui.rest.total)) + '%';
+  stage.dataset.rest = state;
+  stage.style.setProperty('--lvl', (lvl * 100).toFixed(2) + '%');
+  $('#restT').textContent = left > 0 ? mmss(Math.ceil(left)) : '+' + mmss(-left);
+  $('#restL').textContent = left > 0 ? 'Pause' : 'Klar for neste sett';
 }
 setInterval(updateRest, 250);
 
@@ -1940,6 +1991,7 @@ document.addEventListener('click', ev => {
     case 'dismiss': ui.summary = null; render(); break;
     case 'skip': ui.rest = null; updateRest(); break;
     case 'rest': S.settings.rest = +r[0]; save(); render(); break;
+    case 'sound': S.settings.sound = !S.settings.sound; save(); unlockAudio(); render(); if (S.settings.sound) { beep(); toast('Lyd er på'); } break;
     case 'confirm': ui.confirm = r[0]; render(); break;
     case 'cancel': ui.confirm = null; render(); break;
     case 'quit': S.active = null; S.draft = null; ui.summary = null; ui.confirm = null; save(); render(); toast('Programmet er avsluttet'); break;
