@@ -316,12 +316,14 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
 .pp-mach{display:flex;gap:6px}
 .pp-mach button{flex:1;border:0;border-radius:9px;padding:10px 4px;background:var(--iron-3);color:var(--chalk);font:700 16px/1 var(--display);text-transform:uppercase;letter-spacing:.03em;cursor:pointer}
 .pp-mach button[aria-pressed="true"]{background:var(--chalk);color:var(--iron)}
-.pp-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.pp-facts{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px}
 .pp-facts div{background:var(--iron);border-radius:10px;padding:8px 10px;display:grid;gap:2px;min-width:0}
 .pp-facts b{font:700 21px/1 var(--display);font-variant-numeric:tabular-nums}
 .pp-facts b.pp-src{font:600 13px/1.25 var(--body)}
 .pp-facts span{font-size:11px;color:var(--chalk-2);letter-spacing:.04em;text-transform:uppercase}
 .pp-card .field label small{display:block;font-size:12px;font-weight:400}
+.pp-unit button{font-size:15px;padding:10px 6px}
+.box .field label small{display:block;font-size:12px;font-weight:400}
 
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -353,7 +355,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 23;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 24;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -1570,21 +1572,54 @@ function peteSession(pos, ver, mach){
   const restTxt = !rests.length ? '' : new Set(rests).size === 1 ? mmss(rests[0]) + ' pause' : 'pauser ' + rests.map(mmss).join(', ');
   return {pos: pos % PETE.length, kind: base.kind, off: base.off, d, meters: d.reduce((a,b) => a+b, 0), rests, name, restTxt, bike};
 }
-// Målfart i sekunder per 500 m (på sykkel: per 500 sykkelmeter). Kilde forteller brukeren hvor målet kommer fra.
+/* Referansefart regnet begge veier.
+   Framover: 2K-farten + tillegget for økta = målfart.
+   Baklengs: snittfarten du rodde − tillegget = anslått 2K-fart nå.
+   Bare intervalløkter og hard distanse gir anslag (rolige økter er ikke maks innsats).
+   Brukes: medianen av de tre siste anslagene fra de siste seks ukene, per apparat.
+   En testet 2K-tid du skriver inn går foran, helt til nyere anslag kommer.
+   Alle farter er i sekunder per 500 m (på sykkel: per 500 sykkelmeter). */
+const PETE_EST_DAYS = 42;
+const median = a => { const b = a.slice().sort((x, y) => x - y), m = Math.floor(b.length / 2); return b.length % 2 ? b[m] : (b[m-1] + b[m]) / 2; };
+function peteRef(mach){
+  const set = S.settings.pete, tested = set.ref && set.ref[mach], testedAt = (set.refAt && set.refAt[mach]) || 0;
+  const est = ((S.pete.est || {})[mach] || []).filter(e => Date.now() - e.t < PETE_EST_DAYS * DAY && e.t > testedAt).slice(-3);
+  if (est.length) return {split: median(est.map(e => e.sec)), src:'est', n: est.length};
+  if (tested) return {split: mach === 'bike' ? tested / 8 : tested / 4, src:'test'};
+  return {split: null, src:'none'};
+}
+// Fart per 500 m → testtid (2000 m, sykkel 4000 m)
+const refTime = (split, mach) => split * (mach === 'bike' ? 8 : 4);
+const refLine = (mach) => { const r = peteRef(mach); if (!r.split) return '';
+  const what = mach === 'bike' ? '4K' : '2K';
+  return r.src === 'est' ? `Beregnet ${what}: ${splitTxt(refTime(r.split, mach))}, ${r.n === 1 ? 'fra siste økt' : 'fra dine siste ' + r.n + ' økter'}` : `Testet ${what}: ${splitTxt(refTime(r.split, mach))}`; };
+
+// Målfart for økta, og hvor målet kommer fra
 function peteTarget(ss, mach){
-  const P = S.pete || {}, set = S.settings.pete, refSec = set.ref && set.ref[mach];
-  const key = ss.pos + '|' + mach, pbKey = 'hard|' + mach + '|' + ss.meters;
-  if ((ss.kind === 'speed' || ss.kind === 'endur') && P.targets && P.targets[key]) return {sec: P.targets[key], src:'Ditt snitt sist'};
-  if (ss.kind === 'hard' && P.pb && P.pb[pbKey]) return {sec: P.pb[pbKey], src:'Din beste'};
-  if (!refSec) return {sec: null, src:'Mangler referansetid'};
-  const split = mach === 'bike' ? refSec / 8 : refSec / 4;
-  return {sec: split + ss.off, src:'Fra referansetiden'};
+  const P = S.pete || {}, key = ss.pos + '|' + mach, pbKey = 'hard|' + mach + '|' + ss.meters;
+  if ((ss.kind === 'speed' || ss.kind === 'endur') && P.targets && P.targets[key]) return {sec: P.targets[key], src:'ditt snitt sist'};
+  if (ss.kind === 'hard' && P.pb && P.pb[pbKey]) return {sec: P.pb[pbKey], src:'din beste'};
+  const r = peteRef(mach), what = mach === 'bike' ? '4K' : '2K';
+  if (!r.split) return {sec: null, src:'mangler referansetid'};
+  return {sec: r.split + ss.off, src: (r.src === 'est' ? 'beregnet ' : 'testet ') + what};
 }
 const paceTxt = (sec, bike) => sec ? (bike ? splitTxt(sec * 2) + ' /1000 m' : splitTxt(sec) + ' /500 m') : '–';
 const peteWorkMin = (ss, t) => t.sec ? Math.round(ss.meters / 500 * t.sec / 60) : null;
+// Tid per drag når alle dragene er like lange, eller total tid når økta er ett drag. Ellers null (pyramiden).
+// Ved 500 m-drag (1000 m på sykkel) er tid per drag det samme som farten, så da vises den ikke.
+const dragMeters = ss => ss.d.every(x => x === ss.d[0]) && ss.d[0] !== (ss.bike ? 1000 : 500) ? ss.d[0] : null;
+const dragTime = (ss, sec) => { const m = dragMeters(ss); return m && sec ? m / 500 * sec : null; };
+const dragLabel = ss => ss.d.length === 1 ? 'Total tid' : 'Tid per drag';
 const peteNote = k => k === 'steady' ? 'Jevnt, ikke lett. Ro helst uten stopp.'
   : k === 'hard' ? 'Så hardt du klarer. Prøv å komme nær din beste tid.'
   : 'Fart som gjør at du klarer alle dragene. Siste drag tar du fullt ut. Snittet ditt blir målet neste gang denne økta kommer.' + (k === 'endur' ? ' Rundt 5K-fart.' : '');
+
+// Resultatet du skrev inn → fart per 500 m. unit 'drag' = tid per drag eller total tid.
+function peteResultSec(ss, pick){
+  const v = parseSplit(pick.split); if (!v) return null;
+  if (pick.unit === 'drag') { const m = dragMeters(ss); return m ? v / (m / 500) : null; }
+  return ss.bike ? v / 2 : v;   // sykkel vises per 1000 m
+}
 
 // Kortet: viser neste økt i planen. ctx = 'session' (etter styrkeøkta) eller 'free' (fri økt).
 // picked = valgt økt med felt for resultat.
@@ -1592,7 +1627,8 @@ function peteBox(ctx, picked){
   const set = S.settings.pete, mach = picked ? picked.mach : set.mach, ver = picked ? picked.ver : set.ver;
   const idx = picked ? picked.idx : (S.pete.idx || 0), ss = peteSession(idx, ver, mach), t = peteTarget(ss, mach);
   const wk = Math.floor(ss.pos / 6) + 1, day = ss.pos % 6 + 1, round = Math.floor(idx / PETE.length) + 1, min = peteWorkMin(ss, t);
-  const refSec = set.ref && set.ref[mach];
+  const ref = peteRef(mach), dt = dragTime(ss, t.sec), unit = picked && picked.unit === 'drag' && dragMeters(ss) ? 'drag' : 'split';
+  const example = unit === 'drag' ? (dt ? splitTxt(dt) : '7:40') : (t.sec ? (ss.bike ? splitTxt(t.sec*2) : splitTxt(t.sec)) : '1:55');
   return `<section class="box pp-card${picked ? ' pp-picked' : ''}">
     <div class="pp-top"><span class="lbl">${picked ? 'Dagens Pete Plan' : 'Fortsett Pete Plan'}</span>
       ${picked ? `<button class="link" data-a="pp:rm:${ctx}">Fjern</button>` : `<span class="small muted">Runde ${round} · uke ${wk} · økt ${day} av 6</span>`}</div>
@@ -1600,34 +1636,38 @@ function peteBox(ctx, picked){
     <div><p class="small muted">${PETE_KIND[ss.kind]}${ss.restTxt ? ' · ' + ss.restTxt : ''}${picked ? ' · ' + PETE_MACH[mach] : ''}${ver === 'str' && (ss.kind === 'steady' || ss.kind === 'hard') ? ' · tilpasset styrke' : ''}</p><h2>${ss.name}</h2></div>
     <div class="pp-facts">
       <div><span>Målfart</span><b>${t.sec ? (ss.bike ? splitTxt(t.sec*2) : splitTxt(t.sec)) : '–'}</b><span>${ss.bike ? 'per 1000 m' : 'per 500 m'}</span></div>
+      ${dt ? `<div><span>${ss.d.length === 1 ? 'Måltid' : 'Per drag'}</span><b>${splitTxt(dt)}</b><span>${ss.d.length === 1 ? 'totalt' : 'mål'}</span></div>` : ''}
       <div><span>Arbeid</span><b>${min != null ? min + ' min' : '–'}</b><span>ca.</span></div>
-      <div><span>Mål fra</span><b class="pp-src">${t.src}</b></div>
     </div>
-    ${!refSec ? `<div class="field"><label for="ppRef-${ctx}">${PETE_REF[mach]}<small class="muted">Referansetid gir målfart</small></label>
+    <p class="small muted">Mål fra ${t.src}${ref.split && !/testet|beregnet/.test(t.src) ? '. ' + refLine(mach) : ref.split ? ': ' + refLine(mach).replace(/^(Beregnet|Testet) [24]K: /, '') : ''}</p>
+    ${!ref.split ? `<div class="field"><label for="ppRef-${ctx}">${PETE_REF[mach]}<small class="muted">Referansetid gir målfart</small></label>
       <span class="inp"><input id="ppRef-${ctx}" data-ppref="${mach}" type="text" inputmode="decimal" placeholder="${mach === 'bike' ? '6:40' : '7:20'}"></span></div>` : ''}
     <p class="small muted">${peteNote(ss.kind)}</p>
-    ${picked ? `<div class="field"><label for="ppSplit-${ctx}">Snittfart i dag<small class="muted">${ss.bike ? 'per 1000 m' : 'per 500 m'}, f.eks. ${t.sec ? (ss.bike ? splitTxt(t.sec*2) : splitTxt(t.sec)) : '1:55'}</small></label>
+    ${picked ? `${dragMeters(ss) ? `<div class="seg pp-unit" role="group" aria-label="Hva skriver du inn?">
+        <button data-a="pp:unit:${ctx}:split" aria-pressed="${unit === 'split'}">Snittfart</button>
+        <button data-a="pp:unit:${ctx}:drag" aria-pressed="${unit === 'drag'}">${dragLabel(ss)}</button></div>` : ''}
+      <div class="field"><label for="ppSplit-${ctx}">${unit === 'drag' ? (ss.d.length === 1 ? 'Total tid i dag' : 'Snittid per drag i dag') : 'Snittfart i dag'}<small class="muted">${unit === 'drag' ? 'minutter:sekunder' : (ss.bike ? 'per 1000 m' : 'per 500 m')}, f.eks. ${example}</small></label>
       <span class="inp"><input id="ppSplit-${ctx}" data-ppsplit="${ctx}" type="text" inputmode="decimal" value="${esc(picked.split || '')}"></span></div>`
       : `<button class="btn ghost" data-a="pp:pick:${ctx}">Velg denne økta</button>`}
   </section>`;
 }
 function petePick(ctx){
   const set = S.settings.pete, ss = peteSession(S.pete.idx || 0, set.ver, set.mach), t = peteTarget(ss, set.mach);
-  const pick = {idx: S.pete.idx || 0, mach: set.mach, ver: set.ver, split: ''};
+  const pick = {idx: S.pete.idx || 0, mach: set.mach, ver: set.ver, split: '', unit: 'split'};
   const mc = {type:'M', min: peteWorkMin(ss, t) || ''};
   if (ctx === 'session' && S.draft) { S.draft.pete = pick; S.draft.metcon = true; S.draft.mc = Object.assign(mc, S.draft.mc && S.draft.mc.rpe ? {rpe:S.draft.mc.rpe} : {}); save(); }
   else { ui.free = true; ui.freePete = pick; ui.freeMc = true; ui.freeMcData = mc; }
 }
-// Når økta er lagret: neste økt i rotasjonen, og nytt mål hvis snittfart er registrert
+// Når økta er lagret: neste økt i rotasjonen, nytt mål og nytt 2K-anslag hvis resultat er registrert
 function peteDone(pick){
-  const ss = peteSession(pick.idx, pick.ver, pick.mach);
-  let sec = parseSplit(pick.split);
-  if (sec && ss.bike) sec = sec / 2;   // lagres per 500 sykkelmeter
+  const ss = peteSession(pick.idx, pick.ver, pick.mach), sec = peteResultSec(ss, pick);
   S.pete = S.pete || {idx:0, targets:{}, pb:{}};
+  S.pete.est = S.pete.est || {};
   if (sec && (ss.kind === 'speed' || ss.kind === 'endur')) S.pete.targets[ss.pos + '|' + pick.mach] = sec;
   if (sec && ss.kind === 'hard') { const k = 'hard|' + pick.mach + '|' + ss.meters; if (!S.pete.pb[k] || sec < S.pete.pb[k]) S.pete.pb[k] = sec; }
+  if (sec && ss.kind !== 'steady') S.pete.est[pick.mach] = (S.pete.est[pick.mach] || []).concat({t: Date.now(), sec: sec - ss.off, pos: ss.pos}).slice(-10);
   if (pick.idx === (S.pete.idx || 0)) S.pete.idx = (S.pete.idx || 0) + 1;
-  return {name: ss.name, kind: ss.kind, mach: pick.mach, split: sec || null, bike: ss.bike, pos: ss.pos};
+  return {name: ss.name, kind: ss.kind, mach: pick.mach, split: sec || null, bike: ss.bike, pos: ss.pos, est: sec && ss.kind !== 'steady' ? sec - ss.off : null};
 }
 
 /* ---------- Visninger ---------- */
@@ -1944,8 +1984,9 @@ function vPeteSettings(){
           <button data-a="pp:ver:str" aria-pressed="${set.ver === 'str'}">Tilpasset styrke</button>
           <button data-a="pp:ver:orig" aria-pressed="${set.ver === 'orig'}">Original</button></div>
         <p class="small muted">${set.ver === 'str' ? 'Tilpasset styrke er vår egen tilpasning: samme intervaller, men rolige økter på 6 km og hard distanse på 5 km, så kondisjonen ikke tar for mye av restitusjonen.' : 'Originalen har 15 km og 8 km rolig og 10 km hardt. Det kan bli rundt en time per økt.'}</p>
-        <div style="display:grid">${Object.keys(PETE_MACH).map(m => `<div class="field"><label for="ppSet-${m}">${PETE_REF[m]}</label>
+        <div style="display:grid">${Object.keys(PETE_MACH).map(m => `<div class="field"><label for="ppSet-${m}">${PETE_REF[m]}${refLine(m) ? `<small class="muted">Brukes nå: ${refLine(m).charAt(0).toLowerCase() + refLine(m).slice(1)}</small>` : ''}</label>
           <span class="inp"><input id="ppSet-${m}" data-ppref="${m}" type="text" inputmode="decimal" placeholder="${m === 'bike' ? '6:40' : '7:20'}" value="${set.ref[m] ? splitTxt(set.ref[m]) : ''}"></span></div>`).join('')}</div>
+        <p class="small muted">Feltene er testet tid. Etter intervalløkter og hard distanse regner appen baklengs og anslår 2K-tiden din (medianen av de tre siste fra seks uker). En ny testet tid går foran til nyere økter gir et nytt anslag.</p>
         <p class="small muted">Neste økt: ${ss.name} (${PETE_KIND[ss.kind].toLowerCase()}), økt ${(P.idx || 0) % PETE.length + 1} av ${PETE.length} i runde ${Math.floor((P.idx || 0) / PETE.length) + 1}.</p>
         ${ui.confirm === 'ppreset' ? `<div class="row"><button class="btn danger sm" data-a="pp:reset">Ja, start på nytt</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div>`
           : `<button class="btn ghost sm" data-a="confirm:ppreset">Start planen på nytt</button>`}` : ''}
@@ -2154,6 +2195,7 @@ document.addEventListener('click', ev => {
       else if (cmd === 'ver') set.ver = arg;
       else if (cmd === 'toggle') { set.on = !set.on; toast(set.on ? 'Pete Plan vises i økta' : 'Pete Plan er skjult'); }
       else if (cmd === 'pick') { petePick(arg); toast('Pete Plan valgt'); }
+      else if (cmd === 'unit') { const pk = arg === 'session' ? S.draft && S.draft.pete : ui.freePete; if (pk) { pk.unit = r[2]; pk.split = ''; } }
       else if (cmd === 'rm') { if (arg === 'session' && S.draft) { delete S.draft.pete; S.draft.metcon = false; } else { ui.freePete = null; } }
       else if (cmd === 'reset') { S.pete = {idx:0, targets:S.pete.targets || {}, pb:S.pete.pb || {}}; ui.confirm = null; toast('Planen starter på økt 1. Målene dine er beholdt.'); }
       save(); render(); break;
@@ -2251,7 +2293,7 @@ document.addEventListener('change', ev => {
   }
   if (ev.target.dataset && ev.target.dataset.ppref) {
     const sec = parseSplit(ev.target.value), m = ev.target.dataset.ppref;
-    if (sec && sec > 60) { S.settings.pete.ref[m] = sec; save(); render(); toast('Referansetid lagret'); }
+    if (sec && sec > 60) { S.settings.pete.ref[m] = sec; S.settings.pete.refAt = Object.assign({}, S.settings.pete.refAt, {[m]: Date.now()}); save(); render(); toast('Testet tid lagret. Den brukes til nyere økter gir et nytt anslag.'); }
     else if (ev.target.value.trim()) toast('Skriv tiden som minutter:sekunder, f.eks. 7:20');
     return;
   }

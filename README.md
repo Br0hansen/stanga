@@ -16,6 +16,8 @@ Et fast kondisjonsvalg ved siden av øktbanken, på romaskin, ski eller sykkel. 
 
 - Planen er Pete Marstons tre-ukers rotasjon med seks økter per uke, kontrollert mot hans egen tabell. Appen husker hvor du er og går videre én økt om gangen.
 - Målfarten regnes ut fra referansetiden din: 2000 m på romaskin og ski, 4000 m på sykkel.
+- Appen regner også baklengs: snittfarten fra intervalløkter og hard distanse, minus tillegget for økta, gir et anslag på 2K-tiden din nå. Medianen av de tre siste anslagene fra seks uker brukes, så de rolige øktene følger utviklingen din. En ny testet tid går foran til nyere økter gir et nytt anslag.
+- Resultatet kan skrives inn som snittfart eller som tid per drag (total tid for ett drag). Kortet viser målet på begge måter.
 - Progresjon fra planen: snittfarten fra en intervalløkt blir målet neste gang samme økt kommer. Hard distanse viser din beste tid.
 - På sykkel dobles distansen, og farten vises per 1000 m.
 - **Tilpasset styrke** er vår egen tilpasning, ikke en del av Pete Plan: samme intervaller, men rolige økter på 6 km og hard distanse på 5 km. **Original** har 15 km og 8 km rolig og 10 km hardt.
