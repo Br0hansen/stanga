@@ -308,6 +308,21 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
 .plan-ex .ln{display:flex;justify-content:space-between;gap:12px;font-size:14px}
 .plan-ex .ln>span:last-child{color:var(--chalk-2);text-align:right;font-variant-numeric:tabular-nums}
 
+/* Pete Plan */
+.pp-card{border-color:var(--accent)}
+.pp-card.pp-picked{border-color:var(--line)}
+.pp-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.pp-top .lbl{color:var(--accent)}
+.pp-mach{display:flex;gap:6px}
+.pp-mach button{flex:1;border:0;border-radius:9px;padding:10px 4px;background:var(--iron-3);color:var(--chalk);font:700 16px/1 var(--display);text-transform:uppercase;letter-spacing:.03em;cursor:pointer}
+.pp-mach button[aria-pressed="true"]{background:var(--chalk);color:var(--iron)}
+.pp-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.pp-facts div{background:var(--iron);border-radius:10px;padding:8px 10px;display:grid;gap:2px;min-width:0}
+.pp-facts b{font:700 21px/1 var(--display);font-variant-numeric:tabular-nums}
+.pp-facts b.pp-src{font:600 13px/1.25 var(--body)}
+.pp-facts span{font-size:11px;color:var(--chalk-2);letter-spacing:.04em;text-transform:uppercase}
+.pp-card .field label small{display:block;font-size:12px;font-weight:400}
+
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -338,7 +353,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 21;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 22;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -1059,7 +1074,7 @@ const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({'&':'&amp;
 const dateFmt = t => new Date(t).toLocaleDateString('nb-NO',{weekday:'short',day:'numeric',month:'short'});
 
 /* ---------- Lagring ---------- */
-function fresh(){ return {v:1, active:null, draft:null, history:[], settings:{rest:90}, maxes:{}}; }
+function fresh(){ return {v:1, active:null, draft:null, history:[], settings:{rest:90, pete:{on:true, ver:'str', mach:'row', ref:{}}}, maxes:{}, pete:{idx:0, targets:{}, pb:{}}}; }
 function load(){
   const d = fresh();
   try {
@@ -1174,6 +1189,7 @@ function finish(){
   const vol = s.ex.reduce((sum,e) => sum + e.sets.reduce((v,x) => v + (x.d||0)*x.w, 0), 0);
   S.history.unshift({date:Date.now(), programId:p.id, day:s.day, sub:s.sub, note:(s.note||'').trim(), metcon:!!(s.metcon || s.wod), mc: (s.metcon || s.wod) ? mcSaved(s.mc) : undefined,
     wod: s.wod ? {id:s.wod.id, navn:s.wod.navn, tekst:s.wod.tekst, resultat:(s.wod.resultat||'').trim()} : undefined,
+    pete: s.pete ? peteDone(s.pete) : undefined,
     ex: s.ex.map(e => ({lift:e.lift, tag:e.tag, rpe:e.rpe, q:e.q, sets:e.sets.map(x => ({t:x.t, w:x.w, d:x.d}))}))});
   S.active.idx++;
   S.draft = null;
@@ -1489,17 +1505,129 @@ function vPlan(){
       </details>`; }).join('')}</div>` : '').join('')}`;
 }
 
+/* ---------- Pete Plan (Pete Marston) ----------
+   Tre-ukers rotasjon med seks økter per uke, kontrollert mot Pete Marstons egen tabell
+   (machars.net/waspeteplan.htm). Kan slås av under Mer.
+   off = målfart i sekunder per 500 m i forhold til 2K-farten (negativ = raskere).
+   Progresjon (fra planen): snittet fra alle dragene i en intervalløkt blir målet neste gang samme økt kommer.
+   Hard distanse: prøv å komme nær din beste tid. Rolige økter følger 2K-farten.
+   «Tilpasset styrke» er vår egen tilpasning, ikke en del av Pete Plan: rolige økter 6 km og hard distanse 5 km. */
+const PETE = [
+  {kind:'speed',  d:[500,500,500,500,500,500,500,500], rest:[210], off:-2.5},
+  {kind:'steady', d:[15000], off:15},
+  {kind:'steady', d:[8000],  off:12},
+  {kind:'endur',  d:[2000,2000,2000,2000], rest:[300], off:5},
+  {kind:'steady', d:[15000], off:15},
+  {kind:'hard',   d:[10000], off:10},
+  {kind:'speed',  d:[1000,1000,1000,1000], rest:[300], off:2},
+  {kind:'steady', d:[15000], off:15},
+  {kind:'steady', d:[8000],  off:12},
+  {kind:'endur',  d:[1500,1500,1500,1500,1500], rest:[300], off:5},
+  {kind:'steady', d:[15000], off:15},
+  {kind:'hard',   d:[10000], off:10},
+  {kind:'speed',  d:[250,500,750,1000,750,500,250], rest:[90,180,270,360,270,180], off:-2},
+  {kind:'steady', d:[15000], off:15},
+  {kind:'steady', d:[8000],  off:12},
+  {kind:'endur',  d:[3000,2500,2000], rest:[300], off:5},
+  {kind:'steady', d:[15000], off:15},
+  {kind:'hard',   d:[10000], off:10}
+];
+const PETE_KIND = {speed:'Fartsintervaller', steady:'Rolig distanse', endur:'Utholdenhetsintervaller', hard:'Hard distanse'};
+const PETE_MACH = {row:'Ro', ski:'Ski', bike:'Sykkel'};
+const PETE_REF = {row:'Romaskin, 2000 m', ski:'Ski, 2000 m', bike:'Sykkel, 4000 m'};
+const peteOn = () => !!(S.settings.pete && S.settings.pete.on);
+const distTxt = m => (m >= 10000 ? String(m).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') : String(m)) + ' m';
+const splitTxt = sec => { if (!(sec > 0)) return '–'; const t = Math.round(sec * 10) / 10, m = Math.floor(t / 60), r = t - m*60;
+  return m + ':' + (r < 10 ? '0' : '') + (Math.round(r*10) % 10 ? r.toFixed(1) : String(Math.round(r))); };
+// «1:52», «1:52.4» eller «1.52,4» → sekunder
+function parseSplit(v){
+  const m = String(v || '').trim().replace(',', '.').match(/^(\d{1,2})[:.](\d{1,2}(?:\.\d)?)$/);
+  return m ? +m[1]*60 + +m[2] : null;
+}
+// Økta for posisjon pos, i valgt versjon og på valgt apparat. Sykkel: dobbel distanse, fart per 1000 m.
+function peteSession(pos, ver, mach){
+  const base = PETE[pos % PETE.length], bike = mach === 'bike';
+  let d = base.d.slice();
+  if (ver === 'str' && base.kind === 'steady') d = [6000];
+  if (ver === 'str' && base.kind === 'hard') d = [5000];
+  if (bike) d = d.map(x => x * 2);
+  const same = d.every(x => x === d[0]);
+  const name = d.length === 1 ? distTxt(d[0]) : same ? d.length + ' × ' + distTxt(d[0]) : d.join(' / ') + ' m';
+  const rests = base.rest ? (base.rest.length === 1 ? Array(d.length - 1).fill(base.rest[0]) : base.rest) : [];
+  const restTxt = !rests.length ? '' : new Set(rests).size === 1 ? mmss(rests[0]) + ' pause' : 'pauser ' + rests.map(mmss).join(', ');
+  return {pos: pos % PETE.length, kind: base.kind, off: base.off, d, meters: d.reduce((a,b) => a+b, 0), rests, name, restTxt, bike};
+}
+// Målfart i sekunder per 500 m (på sykkel: per 500 sykkelmeter). Kilde forteller brukeren hvor målet kommer fra.
+function peteTarget(ss, mach){
+  const P = S.pete || {}, set = S.settings.pete, refSec = set.ref && set.ref[mach];
+  const key = ss.pos + '|' + mach, pbKey = 'hard|' + mach + '|' + ss.meters;
+  if ((ss.kind === 'speed' || ss.kind === 'endur') && P.targets && P.targets[key]) return {sec: P.targets[key], src:'Ditt snitt sist'};
+  if (ss.kind === 'hard' && P.pb && P.pb[pbKey]) return {sec: P.pb[pbKey], src:'Din beste'};
+  if (!refSec) return {sec: null, src:'Mangler referansetid'};
+  const split = mach === 'bike' ? refSec / 8 : refSec / 4;
+  return {sec: split + ss.off, src:'Fra referansetiden'};
+}
+const paceTxt = (sec, bike) => sec ? (bike ? splitTxt(sec * 2) + ' /1000 m' : splitTxt(sec) + ' /500 m') : '–';
+const peteWorkMin = (ss, t) => t.sec ? Math.round(ss.meters / 500 * t.sec / 60) : null;
+const peteNote = k => k === 'steady' ? 'Jevnt, ikke lett. Ro helst uten stopp.'
+  : k === 'hard' ? 'Så hardt du klarer. Prøv å komme nær din beste tid.'
+  : 'Fart som gjør at du klarer alle dragene. Siste drag tar du fullt ut. Snittet ditt blir målet neste gang denne økta kommer.' + (k === 'endur' ? ' Rundt 5K-fart.' : '');
+
+// Kortet: viser neste økt i planen. ctx = 'session' (etter styrkeøkta) eller 'free' (fri økt).
+// picked = valgt økt med felt for resultat.
+function peteBox(ctx, picked){
+  const set = S.settings.pete, mach = picked ? picked.mach : set.mach, ver = picked ? picked.ver : set.ver;
+  const idx = picked ? picked.idx : (S.pete.idx || 0), ss = peteSession(idx, ver, mach), t = peteTarget(ss, mach);
+  const wk = Math.floor(ss.pos / 6) + 1, day = ss.pos % 6 + 1, round = Math.floor(idx / PETE.length) + 1, min = peteWorkMin(ss, t);
+  const refSec = set.ref && set.ref[mach];
+  return `<section class="box pp-card${picked ? ' pp-picked' : ''}">
+    <div class="pp-top"><span class="lbl">${picked ? 'Dagens Pete Plan' : 'Fortsett Pete Plan'}</span>
+      ${picked ? `<button class="link" data-a="pp:rm:${ctx}">Fjern</button>` : `<span class="small muted">Runde ${round} · uke ${wk} · økt ${day} av 6</span>`}</div>
+    ${picked ? '' : `<div class="pp-mach" role="group" aria-label="Apparat">${Object.entries(PETE_MACH).map(([k,v]) => `<button data-a="pp:mach:${k}" aria-pressed="${mach === k}">${v}</button>`).join('')}</div>`}
+    <div><p class="small muted">${PETE_KIND[ss.kind]}${ss.restTxt ? ' · ' + ss.restTxt : ''}${picked ? ' · ' + PETE_MACH[mach] : ''}${ver === 'str' && (ss.kind === 'steady' || ss.kind === 'hard') ? ' · tilpasset styrke' : ''}</p><h2>${ss.name}</h2></div>
+    <div class="pp-facts">
+      <div><span>Målfart</span><b>${t.sec ? (ss.bike ? splitTxt(t.sec*2) : splitTxt(t.sec)) : '–'}</b><span>${ss.bike ? 'per 1000 m' : 'per 500 m'}</span></div>
+      <div><span>Arbeid</span><b>${min != null ? min + ' min' : '–'}</b><span>ca.</span></div>
+      <div><span>Mål fra</span><b class="pp-src">${t.src}</b></div>
+    </div>
+    ${!refSec ? `<div class="field"><label for="ppRef-${ctx}">${PETE_REF[mach]}<small class="muted">Referansetid gir målfart</small></label>
+      <span class="inp"><input id="ppRef-${ctx}" data-ppref="${mach}" type="text" inputmode="decimal" placeholder="${mach === 'bike' ? '6:40' : '7:20'}"></span></div>` : ''}
+    <p class="small muted">${peteNote(ss.kind)}</p>
+    ${picked ? `<div class="field"><label for="ppSplit-${ctx}">Snittfart i dag<small class="muted">${ss.bike ? 'per 1000 m' : 'per 500 m'}, f.eks. ${t.sec ? (ss.bike ? splitTxt(t.sec*2) : splitTxt(t.sec)) : '1:55'}</small></label>
+      <span class="inp"><input id="ppSplit-${ctx}" data-ppsplit="${ctx}" type="text" inputmode="decimal" value="${esc(picked.split || '')}"></span></div>`
+      : `<button class="btn ghost" data-a="pp:pick:${ctx}">Velg denne økta</button>`}
+  </section>`;
+}
+function petePick(ctx){
+  const set = S.settings.pete, ss = peteSession(S.pete.idx || 0, set.ver, set.mach), t = peteTarget(ss, set.mach);
+  const pick = {idx: S.pete.idx || 0, mach: set.mach, ver: set.ver, split: ''};
+  const mc = {type:'M', min: peteWorkMin(ss, t) || ''};
+  if (ctx === 'session' && S.draft) { S.draft.pete = pick; S.draft.metcon = true; S.draft.mc = Object.assign(mc, S.draft.mc && S.draft.mc.rpe ? {rpe:S.draft.mc.rpe} : {}); save(); }
+  else { ui.free = true; ui.freePete = pick; ui.freeMc = true; ui.freeMcData = mc; }
+}
+// Når økta er lagret: neste økt i rotasjonen, og nytt mål hvis snittfart er registrert
+function peteDone(pick){
+  const ss = peteSession(pick.idx, pick.ver, pick.mach);
+  let sec = parseSplit(pick.split);
+  if (sec && ss.bike) sec = sec / 2;   // lagres per 500 sykkelmeter
+  S.pete = S.pete || {idx:0, targets:{}, pb:{}};
+  if (sec && (ss.kind === 'speed' || ss.kind === 'endur')) S.pete.targets[ss.pos + '|' + pick.mach] = sec;
+  if (sec && ss.kind === 'hard') { const k = 'hard|' + pick.mach + '|' + ss.meters; if (!S.pete.pb[k] || sec < S.pete.pb[k]) S.pete.pb[k] = sec; }
+  if (pick.idx === (S.pete.idx || 0)) S.pete.idx = (S.pete.idx || 0) + 1;
+  return {name: ss.name, kind: ss.kind, mach: pick.mach, split: sec || null, bike: ss.bike, pos: ss.pos};
+}
+
 /* ---------- Visninger ---------- */
 function vFree(){
   return `<button class="link" data-a="freecancel">‹ Tilbake</button>
     <header class="head"><p class="eyebrow">Uten program</p><h1>Fri økt</h1>
       <p class="muted small">Påvirker ikke programmet ditt. Lagres i loggen med dagens dato.</p></header>
-    ${ui.freeWod ? wodBox(ui.freeWod, 'free') : quickPick('free')}
+    ${ui.freePete ? peteBox('free', ui.freePete) : ui.freeWod ? wodBox(ui.freeWod, 'free') : (peteOn() ? peteBox('free') : '') + quickPick('free')}
     <div class="box notebox">
-      <label for="freeNote" class="lbl">${ui.freeWod ? 'Notat' : 'Hva gjorde du?'}</label>
+      <label for="freeNote" class="lbl">${ui.freeWod || ui.freePete ? 'Notat' : 'Hva gjorde du?'}</label>
       <textarea id="freeNote" placeholder="For eksempel: 20 min AMRAP med 5 pull-ups, 10 push-ups og 15 air squats. 9 runder.">${esc(ui.freeNote)}</textarea>
       <button class="tog" data-a="freemc" aria-pressed="${ui.freeMc !== false}">Metcon</button>
-      ${ui.freeMc !== false || ui.freeWod ? mcFields('free', ui.freeMcData) : ''}
+      ${ui.freeMc !== false || ui.freeWod || ui.freePete ? mcFields('free', ui.freeMcData) : ''}
     </div>
     <button class="btn" data-a="freesave">Lagre fri økt</button>`;
 }
@@ -1573,7 +1701,7 @@ function vToday(){
     </section>`;
   });
   h += vMetconBudget(p, s);
-  h += s.wod ? wodBox(s.wod, 'session') : quickPick('session');
+  h += s.pete ? peteBox('session', s.pete) : s.wod ? wodBox(s.wod, 'session') : (peteOn() ? peteBox('session') : '') + quickPick('session');
   h += `<section class="box notebox">
       <label for="note" class="lbl">Notat</label>
       <textarea id="note" placeholder="For eksempel metcon etter økta, dagsform eller en teknikkdetalj">${esc(s.note)}</textarea>
@@ -1758,9 +1886,10 @@ function vLog(){
     const wodH = sess.wod ? `<div class="sess-wod"><p><b>${esc(sess.wod.navn)}</b>${sess.wod.resultat ? ` · <span class="res">${esc(sess.wod.resultat)}</span>` : ''}</p>
       <details><summary>Vis økta</summary><pre class="wodtxt">${esc(sess.wod.tekst)}</pre></details></div>` : '';
     const mcH = sess.mc && MC[sess.mc.type] ? `<span class="pill">${MC[sess.mc.type].n} · ${fmt(sess.mc.min)} min${sess.mc.rpe ? ' · RPE ' + sess.mc.rpe : ''}</span>` : '';
-    const noteH = (sess.metcon || sess.note || sess.wod) ? `<div class="sess-note">${sess.metcon ? '<span class="pill mc">Metcon</span>' : ''}${mcH}${wodH}${sess.note ? `<p>${esc(sess.note)}</p>` : ''}</div>` : '';
+    const ppH = sess.pete ? `<div class="sess-wod"><p><b>Pete Plan · ${esc(sess.pete.name)}</b> · ${PETE_MACH[sess.pete.mach] || ''}${sess.pete.split ? ` · <span class="res">${paceTxt(sess.pete.split, sess.pete.bike)}</span>` : ''}</p></div>` : '';
+    const noteH = (sess.metcon || sess.note || sess.wod || sess.pete) ? `<div class="sess-note">${sess.metcon ? '<span class="pill mc">Metcon</span>' : ''}${mcH}${ppH}${wodH}${sess.note ? `<p>${esc(sess.note)}</p>` : ''}</div>` : '';
     if (sess.free) return `<article class="sess">
-      <div class="top"><h2 style="font-size:19px">${sess.wod ? 'Metcon' : 'Fri økt'}</h2><span class="muted small">${dateFmt(sess.date)}</span></div>
+      <div class="top"><h2 style="font-size:19px">${sess.pete ? 'Pete Plan' : sess.wod ? 'Metcon' : 'Fri økt'}</h2><span class="muted small">${dateFmt(sess.date)}</span></div>
       ${noteH}</article>`;
     const p = prog(sess.programId);
     const vol = sess.ex.reduce((s,e) => s + e.sets.reduce((v,x) => v + (x.d||0)*x.w, 0), 0);
@@ -1792,6 +1921,24 @@ function diag(){
   } catch(e) { return ''; }
 }
 
+function vPeteSettings(){
+  const set = S.settings.pete, P = S.pete, ss = peteSession(P.idx || 0, set.ver, set.mach);
+  return `<h3>Pete Plan</h3>
+    <div class="box">
+      <button class="tog" data-a="pp:toggle" aria-pressed="${!!set.on}">Vis Pete Plan i økta</button>
+      <p class="small muted">Et fast kondisjonsvalg på romaskin, ski eller sykkel ved siden av øktbanken. Planen er Pete Marstons tre-ukers rotasjon. Appen husker hvor du er, og snittet fra intervalløktene blir målet neste gang.</p>
+      ${set.on ? `<div class="seg" role="group" aria-label="Versjon">
+          <button data-a="pp:ver:str" aria-pressed="${set.ver === 'str'}">Tilpasset styrke</button>
+          <button data-a="pp:ver:orig" aria-pressed="${set.ver === 'orig'}">Original</button></div>
+        <p class="small muted">${set.ver === 'str' ? 'Tilpasset styrke er vår egen tilpasning: samme intervaller, men rolige økter på 6 km og hard distanse på 5 km, så kondisjonen ikke tar for mye av restitusjonen.' : 'Originalen har 15 km og 8 km rolig og 10 km hardt. Det kan bli rundt en time per økt.'}</p>
+        <div style="display:grid">${Object.keys(PETE_MACH).map(m => `<div class="field"><label for="ppSet-${m}">${PETE_REF[m]}</label>
+          <span class="inp"><input id="ppSet-${m}" data-ppref="${m}" type="text" inputmode="decimal" placeholder="${m === 'bike' ? '6:40' : '7:20'}" value="${set.ref[m] ? splitTxt(set.ref[m]) : ''}"></span></div>`).join('')}</div>
+        <p class="small muted">Neste økt: ${ss.name} (${PETE_KIND[ss.kind].toLowerCase()}), økt ${(P.idx || 0) % PETE.length + 1} av ${PETE.length} i runde ${Math.floor((P.idx || 0) / PETE.length) + 1}.</p>
+        ${ui.confirm === 'ppreset' ? `<div class="row"><button class="btn danger sm" data-a="pp:reset">Ja, start på nytt</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div>`
+          : `<button class="btn ghost sm" data-a="confirm:ppreset">Start planen på nytt</button>`}` : ''}
+    </div>`;
+}
+
 function vMore(){
   const p = S.active && prog(S.active.programId);
   return `<header class="head"><p class="eyebrow">Innstillinger</p><h1>Mer</h1></header>
@@ -1801,6 +1948,7 @@ function vMore(){
         <span class="inp"><input id="max-${l}" data-max="${l}" type="text" inputmode="decimal" value="${fmt(S.maxes[l])}">kg</span></div>`).join('')
       : '<p class="muted small">Fylles ut første gang du aktiverer et program. Alle programmer bruker samme tall.</p>'}</div>
     ${Object.keys(S.maxes).length ? '<p class="muted small">Endringer her brukes neste gang du aktiverer et program. Det aktive programmet påvirkes ikke.</p>' : ''}
+    ${vPeteSettings()}
     <h3>Pause mellom sett</h3>
     <div class="seg">${[60,90,120,180,300].map(s => `<button data-a="rest:${s}" aria-pressed="${S.settings.rest === s}">${s < 120 ? s+'s' : (s/60)+' min'}</button>`).join('')}</div>
     <button class="tog" data-a="sound" aria-pressed="${!!S.settings.sound}">Lyd når pausen er over</button>
@@ -1943,10 +2091,12 @@ document.addEventListener('click', ev => {
     case 'freemc': ui.freeMc = ui.freeMc === false; render(); break;
     case 'freesave': {
       const note = (ui.freeNote || '').trim(), mc = ui.freeMc !== false, w = ui.freeWod;
-      if (!note && !w) { toast('Velg en metcon eller skriv kort hva du gjorde'); break; }
-      S.history.unshift({date:Date.now(), free:true, day:'Fri økt', sub:'', ex:[], note, metcon: mc || !!w, mc: mc || w ? mcSaved(ui.freeMcData) : undefined,
-        wod: w ? {id:w.id, navn:w.navn, tekst:w.tekst, resultat:(w.resultat||'').trim()} : undefined});
-      ui.free = false; ui.freeNote = ''; ui.freeMc = true; ui.freeWod = null; ui.freeMcData = null; ui.tab = 'log'; ui.logF = 'all';
+      const pp = ui.freePete;
+      if (!note && !w && !pp) { toast('Velg en metcon eller skriv kort hva du gjorde'); break; }
+      S.history.unshift({date:Date.now(), free:true, day:'Fri økt', sub:'', ex:[], note, metcon: mc || !!w || !!pp, mc: mc || w || pp ? mcSaved(ui.freeMcData) : undefined,
+        wod: w ? {id:w.id, navn:w.navn, tekst:w.tekst, resultat:(w.resultat||'').trim()} : undefined,
+        pete: pp ? peteDone(pp) : undefined});
+      ui.free = false; ui.freeNote = ''; ui.freeMc = true; ui.freeWod = null; ui.freePete = null; ui.freeMcData = null; ui.tab = 'log'; ui.logF = 'all';
       save(); render(); toTop(); toast('Fri økt lagret');
       break;
     }
@@ -1983,6 +2133,16 @@ document.addEventListener('click', ev => {
       else { ui.free = true; ui.freeWod = pick; ui.freeMc = true; ui.freeMcData = Object.assign(guess, ui.freeMcData && ui.freeMcData.min ? ui.freeMcData : {}); }
       ui.bank = false; ui.wod = null; ui.wodRand = false; render(); toTop(); toast('Metcon valgt');
       break;
+    }
+    case 'pp': {
+      const set = S.settings.pete, [cmd, arg] = r;
+      if (cmd === 'mach') set.mach = arg;
+      else if (cmd === 'ver') set.ver = arg;
+      else if (cmd === 'toggle') { set.on = !set.on; toast(set.on ? 'Pete Plan vises i økta' : 'Pete Plan er skjult'); }
+      else if (cmd === 'pick') { petePick(arg); toast('Pete Plan valgt'); }
+      else if (cmd === 'rm') { if (arg === 'session' && S.draft) { delete S.draft.pete; S.draft.metcon = false; } else { ui.freePete = null; } }
+      else if (cmd === 'reset') { S.pete = {idx:0, targets:S.pete.targets || {}, pb:S.pete.pb || {}}; ui.confirm = null; toast('Planen starter på økt 1. Målene dine er beholdt.'); }
+      save(); render(); break;
     }
     case 'wodrm':
       if (r[0] === 'session' && S.draft) { delete S.draft.wod; save(); } else ui.freeWod = null;
@@ -2041,6 +2201,10 @@ document.addEventListener('focusout', () => scheduleFit(350));   // tastaturet l
 
 document.addEventListener('input', ev => {
   if (ev.target.id === 'note' && S.draft) { S.draft.note = ev.target.value; save(); }
+  else if (ev.target.dataset && ev.target.dataset.ppsplit) {
+    const ctx = ev.target.dataset.ppsplit, pk = ctx === 'session' ? S.draft && S.draft.pete : ui.freePete;
+    if (pk) { pk.split = ev.target.value; if (ctx === 'session') save(); }
+  }
   else if (ev.target.dataset && ev.target.dataset.mcmin) {
     const ctx = ev.target.dataset.mcmin; if (ctx === 'session' && !S.draft) return;
     mcOf(ctx).min = ev.target.value.replace(/[^\d]/g, '').slice(0, 3); if (ctx === 'session') save();
@@ -2069,6 +2233,12 @@ document.addEventListener('change', ev => {
   if (ev.target.dataset && ev.target.dataset.max) {
     const v = parseFloat(String(ev.target.value).replace(',', '.'));
     if (v > 0) { S.maxes[ev.target.dataset.max] = v; save(); toast('Lagret'); } else { ev.target.value = fmt(S.maxes[ev.target.dataset.max]); }
+    return;
+  }
+  if (ev.target.dataset && ev.target.dataset.ppref) {
+    const sec = parseSplit(ev.target.value), m = ev.target.dataset.ppref;
+    if (sec && sec > 60) { S.settings.pete.ref[m] = sec; save(); render(); toast('Referansetid lagret'); }
+    else if (ev.target.value.trim()) toast('Skriv tiden som minutter:sekunder, f.eks. 7:20');
     return;
   }
   if (ev.target.dataset && ev.target.dataset.bf) { ui.bf[ev.target.dataset.bf] = ev.target.value; ui.bankN = 30; render(); return; }

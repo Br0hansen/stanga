@@ -9,6 +9,17 @@ Styrkeprogrammer (StrongLifts 5×5, Starting Strength, GZCLP, 5/3/1 FSL og BBB, 
 - **Skiver per side** regnes ut med 20 kg stang og skivene 20, 15, 10, 5, 2,5 og 1,25 kg. 25 kg er bevisst utelatt.
 - **Hele planen** vises på programsiden før du aktiverer, og via «Se hele planen» i økta. Planen viser vektene hvis alt går som planlagt, fullførte økter viser det du faktisk løftet, og resten oppdateres etter hver økt. Programmer uten fast slutt vises 12 uker fram.
 
+## Pete Plan
+
+Et fast kondisjonsvalg ved siden av øktbanken, på romaskin, ski eller sykkel. Kan slås av og på under **Mer → Pete Plan**.
+
+- Planen er Pete Marstons tre-ukers rotasjon med seks økter per uke, kontrollert mot hans egen tabell. Appen husker hvor du er og går videre én økt om gangen.
+- Målfarten regnes ut fra referansetiden din: 2000 m på romaskin og ski, 4000 m på sykkel.
+- Progresjon fra planen: snittfarten fra en intervalløkt blir målet neste gang samme økt kommer. Hard distanse viser din beste tid.
+- På sykkel dobles distansen, og farten vises per 1000 m.
+- **Tilpasset styrke** er vår egen tilpasning, ikke en del av Pete Plan: samme intervaller, men rolige økter på 6 km og hard distanse på 5 km. **Original** har 15 km og 8 km rolig og 10 km hardt.
+- Økta teller som kondisjon i metcon-budsjettet, med beregnede minutter som forslag.
+
 ## Programguide
 
 Under **Programmer → Programguide** står det hva hvert program fokuserer på, hvem det passer for, hva forskningen sier og hva man realistisk kan forvente. Hver påstand har et evidensnivå (A, B, C eller H) og lenke til kilden. Teksten ligger i `GUIDE`, `GUIDE_GENERAL` og `REFS` i `index.html`. Kildene ble slått opp i PubMed i oktober 2026.
