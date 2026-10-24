@@ -1,6 +1,6 @@
 # Trene sammen – design
 
-Dato: 2026-10-24 · Status: bygget (APP_VERSION 27). Jonas ga klarsignal til å bygge uten egen godkjenningsrunde av dokumentet.
+Dato: 2026-10-24 · Status: bygget (APP_VERSION 28). Jonas ga klarsignal til å bygge uten egen godkjenningsrunde av dokumentet.
 
 ## Hva og hvorfor
 
@@ -57,7 +57,7 @@ Det er to grunner til å trene sammen, og begge skal støttes: noen ganger er de
 
 ## Mine valg (kan overstyres)
 
-- **Innlogging:** Engangskode på e-post, uten passord. Google- og Apple-innlogging kan komme senere. Ved første innlogging velger du brukernavn (unikt, små bokstaver, tall, punktum og understrek, 3–20 tegn) og eventuelt et visningsnavn.
+- **Innlogging:** ~~Engangskode på e-post~~. Endret til e-post og passord uten e-postbekreftelse, med «glemt passord» via e-post (Jonas sitt valg, se under). Google- og Apple-innlogging kan komme senere. Ved første innlogging velger du brukernavn (unikt, små bokstaver, tall, punktum og understrek, 3–20 tegn) og eventuelt et visningsnavn.
 - **Gjensidige venneforespørsler** (vises i skissen): Forespørsel, så godta eller avslå. Avslag er stille, og avsenderen ser bare «Sendt». Du kan fjerne en venn.
 - **Nye ting hentes når Sammen-fanen åpnes og når appen våkner,** ikke i sanntid. Tallet i fanen beregnes ved oppstart når det er nett. Sist sett-tidspunktet lagres på kontoen, så tallet stemmer på tvers av enheter.
 - **Fanerekkefølge:** Økt, Programmer, Sammen, Logg, Mer.
@@ -97,7 +97,7 @@ Tabellene under er en skisse. Byggeren bestemmer endelig form.
 - **Sist sett** ligger i en egen tabell `seen`, så tidspunktet ikke er synlig for andre.
 - **Service worker:** Svar fra `*.supabase.co` mellomlagres aldri (`SHELL` er økt til `stanga-shell-2`).
 - **Testet:** Tilgangsreglene med tre testbrukere (24 sjekker, inkludert forsøk på å utgi seg for andre og lesing som anonym), og hele flyten i appen mot den ekte databasen: konto, brukernavn, venner, begge typer timer, forslag, påmelding, valg av forslag, endring, avlysning og sletting av konto. Testdataene er slettet.
-- **Gjenstår for Jonas:** Malene for e-post i Supabase-dashbordet må inneholde `{{ .Token }}` (se README).
+- **Endret innlogging (APP_VERSION 28):** Supabase krever nå egen SMTP for å endre e-postmalene, og standardmalen sender bare en lenke. Jonas valgte derfor e-post og passord uten e-postbekreftelse. «Glemt passord» bruker standard e-post med lenke til Site URL. Appen leser nøkkelen fra adressen etter `#`, viser en side for nytt passord og rydder adressen. Testet: lag konto, dobbel registrering, feil passord, innlogging, nytt passord og utløpt lenke. Selve e-posten for glemt passord er ikke testet, fordi den krever en ekte adresse.
 
 ## Overlatt til byggeren
 

@@ -15,7 +15,7 @@ Styrkeprogrammer (StrongLifts 5×5, Starting Strength, GZCLP, 5/3/1 FSL og BBB, 
 
 En egen fane der du legger ut når du skal trene, og vennene dine kan bli med. Konto er valgfritt. Uten konto virker appen akkurat som før, og Sammen-fanen viser bare en side for å lage konto.
 
-- **Innlogging** skjer med en engangskode på e-post, uten passord. En lenke ville åpnet seg i Safari og logget inn der, ikke i hjemskjermappen.
+- **Innlogging** skjer med e-post og passord rett i appen. Det er ingen e-postbekreftelse, så du er innlogget med en gang. **Glemt passord?** sender en lenke som åpner Stanga med en side for nytt passord. Bruker du appen fra hjemskjermen, logger du inn der med det nye passordet etterpå.
 - **Brukernavn** velges første gang. Venner legges til ved å søke på brukernavn, og den andre må godta.
 - **To typer timer:** fast tid (andre melder seg på) og tidsvindu (andre foreslår et tidspunkt). Når du velger et forslag, blir timen fast, og de som foreslo det, står som påmeldt.
 - **Økt på timen** er valgfritt: bare trene samtidig, en metcon fra øktbanken eller fritekst.
@@ -23,7 +23,7 @@ En egen fane der du legger ut når du skal trene, og vennene dine kan bli med. K
 - **Bare dette lagres i skyen** (Supabase, EU): e-post, brukernavn, navn, venner, timer, påmeldinger og forslag. Treningsloggen blir på telefonen. Under **Mer → Konto for Sammen** kan du logge ut eller slette kontoen.
 - **Tilgang:** Reglene i databasen sørger for at bare venner ser timene dine. SQL-en ligger i `supabase/migrations/`.
 
-**Oppsett i Supabase-dashbordet (én gang):** Under *Authentication → Emails (Email Templates)* må malene **Magic Link** og **Confirm signup** inneholde `{{ .Token }}`, så e-posten sender en kode i stedet for bare en lenke. Gratisprosjekter settes på pause etter en uke uten bruk og må da startes igjen i dashbordet.
+**Oppsett i Supabase (gjort):** *Confirm email* er slått av under *Authentication → Sign In / Providers*, og *Site URL* er `https://br0hansen.github.io/stanga/`, så lenken i «glemt passord» går til appen. Supabase sin innebygde e-post sender bare noen få e-poster i timen, og malene kan bare endres med egen e-posttjeneste (SMTP). Gratisprosjekter settes på pause etter en uke uten bruk og må da startes igjen i dashbordet.
 
 ## Pete Plan
 

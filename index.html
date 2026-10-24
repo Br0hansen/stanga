@@ -546,7 +546,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 27;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 28;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -2401,8 +2401,8 @@ function toast(msg){ const t = $('#toast'); t.textContent = msg; t.hidden = fals
 
 /* ---------- Trene sammen: konto, venner og timer i Supabase ----------
    Bare dette ligger i skyen: brukernavn, venner, timer, påmeldinger og tidsforslag. Treningsloggen blir på telefonen.
-   Konto er valgfritt. Innlogging skjer med engangskode på e-post, fordi en lenke åpner seg i Safari
-   og ikke i hjemskjermappen (de har hver sin lagring).
+   Konto er valgfritt. Innlogging skjer med e-post og passord rett i appen, uten e-postbekreftelse.
+   «Glemt passord» sender en lenke som åpner appen med en side for nytt passord.
    Tilgangen styres av reglene i databasen: du ser bare timene til venner. Nøkkelen under er den offentlige. */
 const SB_URL = 'https://ueqteavqpityrmuczkoc.supabase.co', SB_KEY = 'sb_publishable_PqNVw0QF3nfnLnYN9VrcNg_nhNcay9O';
 const AUTH_KEY = 'stanga.auth';
@@ -2440,6 +2440,23 @@ const inList = ids => 'in.(' + [...new Set(ids)].join(',') + ')';
 const uid = () => auth && auth.user.id;
 
 const SX = {loaded:false, loading:null, at:0, me:null, fr:[], ppl:{}, sess:[], part:[], prop:[], seenAt:0, prev:0, err:''};
+const jwtBody = t => { try { const b = t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'); return JSON.parse(atob(b + '='.repeat((4 - b.length % 4) % 4))); } catch(e) { return {}; } };
+(function sxFromLink(){
+  const h = new URLSearchParams(location.hash.slice(1));
+  if (!h.get('type') && !h.get('error_code')) return;
+  history.replaceState(null, '', location.pathname + location.search);
+  ui.tab = 'together';
+  if (h.get('type') === 'recovery' && h.get('access_token')) {
+    const b = jwtBody(h.get('access_token'));
+    setSession({access_token: h.get('access_token'), refresh_token: h.get('refresh_token'), expires_in: +h.get('expires_in') || 3600,
+      expires_at: +h.get('expires_at') || undefined, user: {id: b.sub, email: b.email}});
+    ui.sxView = 'newpw';
+  } else if (h.get('error_code')) {
+    ui.sxMode = 'forgot';
+    ui.sxMsg = h.get('error_code') === 'otp_expired' ? 'Lenken har gått ut. Be om en ny.' : 'Lenken virket ikke. Be om en ny.';
+  }
+})();
+
 function sxReset(){ Object.assign(SX, {loaded:false, at:0, me:null, fr:[], ppl:{}, sess:[], part:[], prop:[], seenAt:0, prev:0, err:''}); ui.sxView = 'list'; sxBadge(); }
 
 // Hent alt Sammen-fanen trenger: profilen din, venner, kommende timer, påmeldinger, forslag og navnene på de involverte
@@ -2558,6 +2575,7 @@ function sxBadge(){
 function vTogether(){
   if (ui.bank && ui.bankFor === 'sx') return vBank();
   if (!auth) return vSxSignup();
+  if (ui.sxView === 'newpw') return vSxNewPw();
   if (!SX.loaded) return `<header class="head"><p class="eyebrow">Med vennene dine</p><h1>Sammen</h1></header>
     ${SX.err ? `<div class="warn">${esc(SX.err)}</div><button class="btn ghost" data-a="sxretry">Prøv igjen</button>` : '<p class="muted">Henter …</p>'}`;
   if (!SX.me) return vSxUsername();
@@ -2569,21 +2587,43 @@ function vTogether(){
 }
 
 function vSxSignup(){
-  const sent = ui.sxEmail && ui.sxSent;
+  const m = ui.sxMode || 'login', busy = ui.sxBusy ? 'disabled' : '';
+  const email = `<label class="lbl" for="sxE">E-post</label>
+        <input id="sxE" class="txt" type="email" autocomplete="email" autocapitalize="none" placeholder="navn@eksempel.no" value="${esc(ui.sxEmail || '')}">`;
+  const msg = ui.sxMsg ? `<p class="small warn-t" role="alert">${esc(ui.sxMsg)}</p>` : '';
+  let box;
+  if (m === 'forgot') box = ui.sxForgotSent
+    ? `<p>Hvis det finnes en konto for <b>${esc(ui.sxEmail)}</b>, har vi sendt en lenke dit. Åpne lenken på denne telefonen for å velge nytt passord.</p>
+       <button class="link" data-a="sxmode:login">‹ Tilbake til innlogging</button>`
+    : `<p class="small muted">Skriv e-posten din, så sender vi en lenke der du kan velge nytt passord.</p>${email}${msg}
+       <button class="btn" data-a="sxforgot" ${busy}>Send lenke</button>
+       <button class="link" data-a="sxmode:login">‹ Tilbake til innlogging</button>`;
+  else box = `<div class="seg2" role="group" aria-label="Logg inn eller lag konto">
+        <button data-a="sxmode:login" aria-pressed="${m === 'login'}"><b>Logg inn</b></button>
+        <button data-a="sxmode:signup" aria-pressed="${m === 'signup'}"><b>Lag konto</b></button>
+      </div>
+      ${email}
+      <label class="lbl" for="sxP">Passord</label>
+      <input id="sxP" class="txt" type="password" autocomplete="${m === 'signup' ? 'new-password' : 'current-password'}" minlength="8" placeholder="${m === 'signup' ? 'Minst 8 tegn' : ''}">
+      ${msg}
+      <button class="btn" data-a="${m === 'signup' ? 'sxsignup' : 'sxlogin'}" ${busy}>${m === 'signup' ? 'Lag konto' : 'Logg inn'}</button>
+      ${m === 'login' ? '<button class="link" data-a="sxmode:forgot">Glemt passord?</button>' : ''}`;
   return `<header class="head"><p class="eyebrow">Valgfritt</p><h1>Sammen</h1>
       <p class="muted">Legg ut når du skal trene, og la vennene dine bli med. Det krever en konto. Resten av appen virker som før uten.</p></header>
+    <section class="box sx-form">${box}</section>
+    <p class="muted small">Bare brukernavn, venner og timer lagres, hos Supabase i EU. Treningsloggen din blir på telefonen. Kontoen kan slettes under Mer.</p>`;
+}
+
+function vSxNewPw(){
+  return `<header class="head"><p class="eyebrow">Glemt passord</p><h1>Nytt passord</h1>
+      <p class="muted">${esc(auth.user.email || '')}</p></header>
     <section class="box sx-form">
-      ${sent ? `<p>Vi sendte en kode til <b>${esc(ui.sxEmail)}</b>. Skriv den inn her.</p>
-        <label class="lbl" for="sxC">Kode fra e-posten</label>
-        <input id="sxC" class="txt" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="123456">
-        <button class="btn" data-a="sxverify" ${ui.sxBusy ? 'disabled' : ''}>Logg inn</button>
-        <div class="row"><button class="link" data-a="sxsend">Send ny kode</button><button class="link" data-a="sxreset">Bruk en annen e-post</button></div>`
-      : `<label class="lbl" for="sxE">E-post</label>
-        <input id="sxE" class="txt" type="email" autocomplete="email" autocapitalize="none" placeholder="navn@eksempel.no" value="${esc(ui.sxEmail || '')}">
-        <button class="btn" data-a="sxsend" ${ui.sxBusy ? 'disabled' : ''}>Send kode</button>`}
+      <label class="lbl" for="sxP">Nytt passord</label>
+      <input id="sxP" class="txt" type="password" autocomplete="new-password" minlength="8" placeholder="Minst 8 tegn">
       ${ui.sxMsg ? `<p class="small warn-t" role="alert">${esc(ui.sxMsg)}</p>` : ''}
+      <button class="btn" data-a="sxnewpw" ${ui.sxBusy ? 'disabled' : ''}>Lagre passord</button>
     </section>
-    <p class="muted small">Du får en engangskode på e-post, uten passord. Bare brukernavn, venner og timer lagres, hos Supabase i EU. Treningsloggen din blir på telefonen. Kontoen kan slettes under Mer.</p>`;
+    <p class="muted small">Bruker du Stanga fra hjemskjermen, logger du inn der med det nye passordet etterpå.</p>`;
 }
 
 function vSxUsername(){
@@ -2805,23 +2845,41 @@ async function sxDo(fn, okMsg){
   catch(e) { toast(e.status || e.code ? sxErr(e) : (e.message || sxErr(e))); }
   finally { ui.sxBusy = false; render(); }
 }
-async function sxSend(){
-  const el = $('#sxE'), email = (el ? el.value : ui.sxEmail || '').trim();
+// Logg inn eller lag konto med e-post og passord. Uten e-postbekreftelse får du en innlogging med en gang.
+async function sxAuth(kind){
+  const email = (($('#sxE') || {}).value || '').trim(), pw = ($('#sxP') || {}).value || '';
+  ui.sxEmail = email;
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { ui.sxMsg = 'Skriv en gyldig e-postadresse.'; render(); return; }
-  ui.sxEmail = email; ui.sxMsg = ''; ui.sxBusy = true; render();
-  try { await sbFetch('/auth/v1/otp', {method:'POST', auth:false, body:{email, create_user:true}}); ui.sxSent = true; toast('Koden er sendt'); }
+  if (kind === 'signup' ? pw.length < 8 : !pw) { ui.sxMsg = kind === 'signup' ? 'Passordet må ha minst 8 tegn.' : 'Skriv passordet ditt.'; render(); return; }
+  ui.sxBusy = true; ui.sxMsg = ''; render();
+  try {
+    const d = await sbFetch(kind === 'signup' ? '/auth/v1/signup' : '/auth/v1/token?grant_type=password', {method:'POST', auth:false, body:{email, password: pw}});
+    if (!d || !d.access_token) throw new Error('Kontoen er laget, men kan ikke brukes ennå. Prøv å logge inn.');
+    setSession(d); ui.sxMode = 'login'; ui.sxBusy = false;
+    toast(kind === 'signup' ? 'Kontoen er laget' : 'Du er logget inn');
+    await sxOpen();
+  } catch(e) {
+    ui.sxMsg = e.code === 'user_already_exists' || /already registered/i.test(e.message) ? 'Det finnes allerede en konto med denne e-posten. Logg inn i stedet.'
+      : e.code === 'invalid_credentials' || (kind === 'login' && e.status === 400) ? 'Feil e-post eller passord.'
+      : e.code === 'weak_password' ? 'Passordet er for svakt. Bruk minst 8 tegn og gjerne både bokstaver og tall.'
+      : e.status === 429 ? 'For mange forsøk. Vent litt og prøv igjen.' : sxErr(e);
+  }
+  ui.sxBusy = false; render();
+}
+async function sxForgot(){
+  const email = (($('#sxE') || {}).value || '').trim(); ui.sxEmail = email;
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { ui.sxMsg = 'Skriv en gyldig e-postadresse.'; render(); return; }
+  ui.sxBusy = true; ui.sxMsg = ''; render();
+  try { await sbFetch('/auth/v1/recover', {method:'POST', auth:false, body:{email}}); ui.sxForgotSent = true; }
   catch(e) { ui.sxMsg = e.status === 429 ? 'For mange forsøk. Vent litt og prøv igjen.' : sxErr(e); }
   ui.sxBusy = false; render();
 }
-async function sxVerify(){
-  const token = ($('#sxC') || {}).value ? $('#sxC').value.replace(/\D/g, '') : '';
-  if (token.length < 6) { ui.sxMsg = 'Skriv inn koden fra e-posten.'; render(); return; }
+async function sxNewPw(){
+  const pw = ($('#sxP') || {}).value || '';
+  if (pw.length < 8) { ui.sxMsg = 'Passordet må ha minst 8 tegn.'; render(); return; }
   ui.sxBusy = true; ui.sxMsg = ''; render();
-  try {
-    setSession(await sbFetch('/auth/v1/verify', {method:'POST', auth:false, body:{type:'email', email: ui.sxEmail, token}}));
-    ui.sxSent = false; ui.sxBusy = false; toast('Du er logget inn');
-    await sxOpen();
-  } catch(e) { ui.sxMsg = e.status === 400 || e.status === 403 ? 'Koden stemmer ikke eller har gått ut. Prøv igjen, eller send en ny kode.' : sxErr(e); }
+  try { await sbFetch('/auth/v1/user', {method:'PUT', body:{password: pw}}); ui.sxView = 'list'; toast('Passordet er endret'); ui.sxBusy = false; await sxOpen(); }
+  catch(e) { ui.sxMsg = e.code === 'same_password' ? 'Velg et annet passord enn det gamle.' : e.code === 'weak_password' ? 'Passordet er for svakt.' : sxErr(e); }
   ui.sxBusy = false; render();
 }
 async function sxUser(){
@@ -2943,9 +3001,11 @@ document.addEventListener('click', ev => {
     case 'finish': finish(); break;
     case 'dismiss': ui.summary = null; render(); break;
     case 'skip': ui.rest = null; updateRest(); break;
-    case 'sxsend': sxSend(); break;
-    case 'sxverify': sxVerify(); break;
-    case 'sxreset': ui.sxSent = false; ui.sxMsg = ''; render(); break;
+    case 'sxmode': ui.sxMode = r[0]; ui.sxMsg = ''; ui.sxForgotSent = false; render(); break;
+    case 'sxlogin': sxAuth('login'); break;
+    case 'sxsignup': sxAuth('signup'); break;
+    case 'sxforgot': sxForgot(); break;
+    case 'sxnewpw': sxNewPw(); break;
     case 'sxuser': sxUser(); break;
     case 'sxretry': sxOpen(); render(); break;
     case 'sxview': ui.sxView = r.join(':'); ui.confirm = null; ui.sxRes = null; ui.sxQ = ''; render(); toTop(); break;
