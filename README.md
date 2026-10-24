@@ -11,6 +11,20 @@ Styrkeprogrammer (StrongLifts 5×5, Starting Strength, GZCLP, 5/3/1 FSL og BBB, 
 - **Skiver per side** regnes ut med 20 kg stang og skivene 20, 15, 10, 5, 2,5 og 1,25 kg. 25 kg er bevisst utelatt.
 - **Hele planen** vises på programsiden før du aktiverer, og via «Se hele planen» i økta. Planen viser vektene hvis alt går som planlagt, fullførte økter viser det du faktisk løftet, og resten oppdateres etter hver økt. Programmer uten fast slutt vises 12 uker fram.
 
+## Sammen (trene med venner)
+
+En egen fane der du legger ut når du skal trene, og vennene dine kan bli med. Konto er valgfritt. Uten konto virker appen akkurat som før, og Sammen-fanen viser bare en side for å lage konto.
+
+- **Innlogging** skjer med en engangskode på e-post, uten passord. En lenke ville åpnet seg i Safari og logget inn der, ikke i hjemskjermappen.
+- **Brukernavn** velges første gang. Venner legges til ved å søke på brukernavn, og den andre må godta.
+- **To typer timer:** fast tid (andre melder seg på) og tidsvindu (andre foreslår et tidspunkt). Når du velger et forslag, blir timen fast, og de som foreslo det, står som påmeldt.
+- **Økt på timen** er valgfritt: bare trene samtidig, en metcon fra øktbanken eller fritekst.
+- **Nytt:** Fanen viser et tall for nye forslag, påmeldinger, timer og venneforespørsler når appen åpnes. Det er ingen push-varsler.
+- **Bare dette lagres i skyen** (Supabase, EU): e-post, brukernavn, navn, venner, timer, påmeldinger og forslag. Treningsloggen blir på telefonen. Under **Mer → Konto for Sammen** kan du logge ut eller slette kontoen.
+- **Tilgang:** Reglene i databasen sørger for at bare venner ser timene dine. SQL-en ligger i `supabase/migrations/`.
+
+**Oppsett i Supabase-dashbordet (én gang):** Under *Authentication → Emails (Email Templates)* må malene **Magic Link** og **Confirm signup** inneholde `{{ .Token }}`, så e-posten sender en kode i stedet for bare en lenke. Gratisprosjekter settes på pause etter en uke uten bruk og må da startes igjen i dashbordet.
+
 ## Pete Plan
 
 Et fast kondisjonsvalg ved siden av øktbanken, på romaskin, ski eller sykkel. Kan slås av og på under **Mer → Pete Plan**.
@@ -45,7 +59,9 @@ Når du merker «Metcon i dag», velger en økt fra øktbanken eller logger en f
 |---|---|
 | `index.html` | Hele appen: utseende, programmer og logikk |
 | `manifest.json` | Navn, ikon og at appen skal åpne i fullskjerm |
-| `sw.js` | Service worker: lagrer filene så appen virker uten nett |
+| `sw.js` | Service worker: lagrer filene så appen virker uten nett. Svar fra Supabase lagres aldri. |
+| `supabase/migrations/` | Databasen for Sammen: tabeller, tilgangsregler og funksjoner |
+| `docs/superpowers/specs/` | Designdokumentet for Sammen |
 | `icon-*.png` | Ikoner til hjemskjermen |
 
 ## Slik får du den på iPhone (GitHub Pages, gratis)

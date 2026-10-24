@@ -3,7 +3,7 @@
 // Selve appen (index.html) hentes fra nettet hver gang den åpnes. Derfor trenger du IKKE endre noe
 // her når du oppdaterer appen. Det holder å øke APP_VERSION i index.html.
 // Øk SHELL under bare hvis du endrer logikken i denne filen eller listen over filer.
-const SHELL = 'stanga-shell-1';
+const SHELL = 'stanga-shell-2';
 const FILES = ['./', './index.html', './manifest.json', './okter.json', './icon-180.png', './icon-192.png', './icon-512.png'];
 
 // 1) Installasjon: legg alle filene i mellomlageret. cache:'reload' hopper over nettleserens
@@ -47,6 +47,9 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
+
+  // Svar fra Supabase (Sammen-fanen) skal aldri mellomlagres. De er personlige og endrer seg hele tiden.
+  if (url.hostname.endsWith('.supabase.co')) return;
 
   // 3a) Selve appen, og appens egen sjekk av ny versjon (som ber om cache:'no-cache'): nett først.
   if (req.mode === 'navigate' || (url.origin === location.origin && (req.cache === 'no-cache' || req.cache === 'reload'))) {

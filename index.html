@@ -185,7 +185,7 @@ textarea{width:100%;min-height:110px;background:var(--iron);border:1px solid var
 .rest-in button{border:0;background:var(--iron);color:var(--chalk);border-radius:8px;padding:9px 12px;font:600 14px var(--body);cursor:pointer}
 .tabs{flex:none;background:var(--iron);border-top:1px solid var(--line);
   padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}
-.tabs-in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
+.tabs-in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr)}
 .tab{appearance:none;background:none;border:0;color:var(--chalk-3);font:600 12px/1 var(--body);letter-spacing:.03em;
   display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 0 12px;cursor:pointer}
 .tab svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -443,6 +443,77 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
 .sess-note .pill{justify-self:start}
 .sess-t small{font-size:13px;color:var(--chalk-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
+/* Sammen */
+.tab{position:relative;font-size:11px}
+.tab-badge{position:absolute;top:5px;left:calc(50% + 6px);min-width:18px;height:18px;border-radius:9px;background:var(--miss);color:#fff;font:700 11px/18px var(--body);text-align:center;padding:0 5px}
+.quick.acc{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.sx-acts{display:flex;gap:8px;flex:none}
+.badge{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--miss);color:#fff;font:700 12px/1 var(--body);letter-spacing:0}
+.sx-h{display:flex;align-items:center;gap:8px}
+.av{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font:700 14px/1 var(--body)}
+.av.sm{width:24px;height:24px;font-size:10px}
+.sx-news{appearance:none;width:100%;text-align:left;font:inherit;color:var(--chalk);display:flex;align-items:center;gap:12px;background:var(--iron-2);border:1px solid var(--line);border-radius:14px;padding:12px 14px;cursor:pointer}
+.sx-news:active,.sx-card.own:active,.sx-hit:active{background:var(--iron-3)}
+.sx-news>span:not(.av){flex:1;display:grid;gap:2px;min-width:0}
+.sx-news b{font-weight:600;font-size:15px}
+.sx-news small{font-size:13px;color:var(--chalk-2)}
+.sx-news .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none}
+.sx-card{appearance:none;width:100%;text-align:left;font:inherit;color:var(--chalk);display:grid;gap:10px;background:var(--iron-2);border:1px solid var(--line);border-radius:16px;padding:14px 16px}
+.sx-card.own{border:2px solid var(--accent);padding:13px 15px;gap:6px;cursor:pointer}
+.sx-card.cancelled{opacity:.6}
+.sx-card .btn.sm{width:100%}
+.sx-hit{appearance:none;background:none;border:0;padding:0;margin:0;text-align:left;font:inherit;color:inherit;display:grid;gap:6px;cursor:pointer;border-radius:8px}
+.sx-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.sx-top .tag,.sx-hit .tag{margin:0}
+.sx-cnt{font-size:13px;font-weight:600;color:var(--amrap)}
+.sx-time{font:700 28px/1 var(--display);font-variant-numeric:tabular-nums}
+.sx-time.sm{font-size:24px}
+.sx-who{display:flex;align-items:center;gap:8px;font-size:14px}
+.sx-who b{font-weight:600}
+.tag.same{color:var(--amrap)}
+.sx-what{font-weight:600;font-size:16px}
+.sx-sub{font-size:13px;color:var(--chalk-2)}
+.sx-people{display:flex;flex-wrap:wrap;gap:12px}
+.sx-people>span{display:flex;align-items:center;gap:8px;font-size:15px}
+.sx-prop{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.sx-prop:last-child{border-bottom:0}
+.sx-prop>span:not(.sx-time):not(.av){flex:1;display:grid;gap:1px;min-width:0}
+.sx-prop b{font-weight:600}
+.sx-prop small{font-size:13px;color:var(--chalk-2);overflow-wrap:anywhere}
+.sx-prop .sx-time{font-size:24px}
+.sx-form{display:grid;gap:14px}
+.sx-form .lbl{display:grid;gap:6px}
+.sx-form p.lbl{margin:0 0 8px}
+.sx-form input[type=time],.sx-form .txt{width:100%;background:var(--iron);border:1px solid var(--line);border-radius:12px;color:var(--chalk);font:500 16px var(--body);padding:12px 14px;min-height:48px;letter-spacing:0;text-transform:none}
+.sx-form input[type=time]{font:700 24px/1 var(--display);-webkit-appearance:none;appearance:none}
+.sx-form textarea.txt{min-height:90px}
+.sx-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.sx-fs{border:0;margin:0;padding:0;min-width:0}
+.sx-fs legend{padding:0;margin-bottom:8px}
+.sx-radio{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line);min-height:56px;cursor:pointer}
+.sx-radio:last-child{border-bottom:0}
+.sx-radio input{width:20px;height:20px;accent-color:var(--accent);margin:0;flex:none}
+.sx-radio span{display:grid;gap:1px}
+.sx-radio b{font-weight:600;font-size:15px}
+.sx-radio small{font-size:13px;color:var(--chalk-2)}
+.seg2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;background:var(--iron-2);border-radius:12px;padding:4px}
+.seg2 button{min-height:48px;border:0;border-radius:9px;background:transparent;color:var(--chalk-2);display:grid;place-items:center;gap:2px;padding:6px;cursor:pointer}
+.seg2 button b{font:700 16px/1 var(--display);text-transform:uppercase;letter-spacing:.04em}
+.seg2 button small{font:500 11px var(--body)}
+.seg2 button[aria-pressed="true"]{background:var(--chalk);color:var(--iron)}
+.sx-search{display:flex;align-items:center;gap:8px;background:var(--iron-2);border:1px solid var(--line);border-radius:12px;padding:0 12px;min-height:48px}
+.sx-search:focus-within{border-color:var(--accent)}
+.sx-search input{flex:1;min-width:0;background:transparent;border:0;color:var(--chalk);font:500 16px var(--body);outline:none;padding:12px 0}
+.sx-list{border:1px solid var(--line);border-radius:14px;background:var(--iron-2);overflow:hidden}
+.sx-row{display:flex;align-items:center;gap:10px;padding:10px 12px 10px 14px;border-bottom:1px solid var(--line)}
+.sx-row:last-child{border-bottom:0}
+.sx-row>span:not(.av){flex:1;display:grid;gap:1px;min-width:0}
+.sx-row b{font-weight:600;font-size:15px}
+.sx-row small{font-size:13px;color:var(--chalk-2)}
+.sx-row .st{flex:none;font-size:13px;font-weight:600;color:var(--chalk-2)}
+.sx-row .st.ok{color:var(--ok)}
+.sx-row .btn.sm{padding:10px 12px;font-size:15px}
+
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -459,6 +530,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
 <nav class="tabs" aria-label="Faner"><div class="tabs-in">
   <button class="tab" data-a="tab:today"><svg viewBox="0 0 24 24"><path d="M2 12h20M5 8v8M8 6v12M16 6v12M19 8v8"/></svg>Økt</button>
   <button class="tab" data-a="tab:programs"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h10"/></svg>Programmer</button>
+  <button class="tab" data-a="tab:together"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c.6-3.2 3-5 6-5s5.4 1.8 6 5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2c2.6.2 4.4 1.8 5 4.8"/></svg>Sammen<span class="tab-badge" id="sxBadge" hidden></span></button>
   <button class="tab" data-a="tab:log"><svg viewBox="0 0 24 24"><path d="M3 19h18M5 15l4-4 4 3 6-7"/></svg>Logg</button>
   <button class="tab" data-a="tab:more"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg>Mer</button>
 </div></nav>
@@ -474,7 +546,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 26;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 27;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -2222,6 +2294,7 @@ function vMore(){
         : `<button class="btn ghost sm" data-a="confirm:quit">Avslutt program</button>`}`
       : `<p class="muted">Ingen program er aktivt.</p>`}</div>
     ${p ? swapRows(p, S.active) : ''}
+    ${vSxAccount()}
     <h3>Sikkerhetskopi</h3>
     <div class="box">
       <p class="small muted">Dataene ligger bare på denne telefonen. Kopier teksten under og lagre den i Notater eller iCloud Drive av og til.</p>
@@ -2243,6 +2316,7 @@ function render(){
   if (ui.plan) { const v = vPlan(); if (ui.plan) { $('#view').innerHTML = h + v; return; } }
   if (ui.tab === 'today') h += vToday();
   else if (ui.tab === 'programs') h += ui.detail === 'guide' ? vGuide() : ui.detail ? vDetail(prog(ui.detail)) : vPrograms();
+  else if (ui.tab === 'together') h += vTogether();
   else if (ui.tab === 'log') h += vLog();
   else h += vMore();
   $('#view').innerHTML = h;
@@ -2325,12 +2399,449 @@ function toTop(){ const sc = $('#scroller'); if (sc) sc.scrollTop = 0; }
 let toastT;
 function toast(msg){ const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 2200); }
 
+/* ---------- Trene sammen: konto, venner og timer i Supabase ----------
+   Bare dette ligger i skyen: brukernavn, venner, timer, påmeldinger og tidsforslag. Treningsloggen blir på telefonen.
+   Konto er valgfritt. Innlogging skjer med engangskode på e-post, fordi en lenke åpner seg i Safari
+   og ikke i hjemskjermappen (de har hver sin lagring).
+   Tilgangen styres av reglene i databasen: du ser bare timene til venner. Nøkkelen under er den offentlige. */
+const SB_URL = 'https://ueqteavqpityrmuczkoc.supabase.co', SB_KEY = 'sb_publishable_PqNVw0QF3nfnLnYN9VrcNg_nhNcay9O';
+const AUTH_KEY = 'stanga.auth';
+const FIXED_LEN = 2 * 3600e3;   // en time med fast tid regnes som to timer lang
+let auth = (() => { try { return JSON.parse(localStorage.getItem(AUTH_KEY)) || null; } catch(e) { return null; } })();
+function saveAuth(a){ auth = a; try { a ? localStorage.setItem(AUTH_KEY, JSON.stringify(a)) : localStorage.removeItem(AUTH_KEY); } catch(e) {} }
+const setSession = d => saveAuth({access_token:d.access_token, refresh_token:d.refresh_token,
+  expires_at: d.expires_at || Math.floor(Date.now()/1000) + d.expires_in, user:{id:d.user.id, email:d.user.email}});
+
+async function sbFetch(path, opt = {}){
+  const h = Object.assign({apikey: SB_KEY, 'Content-Type': 'application/json'}, opt.headers);
+  if (opt.auth !== false && auth) { await freshToken(); if (auth) h.Authorization = 'Bearer ' + auth.access_token; }
+  const res = await fetch(SB_URL + path, {method: opt.method || 'GET', headers: h, cache: 'no-store',
+    body: opt.body === undefined ? undefined : JSON.stringify(opt.body)});
+  const txt = await res.text(); let data = null;
+  try { data = txt ? JSON.parse(txt) : null; } catch(e) {}
+  if (!res.ok) {
+    const err = new Error((data && (data.msg || data.message || data.error_description)) || res.statusText || 'Feil fra serveren');
+    err.status = res.status; err.code = data && (data.code || data.error_code); throw err;
+  }
+  return data;
+}
+// Tilgangsnøkkelen varer en time. Den fornyes like før den går ut.
+let refreshing = null;
+function freshToken(){
+  if (!auth || auth.expires_at - 60 > Date.now()/1000) return Promise.resolve();
+  refreshing = refreshing || sbFetch('/auth/v1/token?grant_type=refresh_token', {method:'POST', auth:false, body:{refresh_token: auth.refresh_token}})
+    .then(setSession, e => { if (e.status === 400 || e.status === 401) { saveAuth(null); sxReset(); } throw e; })
+    .finally(() => refreshing = null);
+  return refreshing;
+}
+const db = (table, q, opt) => sbFetch('/rest/v1/' + table + (q ? '?' + q : ''), opt);
+const rpc = (fn, body) => sbFetch('/rest/v1/rpc/' + fn, {method:'POST', body});
+const inList = ids => 'in.(' + [...new Set(ids)].join(',') + ')';
+const uid = () => auth && auth.user.id;
+
+const SX = {loaded:false, loading:null, at:0, me:null, fr:[], ppl:{}, sess:[], part:[], prop:[], seenAt:0, prev:0, err:''};
+function sxReset(){ Object.assign(SX, {loaded:false, at:0, me:null, fr:[], ppl:{}, sess:[], part:[], prop:[], seenAt:0, prev:0, err:''}); ui.sxView = 'list'; sxBadge(); }
+
+// Hent alt Sammen-fanen trenger: profilen din, venner, kommende timer, påmeldinger, forslag og navnene på de involverte
+function sxLoad(){
+  if (!auth) return Promise.resolve();
+  if (SX.loading) return SX.loading;
+  SX.loading = (async () => {
+    try {
+      const me = uid();
+      const [prof, fr, seen] = await Promise.all([
+        db('profiles', 'select=id,username,display_name&id=eq.' + me),
+        db('friendships', 'select=*'),
+        db('seen', 'select=last_seen_at')]);
+      SX.me = prof[0] || null;
+      if (SX.me) {
+        if (!seen.length) await db('seen', '', {method:'POST', body:{user_id: me}});
+        SX.seenAt = seen.length ? Date.parse(seen[0].last_seen_at) : Date.now();
+        const now = Date.now(), iso = t => new Date(t).toISOString();
+        const sess = await db('sessions', 'select=*&order=starts_at&or=' +
+          encodeURIComponent(`(ends_at.gte.${iso(now)},and(ends_at.is.null,starts_at.gte.${iso(now - FIXED_LEN)}))`));
+        const ids = sess.map(s => s.id);
+        const [part, prop] = ids.length ? await Promise.all([
+          db('participants', 'select=*&session_id=' + inList(ids)),
+          db('proposals', 'select=*&order=proposed_at&session_id=' + inList(ids))]) : [[], []];
+        const people = [...fr.map(f => f.requester), ...fr.map(f => f.addressee), ...sess.map(s => s.owner),
+          ...part.map(p => p.user_id), ...prop.map(p => p.user_id)].filter(x => x !== me);
+        const ppl = people.length ? await db('profiles', 'select=id,username,display_name&id=' + inList(people)) : [];
+        SX.ppl = Object.fromEntries(ppl.map(p => [p.id, p])); SX.ppl[me] = SX.me;
+        Object.assign(SX, {fr, sess, part, prop});
+      }
+      SX.loaded = true; SX.err = ''; SX.at = Date.now();
+    } catch(e) {
+      SX.err = sxErr(e);
+    } finally {
+      SX.loading = null; sxBadge();
+      if (ui.tab === 'together' && !isTyping()) render();
+    }
+  })();
+  return SX.loading;
+}
+// Når fanen åpnes: hent på nytt, vis det som er nytt siden sist, og merk det som sett
+async function sxOpen(){
+  if (!auth) return;
+  if (!BANK) loadBank();
+  await sxLoad();
+  if (!SX.me || SX.err) return;
+  SX.prev = SX.seenAt; sxSeen();
+  if (ui.tab === 'together' && !isTyping()) render();
+}
+// Merk alt fram til nå som sett, både her og på kontoen, så tallet i fanen nullstilles
+function sxSeen(){
+  SX.seenAt = Date.now(); sxBadge();
+  db('seen', 'user_id=eq.' + uid(), {method:'PATCH', body:{last_seen_at: new Date().toISOString()}}).catch(() => {});
+}
+function sxErr(e){
+  if (!navigator.onLine || /fetch|network|load failed/i.test(e.message || '')) return 'Ingen kontakt med serveren. Sjekk nettet og prøv igjen.';
+  if (e.code === '23505') return 'Det finnes allerede.';
+  if (e.status === 401 || e.status === 403 || e.code === '42501') return 'Du har ikke tilgang til dette.';
+  return e.message || 'Noe gikk galt.';
+}
+
+const pad = n => String(n).padStart(2, '0');
+const hm = t => { const d = new Date(t); return pad(d.getHours()) + ':' + pad(d.getMinutes()); };
+const dayStart = t => { const d = new Date(t); d.setHours(0,0,0,0); return d; };
+const dayDiff = t => Math.round((dayStart(t) - dayStart(Date.now())) / 864e5);
+function dayLabel(t){
+  const n = dayDiff(t); if (n === 0) return 'I dag'; if (n === 1) return 'I morgen';
+  const s = new Date(t).toLocaleDateString('nb-NO', {weekday:'long', day:'numeric', month:'short'});
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+const sxEnd = s => s.ends_at ? Date.parse(s.ends_at) : Date.parse(s.starts_at) + FIXED_LEN;
+const sxTime = s => s.kind === 'window' ? hm(s.starts_at) + '–' + hm(s.ends_at) : hm(s.starts_at);
+const uname = id => SX.ppl[id] ? '@' + SX.ppl[id].username : 'en venn';
+// Initialer i en farget sirkel. Fargen følger brukernavnet, så samme person har alltid samme farge.
+const AV = [['#2E9E5B','#06150C'],['#E3B42B','#2A2005'],['#2F6FDB','#FFFFFF'],['#D93A2F','#FFFFFF'],['#A9AEB6','#111317'],['#B8413A','#FFFFFF']];
+function av(id, sm){
+  const p = SX.ppl[id] || {}, name = p.display_name || p.username || '?';
+  const ini = name.split(/[\s._]+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?';
+  let h = 0; for (const c of (p.username || '')) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  const [bg, ink] = AV[h % AV.length];
+  return `<span class="av${sm ? ' sm' : ''}" style="background:${bg};color:${ink}" aria-hidden="true">${esc(ini)}</span>`;
+}
+function sxWorkout(s){
+  if (s.workout_kind === 'bank') {
+    const w = BANK && BANK.find(x => x.i === s.workout_ref);
+    return {lbl:'Samme økt', txt: w ? 'Metcon: ' + wodTitle(w) : 'Metcon fra øktbanken', body: w ? w.x : ''};
+  }
+  if (s.workout_kind === 'text') return {lbl:'Samme økt', txt: s.workout_text || '', body:''};
+  return {lbl:'Bare trene samtidig', txt:'Bare trene samtidig', body:''};
+}
+
+// Det som er nytt siden sist: forslag og påmeldinger på dine timer, nye timer fra venner og venneforespørsler.
+// Forespørsler du ikke har svart på, står alltid her til du har svart.
+function sxNews(since){
+  const me = uid(), at = x => Date.parse(x.created_at), out = [];
+  const mine = new Map(SX.sess.filter(s => s.owner === me).map(s => [s.id, s]));
+  const sub = s => 'Din time ' + dayLabel(s.starts_at).toLowerCase() + ', ' + sxTime(s);
+  SX.fr.forEach(f => {
+    if (f.addressee === me && f.status === 'pending') out.push({at: at(f), who: f.requester, txt: 'vil legge deg til', sub: 'Venneforespørsel'});
+    if (f.requester === me && f.status === 'accepted' && f.accepted_at && Date.parse(f.accepted_at) > since) out.push({at: Date.parse(f.accepted_at), who: f.addressee, txt: 'godtok forespørselen din', sub: 'Dere er venner nå'});
+  });
+  SX.prop.forEach(p => { const s = mine.get(p.session_id); if (s && at(p) > since) out.push({at: at(p), who: p.user_id, txt: 'foreslår ' + hm(p.proposed_at), sub: sub(s), sid: s.id}); });
+  SX.part.forEach(p => { const s = mine.get(p.session_id); if (s && p.user_id !== me && at(p) > since) out.push({at: at(p), who: p.user_id, txt: 'meldte seg på', sub: sub(s), sid: s.id}); });
+  SX.sess.forEach(s => { if (s.owner !== me && !s.cancelled_at && at(s) > since && sxEnd(s) > Date.now())
+    out.push({at: at(s), who: s.owner, txt: 'la ut en time', sub: dayLabel(s.starts_at) + ', ' + sxTime(s), sid: s.id}); });
+  return out.sort((a, b) => b.at - a.at);
+}
+function sxBadge(){
+  const el = $('#sxBadge'); if (!el) return;
+  const n = auth && SX.me ? sxNews(SX.seenAt).length : 0;
+  el.textContent = n > 9 ? '9+' : n; el.hidden = !n;
+  el.setAttribute('aria-label', n + ' nye');
+}
+
+/* ---------- Sammen: visningene ---------- */
+function vTogether(){
+  if (ui.bank && ui.bankFor === 'sx') return vBank();
+  if (!auth) return vSxSignup();
+  if (!SX.loaded) return `<header class="head"><p class="eyebrow">Med vennene dine</p><h1>Sammen</h1></header>
+    ${SX.err ? `<div class="warn">${esc(SX.err)}</div><button class="btn ghost" data-a="sxretry">Prøv igjen</button>` : '<p class="muted">Henter …</p>'}`;
+  if (!SX.me) return vSxUsername();
+  const v = ui.sxView || 'list';
+  if (v === 'form') return vSxForm();
+  if (v === 'friends') return vSxFriends();
+  if (v.startsWith('s:')) return vSxSess(v.slice(2));
+  return vSxList();
+}
+
+function vSxSignup(){
+  const sent = ui.sxEmail && ui.sxSent;
+  return `<header class="head"><p class="eyebrow">Valgfritt</p><h1>Sammen</h1>
+      <p class="muted">Legg ut når du skal trene, og la vennene dine bli med. Det krever en konto. Resten av appen virker som før uten.</p></header>
+    <section class="box sx-form">
+      ${sent ? `<p>Vi sendte en kode til <b>${esc(ui.sxEmail)}</b>. Skriv den inn her.</p>
+        <label class="lbl" for="sxC">Kode fra e-posten</label>
+        <input id="sxC" class="txt" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="123456">
+        <button class="btn" data-a="sxverify" ${ui.sxBusy ? 'disabled' : ''}>Logg inn</button>
+        <div class="row"><button class="link" data-a="sxsend">Send ny kode</button><button class="link" data-a="sxreset">Bruk en annen e-post</button></div>`
+      : `<label class="lbl" for="sxE">E-post</label>
+        <input id="sxE" class="txt" type="email" autocomplete="email" autocapitalize="none" placeholder="navn@eksempel.no" value="${esc(ui.sxEmail || '')}">
+        <button class="btn" data-a="sxsend" ${ui.sxBusy ? 'disabled' : ''}>Send kode</button>`}
+      ${ui.sxMsg ? `<p class="small warn-t" role="alert">${esc(ui.sxMsg)}</p>` : ''}
+    </section>
+    <p class="muted small">Du får en engangskode på e-post, uten passord. Bare brukernavn, venner og timer lagres, hos Supabase i EU. Treningsloggen din blir på telefonen. Kontoen kan slettes under Mer.</p>`;
+}
+
+function vSxUsername(){
+  const guess = (auth.user.email || '').split('@')[0].toLowerCase().replace(/[^a-z0-9._]/g, '').slice(0, 20);
+  return `<header class="head"><p class="eyebrow">Nesten ferdig</p><h1>Velg brukernavn</h1>
+      <p class="muted">Vennene dine finner deg på brukernavnet.</p></header>
+    <section class="box sx-form">
+      <label class="lbl" for="sxU">Brukernavn</label>
+      <div class="sx-search"><span class="muted">@</span><input id="sxU" type="text" autocapitalize="none" autocomplete="username" maxlength="20" value="${esc(ui.sxU || guess)}"></div>
+      <p class="small muted">3–20 tegn: små bokstaver, tall, punktum og understrek.</p>
+      <label class="lbl" for="sxN">Navn (valgfritt)</label>
+      <input id="sxN" class="txt" type="text" maxlength="40" autocomplete="name" placeholder="Fornavn eller kallenavn" value="${esc(ui.sxN || '')}">
+      <button class="btn" data-a="sxuser" ${ui.sxBusy ? 'disabled' : ''}>Lagre</button>
+      ${ui.sxMsg ? `<p class="small warn-t" role="alert">${esc(ui.sxMsg)}</p>` : ''}
+    </section>`;
+}
+
+function sxCard(s){
+  const me = uid(), own = s.owner === me, w = sxWorkout(s);
+  const ps = SX.part.filter(p => p.session_id === s.id), props = SX.prop.filter(p => p.session_id === s.id);
+  const others = ps.filter(p => p.user_id !== me && p.user_id !== s.owner).map(p => uname(p.user_id));
+  const joined = ps.some(p => p.user_id === me), myProp = props.find(p => p.user_id === me);
+  const cancelled = !!s.cancelled_at;
+  if (own) return `<button class="sx-card own${cancelled ? ' cancelled' : ''}" data-a="sxopen:${s.id}">
+      <span class="sx-top"><span class="tag">${cancelled ? 'Avlyst' : 'Din time' + (s.kind === 'window' ? ' · tidsvindu' : '')}</span>
+        <span class="sx-cnt">${cancelled ? '' : s.kind === 'window' ? (props.length ? props.length + ' forslag' : 'Ingen forslag ennå') : (others.length ? others.length + ' med' : 'Ingen påmeldt ennå')}</span></span>
+      <span class="sx-time">${sxTime(s)}</span>
+      <span class="sx-sub">${esc(w.txt)}${s.place ? ' · ' + esc(s.place) : ''}</span>
+    </button>`;
+  const who = others.length ? (others.length > 2 ? others.slice(0, 2).join(', ') + ' og ' + (others.length - 2) + ' til' : others.join(' og ')) + ' er med' : '';
+  return `<article class="sx-card${cancelled ? ' cancelled' : ''}">
+      <button class="sx-hit" data-a="sxopen:${s.id}" aria-label="Åpne timen til ${uname(s.owner)}">
+        <span class="sx-top"><span class="sx-who">${av(s.owner, 1)}<b>${uname(s.owner)}</b></span><span class="sx-time sm">${sxTime(s)}</span></span>
+        <span class="tag${s.workout_kind === 'none' ? '' : ' same'}">${cancelled ? 'Avlyst' : (s.kind === 'window' ? 'Tidsvindu · ' : '') + w.lbl}</span>
+        ${s.workout_kind !== 'none' ? `<span class="sx-what">${esc(w.txt)}</span>` : ''}
+        ${s.place || who ? `<span class="sx-sub">${[s.place && esc(s.place), who].filter(Boolean).join(' · ')}</span>` : ''}
+      </button>
+      ${cancelled ? '' : s.kind === 'fixed'
+        ? (joined ? `<button class="btn ghost sm" data-a="sxleave:${s.id}">Meld av</button>` : `<button class="btn sm" data-a="sxjoin:${s.id}">Bli med</button>`)
+        : `<button class="btn ghost sm" data-a="sxopen:${s.id}">${myProp ? 'Ditt forslag: ' + hm(myProp.proposed_at) : 'Foreslå tid'}</button>`}
+    </article>`;
+}
+
+function vSxList(){
+  const me = uid(), news = sxNews(SX.prev || SX.seenAt), now = Date.now();
+  const list = SX.sess.filter(s => sxEnd(s) > now &&
+    (!s.cancelled_at || s.owner === me || SX.part.some(p => p.session_id === s.id && p.user_id === me)));
+  const friends = SX.fr.filter(f => f.status === 'accepted').length;
+  let h = `<header class="head h-row"><div><p class="eyebrow">Med vennene dine</p><h1>Sammen</h1></div>
+      <div class="sx-acts"><button class="quick" data-a="sxview:friends">Venner</button><button class="quick acc" data-a="sxnew">+ Ny time</button></div></header>`;
+  if (SX.err) h += `<div class="warn">${esc(SX.err)}</div>`;
+  if (news.length) h += `<h3 class="sx-h">Nytt <span class="badge">${news.length}</span></h3>
+    <div class="list">${news.slice(0, 8).map(n => `<button class="sx-news" data-a="${n.sid ? 'sxopen:' + n.sid : 'sxview:friends'}">
+      ${av(n.who)}<span><b>${uname(n.who)} ${n.txt}</b><small>${esc(n.sub)}</small></span><i class="dot" aria-hidden="true"></i></button>`).join('')}</div>`;
+  if (!list.length) return h + `<div class="empty"><h2>Ingen timer ennå</h2>
+      <p class="muted">${friends ? 'Legg ut når du skal trene, så kan vennene dine bli med.' : 'Start med å legge til vennene dine på brukernavn. Så kan dere se hverandres timer.'}</p>
+      <button class="btn" data-a="${friends ? 'sxnew' : 'sxview:friends'}">${friends ? 'Legg ut en time' : 'Finn venner'}</button></div>`;
+  let day = '';
+  list.forEach(s => { const d = dayLabel(s.starts_at); if (d !== day) { day = d; h += `<h3>${d}</h3>`; } h += sxCard(s); });
+  return h;
+}
+
+// Skjemaet for ny time, og for å endre en du har lagt ut
+function sxFormInit(s){
+  const next = () => { const d = new Date(Date.now() + 30 * 6e4); d.setMinutes(d.getMinutes() < 30 ? 30 : 60, 0, 0); return hm(d); };
+  ui.sxForm = s
+    ? {id:s.id, kind:s.kind, day: Math.max(0, dayDiff(s.starts_at)), from: hm(s.starts_at), to: s.ends_at ? hm(s.ends_at) : '',
+       place: s.place || '', wk: s.workout_kind, ref: s.workout_ref, text: s.workout_text || ''}
+    : {kind:'fixed', day:0, from: next(), to:'', place: S.settings.sxPlace || '', wk:'none', ref:null, text:''};
+  ui.sxMsg = '';
+}
+function vSxForm(){
+  const f = ui.sxForm, days = Array.from({length:7}, (_, i) => { const d = new Date(); d.setDate(d.getDate() + i); return i === 0 ? 'I dag' : i === 1 ? 'I morgen' : d.toLocaleDateString('nb-NO', {weekday:'short', day:'numeric'}).replace('.', ''); });
+  const w = f.ref && BANK && BANK.find(x => x.i === f.ref);
+  return `<button class="link" data-a="sxview:${f.id ? 's:' + f.id : 'list'}">‹ Avbryt</button>
+    <header class="head"><h1>${f.id ? 'Endre time' : 'Ny time'}</h1></header>
+    <div class="sx-form">
+      <div class="seg2" role="group" aria-label="Type time">
+        <button data-a="sxf:kind:fixed" aria-pressed="${f.kind === 'fixed'}"><b>Fast tid</b><small>Andre melder seg på</small></button>
+        <button data-a="sxf:kind:window" aria-pressed="${f.kind === 'window'}"><b>Tidsvindu</b><small>Andre foreslår tid</small></button>
+      </div>
+      <div><p class="lbl">Dag</p><div class="filt" role="group" aria-label="Dag">${days.map((d, i) => `<button data-a="sxf:day:${i}" aria-pressed="${f.day === i}">${d}</button>`).join('')}</div></div>
+      <div class="${f.kind === 'window' ? 'sx-2' : ''}">
+        <label class="lbl">${f.kind === 'window' ? 'Fra' : 'Klokka'}<input type="time" data-sxf="from" value="${esc(f.from)}"></label>
+        ${f.kind === 'window' ? `<label class="lbl">Til<input type="time" data-sxf="to" value="${esc(f.to)}"></label>` : ''}
+      </div>
+      <label class="lbl">Sted<input class="txt" type="text" data-sxf="place" maxlength="80" placeholder="For eksempel treningssenteret" value="${esc(f.place)}"></label>
+      <fieldset class="sx-fs"><legend class="lbl">Økt</legend><div class="sx-list">
+        ${[['none','Bare trene samtidig','Hver kjører sitt eget'],['bank','Metcon fra øktbanken','Alle ser økta og kan kjøre den'],['text','Skriv selv','For eksempel «tung knebøy»']].map(([k, t, s]) =>
+          `<label class="sx-radio"><input type="radio" name="sxwk" data-sxf="wk" value="${k}" ${f.wk === k ? 'checked' : ''}><span><b>${t}</b><small>${s}</small></span></label>`).join('')}
+      </div></fieldset>
+      ${f.wk === 'bank' ? `<div class="box">${w ? `<p><b>${esc(wodTitle(w))}</b></p><pre class="wodtxt">${esc(w.x)}</pre>` : '<p class="muted small">Ingen metcon valgt ennå.</p>'}
+        <button class="btn ghost sm" data-a="sxbank">${w ? 'Velg en annen' : 'Velg fra øktbanken'}</button></div>` : ''}
+      ${f.wk === 'text' ? `<label class="lbl">Økta<textarea class="txt" data-sxf="text" maxlength="300" placeholder="Hva skal dere kjøre?">${esc(f.text)}</textarea></label>` : ''}
+      <p class="muted small">Synlig for vennene dine.</p>
+      ${ui.sxMsg ? `<p class="small warn-t" role="alert">${esc(ui.sxMsg)}</p>` : ''}
+      <button class="btn" data-a="sxsave" ${ui.sxBusy ? 'disabled' : ''}>${f.id ? 'Lagre endringer' : 'Legg ut time'}</button>
+    </div>`;
+}
+async function sxSave(){
+  const f = ui.sxForm, d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() + f.day);
+  const at = v => { if (!/^\d{1,2}:\d{2}/.test(v || '')) return null; const [h, m] = v.split(':').map(Number); const x = new Date(d); x.setHours(h, m, 0, 0); return x; };
+  const start = at(f.from), end = f.kind === 'window' ? at(f.to) : null;
+  if (!start) throw new Error('Velg et klokkeslett.');
+  if (f.kind === 'window' && (!end || end <= start)) throw new Error('Slutten av vinduet må være etter starten.');
+  if ((end || new Date(+start + FIXED_LEN)) <= new Date()) throw new Error('Tidspunktet har allerede vært.');
+  if (f.wk === 'bank' && !f.ref) throw new Error('Velg en metcon fra øktbanken, eller velg et annet alternativ.');
+  if (f.wk === 'text' && !f.text.trim()) throw new Error('Skriv hva dere skal kjøre.');
+  const body = {kind: f.kind, starts_at: start.toISOString(), ends_at: end ? end.toISOString() : null, place: f.place.trim() || null,
+    workout_kind: f.wk, workout_ref: f.wk === 'bank' ? f.ref : null, workout_text: f.wk === 'text' ? f.text.trim() : null};
+  if (f.id) await db('sessions', 'id=eq.' + f.id, {method:'PATCH', body});
+  else await db('sessions', '', {method:'POST', body});
+  S.settings.sxPlace = body.place || ''; save();
+  ui.sxView = f.id ? 's:' + f.id : 'list'; ui.sxForm = null;
+}
+
+function vSxSess(id){
+  const s = SX.sess.find(x => x.id === id);
+  if (!s) return `<button class="link" data-a="sxview:list">‹ Sammen</button><p class="muted">Timen finnes ikke lenger.</p>`;
+  const me = uid(), own = s.owner === me, w = sxWorkout(s), cancelled = !!s.cancelled_at;
+  const ps = SX.part.filter(p => p.session_id === s.id && p.user_id !== s.owner), props = SX.prop.filter(p => p.session_id === s.id);
+  const joined = ps.some(p => p.user_id === me), myProp = props.find(p => p.user_id === me);
+  let h = `<button class="link" data-a="sxview:list">‹ Sammen</button>
+    <header class="head"><p class="eyebrow" style="color:var(--accent)">${own ? 'Din time' : 'Time med ' + uname(s.owner)} · ${dayLabel(s.starts_at).toLowerCase()}${s.kind === 'window' ? ' · tidsvindu' : ''}</p>
+      <h1 style="text-transform:none">${sxTime(s)}</h1>${s.place ? `<p class="muted">${esc(s.place)}</p>` : ''}</header>`;
+  if (cancelled) h += `<div class="warn">Timen er avlyst.</div>`;
+  h += `<section class="box"><span class="lbl">Økt</span><p><b>${esc(w.txt)}</b></p>${w.body ? `<pre class="wodtxt">${esc(w.body)}</pre>` : ''}</section>`;
+  if (s.kind === 'window' && !cancelled) {
+    const opts = props.map(p => `<div class="sx-prop">${av(p.user_id)}<span><b>${uname(p.user_id)}</b>${p.comment ? `<small>«${esc(p.comment)}»</small>` : ''}</span>
+        <span class="sx-time">${hm(p.proposed_at)}</span>
+        ${own ? `<button class="btn sm" data-a="sxpick:${p.id}">Velg</button>` : ''}</div>`).join('');
+    h += `<h3>Forslag til tidspunkt</h3>`;
+    h += props.length ? `<section class="box" style="gap:0;padding-block:4px">${opts}</section>` : `<p class="muted small">${own ? 'Ingen forslag ennå. Vennene dine kan foreslå et tidspunkt innenfor vinduet.' : 'Ingen forslag ennå.'}</p>`;
+    if (own && props.length) h += `<p class="muted small">Når du velger et tidspunkt, blir timen fast, og de som foreslo det, står som påmeldt. De kan melde seg av hvis tiden ikke passer.</p>`;
+    if (!own) h += myProp
+      ? `<div class="row"><button class="btn ghost" data-a="sxunprop:${s.id}">Trekk forslaget mitt (${hm(myProp.proposed_at)})</button></div>`
+      : `<section class="box sx-form"><span class="lbl">Ditt forslag</span>
+          <div class="sx-2"><label class="lbl">Tidspunkt<input id="sxPT" type="time"${dayDiff(s.ends_at) === dayDiff(s.starts_at) ? ` min="${hm(s.starts_at)}" max="${hm(s.ends_at)}"` : ''} value="${hm(s.starts_at)}"></label>
+          <label class="lbl">Kommentar<input id="sxPC" class="txt" type="text" maxlength="120" placeholder="Valgfritt"></label></div>
+          <button class="btn" data-a="sxprop:${s.id}" ${ui.sxBusy ? 'disabled' : ''}>Foreslå</button></section>`;
+  }
+  h += `<h3>Med på timen</h3><div class="sx-people"><span>${av(s.owner)}${own ? 'Deg' : uname(s.owner)}</span>${ps.map(p => `<span>${av(p.user_id)}${p.user_id === me ? 'Deg' : uname(p.user_id)}</span>`).join('')}</div>`;
+  if (own) {
+    if (cancelled) h += `<button class="btn ghost" data-a="sxdel:${s.id}">Slett timen</button>`;
+    else h += `<div class="sx-form" style="gap:8px"><button class="btn ghost" data-a="sxedit:${s.id}">Endre time</button>
+      ${ui.confirm === 'sxc:' + s.id ? `<div class="row"><button class="btn danger sm" data-a="sxcancel:${s.id}">Ja, avlys</button><button class="btn ghost sm" data-a="cancel">Nei</button></div>`
+        : `<button class="btn danger" data-a="confirm:sxc:${s.id}">Avlys timen</button>`}</div>`;
+  } else if (s.kind === 'fixed' && !cancelled) {
+    h += joined ? `<button class="btn ghost" data-a="sxleave:${s.id}">Meld av</button>` : `<button class="btn" data-a="sxjoin:${s.id}">Bli med</button>`;
+  }
+  return h;
+}
+
+function sxResHTML(){
+  const me = uid(), r = ui.sxRes;
+  if (!r) return '';
+  if (!r.length) return `<p class="muted small">Ingen brukere funnet.</p>`;
+  return `<div class="sx-list">${r.map(p => {
+    SX.ppl[p.id] = SX.ppl[p.id] || p;
+    const f = SX.fr.find(x => (x.requester === p.id && x.addressee === me) || (x.requester === me && x.addressee === p.id));
+    const st = !f ? `<button class="btn sm" data-a="sxadd:${p.id}">Legg til</button>`
+      : f.status === 'accepted' ? '<span class="st ok">Venner</span>'
+      : f.requester === me ? '<span class="st">Sendt</span>' : `<button class="btn sm" data-a="sxaccept:${p.id}">Godta</button>`;
+    return `<div class="sx-row">${av(p.id)}<span><b>@${esc(p.username)}</b>${p.display_name ? `<small>${esc(p.display_name)}</small>` : ''}</span>${st}</div>`;
+  }).join('')}</div>`;
+}
+let sxQT = null;
+function sxSearch(q){
+  clearTimeout(sxQT);
+  q = q.trim().toLowerCase().replace(/^@/, '');
+  if (q.length < 2) { ui.sxRes = null; const el = $('#sxRes'); if (el) el.innerHTML = ''; return; }
+  sxQT = setTimeout(async () => {
+    try { ui.sxRes = await rpc('search_profiles', {q}); } catch(e) { ui.sxRes = null; toast(sxErr(e)); }
+    const el = $('#sxRes'); if (el) el.innerHTML = sxResHTML();
+  }, 250);
+}
+function vSxFriends(){
+  const me = uid();
+  const inc = SX.fr.filter(f => f.addressee === me && f.status === 'pending');
+  const out = SX.fr.filter(f => f.requester === me && f.status === 'pending');
+  const acc = SX.fr.filter(f => f.status === 'accepted').map(f => f.requester === me ? f.addressee : f.requester)
+    .sort((a, b) => uname(a).localeCompare(uname(b)));
+  const nextOf = id => { const s = SX.sess.find(x => x.owner === id && !x.cancelled_at && sxEnd(x) > Date.now()); return s ? 'Trener ' + dayLabel(s.starts_at).toLowerCase() + ' ' + sxTime(s) : ''; };
+  return `<button class="link" data-a="sxview:list">‹ Sammen</button>
+    <header class="head h-row"><h1>Venner</h1><span>Du er <b style="color:var(--chalk)">@${esc(SX.me.username)}</b></span></header>
+    <label class="lbl" for="sxQ">Legg til med brukernavn</label>
+    <div class="sx-search"><span class="muted">@</span><input id="sxQ" type="search" autocapitalize="none" autocomplete="off" spellcheck="false" placeholder="brukernavn" value="${esc(ui.sxQ || '')}"></div>
+    <div id="sxRes">${sxResHTML()}</div>
+    ${inc.length ? `<h3 class="sx-h">Forespørsler <span class="badge">${inc.length}</span></h3><div class="sx-list">${inc.map(f => `<div class="sx-row">${av(f.requester)}<span><b>${uname(f.requester)}</b><small>Vil legge deg til</small></span>
+        <button class="btn ghost sm" data-a="sxdecline:${f.requester}">Avslå</button><button class="btn sm" data-a="sxaccept:${f.requester}">Godta</button></div>`).join('')}</div>` : ''}
+    ${out.length ? `<h3>Sendt</h3><div class="sx-list">${out.map(f => `<div class="sx-row">${av(f.addressee)}<span><b>${uname(f.addressee)}</b><small>Venter på svar</small></span>
+        <button class="btn ghost sm" data-a="sxdecline:${f.addressee}">Angre</button></div>`).join('')}</div>` : ''}
+    <h3>Vennene dine · ${acc.length}</h3>
+    ${acc.length ? `<div class="sx-list">${acc.map(id => `<div class="sx-row">${av(id, 1)}<span><b>${uname(id)}</b>${nextOf(id) ? `<small>${nextOf(id)}</small>` : ''}</span>
+        ${ui.confirm === 'unf:' + id ? `<button class="btn danger sm" data-a="sxdecline:${id}">Fjern</button><button class="btn ghost sm" data-a="cancel">Nei</button>`
+          : `<button class="x" data-a="confirm:unf:${id}" aria-label="Fjern ${uname(id)} som venn">×</button>`}</div>`).join('')}</div>`
+      : '<p class="muted small">Ingen venner ennå. Søk etter brukernavnet til noen du kjenner.</p>'}`;
+}
+
+// Konto under Mer
+function vSxAccount(){
+  return `<h3>Konto for Sammen</h3>
+    <div class="box">${auth
+      ? `<p>${SX.me ? `Innlogget som <b>@${esc(SX.me.username)}</b>` : 'Innlogget'} <span class="muted">· ${esc(auth.user.email || '')}</span></p>
+        <button class="btn ghost sm" data-a="sxlogout">Logg ut</button>
+        ${ui.confirm === 'sxdelacc' ? `<p class="small">Brukernavn, venner, timer, påmeldinger og forslag slettes for godt. Treningsloggen på telefonen beholdes.</p>
+          <div class="row"><button class="btn danger sm" data-a="sxdelacc">Slett kontoen</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div>`
+          : `<button class="btn danger sm" data-a="confirm:sxdelacc">Slett konto</button>`}`
+      : `<p class="muted small">Ingen konto. Konto trengs bare for Sammen, der du kan trene sammen med venner.</p>`}
+      <p class="muted small">Personvern: Med konto lagres e-post, brukernavn, navn hvis du har skrevet det, venner, timer, påmeldinger og tidsforslag hos Supabase i EU (Irland). Bare vennene dine ser timene dine. Treningslogg, programmer og vekter sendes aldri. Sletter du kontoen, slettes alt dette.</p>
+    </div>`;
+}
+
+// Kjør en handling mot serveren, vis feil som melding, og hent på nytt etterpå
+async function sxDo(fn, okMsg){
+  if (ui.sxBusy) return;
+  ui.sxBusy = true;
+  try { await fn(); if (okMsg) toast(okMsg); ui.confirm = null; await sxLoad(); if (auth && SX.me && ui.tab === 'together') sxSeen(); }
+  catch(e) { toast(e.status || e.code ? sxErr(e) : (e.message || sxErr(e))); }
+  finally { ui.sxBusy = false; render(); }
+}
+async function sxSend(){
+  const el = $('#sxE'), email = (el ? el.value : ui.sxEmail || '').trim();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { ui.sxMsg = 'Skriv en gyldig e-postadresse.'; render(); return; }
+  ui.sxEmail = email; ui.sxMsg = ''; ui.sxBusy = true; render();
+  try { await sbFetch('/auth/v1/otp', {method:'POST', auth:false, body:{email, create_user:true}}); ui.sxSent = true; toast('Koden er sendt'); }
+  catch(e) { ui.sxMsg = e.status === 429 ? 'For mange forsøk. Vent litt og prøv igjen.' : sxErr(e); }
+  ui.sxBusy = false; render();
+}
+async function sxVerify(){
+  const token = ($('#sxC') || {}).value ? $('#sxC').value.replace(/\D/g, '') : '';
+  if (token.length < 6) { ui.sxMsg = 'Skriv inn koden fra e-posten.'; render(); return; }
+  ui.sxBusy = true; ui.sxMsg = ''; render();
+  try {
+    setSession(await sbFetch('/auth/v1/verify', {method:'POST', auth:false, body:{type:'email', email: ui.sxEmail, token}}));
+    ui.sxSent = false; ui.sxBusy = false; toast('Du er logget inn');
+    await sxOpen();
+  } catch(e) { ui.sxMsg = e.status === 400 || e.status === 403 ? 'Koden stemmer ikke eller har gått ut. Prøv igjen, eller send en ny kode.' : sxErr(e); }
+  ui.sxBusy = false; render();
+}
+async function sxUser(){
+  const u = ($('#sxU').value || '').trim().toLowerCase().replace(/^@/, ''), n = ($('#sxN').value || '').trim();
+  ui.sxU = u; ui.sxN = n;
+  if (!/^[a-z0-9._]{3,20}$/.test(u)) { ui.sxMsg = 'Brukernavnet må ha 3–20 tegn: små bokstaver, tall, punktum og understrek.'; render(); return; }
+  ui.sxBusy = true; ui.sxMsg = ''; render();
+  try { await db('profiles', '', {method:'POST', body:{id: uid(), username: u, display_name: n || null}}); ui.sxBusy = false; await sxOpen(); }
+  catch(e) { ui.sxMsg = e.code === '23505' ? 'Brukernavnet er tatt. Prøv et annet.' : sxErr(e); }
+  ui.sxBusy = false; render();
+}
+
 /* ---------- Handlinger ---------- */
 document.addEventListener('click', ev => {
   const b = ev.target.closest('[data-a]'); if (!b || b.disabled) return;
   const [a, ...r] = b.dataset.a.split(':');
   switch (a) {
-    case 'tab': ui.tab = r[0]; ui.detail = null; ui.plan = null; ui.confirm = null; ui.free = false; ui.bank = false; ui.wod = null; render(); toTop(); break;
+    case 'tab': ui.tab = r[0]; ui.detail = null; ui.plan = null; ui.confirm = null; ui.free = false; ui.bank = false; ui.wod = null;
+      if (r[0] === 'together') { ui.sxView = 'list'; sxOpen(); }
+      render(); toTop(); break;
     case 'open': ui.detail = r[0]; render(); toTop(); break;
     case 'back': ui.detail = null; render(); break;
     case 'activate': activate(r[0]); break;
@@ -2409,9 +2920,10 @@ document.addEventListener('click', ev => {
       const w = BANK.find(x => x.i === r[0]); if (!w) break;
       const pick = {id:w.i, navn:wodTitle(w), tekst:w.x, resultat:''};
       const guess = {type: mcGuess(w.x + ' ' + (w.n || '')), min: w.m || ''};   // forslag, kan endres
-      if (ui.bankFor === 'session' && S.draft) { S.draft.wod = pick; S.draft.metcon = true; S.draft.mc = Object.assign(guess, S.draft.mc && S.draft.mc.min ? S.draft.mc : {}); save(); }
+      if (ui.bankFor === 'sx' && ui.sxForm) { ui.sxForm.wk = 'bank'; ui.sxForm.ref = w.i; }
+      else if (ui.bankFor === 'session' && S.draft) { S.draft.wod = pick; S.draft.metcon = true; S.draft.mc = Object.assign(guess, S.draft.mc && S.draft.mc.min ? S.draft.mc : {}); save(); }
       else { ui.free = true; ui.freeWod = pick; ui.freeMc = true; ui.freeMcData = Object.assign(guess, ui.freeMcData && ui.freeMcData.min ? ui.freeMcData : {}); }
-      ui.bank = false; ui.wod = null; ui.wodRand = false; render(); toTop(); toast('Metcon valgt');
+      ui.bank = false; ui.wod = null; ui.wodRand = false; render(); toTop(); toast(ui.bankFor === 'sx' ? 'Metcon lagt til timen' : 'Metcon valgt');
       break;
     }
     case 'pp': {
@@ -2431,12 +2943,54 @@ document.addEventListener('click', ev => {
     case 'finish': finish(); break;
     case 'dismiss': ui.summary = null; render(); break;
     case 'skip': ui.rest = null; updateRest(); break;
+    case 'sxsend': sxSend(); break;
+    case 'sxverify': sxVerify(); break;
+    case 'sxreset': ui.sxSent = false; ui.sxMsg = ''; render(); break;
+    case 'sxuser': sxUser(); break;
+    case 'sxretry': sxOpen(); render(); break;
+    case 'sxview': ui.sxView = r.join(':'); ui.confirm = null; ui.sxRes = null; ui.sxQ = ''; render(); toTop(); break;
+    case 'sxopen': ui.sxView = 's:' + r[0]; ui.confirm = null; render(); toTop(); break;
+    case 'sxnew': sxFormInit(); ui.sxView = 'form'; render(); toTop(); break;
+    case 'sxedit': { const s0 = SX.sess.find(x => x.id === r[0]); if (s0) { sxFormInit(s0); ui.sxView = 'form'; render(); toTop(); } break; }
+    case 'sxf': ui.sxForm[r[0]] = r[0] === 'day' ? +r[1] : r[1]; render(); break;
+    case 'sxbank': openBank('sx'); break;
+    case 'sxsave': if (ui.sxBusy) break; ui.sxBusy = true; ui.sxMsg = ''; render();
+      sxSave().then(() => { toast(ui.sxView === 'list' ? 'Timen er lagt ut' : 'Endringene er lagret'); return sxLoad(); })
+        .catch(e => { ui.sxMsg = e.status || e.code ? sxErr(e) : e.message; })
+        .finally(() => { ui.sxBusy = false; render(); toTop(); });
+      break;
+    case 'sxjoin': sxDo(() => db('participants', '', {method:'POST', body:{session_id: r[0]}}), 'Du er med'); break;
+    case 'sxleave': sxDo(() => db('participants', 'session_id=eq.' + r[0] + '&user_id=eq.' + uid(), {method:'DELETE'}), 'Du er meldt av'); break;
+    case 'sxprop': {
+      const s0 = SX.sess.find(x => x.id === r[0]), t = ($('#sxPT') || {}).value, c = (($('#sxPC') || {}).value || '').trim();
+      if (!s0 || !/^\d{1,2}:\d{2}/.test(t || '')) { toast('Velg et tidspunkt'); break; }
+      const d0 = new Date(s0.starts_at), [hh, mm] = t.split(':').map(Number); d0.setHours(hh, mm, 0, 0);
+      if (d0 < new Date(s0.starts_at)) d0.setDate(d0.getDate() + 1);   // vinduet går over midnatt
+      if (d0 < new Date(s0.starts_at) || d0 > new Date(s0.ends_at)) { toast('Velg en tid mellom ' + sxTime(s0).replace('–', ' og ')); break; }
+      sxDo(() => db('proposals', '', {method:'POST', body:{session_id: s0.id, proposed_at: d0.toISOString(), comment: c || null}}), 'Forslaget er sendt');
+      break;
+    }
+    case 'sxunprop': sxDo(() => db('proposals', 'session_id=eq.' + r[0] + '&user_id=eq.' + uid(), {method:'DELETE'}), 'Forslaget er trukket'); break;
+    case 'sxpick': sxDo(() => rpc('pick_proposal', {pid: r[0]}), 'Tidspunktet er valgt'); break;
+    case 'sxcancel': sxDo(() => db('sessions', 'id=eq.' + r[0], {method:'PATCH', body:{cancelled_at: new Date().toISOString()}}), 'Timen er avlyst'); break;
+    case 'sxdel': ui.sxView = 'list'; sxDo(() => db('sessions', 'id=eq.' + r[0], {method:'DELETE'}), 'Timen er slettet'); break;
+    case 'sxadd': sxDo(() => db('friendships', '', {method:'POST', body:{addressee: r[0]}}), 'Forespørselen er sendt').then(() => { const el = $('#sxRes'); if (el) el.innerHTML = sxResHTML(); }); break;
+    case 'sxaccept': sxDo(() => db('friendships', 'requester=eq.' + r[0] + '&addressee=eq.' + uid(), {method:'PATCH', body:{status:'accepted', accepted_at: new Date().toISOString()}}), 'Dere er venner nå'); break;
+    case 'sxdecline': { const me = uid();
+      sxDo(() => db('friendships', 'or=' + encodeURIComponent(`(and(requester.eq.${me},addressee.eq.${r[0]}),and(requester.eq.${r[0]},addressee.eq.${me}))`), {method:'DELETE'}));
+      break; }
+    case 'sxlogout': {
+      const tok = auth && auth.access_token;
+      if (tok) fetch(SB_URL + '/auth/v1/logout', {method:'POST', headers:{apikey: SB_KEY, Authorization: 'Bearer ' + tok}}).catch(() => {});
+      saveAuth(null); sxReset(); ui.confirm = null; render(); toast('Du er logget ut'); break;
+    }
+    case 'sxdelacc': sxDo(async () => { await rpc('delete_account'); saveAuth(null); sxReset(); }, 'Kontoen er slettet'); break;
     case 'restadd': if (ui.rest) { const now = Date.now(); ui.rest.end = Math.max(ui.rest.end, now) + (+r[0])*1000; ui.rest.total = Math.max(ui.rest.total, (ui.rest.end - now)/1000); ui.rest.done = false; updateRest(); } break;
     case 'exopen': { const o = ui.exOpen = ui.exOpen || {}; o[r[0]] = !o[r[0]]; render(); break; }
     case 'wuopen': { const o = ui.wuOpen = ui.wuOpen || {}; o[r[0]] = r[1] !== '1'; render(); break; }
     case 'restscale': S.settings.restScale = +r[0]; save(); render(); break;
     case 'sound': S.settings.sound = !S.settings.sound; save(); unlockAudio(); render(); if (S.settings.sound) { beep(); toast('Lyd er på'); } break;
-    case 'confirm': ui.confirm = r[0]; render(); break;
+    case 'confirm': ui.confirm = r.join(':'); render(); break;
     case 'cancel': ui.confirm = null; render(); break;
     case 'quit': S.active = null; S.draft = null; ui.summary = null; ui.confirm = null; save(); render(); toast('Programmet er avsluttet'); break;
     case 'reset': S = fresh(); mergeCustom(); ui.summary = null; ui.confirm = null; ui.exportText = ''; save(); ui.tab = 'programs'; render(); toast('Alle data er slettet'); break;
@@ -2456,6 +3010,17 @@ document.addEventListener('click', ev => {
       break;
     }
   }
+});
+
+// Sammen: skjemafeltene for ny time lagres mens du skriver, så de overlever at skjermen tegnes på nytt
+document.addEventListener('input', ev => {
+  const t = ev.target;
+  if (t.dataset && t.dataset.sxf && ui.sxForm && t.type !== 'radio') ui.sxForm[t.dataset.sxf] = t.value;
+  if (t.id === 'sxQ') { ui.sxQ = t.value; sxSearch(t.value); }
+});
+document.addEventListener('change', ev => {
+  const t = ev.target;
+  if (t.dataset && t.dataset.sxf === 'wk' && ui.sxForm) { ui.sxForm.wk = t.value; render(); }
 });
 
 /* iOS gir av og til hjemskjerm-appen et vindu som slutter over skjermkanten.
@@ -2560,6 +3125,9 @@ function reloadWhenIdle(){
   location.reload();
 }
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkUpdate(); });
+// Sammen: hent nytt når appen åpnes og våkner (høyst hvert minutt), så tallet i fanen stemmer
+if (auth) setTimeout(() => { sxLoad(); }, 400);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && auth && Date.now() - SX.at > 60000) { if (ui.tab === 'together') sxOpen(); else sxLoad(); } });
 addEventListener('pageshow', e => { if (e.persisted) checkUpdate(); });
 addEventListener('online', checkUpdate);
 document.addEventListener('focusout', () => setTimeout(reloadWhenIdle, 400));
