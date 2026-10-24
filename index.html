@@ -325,6 +325,124 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
 .pp-unit button{font-size:15px;padding:10px 6px}
 .box .field label small{display:block;font-size:12px;font-weight:400}
 
+/* Økta: fremdrift øverst, ett kort som er «nå», ferdige øvelser som én linje, neste som kort sammendrag */
+.topbar{gap:8px}
+.h-row{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.h-row h1{margin:0}
+.h-row span{font-size:14px;color:var(--chalk-2);white-space:nowrap;padding-bottom:2px;font-variant-numeric:tabular-nums}
+.prog{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px;margin-top:6px}
+.prog i{display:block;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.prog b{display:block;height:100%;background:var(--accent)}
+.prog i.full b{background:var(--ok)}
+.ex.now{border:2px solid var(--accent);padding:15px}
+.ex-row{appearance:none;width:100%;text-align:left;background:var(--iron-2);border:1px solid var(--line);border-radius:14px;padding:12px 16px;color:var(--chalk);display:flex;align-items:center;gap:12px;cursor:pointer;font:inherit}
+.ex-row:active{background:var(--iron-3)}
+.ex-row .ck{flex:none;width:28px;height:28px;border-radius:50%;background:var(--ok);display:grid;place-items:center}
+.ex-row .ck.miss{background:transparent;box-shadow:inset 0 0 0 2px var(--miss)}
+.ex-row .ck svg{width:16px;height:16px;fill:none;stroke:var(--ok-ink);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.ex-row .ck.miss svg{stroke:var(--miss)}
+.ex-row b{flex:1;font:700 18px/1 var(--display);text-transform:uppercase;letter-spacing:.02em;min-width:0}
+.ex-row span{font-size:14px;color:var(--chalk-2);text-align:right;font-variant-numeric:tabular-nums}
+.ex-next{appearance:none;width:100%;text-align:left;color:var(--chalk);cursor:pointer;font:inherit;gap:8px;padding:14px 16px}
+.ex-next:active{background:var(--iron-3)}
+.ex-next .tag{color:var(--chalk-2)}
+.ex-next .kg{font-size:30px}
+.ex-next p{font-size:14px;color:var(--chalk-2)}
+.chips{display:grid;grid-template-columns:repeat(auto-fill,54px);gap:10px 6px;justify-content:space-between}
+.chip.next{border-color:var(--accent);background:rgba(76,134,240,.14);color:var(--chalk)}
+.platebox{background:var(--iron);border-radius:12px;padding:8px 12px;min-height:56px}
+.platebox .plates{height:40px;padding-left:20px}
+.platebox .plates::before{width:20px;height:6px;margin-top:-3px}
+.platebox .p25{width:11px;height:40px} .platebox .p20{width:10px;height:40px} .platebox .p15{width:9px;height:40px} .platebox .p10{width:8px;height:40px}
+.platebox .p5{width:6px;height:26px} .platebox .p2{width:5px;height:19px} .platebox .p1{width:4px;height:15px}
+.platebox .pl-txt{font:700 20px/1 var(--display);color:var(--chalk)}
+.platebox .pl-txt small{display:block;font:500 13px/1.3 var(--body);color:var(--chalk-2);margin-top:2px}
+.wu-tog{appearance:none;display:flex;align-items:center;gap:10px;width:100%;min-height:44px;background:transparent;border:1px dashed var(--line);border-radius:12px;padding:0 12px;color:var(--chalk-2);font:500 14px var(--body);text-align:left;cursor:pointer}
+.wu-tog>span:first-child{flex:1}
+.wu-dots{display:flex;gap:4px}
+.wu-dots i{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.wu-dots i.on{background:var(--ok)}
+.wu-tog svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;transition:transform .15s}
+.wu-tog[aria-expanded="true"] svg{transform:rotate(180deg)}
+.wu-in{display:grid;gap:10px;padding:2px 0 4px}
+
+/* Pausen: fargelaget bærer informasjonen. Tiden rir på kanten av laget, linjen nederst er lav og mørk. */
+.rest-in{background:rgba(17,19,23,.86);color:var(--chalk);border:1px solid var(--line);border-radius:14px;padding:6px 6px 6px 14px;gap:8px;margin-bottom:8px}
+.rest-in span{font-size:14px;font-weight:500;color:var(--chalk-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.rest-in span b{font:inherit;color:var(--chalk)}
+.rest-in button{height:44px;padding:0 12px;background:var(--iron-3);color:var(--chalk);border-radius:10px;font:600 14px var(--body);flex:none}
+.stage[data-rest="over"] .rest-in{background:rgba(17,19,23,.86);color:var(--chalk)}
+.stage[data-rest="over"] .rest-in span{color:var(--ok)}
+.rest-t{position:absolute;right:max(16px,env(safe-area-inset-right,0px));bottom:clamp(74px,var(--lvl,0%),calc(100% - 24px));transform:translateY(50%);z-index:21;pointer-events:none;
+  background:var(--iron);border:2px solid var(--accent);color:var(--chalk);border-radius:999px;padding:4px 10px;
+  font:700 18px/1 var(--display);font-variant-numeric:tabular-nums;transition:bottom .25s linear}
+.stage[data-rest="warn"] .rest-t{border-color:var(--amrap)}
+.stage[data-rest="over"] .rest-t{border-color:var(--amrap);border-style:dashed}
+.rest-t{display:none}
+.stage[data-rest] .rest-t{display:block}
+
+/* Programmer */
+.chev{width:18px;height:18px;flex:none;fill:none;stroke:var(--chalk-3);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.act-card{appearance:none;width:100%;text-align:left;font:inherit;color:var(--chalk);background:var(--iron-2);border:2px solid var(--accent);border-radius:16px;padding:15px;display:grid;gap:10px;cursor:pointer}
+.act-card:active{background:var(--iron-3)}
+.act-card h2{font-size:28px}
+.act-card .tag{margin:0}
+.act-top,.act-sub{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;color:var(--chalk-2)}
+.act-facts{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px}
+.act-facts div{background:var(--iron);border-radius:10px;padding:8px 10px;display:grid;gap:2px;min-width:0}
+.act-facts b{font:700 20px/1 var(--display);font-variant-numeric:tabular-nums}
+.act-facts span{font:600 11px/1.2 var(--body);letter-spacing:.04em;text-transform:uppercase;color:var(--chalk-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.filt{display:flex;gap:8px;flex-wrap:wrap}
+.filt button{min-height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--chalk-2);font:600 13px var(--body);cursor:pointer}
+.filt button[aria-pressed="true"]{background:var(--chalk);border-color:var(--chalk);color:var(--iron)}
+.guide-row{appearance:none;width:100%;text-align:left;font:inherit;display:flex;align-items:center;gap:12px;padding:12px 14px;border:0;border-radius:14px;background:rgba(76,134,240,.10);color:var(--chalk);cursor:pointer}
+.guide-row>svg:first-child{width:22px;height:22px;flex:none;fill:none;stroke:var(--accent);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.guide-row>span,.plist button>span{flex:1;display:grid;gap:2px;min-width:0}
+.guide-row b{font-weight:600;font-size:15px}
+.guide-row small,.plist small{font-size:13px;color:var(--chalk-2)}
+.plist{border:1px solid var(--line);border-radius:14px;background:var(--iron-2);overflow:hidden}
+.plist button{appearance:none;width:100%;text-align:left;font:inherit;display:flex;align-items:center;gap:12px;min-height:60px;padding:12px 14px;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--chalk);cursor:pointer}
+.plist button:last-child{border-bottom:0}
+.plist button:active{background:var(--iron-3)}
+.plist b{font:700 18px/1.1 var(--display);text-transform:uppercase;letter-spacing:.02em}
+
+/* Logg */
+.head.h-row .quick{flex:none}
+.log-sum{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.log-sum div{display:grid;gap:2px}
+.log-sum b{font:700 30px/1 var(--display);font-variant-numeric:tabular-nums}
+.log-sum b small{font-size:14px;color:var(--chalk-2);margin-left:2px}
+.log-sum span{font-size:12px;color:var(--chalk-2)}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.cal span{font:600 11px/1 var(--body);color:var(--chalk-2);text-align:center}
+.cal i{height:26px;border-radius:6px;background:var(--iron-3)}
+.cal i.st{background:var(--accent)} .cal i.mc{background:var(--amrap)}
+.cal i.both{background:var(--p20);box-shadow:inset 0 0 0 3px var(--amrap)}
+.cal i.today{outline:2px solid var(--chalk);outline-offset:1px}
+.cal i.fut{opacity:.35}
+.cal-key{display:flex;gap:14px;font-size:12px;color:var(--chalk-2)}
+.cal-key span{display:flex;align-items:center;gap:6px}
+.cal-key i{width:10px;height:10px;border-radius:3px}
+.cal-key i.st{background:var(--accent)} .cal-key i.mc{background:var(--amrap)} .cal-key i.both{background:var(--p20);box-shadow:inset 0 0 0 2px var(--amrap)}
+.tr .tr-kg{font:700 20px/1 var(--display);color:var(--chalk);min-width:3.2ch;text-align:right}
+.tr .tr-d{font-weight:600;font-size:13px;min-width:4ch;text-align:right}
+.miss-t{color:var(--miss)}
+.sess{padding:0;gap:0;overflow:hidden}
+.sess.open{padding-bottom:14px}
+.sess.open>:not(.sess-row){margin:0 16px}
+.sess.open>.ln,.sess.open>p{margin-top:8px}
+.sess-row{appearance:none;width:100%;text-align:left;font:inherit;display:flex;align-items:center;gap:12px;padding:12px 14px;border:0;background:transparent;color:var(--chalk);cursor:pointer;min-height:60px}
+.sess-row:active{background:var(--iron-3)}
+.sess-row .chev{transition:transform .15s}
+.sess-row[aria-expanded="true"] .chev{transform:rotate(90deg)}
+.sess-d{width:40px;flex:none;display:grid;justify-items:center;gap:1px}
+.sess-d b{font:700 20px/1 var(--display)}
+.sess-d small{font:600 11px/1 var(--body);text-transform:uppercase;color:var(--chalk-2)}
+.sess-t{flex:1;display:grid;gap:2px;min-width:0}
+.sess-t b{font:700 17px/1.1 var(--display);text-transform:uppercase;letter-spacing:.02em}
+.sess-note .pill{justify-self:start}
+.sess-t small{font-size:13px;color:var(--chalk-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -334,7 +452,8 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
   <div class="scroller" id="scroller"><main class="wrap" id="view"></main></div>
   <div class="rest-fill" id="restFill" aria-hidden="true"></div>
   <div class="rest-flash" id="restFlash" aria-hidden="true"></div>
-  <div class="rest" id="rest" hidden role="timer"><div class="rest-in"><b id="restT">1:30</b><span id="restL">Pause</span><button data-a="skip">Hopp over</button></div></div>
+  <div class="rest-t" id="restT" role="timer" aria-label="Pause igjen">1:30</div>
+  <div class="rest" id="rest" hidden><div class="rest-in"><span id="restL">Pause</span><button data-a="restadd:30" aria-label="30 sekunder lengre pause">+30 s</button><button data-a="skip">Hopp over</button></div></div>
 </div>
 <div class="toast" id="toast" hidden></div>
 <nav class="tabs" aria-label="Faner"><div class="tabs-in">
@@ -355,7 +474,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 24;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 26;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -749,17 +868,22 @@ function wuKind(s, ei){
   if (ei === 0) return 'full';
   return /Sekundær|T2|T3/.test(e.tag || '') ? 'short' : 'full';
 }
-function vWarmup(e, ei, wu){
-  const done = e.wuDone || [];
-  return `<section class="ex wu-block" aria-label="Oppvarming før ${liftName(e.lift).toLowerCase()}">
-    <div class="ex-head"><div><span class="tag">Oppvarming</span><h2>${liftName(e.lift)}</h2></div></div>
-    <div class="wu-list">${wu.map(([w, r], wi) => { const k = w + 'x' + r, ok = done.includes(k), last = wi === wu.length - 1 ? 1 : 0;
+// Oppvarmingen ligger inne i øvelseskortet. Åpen til den er gjort eller arbeidssettene er i gang, så brettet sammen.
+function vWarmup(e, ei, wu, k){
+  const done = e.wuDone || [], n = wu.filter(([w, r]) => done.includes(w + 'x' + r)).length;
+  const auto = n < wu.length && !e.sets.some(x => x.d != null);
+  const open = ui.wuOpen && k in ui.wuOpen ? ui.wuOpen[k] : auto;
+  return `<button class="wu-tog" data-a="wuopen:${k}:${open ? 1 : 0}" aria-expanded="${open}">
+      <span>Oppvarming · ${n === wu.length ? wu.length + ' sett gjort' : n + ' av ' + wu.length + ' sett'}</span>
+      <span class="wu-dots" aria-hidden="true">${wu.map(([w, r]) => `<i class="${done.includes(w + 'x' + r) ? 'on' : ''}"></i>`).join('')}</span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+    ${open ? `<div class="wu-in"><div class="wu-list">${wu.map(([w, r], wi) => { const kk = w + 'x' + r, ok = done.includes(kk), last = wi === wu.length - 1 ? 1 : 0;
       return `<div class="wu-row">
-        <button class="chip sm ${ok ? 'ok' : ''}" data-a="wu:${ei}:${k}:${last}" aria-label="Oppvarming: ${r} reps på ${fmt(w)} kg${ok ? ', gjort' : ''}">${r}</button>
+        <button class="chip sm ${ok ? 'ok' : ''}" data-a="wu:${ei}:${kk}:${last}" aria-label="Oppvarming: ${r} reps på ${fmt(w)} kg${ok ? ', gjort' : ''}">${r}</button>
         <div class="wu-w"><b>${fmt(w)} kg</b><div class="platesrow">${plateHTML(w)}</div></div>
       </div>`; }).join('')}</div>
-    <p class="small muted">Teller ikke som arbeidssett og lagres ikke i loggen.</p>
-  </section>`;
+    <p class="small muted">Teller ikke som arbeidssett og lagres ikke i loggen.</p></div>` : ''}`;
 }
 
 function spExtras(e, ei){
@@ -1241,14 +1365,18 @@ function activate(id){
 /* ---------- Skiver per side (20 kg stang) ---------- */
 // Skivene på gymmet. 25 kg er bevisst utelatt: 20 kg er største skive.
 const PL = [[20,'p20'],[15,'p15'],[10,'p10'],[5,'p5'],[2.5,'p2'],[1.25,'p1']];
-function plateHTML(w){
-  let side = (w - 20) / 2;
-  if (side <= 0) return '<span class="pl-txt">Bare stanga (20 kg)</span>';
-  const out = [];
+function platesOf(w){
+  let side = (w - 20) / 2; const out = [];
   for (const [kg,c] of PL) while (side >= kg - 1e-6) { out.push([kg,c]); side -= kg; }
-  const txt = out.map(x => fmt(x[0])).join(' + ');
+  return out;
+}
+const plateTxt = w => w <= 20 ? 'bare stanga' : platesOf(w).map(x => fmt(x[0])).join(' + ') + ' per side';
+// big: stor variant i kortet som er «nå», med skivene som tall og «per side» under
+function plateHTML(w, big){
+  if (w <= 20) return '<span class="pl-txt">Bare stanga (20 kg)</span>';
+  const out = platesOf(w), txt = out.map(x => fmt(x[0])).join(' + ');
   return '<span class="plates" aria-hidden="true">' + out.map(([kg,c]) => '<i class="pl '+c+'"></i>').join('') +
-         '</span><span class="pl-txt">'+txt+' per side</span>';
+         '</span><span class="pl-txt">' + txt + (big ? '<small>per side · 20 kg stang</small>' : ' per side') + '</span>';
 }
 
 /* ---------- Øktbank: metcons fra SugarWOD (egen fil, okter.json) ----------
@@ -1700,7 +1828,7 @@ function vToday(){
   const over = p.total && S.active.idx >= p.total && !S.draft;
   if (!S.draft && !over) { S.draft = buildSession(p, S.active); save(); }
   const s = S.draft;
-  let h = `<div class="topbar"><button class="quick" data-a="free">+ Logg fri økt</button></div>`;
+  let h = `<div class="topbar">${s && !over ? '<button class="quick" data-a="plan">Se planen</button>' : ''}<button class="quick" data-a="free">+ Logg fri økt</button></div>`;
   if (ui.summary) {
     const u = ui.summary;
     h += `<section class="done" aria-live="polite">
@@ -1718,12 +1846,21 @@ function vToday(){
       <button class="btn" data-a="tab:programs">Velg neste program</button>`;
   }
   const anyTouched = s.ex.some(e => e.sets.some(x => x.d != null));
+  const allDone = e => e.sets.every(x => x.d != null);
+  const touched = e => e.sets.some(x => x.d != null) || !!(e.wuDone && e.wuDone.length);
+  // Strength & Power spør om RPE eller kvalitet når settene er gjort. Kortet holdes åpent til det er svart.
+  const asks = e => e.sp && allDone(e) && ((e.part === 'extra' && e.rpe == null) || ((e.part === 'top' || e.part === 'back') && (e.slot === 'clean' ? e.q == null : e.rpe == null)));
+  const cur = s.ex.findIndex(e => !allDone(e) || asks(e));
+  const setsLeft = s.ex.reduce((n, e) => n + e.sets.filter(x => x.d == null).length, 0);
+  const mins = Math.floor((Date.now() - s.started) / 60000);
   h += `<header class="head">
       <p class="eyebrow">${p.name} · ${s.sub}</p>
-      <h1>${s.day}</h1>
+      <div class="h-row"><h1>${s.day}</h1>${anyTouched ? `<span>${mins} min · ${setsLeft ? setsLeft + ' sett igjen' : 'alt gjort'}</span>` : ''}</div>
+      <div class="prog" aria-label="${cur < 0 ? 'Alle øvelser er gjort' : 'Øvelse ' + (cur+1) + ' av ' + s.ex.length}">${s.ex.map(e => {
+        const d = e.sets.filter(x => x.d != null).length;
+        return `<i class="${d === e.sets.length ? 'full' : ''}"><b style="width:${Math.round(d / e.sets.length * 100)}%"></b></i>`; }).join('')}</div>
       ${S.active.e1rm ? `<p class="muted small">${p.prog === 'sp12' ? 'Estimert 1RM' : '1RM'} ${liftName(s.ex[0].lift).toLowerCase()}: ${fmt(Math.round(S.active.e1rm[s.ex[0].lift]*2)/2)} kg</p>` : ''}
-      <p class="muted small">Trykk på et sett når det er gjort. Trykk igjen for å trekke fra én rep.</p>
-      <button class="link" data-a="plan">Se hele planen ›</button>
+      ${anyTouched ? '' : '<p class="muted small">Trykk på et sett når det er gjort. Trykk igjen for å trekke fra én rep.</p>'}
     </header>`;
   if (p.prog === 'sp12') {
     const c = mcRecentConflict(s.ex[0].slot);
@@ -1732,17 +1869,37 @@ function vToday(){
   }
   s.ex.forEach((e,ei) => {
     const top = Math.max(...e.sets.map(x => x.w));
+    const k = s.started + '-' + ei, opened = !!(ui.exOpen && ui.exOpen[k]);
+    const wk = wuKind(s, ei), wu = wk ? warmups(e.slot, e.sets[0].w, e.sets[0].t, wk) : [];
+    // Ferdig øvelse blir én linje når du har begynt på en senere øvelse. Trykk for å åpne den igjen.
+    if (!opened && cur !== ei && allDone(e) && !asks(e) && s.ex.slice(ei+1).some(touched)) {
+      const hit = e.sets.every(x => x.d >= x.t);
+      h += `<button class="ex-row" data-a="exopen:${k}" aria-label="${liftName(e.lift)}, ferdig: ${setsLine(e, true)}. Trykk for å åpne">
+        <span class="ck ${hit ? '' : 'miss'}" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="${hit ? 'M5 12l5 5L20 7' : 'M12 7v6M12 17v.01'}"/></svg></span>
+        <b>${liftName(e.lift)}</b><span>${setsLine(e, true)}</span></button>`;
+      return;
+    }
+    // Øvelser som ikke er påbegynt etter den du holder på med, vises som et kort sammendrag
+    if (!opened && cur > -1 && ei > cur && !touched(e)) {
+      h += `<button class="ex ex-next" data-a="exopen:${k}" aria-label="${liftName(e.lift)}, ${setsLine(e)}. Trykk for å åpne">
+        <div class="ex-head"><div><span class="tag">${ei === cur + 1 ? 'Neste' : 'Senere'}${e.tag ? ' · ' + e.tag : ''}</span><h2>${liftName(e.lift)}</h2></div>
+          <div class="kg">${fmt(top)}<small>KG</small></div></div>
+        <p>${setsLine(e)}${LIFTS[e.lift].bar ? ' · ' + plateTxt(top) : ''}${wu.length ? ' · ' + wu.length + ' oppvarmingssett' : ''}</p>
+      </button>`;
+      return;
+    }
+    const now = ei === cur, nextSi = now ? e.sets.findIndex(x => x.d == null) : -1;
     const varies = new Set(e.sets.map(x => x.w)).size > 1;
     const amIdx = e.sets.findIndex(x => x.am && x.d != null);
-    const wk = wuKind(s, ei), wu = wk ? warmups(e.slot, e.sets[0].w, e.sets[0].t, wk) : [];
-    if (wu.length) h += vWarmup(e, ei, wu);
-    h += `<section class="ex">
-      <div class="ex-head"><div>${e.tag ? `<span class="tag">${e.tag}</span>` : ''}<h2>${liftName(e.lift)}</h2></div>
+    const tag = now ? (nextSi > -1 ? `Nå · sett ${nextSi+1} av ${e.sets.length}` : 'Nå') + (e.tag ? ' · ' + e.tag : '') : e.tag;
+    h += `<section class="ex ${now ? 'now' : ''}">
+      <div class="ex-head"><div>${tag ? `<span class="tag">${tag}</span>` : ''}<h2>${liftName(e.lift)}</h2></div>
         <div class="kg">${fmt(top)}<small>KG</small></div></div>
-      ${LIFTS[e.lift].bar ? `<div class="platesrow">${plateHTML(top)}</div>` : ''}
+      ${wu.length ? vWarmup(e, ei, wu, k) : ''}
+      ${LIFTS[e.lift].bar ? `<div class="platesrow ${now ? 'platebox' : ''}">${plateHTML(top, now)}</div>` : ''}
       ${e.hint ? `<p class="wu">${e.hint}</p>` : ''}
       <div class="chips">${e.sets.map((x,si) => {
-        const st = x.d == null ? '' : (x.d >= x.t ? 'ok' : 'miss');
+        const st = x.d == null ? (si === nextSi ? 'next' : '') : (x.d >= x.t ? 'ok' : 'miss');
         const lbl = 'Sett '+(si+1)+': '+(x.d == null ? 'ikke gjort, mål '+x.t+' reps' : x.d+' reps')+(x.am ? ', så mange du klarer' : '');
         return `<div class="cw"><button class="chip ${st} ${x.am?'am':''}" data-a="set:${ei}:${si}" aria-label="${lbl}">${x.d == null ? x.t : x.d}${x.am ? '<sup>+</sup>' : ''}</button>${varies ? `<small>${fmt(x.w)}</small>` : ''}</div>`;
       }).join('')}</div>
@@ -1862,19 +2019,36 @@ function vGuide(){
     <details class="box acc"><summary>Alle kilder</summary>${refList(Object.keys(REFS))}</details>`;
 }
 
+// Programmer: det aktive programmet øverst, så filter på nivå og en kompakt liste
+const LEVELS = ['Nybegynner','Middels','Erfaren'];
+const chev = '<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
+function vActiveCard(){
+  const a = S.active, p = prog(a.programId); if (!p) return '';
+  const over = p.total && a.idx >= p.total;
+  const next = over ? null : (S.draft || buildSession(p, JSON.parse(JSON.stringify(a))));
+  const lifts = next ? [...new Map(next.ex.map(e => [e.lift, Math.max(...e.sets.map(x => x.w))])).entries()].slice(0, 3) : [];
+  return `<button class="act-card" data-a="open:${p.id}">
+      <div class="act-top"><span class="tag">Aktivt program</span>${next ? `<span>${esc(next.sub)}</span>` : ''}</div>
+      <h2>${p.name}</h2>
+      ${p.total ? `<div class="meter" aria-hidden="true"><i style="width:${Math.min(100, Math.round(a.idx / p.total * 100))}%"></i></div>` : ''}
+      <div class="act-sub"><span>${p.total ? `${Math.min(a.idx, p.total)} av ${p.total} økter` : `${a.idx} økter fullført`}</span><span>${next ? 'Neste: ' + next.day : 'Fullført'}</span></div>
+      ${lifts.length ? `<div class="act-facts">${lifts.map(([l, w]) => `<div><b>${fmt(w)}</b><span>${liftName(l)}</span></div>`).join('')}</div>` : ''}
+    </button>`;
+}
 function vPrograms(){
-  return `<header class="head"><p class="eyebrow">Bibliotek</p><h1>Programmer</h1>
-    <p class="muted small">Kjente styrkeprogrammer og din egen modell. Trykk på ett for å se øktene og aktivere det.</p></header>
-    <button class="card guide-card" data-a="guide">
-      <div class="top"><h2>Programguide</h2><span class="pill on">Les</span></div>
-      <p class="muted small">Hvilket program passer for deg, hva forskningen sier, og hva du realistisk kan forvente.</p>
+  const f = ui.progF || '', act = S.active && S.active.programId;
+  const list = PROGRAMS.filter(p => p.id !== act && (!f || p.level.toLowerCase().includes(f.toLowerCase())));
+  return `<header class="head"><p class="eyebrow">Bibliotek</p><h1>Programmer</h1></header>
+    ${act ? vActiveCard() : '<p class="muted small">Kjente styrkeprogrammer og din egen modell. Trykk på ett for å se øktene og aktivere det.</p>'}
+    <div class="filt" role="group" aria-label="Filtrer etter nivå">${[''].concat(LEVELS).map(l =>
+      `<button data-a="progf:${l}" aria-pressed="${f === l}">${l || 'Alle'}</button>`).join('')}</div>
+    <button class="guide-row" data-a="guide">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5a2 2 0 012-2h12v18H6a2 2 0 01-2-2z"/><path d="M8 7h6M8 11h6"/></svg>
+      <span><b>Programguide</b><small>Hva passer for deg, og hva sier forskningen?</small></span>${chev}
     </button>
-    <div class="list">${PROGRAMS.map(p => `
-      <button class="card" data-a="open:${p.id}">
-        <div class="top"><h2>${p.name}</h2>${S.active && S.active.programId === p.id ? '<span class="pill on">Aktivt</span>' : ''}</div>
-        <div class="meta"><span class="pill">${p.level}</span><span class="pill">${p.perWeek} økter/uke</span><span class="pill">${p.origin}</span></div>
-        <p class="muted small">${p.summary}</p>
-      </button>`).join('')}</div>`;
+    ${list.length ? `<div class="plist">${list.map(p => `
+      <button data-a="open:${p.id}"><span><b>${p.name}</b><small>${p.perWeek} økter/uke · ${p.level} · ${p.origin}</small></span>${chev}</button>`).join('')}</div>`
+      : '<p class="muted small">Ingen andre programmer på dette nivået.</p>'}`;
 }
 
 function vDetail(p){
@@ -1908,7 +2082,7 @@ function vDetail(p){
 }
 
 function spark(vals){
-  const w = 96, h = 28, min = Math.min(...vals), max = Math.max(...vals), rng = max - min || 1;
+  const w = 72, h = 24, min = Math.min(...vals), max = Math.max(...vals), rng = max - min || 1;
   const pts = vals.map((v,i) => [ (i/(vals.length-1))*(w-6)+3, h-3-((v-min)/rng)*(h-6) ]);
   const last = pts[pts.length-1];
   return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true">
@@ -1916,9 +2090,36 @@ function spark(vals){
     <circle cx="${last[0]}" cy="${last[1]}" r="3" fill="var(--chalk)"/></svg>`;
 }
 
+// Er økta styrke, kondisjon/metcon, eller begge? Brukes av kalenderen og tellerne i loggen.
+const isStrength = h => !h.free;
+const isMetcon = h => !!(h.metcon || h.mc || h.wod || h.pete);
+// Fire uker, mandag først, med i dag markert
+function vCalendar(){
+  const day = 864e5, today = new Date(); today.setHours(0,0,0,0);
+  const start = today.getTime() - ((today.getDay() + 6) % 7 + 21) * day;
+  const cells = [];
+  for (let i = 0; i < 28; i++) {
+    const t0 = start + i * day, t1 = t0 + day, hs = S.history.filter(h => h.date >= t0 && h.date < t1);
+    const st = hs.some(isStrength), mc = hs.some(isMetcon);
+    const cls = st && mc ? 'both' : st ? 'st' : mc ? 'mc' : '';
+    const lbl = new Date(t0).toLocaleDateString('nb-NO', {weekday:'long', day:'numeric', month:'long'}) + ': ' + (st && mc ? 'styrke og metcon' : st ? 'styrke' : mc ? 'metcon' : 'ingen økt');
+    cells.push(`<i class="${cls}${t0 === today.getTime() ? ' today' : ''}${t0 > today.getTime() ? ' fut' : ''}" title="${lbl}"></i>`);
+  }
+  return `<div class="cal" role="img" aria-label="Treningsdager de siste fire ukene">${['M','T','O','T','F','L','S'].map(d => `<span>${d}</span>`).join('')}${cells.join('')}</div>
+    <div class="cal-key"><span><i class="st"></i>Styrke</span><span><i class="mc"></i>Metcon</span><span><i class="both"></i>Begge</span></div>`;
+}
 function vLog(){
-  let h = `<header class="head"><p class="eyebrow">${S.history.length} økter</p><h1>Logg</h1></header>`;
+  let h = `<header class="head h-row"><div><p class="eyebrow">Siste 4 uker</p><h1>Logg</h1></div><button class="quick" data-a="free">+ Fri økt</button></header>`;
   if (!S.history.length) return h + `<p class="muted">Øktene du fullfører havner her, med vekt, reps og notater.</p>`;
+  const now = Date.now(), last28 = S.history.filter(x => x.date > now - 28*864e5);
+  h += `<section class="box">
+      <div class="log-sum">
+        <div><b>${last28.filter(isStrength).length}</b><span>styrkeøkter</span></div>
+        <div><b class="warn-t">${last28.filter(isMetcon).length}</b><span>metcons</span></div>
+        <div><b>${fmt(mcWindow(now - 7*864e5, now).min)}<small>min</small></b><span>kondisjon 7 d</span></div>
+      </div>
+      ${vCalendar()}
+    </section>`;
   const series = {};
   [...S.history].reverse().forEach(sess => sess.ex.forEach(e => {
     if (/BBB|FSL|T2|T3|Lett|Backoff|Deload|Sekundær|Taper/.test(e.tag || '')) return;
@@ -1926,12 +2127,12 @@ function vLog(){
     (series[e.lift] = series[e.lift] || []).push(Math.max(...done.map(x => x.w)));
   }));
   const rows = Object.entries(series).filter(([,v]) => v.length > 1);
-  h += `<h3>Toppvekt per økt</h3>`;
-  h += rows.length ? `<div class="box trend">${rows.map(([l,v]) => `<div class="tr"><b>${liftName(l)}</b>${spark(v)}<span>${fmt(v[0])} → ${fmt(v[v.length-1])} kg</span></div>`).join('')}</div>`
+  h += rows.length ? `<section class="box trend"><h3 style="margin:2px 0 0">Toppvekt per økt</h3>${rows.map(([l,v]) => { const d = v[v.length-1] - v[0];
+      return `<div class="tr"><b>${liftName(l)}</b>${spark(v)}<span class="tr-kg">${fmt(v[v.length-1])}</span><span class="tr-d ${d > 0 ? 'ok-t' : d < 0 ? 'miss-t' : ''}">${d > 0 ? '+' : ''}${d ? fmt(d) : '±0'}</span></div>`; }).join('')}</section>`
                    : `<p class="muted small">Kurvene dukker opp når du har logget samme løft to ganger.</p>`;
   const mcCount = S.history.filter(x => x.metcon).length;
-  h += `<h3>Økter</h3>`;
-  if (mcCount) h += `<div class="seg" role="group" aria-label="Filter">
+  h += `<h3>Siste økter</h3>`;
+  if (mcCount) h += `<div class="filt" role="group" aria-label="Filter">
       <button data-a="logf:all" aria-pressed="${ui.logF !== 'mc'}">Alle</button>
       <button data-a="logf:mc" aria-pressed="${ui.logF === 'mc'}">Med metcon (${mcCount})</button></div>`;
   const list = ui.logF === 'mc' ? S.history.filter(x => x.metcon) : S.history;
@@ -1941,21 +2142,28 @@ function vLog(){
     const mcH = sess.mc && MC[sess.mc.type] ? `<span class="pill">${MC[sess.mc.type].n} · ${fmt(sess.mc.min)} min${sess.mc.rpe ? ' · RPE ' + sess.mc.rpe : ''}</span>` : '';
     const ppH = sess.pete ? `<div class="sess-wod"><p><b>Pete Plan · ${esc(sess.pete.name)}</b> · ${PETE_MACH[sess.pete.mach] || ''}${sess.pete.split ? ` · <span class="res">${paceTxt(sess.pete.split, sess.pete.bike)}</span>` : ''}</p></div>` : '';
     const noteH = (sess.metcon || sess.note || sess.wod || sess.pete) ? `<div class="sess-note">${sess.metcon ? '<span class="pill mc">Metcon</span>' : ''}${mcH}${ppH}${wodH}${sess.note ? `<p>${esc(sess.note)}</p>` : ''}</div>` : '';
-    if (sess.free) return `<article class="sess">
-      <div class="top"><h2 style="font-size:19px">${sess.pete ? 'Pete Plan' : sess.wod ? 'Metcon' : 'Fri økt'}</h2><span class="muted small">${dateFmt(sess.date)}</span></div>
-      ${noteH}</article>`;
-    const p = prog(sess.programId);
-    const vol = sess.ex.reduce((s,e) => s + e.sets.reduce((v,x) => v + (x.d||0)*x.w, 0), 0);
-    return `<article class="sess">
-      <div class="top"><h2 style="font-size:19px">${sess.day}</h2><span class="muted small">${dateFmt(sess.date)}</span></div>
-      <p class="muted small">${p ? p.name : ''} · ${sess.sub} · ${fmt(Math.round(vol))} kg totalt</p>
+    const d = new Date(sess.date), open = !!(ui.logOpen && ui.logOpen[sess.date]);
+    const p = sess.free ? null : prog(sess.programId);
+    const title = sess.free ? (sess.pete ? 'Pete Plan' : sess.wod ? 'Metcon' : 'Fri økt') : sess.day;
+    // Én linje per økt: løftene med toppvekt, eller hva den frie økta var. Trykk for detaljer.
+    const sum = sess.free ? (sess.pete ? esc(sess.pete.name) : sess.wod ? esc(sess.wod.navn) : sess.note ? esc(sess.note.slice(0, 60)) : '')
+      : [...new Map(sess.ex.map(e => [e.lift, Math.max(...e.sets.map(x => x.w))])).entries()].map(([l, w]) => liftName(l) + ' ' + fmt(w)).join(' · ');
+    const vol = sess.free ? 0 : sess.ex.reduce((s,e) => s + e.sets.reduce((v,x) => v + (x.d||0)*x.w, 0), 0);
+    const body = !open ? '' : sess.free ? noteH : `<p class="muted small">${p ? p.name : ''} · ${sess.sub} · ${fmt(Math.round(vol))} kg totalt</p>
       ${sess.ex.map(e => {
         const ws = [...new Set(e.sets.map(x => x.w))];
         const reps = e.sets.map(x => x.d == null ? '–' : x.d);
         const right = ws.length === 1 ? reps.join(' ') + ' × ' + fmt(ws[0]) + ' kg' : e.sets.map(x => (x.d == null ? '–' : x.d) + '×' + fmt(x.w)).join(' · ');
         return `<div class="ln"><span>${liftName(e.lift)}${e.tag ? ' <span class="muted">'+e.tag+(e.rpe != null ? ' · RPE '+fmt(e.rpe) : '')+'</span>' : ''}</span><span>${right}</span></div>`;
       }).join('')}
-      ${noteH}
+      ${noteH}`;
+    return `<article class="sess ${open ? 'open' : ''}">
+      <button class="sess-row" data-a="logopen:${sess.date}" aria-expanded="${open}" aria-label="${dateFmt(sess.date)}: ${title}">
+        <span class="sess-d"><b>${d.getDate()}</b><small>${d.toLocaleDateString('nb-NO', {month:'short'}).replace('.', '')}</small></span>
+        <span class="sess-t"><b>${title}</b>${sum ? `<small>${sum}</small>` : ''}</span>
+        ${isMetcon(sess) && !sess.free ? '<span class="pill mc">Metcon</span>' : ''}${chev}
+      </button>
+      ${body}
     </article>`;
   }).join('');
   return h;
@@ -2063,8 +2271,22 @@ function beep(){
 }
 function startRest(sec){
   sec = Math.round((sec || 120) * (S.settings.restScale || 1)); unlockAudio();
-  ui.rest = {end: Date.now() + sec*1000, total: sec, done: false};
+  ui.rest = {end: Date.now() + sec*1000, total: sec, done: false, next: nextUp()};
   updateRest();
+}
+// Neste sett i økta, til linjen nederst i pausen: oppvarming først, så arbeidssett i rekkefølge
+function nextUp(){
+  const s = S.draft; if (!s) return '';
+  for (let ei = 0; ei < s.ex.length; ei++) {
+    const e = s.ex[ei], n = liftName(e.lift), started = e.sets.some(x => x.d != null);
+    const wk = !started && wuKind(s, ei), done = e.wuDone || [];
+    const w = wk ? warmups(e.slot, e.sets[0].w, e.sets[0].t, wk).find(([w, r]) => !done.includes(w + 'x' + r)) : null;
+    if (w) return n + ' · oppvarming ' + w[1] + ' × ' + fmt(w[0]) + ' kg';
+    const si = e.sets.findIndex(x => x.d == null);
+    // Løftets navn bare når du bytter øvelse, så linjen holder seg kort
+    if (si > -1) { const x = e.sets[si]; return (si ? '' : n + ' · ') + 'sett ' + (si+1) + ' · ' + x.t + (x.am ? '+' : '') + ' × ' + fmt(x.w) + ' kg'; }
+  }
+  return 'Alle sett er gjort';
 }
 // Gult de siste 10 sekundene, eller den siste femdelen hvis pausen er kortere enn 50 sekunder
 const restWarn = total => Math.min(10, total * .2);
@@ -2087,7 +2309,8 @@ function updateRest(){
   stage.dataset.rest = state;
   stage.style.setProperty('--lvl', (lvl * 100).toFixed(2) + '%');
   $('#restT').textContent = left > 0 ? mmss(Math.ceil(left)) : '+' + mmss(-left);
-  $('#restL').textContent = left > 0 ? 'Pause' : 'Klar for neste sett';
+  const nx = esc(ui.rest.next || '');
+  $('#restL').innerHTML = left > 0 ? (nx ? 'Neste: <b>' + nx + '</b>' : 'Pause') : 'Klar for neste sett' + (nx ? ': <b>' + nx + '</b>' : '');
 }
 setInterval(updateRest, 250);
 
@@ -2141,7 +2364,7 @@ document.addEventListener('click', ev => {
       S.active.skipDl = Object.assign({}, S.active.skipDl, {[r[0]]: true});
       S.draft = null; save(); render(); toTop(); toast('Lett uke hoppet over. Du kjører én uke til.'); break;
     case 'guide': ui.detail = 'guide'; render(); toTop(); break;
-    case 'free': ui.free = true; ui.freeNote = ui.freeNote || ''; render(); toTop(); break;
+    case 'free': ui.tab = 'today'; ui.free = true; ui.freeNote = ui.freeNote || ''; render(); toTop(); break;
     case 'freecancel': ui.free = false; render(); break;
     case 'freemc': ui.freeMc = ui.freeMc === false; render(); break;
     case 'freesave': {
@@ -2156,6 +2379,8 @@ document.addEventListener('click', ev => {
       break;
     }
     case 'logf': ui.logF = r[0]; render(); break;
+    case 'logopen': { const o = ui.logOpen = ui.logOpen || {}; o[r[0]] = !o[r[0]]; render(); break; }
+    case 'progf': ui.progF = r[0] || ''; render(); break;
     case 'bank': openBank(r[0]); break;
     case 'bankclose': ui.bank = false; ui.wod = null; render(); toTop(); break;
     case 'bankretry': loadBank(); render(); break;
@@ -2206,6 +2431,9 @@ document.addEventListener('click', ev => {
     case 'finish': finish(); break;
     case 'dismiss': ui.summary = null; render(); break;
     case 'skip': ui.rest = null; updateRest(); break;
+    case 'restadd': if (ui.rest) { const now = Date.now(); ui.rest.end = Math.max(ui.rest.end, now) + (+r[0])*1000; ui.rest.total = Math.max(ui.rest.total, (ui.rest.end - now)/1000); ui.rest.done = false; updateRest(); } break;
+    case 'exopen': { const o = ui.exOpen = ui.exOpen || {}; o[r[0]] = !o[r[0]]; render(); break; }
+    case 'wuopen': { const o = ui.wuOpen = ui.wuOpen || {}; o[r[0]] = r[1] !== '1'; render(); break; }
     case 'restscale': S.settings.restScale = +r[0]; save(); render(); break;
     case 'sound': S.settings.sound = !S.settings.sound; save(); unlockAudio(); render(); if (S.settings.sound) { beep(); toast('Lyd er på'); } break;
     case 'confirm': ui.confirm = r[0]; render(); break;
