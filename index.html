@@ -514,6 +514,11 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
 .sx-row .st.ok{color:var(--ok)}
 .sx-row .btn.sm{padding:10px 12px;font-size:15px}
 
+/* Hopp over økt */
+.skip-l{justify-self:center;color:var(--chalk-3)}
+.skipbox{border-color:var(--miss)}
+.sess.skipped .sess-row{cursor:default;opacity:.7}
+
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -546,7 +551,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 29;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 30;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -838,7 +843,7 @@ function spReadiness(a){
   const p = prog('sp12');
   return p.days.map(d => {
     const L = sw(a, d.lift), hist = (a.e1log && a.e1log[L]) || [];
-    const last = S.history.find(h => h.programId === 'sp12' && h.date >= a.startedAt &&
+    const last = S.history.find(h => h.programId === 'sp12' && !h.skipped && h.date >= a.startedAt &&
       h.ex.some(e => e.lift === L && /Toppsett|Singler/.test(e.tag || '')));
     const e = last && last.ex.find(e => e.lift === L && /Toppsett|Singler/.test(e.tag || ''));
     const eff = !e ? null : d.lift === 'clean' ? (e.q === 'god' ? 'raske og rene' : e.q === 'treg' ? 'tregere' : e.q === 'teknisk' ? 'teknikk sviktet' : null)
@@ -1409,6 +1414,20 @@ function finish(){
   save(); render(); toTop();
 }
 
+// Hopp over dagens økt: ingen progresjon, vektene står som de er. Økta logges som hoppet over,
+// så «Hele planen» fortsatt kobler hver økt til riktig linje i loggen.
+function skipSession(){
+  const p = prog(S.active.programId), s = S.draft;
+  S.history.unshift({date:Date.now(), programId:p.id, day:s.day, sub:s.sub, skipped:true,
+    ex: s.ex.map(e => ({lift:e.lift, tag:e.tag, sets:e.sets.map(x => ({t:x.t, w:x.w, d:null}))}))});
+  S.active.idx++;
+  S.draft = null; ui.confirm = null; ui.summary = null;
+  ui.rest = null; updateRest();
+  save(); render(); toTop(); toast(s.day + ' er hoppet over');
+}
+// «knebøy, benkpress og stangroing»
+const listNo = a => a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' og ' + a[a.length - 1];
+
 // Lager en ny instans fra tallene i feltene på programsiden. Brukes både til å aktivere og til å vise planen.
 function newInstance(p){
   const a = {programId:p.id, startedAt:Date.now(), idx:0, lifts:{}, tm:{}};
@@ -1700,7 +1719,7 @@ function vPlan(){
   const per = planPer(p);
   const N = p.total || Math.max(12 * per, a.idx + 4 * per);
   const doneH = P.active ? S.history.filter(h => h.programId === p.id && !h.free && h.date >= a.startedAt).reverse().slice(-a.idx) : [];
-  const rows = doneH.map((h, k) => ({k, done:true, day:h.day, sub:h.sub, ex:h.ex}));
+  const rows = doneH.map((h, k) => ({k, done:!h.skipped, skipped:!!h.skipped, day:h.day, sub:h.sub, ex:h.ex}));
   simulate(p, a, N - a.idx).forEach(f => {
     const s = P.active && f.idx === a.idx && S.draft ? S.draft : f.s;
     rows.push({k: f.idx, done:false, next: P.active && f.idx === a.idx, day:s.day, sub:s.sub, ex:s.ex});
@@ -1712,8 +1731,8 @@ function vPlan(){
       <p class="muted small">${PLAN_NOTE[p.prog] || ''}${P.active ? '' : ' Vektene er regnet ut fra tallene du har skrevet inn.'}${p.total ? '' : ' Programmet har ingen fast slutt, så planen viser 12 uker.'}</p></header>
     ${weeks.map((list, w) => list ? `<h3>Uke ${w + 1}</h3><div class="list">${list.map(r => {
       const m = r.ex[0];
-      return `<details class="box acc plan-s${r.done ? ' done-s' : ''}${r.next ? ' next-s' : ''}"${r.next ? ' open' : ''}>
-        <summary><span class="ps"><span class="ps-top"><b>${esc(r.day)}</b>${r.done ? '<span class="pill">✓ Gjort</span>' : r.next ? '<span class="pill on">Neste</span>' : ''}</span>
+      return `<details class="box acc plan-s${r.done || r.skipped ? ' done-s' : ''}${r.next ? ' next-s' : ''}"${r.next ? ' open' : ''}>
+        <summary><span class="ps"><span class="ps-top"><b>${esc(r.day)}</b>${r.done ? '<span class="pill">✓ Gjort</span>' : r.skipped ? '<span class="pill">Hoppet over</span>' : r.next ? '<span class="pill on">Neste</span>' : ''}</span>
           <span class="small muted">${esc(r.sub || '')}</span>
           <span class="small">${m ? liftName(m.lift) + ' · ' + setsLine(m, r.done) : ''}</span></span></summary>
         <div class="plan-ex">${r.ex.map(e => `<div class="ln"><span>${liftName(e.lift)}${e.tag ? ` <span class="muted">${e.tag}</span>` : ''}</span><span>${setsLine(e, r.done)}</span></div>`).join('')}</div>
@@ -1991,6 +2010,15 @@ function vToday(){
       ${s.metcon || s.wod ? mcFields('session', s.mc) : ''}
     </section>`;
   h += `<button class="btn" data-a="finish" ${anyTouched ? '' : 'disabled'}>Fullfør økt</button>`;
+  if (ui.confirm === 'skipday') {
+    const a1 = JSON.parse(JSON.stringify(S.active)); a1.idx++;
+    const next = p.total && a1.idx >= p.total ? null : buildSession(p, a1);
+    const lifts = [...new Set(s.ex.map(e => liftName(e.lift)))].map((n, i) => i ? n.toLowerCase() : n);
+    h += `<section class="box skipbox" aria-live="polite"><p><b>Hoppe over ${esc(s.day)}?</b></p>
+      <p class="small">${listNo(lifts)} får ingen økning denne gangen, og vektene står som de er.${anyTouched ? ' Settene du har tatt i dag, lagres ikke.' : ''}${s.wod || s.pete ? ' Metconen du har valgt, lagres heller ikke.' : ''}
+        ${next ? 'Neste økt blir ' + esc(next.day) + (next.sub && next.sub !== s.sub ? ' (' + esc(next.sub) + ')' : '') + '.' : 'Dette var siste økt i programmet.'}</p>
+      <div class="row"><button class="btn danger sm" data-a="skipday">Ja, hopp over</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div></section>`;
+  } else h += `<button class="link skip-l" data-a="confirm:skipday">Hopp over denne økta</button>`;
   return h;
 }
 
@@ -2163,7 +2191,7 @@ function spark(vals){
 }
 
 // Er økta styrke, kondisjon/metcon, eller begge? Brukes av kalenderen og tellerne i loggen.
-const isStrength = h => !h.free;
+const isStrength = h => !h.free && !h.skipped;
 const isMetcon = h => !!(h.metcon || h.mc || h.wod || h.pete);
 // Fire uker, mandag først, med i dag markert
 function vCalendar(){
@@ -2184,10 +2212,11 @@ function vLog(){
   let h = `<header class="head h-row"><div><p class="eyebrow">Siste 4 uker</p><h1>Logg</h1></div><button class="quick" data-a="free">+ Fri økt</button></header>`;
   if (!S.history.length) return h + `<p class="muted">Øktene du fullfører havner her, med vekt, reps og notater.</p>`;
   const now = Date.now(), last28 = S.history.filter(x => x.date > now - 28*864e5);
+  const nSt = last28.filter(isStrength).length, nMc = last28.filter(isMetcon).length;
   h += `<section class="box">
       <div class="log-sum">
-        <div><b>${last28.filter(isStrength).length}</b><span>styrkeøkter</span></div>
-        <div><b class="warn-t">${last28.filter(isMetcon).length}</b><span>metcons</span></div>
+        <div><b>${nSt}</b><span>${nSt === 1 ? 'styrkeøkt' : 'styrkeøkter'}</span></div>
+        <div><b class="warn-t">${nMc}</b><span>${nMc === 1 ? 'metcon' : 'metcons'}</span></div>
         <div><b>${fmt(mcWindow(now - 7*864e5, now).min)}<small>min</small></b><span>kondisjon 7 d</span></div>
       </div>
       ${vCalendar()}
@@ -2215,6 +2244,10 @@ function vLog(){
     const ppH = sess.pete ? `<div class="sess-wod"><p><b>Pete Plan · ${esc(sess.pete.name)}</b> · ${PETE_MACH[sess.pete.mach] || ''}${sess.pete.split ? ` · <span class="res">${paceTxt(sess.pete.split, sess.pete.bike)}</span>` : ''}</p></div>` : '';
     const noteH = (sess.metcon || sess.note || sess.wod || sess.pete) ? `<div class="sess-note">${sess.metcon ? '<span class="pill mc">Metcon</span>' : ''}${mcH}${ppH}${wodH}${sess.note ? `<p>${esc(sess.note)}</p>` : ''}</div>` : '';
     const d = new Date(sess.date), open = !!(ui.logOpen && ui.logOpen[sess.date]);
+    const dateBox = `<span class="sess-d"><b>${d.getDate()}</b><small>${d.toLocaleDateString('nb-NO', {month:'short'}).replace('.', '')}</small></span>`;
+    if (sess.skipped) { const ps = prog(sess.programId);
+      return `<article class="sess skipped"><div class="sess-row">${dateBox}
+        <span class="sess-t"><b>${esc(sess.day)}</b><small>Hoppet over${ps ? ' · ' + ps.name : ''}</small></span></div></article>`; }
     const p = sess.free ? null : prog(sess.programId);
     const title = sess.free ? (sess.pete ? 'Pete Plan' : sess.wod ? 'Metcon' : 'Fri økt') : sess.day;
     // Én linje per økt: løftene med toppvekt, eller hva den frie økta var. Trykk for detaljer.
@@ -2231,7 +2264,7 @@ function vLog(){
       ${noteH}`;
     return `<article class="sess ${open ? 'open' : ''}">
       <button class="sess-row" data-a="logopen:${sess.date}" aria-expanded="${open}" aria-label="${dateFmt(sess.date)}: ${title}">
-        <span class="sess-d"><b>${d.getDate()}</b><small>${d.toLocaleDateString('nb-NO', {month:'short'}).replace('.', '')}</small></span>
+        ${dateBox}
         <span class="sess-t"><b>${title}</b>${sum ? `<small>${sum}</small>` : ''}</span>
         ${isMetcon(sess) && !sess.free ? '<span class="pill mc">Metcon</span>' : ''}${chev}
       </button>
@@ -3027,6 +3060,7 @@ document.addEventListener('click', ev => {
       if (r[0] === 'session' && S.draft) { delete S.draft.wod; save(); } else ui.freeWod = null;
       render(); break;
     case 'finish': finish(); break;
+    case 'skipday': if (S.active && S.draft) skipSession(); break;
     case 'dismiss': ui.summary = null; render(); break;
     case 'skip': ui.rest = null; updateRest(); break;
     case 'sxmode': ui.sxMode = r[0]; ui.sxMsg = ''; ui.sxForgotSent = false; render(); break;
