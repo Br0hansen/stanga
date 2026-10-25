@@ -1,6 +1,6 @@
 # Trene sammen – design
 
-Dato: 2026-10-24 · Status: bygget (APP_VERSION 28). Jonas ga klarsignal til å bygge uten egen godkjenningsrunde av dokumentet.
+Dato: 2026-10-24 · Status: bygget (APP_VERSION 29). Jonas ga klarsignal til å bygge uten egen godkjenningsrunde av dokumentet.
 
 ## Hva og hvorfor
 
@@ -98,6 +98,7 @@ Tabellene under er en skisse. Byggeren bestemmer endelig form.
 - **Service worker:** Svar fra `*.supabase.co` mellomlagres aldri (`SHELL` er økt til `stanga-shell-2`).
 - **Testet:** Tilgangsreglene med tre testbrukere (24 sjekker, inkludert forsøk på å utgi seg for andre og lesing som anonym), og hele flyten i appen mot den ekte databasen: konto, brukernavn, venner, begge typer timer, forslag, påmelding, valg av forslag, endring, avlysning og sletting av konto. Testdataene er slettet.
 - **Endret innlogging (APP_VERSION 28):** Supabase krever nå egen SMTP for å endre e-postmalene, og standardmalen sender bare en lenke. Jonas valgte derfor e-post og passord uten e-postbekreftelse. «Glemt passord» bruker standard e-post med lenke til Site URL. Appen leser nøkkelen fra adressen etter `#`, viser en side for nytt passord og rydder adressen. Testet: lag konto, dobbel registrering, feil passord, innlogging, nytt passord og utløpt lenke. Selve e-posten for glemt passord er ikke testet, fordi den krever en ekte adresse.
+- **Glemt passord med kode (APP_VERSION 29):** Brevo er satt opp som SMTP i Supabase, og malen *Reset password* sender en sekssifret kode på norsk. Appen tar koden og det nye passordet i samme skjerm: `verify` med `type: recovery` gir en innlogging, og så lagres passordet med `PUT /auth/v1/user`. Lenkehåndteringen etter `#` er beholdt for eldre e-poster. Testet lokalt: sending (til en adresse uten konto, så ingen e-post ble sendt), for kort kode, for kort passord og feil kode. En ekte e-post med kode er ikke testet.
 
 ## Overlatt til byggeren
 

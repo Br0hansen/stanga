@@ -546,7 +546,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 28;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 29;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -2402,7 +2402,7 @@ function toast(msg){ const t = $('#toast'); t.textContent = msg; t.hidden = fals
 /* ---------- Trene sammen: konto, venner og timer i Supabase ----------
    Bare dette ligger i skyen: brukernavn, venner, timer, påmeldinger og tidsforslag. Treningsloggen blir på telefonen.
    Konto er valgfritt. Innlogging skjer med e-post og passord rett i appen, uten e-postbekreftelse.
-   «Glemt passord» sender en lenke som åpner appen med en side for nytt passord.
+   «Glemt passord» sender en kode på e-post (via Brevo). Koden og nytt passord skrives inn rett i appen.
    Tilgangen styres av reglene i databasen: du ser bare timene til venner. Nøkkelen under er den offentlige. */
 const SB_URL = 'https://ueqteavqpityrmuczkoc.supabase.co', SB_KEY = 'sb_publishable_PqNVw0QF3nfnLnYN9VrcNg_nhNcay9O';
 const AUTH_KEY = 'stanga.auth';
@@ -2593,10 +2593,16 @@ function vSxSignup(){
   const msg = ui.sxMsg ? `<p class="small warn-t" role="alert">${esc(ui.sxMsg)}</p>` : '';
   let box;
   if (m === 'forgot') box = ui.sxForgotSent
-    ? `<p>Hvis det finnes en konto for <b>${esc(ui.sxEmail)}</b>, har vi sendt en lenke dit. Åpne lenken på denne telefonen for å velge nytt passord.</p>
-       <button class="link" data-a="sxmode:login">‹ Tilbake til innlogging</button>`
-    : `<p class="small muted">Skriv e-posten din, så sender vi en lenke der du kan velge nytt passord.</p>${email}${msg}
-       <button class="btn" data-a="sxforgot" ${busy}>Send lenke</button>
+    ? `<p>Hvis det finnes en konto for <b>${esc(ui.sxEmail)}</b>, har vi sendt en kode dit. Sjekk også søppelposten.</p>
+       <label class="lbl" for="sxC">Kode fra e-posten</label>
+       <input id="sxC" class="txt" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="123456">
+       <label class="lbl" for="sxP">Nytt passord</label>
+       <input id="sxP" class="txt" type="password" autocomplete="new-password" minlength="8" placeholder="Minst 8 tegn">
+       ${msg}
+       <button class="btn" data-a="sxresetpw" ${busy}>Lagre nytt passord</button>
+       <div class="row"><button class="link" data-a="sxforgot">Send ny kode</button><button class="link" data-a="sxmode:login">‹ Tilbake til innlogging</button></div>`
+    : `<p class="small muted">Skriv e-posten din, så sender vi en kode du kan bruke til å velge nytt passord.</p>${email}${msg}
+       <button class="btn" data-a="sxforgot" ${busy}>Send kode</button>
        <button class="link" data-a="sxmode:login">‹ Tilbake til innlogging</button>`;
   else box = `<div class="seg2" role="group" aria-label="Logg inn eller lag konto">
         <button data-a="sxmode:login" aria-pressed="${m === 'login'}"><b>Logg inn</b></button>
@@ -2867,11 +2873,33 @@ async function sxAuth(kind){
   ui.sxBusy = false; render();
 }
 async function sxForgot(){
-  const email = (($('#sxE') || {}).value || '').trim(); ui.sxEmail = email;
+  const email = ($('#sxE') ? $('#sxE').value : ui.sxEmail || '').trim(); ui.sxEmail = email;
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { ui.sxMsg = 'Skriv en gyldig e-postadresse.'; render(); return; }
   ui.sxBusy = true; ui.sxMsg = ''; render();
-  try { await sbFetch('/auth/v1/recover', {method:'POST', auth:false, body:{email}}); ui.sxForgotSent = true; }
+  try { await sbFetch('/auth/v1/recover', {method:'POST', auth:false, body:{email}}); ui.sxForgotSent = true; toast('Koden er sendt'); }
   catch(e) { ui.sxMsg = e.status === 429 ? 'For mange forsøk. Vent litt og prøv igjen.' : sxErr(e); }
+  ui.sxBusy = false; render();
+}
+// Glemt passord: koden fra e-posten gir en innlogging, og så lagres det nye passordet med en gang
+async function sxResetPw(){
+  const token = (($('#sxC') || {}).value || '').replace(/\D/g, ''), pw = ($('#sxP') || {}).value || '';
+  if (token.length < 6) { ui.sxMsg = 'Skriv inn koden fra e-posten.'; render(); return; }
+  if (pw.length < 8) { ui.sxMsg = 'Passordet må ha minst 8 tegn.'; render(); return; }
+  ui.sxBusy = true; ui.sxMsg = ''; render();
+  try {
+    setSession(await sbFetch('/auth/v1/verify', {method:'POST', auth:false, body:{type:'recovery', email: ui.sxEmail, token}}));
+  } catch(e) {
+    ui.sxMsg = e.status === 400 || e.status === 403 ? 'Koden stemmer ikke eller har gått ut. Prøv igjen, eller send en ny kode.' : sxErr(e);
+    ui.sxBusy = false; render(); return;
+  }
+  try {
+    await sbFetch('/auth/v1/user', {method:'PUT', body:{password: pw}});
+    ui.sxForgotSent = false; ui.sxMode = 'login'; ui.sxBusy = false; toast('Passordet er endret');
+    await sxOpen();
+  } catch(e) {
+    ui.sxView = 'newpw';   // innlogget med koden, men passordet ble ikke lagret: prøv igjen på siden for nytt passord
+    ui.sxMsg = e.code === 'same_password' ? 'Velg et annet passord enn det gamle.' : e.code === 'weak_password' ? 'Passordet er for svakt.' : sxErr(e);
+  }
   ui.sxBusy = false; render();
 }
 async function sxNewPw(){
@@ -3005,6 +3033,7 @@ document.addEventListener('click', ev => {
     case 'sxlogin': sxAuth('login'); break;
     case 'sxsignup': sxAuth('signup'); break;
     case 'sxforgot': sxForgot(); break;
+    case 'sxresetpw': sxResetPw(); break;
     case 'sxnewpw': sxNewPw(); break;
     case 'sxuser': sxUser(); break;
     case 'sxretry': sxOpen(); render(); break;
