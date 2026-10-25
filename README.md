@@ -4,13 +4,17 @@ Styrkeprogrammer (StrongLifts 5×5, Starting Strength, GZCLP, 5/3/1 FSL og BBB, 
 
 ## I økta
 
-- **Øktoversikten** har en fremdriftslinje med én bit per øvelse. Øvelsen du holder på med har blå ramme og viser hvilket sett som er det neste. Ferdige øvelser blir én linje når du begynner på neste, og øvelser du ikke har begynt på vises som et kort sammendrag. Trykk på en linje eller et sammendrag for å åpne den.
-- **Hopp over denne økta** står under «Fullfør økt». Du får en bekreftelse som sier hvilke løft som ikke får økning den gangen. Økta står som «Hoppet over» i loggen og i hele planen, men teller ikke som treningsdag.
-- **Oppvarming** ligger inne i øvelseskortet, med vekt og skiver per side. Den er åpen til oppvarmingen er gjort eller du begynner på arbeidssettene, og brettes så sammen til én linje. Hovedløft får full oppvarming, sekundærøvelser to korte sett. Settene kan trykkes som gjort og gir 60 sekunders pause, men teller ikke som arbeidssett og lagres ikke i loggen.
+- **Øktoversikten** har en fremdriftslinje med én bit per øvelse. Øvelsen du holder på med har blå ramme. Det store tallet i kortet er alltid neste sett, med skivene rett under: først oppvarmingssettene, så arbeidsvekten. Ferdige øvelser blir én linje når du begynner på neste. Øvelser du ikke har begynt på, står som én linje med navn og vekt. Trykk på en linje for å åpne den.
+- **Fullfør økt** spør først hvis noen sett ikke er logget, og sier hvilke løft som regnes som bom og hvilke som står på samme vekt.
+- **Under settene** står «Trykk = gjort · trykk igjen = én rep mindre» så lenge øvelsen er i gang.
+- **Etter styrken** er én rad med «+ Kondisjon» (når Pete Plan er på), «+ Metcon» og «+ Notat». Trykk for å åpne en del. En del med innhold, for eksempel en valgt Pete Plan-økt eller et notat, står åpen. Metcon-budsjettet ligger under «+ Metcon».
+- **Under «Fullfør økt»** står «Se planen», «Logg fri økt» og «Hopp over økta».
+- **Hopp over økta** Du får en bekreftelse som sier hvilke løft som ikke får økning den gangen. Økta står som «Hoppet over» i loggen og i hele planen, men teller ikke som treningsdag.
+- **Oppvarming** er en rad med små sett over arbeidssettene, med vekten under hvert sett. Neste oppvarmingssett står som det store tallet i kortet, med skiver per side. Raden blir stående når oppvarmingen er gjort, så arbeidssettene ikke flytter seg. Hovedløft får full oppvarming, sekundærøvelser to korte sett. Settene kan trykkes som gjort og gir 60 sekunders pause, men teller ikke som arbeidssett og lagres ikke i loggen.
 - **Pauser etter type sett**, slik forskningen anbefaler: tunge sett 3 min, volumsett 2 min og lette hjelpeøvelser 90 s. Strength & Power, Cube og Juggernaut har egne pauser. Oppvarming gir 60 s, og 2 min etter siste oppvarmingssett. Under Mer kan alle pauser skaleres til Kortere (75 %) eller Lengre (125 %).
-- **Pausen vises over hele skjermen.** Et svakt farget lag synker nedover mens pausen går: blått først, gult de siste 10 sekundene. Tiden står i et lite merke på kanten av laget og synker sammen med det. Linjen nederst viser neste sett, og har knappene «+30 s» og «Hopp over». Ved null blinker skjermen grønt én gang, og linjen sier «Klar for neste sett». Går du over, teller tiden oppover og gult vokser tilbake. Lyd ved slutten kan slås på under Mer.
+- **Pausen vises over hele skjermen.** Et svakt farget lag synker nedover mens pausen går: blått først, gult de siste 10 sekundene. Tiden står stort i linjen nederst, sammen med neste sett og knappene «+30 s» og «Start nå». Et lite merke følger også kanten av laget når den er nede på skjermen. Ved null blinker skjermen grønt én gang, laget forsvinner, og linjen sier «Klar for neste sett». Går du over, teller tiden oppover i grønt (+0:12). Lyd ved slutten kan slås på under Mer.
 - **Skiver per side** regnes ut med 20 kg stang og skivene 20, 15, 10, 5, 2,5 og 1,25 kg. 25 kg er bevisst utelatt.
-- **Hele planen** vises på programsiden før du aktiverer, og via «Se hele planen» i økta. Planen viser vektene hvis alt går som planlagt, fullførte økter viser det du faktisk løftet, og resten oppdateres etter hver økt. Programmer uten fast slutt vises 12 uker fram.
+- **Hele planen** vises på programsiden før du aktiverer, og via «Se planen» under økta. Planen viser vektene hvis alt går som planlagt, fullførte økter viser det du faktisk løftet, og resten oppdateres etter hver økt. Programmer uten fast slutt vises 12 uker fram.
 
 ## Sammen (trene med venner)
 
