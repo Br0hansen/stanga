@@ -3,8 +3,8 @@
 // Selve appen (index.html) hentes fra nettet hver gang den åpnes. Derfor trenger du IKKE endre noe
 // her når du oppdaterer appen. Det holder å øke APP_VERSION i index.html.
 // Øk SHELL under bare hvis du endrer logikken i denne filen eller listen over filer.
-const SHELL = 'stanga-shell-2';
-const FILES = ['./', './index.html', './manifest.json', './okter.json', './icon-180.png', './icon-192.png', './icon-512.png'];
+const SHELL = 'stanga-shell-3';
+const FILES = ['./', './index.html', './manifest.json', './okter.json', './bg.webp', './icon-180.png', './icon-192.png', './icon-512.png'];
 
 // 1) Installasjon: legg alle filene i mellomlageret. cache:'reload' hopper over nettleserens
 //    eget lager, så vi ikke lagrer en utdatert kopi.
