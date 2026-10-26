@@ -578,7 +578,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 37;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 38;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -1503,7 +1503,7 @@ function loadBank(){
     .catch(() => { bankErr = true; ui.bankLoading = false; render(); });
 }
 /* Tilfeldig: solo-WOD, temaøkt eller blant filtrene. Hopper over økter gjort de siste 60 dagene. */
-const THEMES = ['HYROX / X-RACE', 'Max Metcon', 'Basic', 'TriErg'];
+const THEMES = ['ATHX', 'HYROX / X-RACE', 'Max Metcon', 'Basic', 'TriErg'];
 const themeLabel = t => t === 'HYROX / X-RACE' ? 'HYROX' : t;
 function poolFor(rp){
   if (rp.kind === 'solo') return BANK.filter(w => w.t === 'WOD' && !w.lag);
@@ -1569,7 +1569,7 @@ function vWod(w){
   const fav = (S.fav || []).includes(w.i);
   return `<button class="link" data-a="wodback">‹ Øktbanken</button>
     ${ui.wodRand && ui.randPool ? `<p class="randlbl">${esc(poolLabel(ui.randPool))}</p>` : ''}
-    <header class="head"><p class="eyebrow">${esc(w.t)}${w.c > 1 ? ` · kjørt ${w.c} ganger` : ''} · sist ${esc(w.s.split('-').reverse().join('.'))}</p>
+    <header class="head"><p class="eyebrow">${esc(w.t)}${w.c > 1 ? ` · kjørt ${w.c} ganger` : ''}${w.s ? ` · sist ${esc(w.s.split('-').reverse().join('.'))}` : ''}</p>
       <h1>${esc(wodTitle(w))}</h1></header>
     <div class="meta">${wodChips(w)}${w.u.map(u => `<span class="pill">${esc(u)}</span>`).join('')}</div>
     <section class="box"><pre class="wodtxt">${esc(w.x)}</pre></section>
@@ -1592,7 +1592,8 @@ function vBank(){
   const f = ui.bf;
   const sel = (k, label, vals) => `<select data-bf="${k}" aria-label="${label}"><option value="">${label}</option>${vals.map(v => `<option${f[k] === v ? ' selected' : ''}>${esc(v)}</option>`).join('')}</select>`;
   const uq = a => [...new Set(a)].sort();
-  return back + `<header class="head"><p class="eyebrow">${BANK.length} metcons fra Functional Fitness Sarpsborg</p><h1>Øktbank</h1></header>
+  const nAthx = BANK.filter(w => w.t === 'ATHX').length;   // ATHX-øktene er våre egne, ikke fra Sarpsborg
+  return back + `<header class="head"><p class="eyebrow">${BANK.length - nAthx} metcons fra Functional Fitness Sarpsborg${nAthx ? ` og ${nAthx} ATHX-økter` : ''}</p><h1>Øktbank</h1></header>
     <div class="row">
       <button class="btn" data-a="rand:solo">Tilfeldig solo-metcon</button>
       <button class="btn ghost" data-a="themes" aria-expanded="${!!ui.showThemes}">Tilfeldig temaøkt</button>

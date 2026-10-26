@@ -56,6 +56,10 @@ Under **Programmer → Programguide** står det hva hvert program fokuserer på,
 - Uke 4 og 8 er lette uker. Appen viser RPE og 1RM-trend, og du kan hoppe over uka hvis tallene er gode.
 - Uke 11 er taper med halvert volum. Uke 12 er test.
 
+## ATHX i øktbanken
+
+17 økter for ATHX Games 2027 ligger først i øktbanken med typen **ATHX**: Strength, Endurance og Metcon X slik de er på stevnet (individuelt og for par, med vektene for PRO og LITE), og treningsøktene fra planen: mini-Metcon X, Metcon X i deler, løp rett på ski, ski-intervaller og generalprøven. Under «Tilfeldig temaøkt» finnes en egen ATHX-knapp. Øktene er laget av oss, ikke hentet fra Sarpsborg, og har derfor ingen dato eller antall kjøringer. Hele planen, med faser og anslag, står i `docs/superpowers/specs/2026-10-26-athx-2027-treningsplan.md`. Den er ennå ikke et program i appen.
+
 ## Metcon-budsjett
 
 Når du merker «Metcon i dag», velger en økt fra øktbanken eller logger en fri økt, kan du legge inn type, minutter og RPE. Fra øktbanken foreslår appen type og minutter ut fra økta. Appen viser minutter og belastning (minutter × RPE) for de siste sju dagene. I Strength & Power vises også budsjettet for fasen, og appen varsler når en metcon ligger for nær knebøy, clean eller benk.
@@ -69,7 +73,8 @@ Når du merker «Metcon i dag», velger en økt fra øktbanken eller logger en f
 | `sw.js` | Service worker: lagrer filene så appen virker uten nett. Svar fra Supabase lagres aldri. |
 | `supabase/migrations/` | Databasen for Sammen: tabeller, tilgangsregler og funksjoner |
 | `supabase/functions/push/` | Edge-funksjonen som sender pushvarsler fra utboksen i databasen |
-| `docs/superpowers/specs/` | Designdokumentet for Sammen |
+| `okter.json` | Øktbanken: metcons fra Functional Fitness Sarpsborg og ATHX-øktene |
+| `docs/superpowers/specs/` | Designdokumentet for Sammen og treningsplanen for ATHX |
 | `icon-*.png` | Ikoner til hjemskjermen |
 
 ## Slik får du den på iPhone (GitHub Pages, gratis)
