@@ -108,6 +108,14 @@ Tabellene under er en skisse. Byggeren bestemmer endelig form.
   - Utboksen er stengt for alle utenom funksjonen (`service_role`). Varsler eldre enn sju dager slettes.
   - Testet: krypteringen og VAPID-signaturen mot referanseimplementasjonen `http_ece` (11 sjekker). Triggere og tilgang i databasen med tre testbrukere i en transaksjon som ble rullet tilbake (14 sjekker). Den utlagte funksjonen mot Apple, Google og Mozilla med falske abonnementer: Apple godtar signaturen og avviser bare det falske abonnementet, og Google og Mozilla svarer at abonnementene er borte, så funksjonen sletter dem. Testdataene er slettet. Et ekte varsel på telefon er ikke testet.
 
+- **Chat (APP_VERSION 35):** Jonas ville ha chat 26.10.2026, så ikke-målet om chat gjelder ikke lenger. Bestemt av Jonas: alle i en gruppe kan legge til folk, timer får chat automatisk for eieren og alle påmeldte, og en samtale gir ett varsel til du har lest den, uansett antall meldinger.
+  - Tabeller: `conversations` (`dm`, `group` eller `session`), `conversation_members` (med `last_read_at` og `last_push_at`) og `messages` (med `system` for linjer som «@kari la til @ola»).
+  - Tilgang: bare medlemmer leser og skriver. Samtaler og medlemmer endres bare gjennom `chat_dm`, `chat_group`, `chat_add` og `chat_leave`, som sjekker at du bare legger til egne venner. Du ser brukernavnet til alle du er i samtale med, også om dere ikke er venner. `chat_list` gir samtalene med siste melding og antall uleste.
+  - Timechat: en trigger lager chatten med timen, og påmeldinger legger til og fjerner medlemmer. Timer som fantes fra før, fikk chat i migrasjonen. Chatten vises i listen når noen har skrevet i den, eller når timen ikke er over og flere enn eieren er med.
+  - Varsel: triggeren på `messages` varsler bare medlemmer som har lest siden forrige varsel, og ikke den som har lest i samtalen det siste minuttet. Varsler fra samme samtale har samme `tag`, så de erstatter hverandre på telefonen.
+  - Appen henter nye meldinger hvert fjerde sekund mens samtalen er åpen, og samtalelisten hvert 16. sekund når Chat er valgt. Bare meldingene tegnes på nytt, så det du skriver, blir stående.
+  - Testet: migrasjonen med 29 sjekker i en transaksjon som ble rullet tilbake (fem testbrukere: tilgang, venneregler, varselregler, timechat og forlate gruppe). Skjermene i appen med en falsk server: samtaleliste, gruppe, sending, nye meldinger som kommer inn, ny gruppe, legg til, forlat, samtale med én venn og chat fra timen.
+
 ## Overlatt til byggeren
 
 - Endelig databaseskjema, indekser og om noe løses med databasefunksjoner.

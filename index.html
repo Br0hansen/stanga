@@ -514,6 +514,34 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
 .sx-row .st.ok{color:var(--ok)}
 .sx-row .btn.sm{padding:10px 12px;font-size:15px}
 
+/* Chat i Sammen: samtaleliste, meldinger og skrivefelt som står nederst mens du blar */
+.ch-row .ch-t{flex:none;font-size:12px;color:var(--chalk-3)}
+.ch-row .ch-n{flex:none;min-width:22px;height:22px;padding:0 7px;border-radius:11px;background:var(--accent);color:var(--accent-ink);font:700 12px/22px var(--body);font-style:normal;text-align:center}
+.ch-row.new b{color:var(--chalk)}
+.ch-row.new small{color:var(--chalk)}
+.ch-row small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ch-acts{display:flex;gap:8px}
+.ch-acts .btn{flex:1}
+.ch-pick{appearance:none;width:100%;background:none;border:0;border-bottom:1px solid var(--line);color:inherit;font:inherit;text-align:left;cursor:pointer;min-height:58px}
+.ch-ck{width:22px;height:22px;accent-color:var(--accent);flex:none}
+.ch-head{display:flex;align-items:center;gap:12px}
+.ch-head>div{display:grid;gap:2px;min-width:0}
+.ch-head h2{text-transform:none;letter-spacing:0}
+.ch-msgs{display:flex;flex-direction:column;gap:4px;min-height:30vh}
+.ch-day{align-self:center;font:600 12px/1.2 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--chalk-3);margin:12px 0 4px}
+.ch-sys{align-self:center;text-align:center;font-size:13px;color:var(--chalk-2);margin:6px 0}
+.ch-who{font-size:12px;color:var(--chalk-3);margin:8px 6px 0}
+.ch-who.me{align-self:flex-end}
+.ch-msg{max-width:80%;align-self:flex-start;background:var(--iron-3);border-radius:16px;padding:9px 13px;font-size:16px;line-height:1.35;white-space:pre-wrap;overflow-wrap:anywhere}
+.ch-msg.me{align-self:flex-end;background:var(--accent);color:var(--accent-ink)}
+.wrap.chat{padding-bottom:0;display:flex;flex-direction:column;min-height:100%}
+.wrap.chat>.link{align-self:flex-start}
+.wrap.chat .ch-msgs{flex:1;justify-content:flex-end}
+.ch-compose{position:sticky;bottom:0;display:flex;gap:8px;align-items:center;background:var(--iron);margin:0 -16px;padding:10px 16px 12px;border-top:1px solid var(--line)}
+.ch-compose .txt{flex:1;min-width:0;background:var(--iron-2);border:1px solid var(--line);border-radius:22px;color:var(--chalk);font:16px var(--body);padding:11px 16px}
+.ch-compose .txt:focus{border-color:var(--accent);outline:none}
+.ch-compose .btn{width:auto;flex:none;padding:12px 16px;font-size:16px}
+
 /* Hopp over økt */
 .skipbox{border-color:var(--miss)}
 .sess.skipped .sess-row{cursor:default;opacity:.7}
@@ -550,7 +578,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 34;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 35;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -2374,6 +2402,9 @@ function render(){
   else if (ui.tab === 'log') h += vLog();
   else h += vMore();
   $('#view').innerHTML = h;
+  const inChat = ui.tab === 'together' && /^c:/.test(ui.sxView || '');
+  $('#view').classList.toggle('chat', inChat);
+  if (inChat) chatBottom();   // i en samtale står de nyeste meldingene nederst
   document.querySelectorAll('.tab').forEach(t => {
     if (t.dataset.a === 'tab:' + ui.tab) t.setAttribute('aria-current','page'); else t.removeAttribute('aria-current');
   });
@@ -2496,13 +2527,15 @@ const rpc = (fn, body) => sbFetch('/rest/v1/rpc/' + fn, {method:'POST', body});
 const inList = ids => 'in.(' + [...new Set(ids)].join(',') + ')';
 const uid = () => auth && auth.user.id;
 
-const SX = {loaded:false, loading:null, at:0, me:null, fr:[], ppl:{}, sess:[], part:[], prop:[], seenAt:0, prev:0, err:''};
+const SX = {loaded:false, loading:null, at:0, me:null, fr:[], ppl:{}, sess:[], part:[], prop:[], chats:[], seenAt:0, prev:0, err:''};
 const jwtBody = t => { try { const b = t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'); return JSON.parse(atob(b + '='.repeat((4 - b.length % 4) % 4))); } catch(e) { return {}; } };
 (function sxFromLink(){
   const h = new URLSearchParams(location.hash.slice(1));
-  if (h.has('sammen')) {   // åpnet fra et pushvarsel
+  if (h.has('sammen') || h.has('chat')) {   // åpnet fra et pushvarsel
     history.replaceState(null, '', location.pathname + location.search);
-    ui.tab = 'together'; ui.sxView = h.get('sammen') ? 's:' + h.get('sammen') : 'list';
+    ui.tab = 'together';
+    if (h.get('chat')) { ui.sxTab = 'chat'; ui.sxView = 'c:' + h.get('chat'); }   // samtalen hentes ved oppstart, se nederst
+    else ui.sxView = h.get('sammen') ? 's:' + h.get('sammen') : 'list';
     return;
   }
   if (!h.get('type') && !h.get('error_code')) return;
@@ -2519,7 +2552,7 @@ const jwtBody = t => { try { const b = t.split('.')[1].replace(/-/g, '+').replac
   }
 })();
 
-function sxReset(){ Object.assign(SX, {loaded:false, at:0, me:null, fr:[], ppl:{}, sess:[], part:[], prop:[], seenAt:0, prev:0, err:''}); ui.sxView = 'list'; sxBadge(); }
+function sxReset(){ Object.assign(SX, {loaded:false, at:0, me:null, fr:[], ppl:{}, sess:[], part:[], prop:[], chats:[], seenAt:0, prev:0, err:''}); ui.sxView = 'list'; ui.sxTab = ''; sxBadge(); }
 
 // Hent alt Sammen-fanen trenger: profilen din, venner, kommende timer, påmeldinger, forslag og navnene på de involverte
 function sxLoad(){
@@ -2540,14 +2573,15 @@ function sxLoad(){
         const sess = await db('sessions', 'select=*&order=starts_at&or=' +
           encodeURIComponent(`(ends_at.gte.${iso(now)},and(ends_at.is.null,starts_at.gte.${iso(now - FIXED_LEN)}))`));
         const ids = sess.map(s => s.id);
-        const [part, prop] = ids.length ? await Promise.all([
-          db('participants', 'select=*&session_id=' + inList(ids)),
-          db('proposals', 'select=*&order=proposed_at&session_id=' + inList(ids))]) : [[], []];
+        const [part, prop, chats] = await Promise.all([
+          ids.length ? db('participants', 'select=*&session_id=' + inList(ids)) : [],
+          ids.length ? db('proposals', 'select=*&order=proposed_at&session_id=' + inList(ids)) : [],
+          rpc('chat_list').catch(() => [])]);
         const people = [...fr.map(f => f.requester), ...fr.map(f => f.addressee), ...sess.map(s => s.owner),
-          ...part.map(p => p.user_id), ...prop.map(p => p.user_id)].filter(x => x !== me);
+          ...part.map(p => p.user_id), ...prop.map(p => p.user_id), ...chats.flatMap(c => c.members)].filter(x => x !== me);
         const ppl = people.length ? await db('profiles', 'select=id,username,display_name&id=' + inList(people)) : [];
         SX.ppl = Object.fromEntries(ppl.map(p => [p.id, p])); SX.ppl[me] = SX.me;
-        Object.assign(SX, {fr, sess, part, prop});
+        Object.assign(SX, {fr, sess, part, prop, chats});
       }
       SX.loaded = true; SX.err = ''; SX.at = Date.now();
     } catch(e) {
@@ -2623,12 +2657,13 @@ async function pushOff(){
   if (ui.push === 'on') ui.push = 'off';
 }
 // Trykk på et varsel mens appen er åpen: service workeren sier fra, og vi går til timen
-function sxGoto(sid){
+function sxGoto(sid, cid){
   Object.assign(ui, {tab:'together', detail:null, plan:null, confirm:null, free:false, bank:false, wod:null});
   ui.sxView = typeof sid === 'string' ? 's:' + sid : 'list';
-  sxOpen(); render(); toTop();
+  sxOpen();
+  if (cid) chatOpen(cid); else { render(); toTop(); }
 }
-if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', e => { if (e.data && e.data.sx) sxGoto(e.data.sx); });
+if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', e => { if (e.data && (e.data.sx || e.data.chat)) sxGoto(e.data.sx, e.data.chat); });
 pushCheck().then(() => { if (ui.tab === 'together' || ui.tab === 'more') render(); });
 
 const pad = n => String(n).padStart(2, '0');
@@ -2646,9 +2681,12 @@ const uname = id => SX.ppl[id] ? '@' + SX.ppl[id].username : 'en venn';
 // Initialer i en farget sirkel. Fargen følger brukernavnet, så samme person har alltid samme farge.
 const AV = [['#2E9E5B','#06150C'],['#E3B42B','#2A2005'],['#2F6FDB','#FFFFFF'],['#D93A2F','#FFFFFF'],['#A9AEB6','#111317'],['#B8413A','#FFFFFF']];
 function av(id, sm){
-  const p = SX.ppl[id] || {}, name = p.display_name || p.username || '?';
+  const p = SX.ppl[id] || {};
+  return avTxt(p.display_name || p.username || '?', p.username || '', sm);
+}
+function avTxt(name, key, sm){
   const ini = name.split(/[\s._]+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?';
-  let h = 0; for (const c of (p.username || '')) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  let h = 0; for (const c of key) h = (h * 31 + c.charCodeAt(0)) >>> 0;
   const [bg, ink] = AV[h % AV.length];
   return `<span class="av${sm ? ' sm' : ''}" style="background:${bg};color:${ink}" aria-hidden="true">${esc(ini)}</span>`;
 }
@@ -2679,7 +2717,7 @@ function sxNews(since){
 }
 function sxBadge(){
   const el = $('#sxBadge'); if (!el) return;
-  const n = auth && SX.me ? sxNews(SX.seenAt).length : 0;
+  const n = auth && SX.me ? sxNews(SX.seenAt).length + chatUnread() : 0;
   el.textContent = n > 9 ? '9+' : n; el.hidden = !n;
   el.setAttribute('aria-label', n + ' nye');
 }
@@ -2696,6 +2734,9 @@ function vTogether(){
   if (v === 'form') return vSxForm();
   if (v === 'friends') return vSxFriends();
   if (v.startsWith('s:')) return vSxSess(v.slice(2));
+  if (v.startsWith('c:')) return vSxChat(v.slice(2));
+  if (v === 'cnew' || v === 'cdm') return vSxPick(v);
+  if (v.startsWith('cadd:')) return vSxPick('cadd', v.slice(5));
   return vSxList();
 }
 
@@ -2794,6 +2835,11 @@ function vSxList(){
   let h = `<header class="head h-row"><div><p class="eyebrow">Med vennene dine</p><h1>Sammen</h1></div>
       <div class="sx-acts"><button class="quick" data-a="sxview:friends">Venner</button><button class="quick acc" data-a="sxnew">+ Ny time</button></div></header>`;
   if (SX.err) h += `<div class="warn">${esc(SX.err)}</div>`;
+  const chat = ui.sxTab === 'chat', unread = chatUnread();
+  h += `<div class="seg2" role="group" aria-label="Timer eller chat">
+      <button data-a="sxtab:timer" aria-pressed="${!chat}"><b>Timer</b></button>
+      <button data-a="sxtab:chat" aria-pressed="${chat}"><b>Chat${unread ? ` <span class="badge">${unread}</span>` : ''}</b></button></div>`;
+  if (chat) return vSxChats(h);
   if (ui.push === 'off' && !S.settings.pushNo) h += `<div class="box"><p class="small"><b>Vil du få varsel</b> når noen blir med på timene dine?</p>
       <div class="row"><button class="btn sm" data-a="pushon">Slå på varsler</button><button class="btn ghost sm" data-a="pushno">Ikke nå</button></div></div>`;
   if (news.length) h += `<h3 class="sx-h">Nytt <span class="badge">${news.length}</span></h3>
@@ -2887,6 +2933,8 @@ function vSxSess(id){
           <button class="btn" data-a="sxprop:${s.id}" ${ui.sxBusy ? 'disabled' : ''}>Foreslå</button></section>`;
   }
   h += `<h3>Med på timen</h3><div class="sx-people"><span>${av(s.owner)}${own ? 'Deg' : uname(s.owner)}</span>${ps.map(p => `<span>${av(p.user_id)}${p.user_id === me ? 'Deg' : uname(p.user_id)}</span>`).join('')}</div>`;
+  const ch = SX.chats.find(c => c.session_id === s.id);   // bare eieren og de påmeldte er med i chatten
+  if (ch) h += `<button class="btn ghost" data-a="chopen:${ch.id}">Chat for timen${ch.unread ? ' · ' + ch.unread + ' nye' : ''}</button>`;
   if (own) {
     if (cancelled) h += `<button class="btn ghost" data-a="sxdel:${s.id}">Slett timen</button>`;
     else h += `<div class="sx-form" style="gap:8px"><button class="btn ghost" data-a="sxedit:${s.id}">Endre time</button>
@@ -2944,26 +2992,188 @@ function vSxFriends(){
       : '<p class="muted small">Ingen venner ennå. Søk etter brukernavnet til noen du kjenner.</p>'}`;
 }
 
+/* ---------- Sammen: chat ----------
+   Samtaler med én venn, grupper og chat på timer. Bare de som er med, kan lese og skrive (se migrasjonen chat).
+   Samtalelisten hentes sammen med resten av Sammen. Mens en samtale er åpen, hentes nye meldinger hvert fjerde sekund,
+   og bare meldingene tegnes på nytt, så det du holder på å skrive, blir stående. */
+const CH = {cid:null, msgs:[], loading:false, busy:false, err:''};
+const chatOf = cid => SX.chats.find(c => c.id === cid);
+// En timechat vises når noen har skrevet i den, eller når timen ikke er over og flere enn eieren er med
+const chatShown = c => c.kind !== 'session' || (c.last_body && !c.last_system)
+  || (c.members.length > 1 && !!c.s_start && Date.parse(c.s_start) + FIXED_LEN > Date.now());
+const chatUnread = () => SX.chats.filter(c => c.unread > 0 && chatShown(c)).length;
+const chatOther = c => c.members.find(m => m !== uid()) || uid();
+const sxFriendIds = () => { const me = uid(); return SX.fr.filter(f => f.status === 'accepted').map(f => f.requester === me ? f.addressee : f.requester); };
+function chatName(c){
+  if (c.kind === 'group') return c.name;
+  if (c.kind === 'dm') return uname(chatOther(c));
+  if (!c.s_start) return 'Time';
+  return (c.s_owner === uid() ? 'Din time' : 'Timen til ' + uname(c.s_owner)) + ' · ' + dayLabel(c.s_start).toLowerCase() + ' ' + hm(c.s_start);
+}
+const chatAv = c => c.kind === 'group' ? avTxt(c.name, c.name) : av(c.kind === 'dm' ? chatOther(c) : c.s_owner);
+const chatWhen = t => { const n = dayDiff(t); return n === 0 ? hm(t) : n === -1 ? 'I går' : new Date(t).toLocaleDateString('nb-NO', {day:'numeric', month:'short'}); };
+
+function chatRow(c){
+  const who = c.last_system ? '' : c.last_user === uid() ? 'Du: ' : c.kind !== 'dm' && c.last_user ? uname(c.last_user) + ': ' : '';
+  const sub = c.last_body ? who + c.last_body : c.kind === 'session' ? 'Chat for alle som er med på timen' : 'Ingen meldinger ennå';
+  return `<button class="sx-news ch-row${c.unread ? ' new' : ''}" data-a="chopen:${c.id}">${chatAv(c)}
+      <span><b>${esc(chatName(c))}</b><small>${esc(sub)}</small></span>
+      ${c.unread ? `<i class="ch-n" aria-label="${c.unread} uleste">${c.unread}</i>` : `<i class="ch-t">${chatWhen(c.last_at)}</i>`}</button>`;
+}
+function vSxChats(h){
+  const list = SX.chats.filter(chatShown), friends = sxFriendIds().length;
+  if (friends) h += `<div class="ch-acts"><button class="btn ghost sm" data-a="sxview:cdm">Skriv til en venn</button><button class="btn sm" data-a="sxview:cnew">+ Ny gruppe</button></div>`;
+  if (!list.length) return h + `<div class="empty"><h2>Ingen samtaler ennå</h2>
+      <p class="muted">${friends ? 'Lag en gruppe med treningsvennene dine, eller skriv til én av dem. Timer du er med på, får sin egen chat.' : 'Legg til venner først, så kan dere skrive sammen.'}</p>
+      ${friends ? '' : '<button class="btn" data-a="sxview:friends">Finn venner</button>'}</div>`;
+  return h + `<div class="list">${list.map(chatRow).join('')}</div>`;
+}
+
+function vSxChat(cid){
+  const c = chatOf(cid);
+  if (!c) return `<button class="link" data-a="sxtab:chat">‹ Chat</button><p class="muted">Samtalen finnes ikke lenger.</p>`;
+  const sub = c.kind === 'dm' ? '' : c.members.map(m => m === uid() ? 'deg' : uname(m)).join(', ');
+  const acts = [];
+  if (c.kind === 'group') acts.push(`<button class="quick" data-a="sxview:cadd:${c.id}">+ Legg til</button>`, ui.confirm === 'chl:' + c.id
+    ? `<button class="quick" style="border-color:var(--miss);color:var(--miss)" data-a="chleave:${c.id}">Ja, forlat</button><button class="quick" data-a="cancel">Nei</button>`
+    : `<button class="quick" data-a="confirm:chl:${c.id}">Forlat gruppen</button>`);
+  if (c.kind === 'session' && SX.sess.some(s => s.id === c.session_id)) acts.push(`<button class="quick" data-a="sxopen:${c.session_id}">Se timen</button>`);
+  return `<button class="link" data-a="sxtab:chat">‹ Chat</button>
+    <header class="ch-head">${chatAv(c)}<div><h2>${esc(chatName(c))}</h2>${sub ? `<p class="muted small">${esc(sub)}</p>` : ''}</div></header>
+    ${acts.length ? `<div class="sx-acts" style="flex-wrap:wrap">${acts.join('')}</div>` : ''}
+    <div id="chatMsgs" class="ch-msgs">${chatMsgsHTML()}</div>
+    <div class="ch-compose"><input id="chIn" class="txt" type="text" maxlength="1000" enterkeyhint="send" autocomplete="off" placeholder="Skriv en melding" aria-label="Melding" value="${esc(ui.chDraft || '')}">
+      <button class="btn" data-a="chsend" onmousedown="event.preventDefault()">Send</button></div>`;
+}
+// Meldingene: dag som overskrift, navn og klokkeslett når en ny person skriver eller det har gått ti minutter
+function chatMsgsHTML(){
+  if (!CH.msgs.length) return CH.loading ? '<p class="muted small">Henter …</p>'
+    : CH.err ? `<div class="warn">${esc(CH.err)}</div>` : '<p class="ch-sys">Ingen meldinger ennå. Si hei!</p>';
+  const c = chatOf(CH.cid), dm = c && c.kind === 'dm';
+  let h = '', day = '', prev = null;
+  for (const m of CH.msgs) {
+    const d = dayLabel(m.created_at);
+    if (d !== day) { day = d; prev = null; h += `<p class="ch-day">${d}</p>`; }
+    if (m.system) { prev = null; h += `<p class="ch-sys">${esc(m.body)}</p>`; continue; }
+    const me = m.user_id === uid();
+    if (!prev || prev.user_id !== m.user_id || Date.parse(m.created_at) - Date.parse(prev.created_at) > 10 * 6e4)
+      h += `<p class="ch-who${me ? ' me' : ''}">${me || dm ? '' : uname(m.user_id) + ' · '}${hm(m.created_at)}</p>`;
+    h += `<div class="ch-msg${me ? ' me' : ''}">${esc(m.body)}</div>`;
+    prev = m;
+  }
+  return h + (CH.err ? `<p class="small warn-t">${esc(CH.err)}</p>` : '');
+}
+const chatBottom = () => { const sc = $('#scroller'); if (sc) sc.scrollTop = sc.scrollHeight; };
+function chatPaint(force){
+  const el = $('#chatMsgs'), sc = $('#scroller'); if (!el) return;
+  const near = sc && sc.scrollHeight - sc.scrollTop - sc.clientHeight < 160;
+  el.innerHTML = chatMsgsHTML();
+  if (force || near) chatBottom();
+}
+// Legg til nye meldinger (bare de som er nyere enn den siste vi har), og merk samtalen som lest
+function chatAdd(rows){
+  const last = CH.msgs.length ? CH.msgs[CH.msgs.length - 1].id : 0, add = rows.filter(m => m.id > last);
+  CH.msgs.push(...add);
+  return add.length;
+}
+function chatSeen(cid){
+  rpc('chat_read', {cid}).catch(() => {});
+  const c = chatOf(cid), m = CH.msgs[CH.msgs.length - 1];
+  if (c) { c.unread = 0; if (m) Object.assign(c, {last_body: m.body, last_user: m.user_id, last_system: m.system, last_at: m.created_at}); }
+  sxBadge();
+}
+async function chatOpen(cid){
+  if (CH.cid !== cid) Object.assign(CH, {cid, msgs:[], err:''});
+  CH.loading = !CH.msgs.length;
+  Object.assign(ui, {tab:'together', sxTab:'chat', sxView:'c:' + cid, confirm:null, chDraft:''});
+  render(); chatBottom();
+  await chatFetch(true);
+}
+async function chatFetch(first){
+  const cid = CH.cid; if (!cid || CH.busy || !auth) return;
+  CH.busy = true;
+  const last = CH.msgs.length ? CH.msgs[CH.msgs.length - 1].id : 0;
+  try {
+    const rows = await db('messages', 'select=id,user_id,body,system,created_at&conversation_id=eq.' + cid +
+      (last ? '&id=gt.' + last + '&order=id&limit=200' : '&order=id.desc&limit=100'));
+    if (cid !== CH.cid) return;
+    CH.loading = false; CH.err = '';
+    const n = chatAdd(last ? rows : rows.reverse());
+    if (n || first) { chatSeen(cid); chatPaint(first); }
+  } catch(e) {
+    if (cid === CH.cid) { CH.loading = false; CH.err = sxErr(e); chatPaint(); }
+  } finally { CH.busy = false; }
+}
+async function chatSend(){
+  const inp = $('#chIn'), body = (inp ? inp.value : '').trim(), cid = CH.cid;
+  if (!body || !cid || ui.chSending) return;
+  ui.chSending = true;
+  try {
+    const rows = await db('messages', '', {method:'POST', headers:{Prefer:'return=representation'}, body:{conversation_id: cid, body}});
+    if (inp) inp.value = '';
+    ui.chDraft = '';
+    if (cid === CH.cid && chatAdd(rows || [])) { chatSeen(cid); chatPaint(true); }
+  } catch(e) { toast(sxErr(e)); }
+  finally { ui.chSending = false; }
+}
+// Samtalelisten på nytt mens du ser på den. Er det nye folk i en samtale, hentes alt, så navnene kommer med.
+async function chatListRefresh(){
+  if (!auth || !SX.me) return;
+  try {
+    const chats = await rpc('chat_list');
+    if (chats.some(c => c.members.some(m => !SX.ppl[m]))) return sxLoad();
+    SX.chats = chats; sxBadge();
+    if (ui.tab === 'together' && ui.sxTab === 'chat' && (ui.sxView || 'list') === 'list' && !isTyping()) render();
+  } catch(e) {}
+}
+let chatTick = 0;
+setInterval(() => {
+  if (!auth || document.visibilityState !== 'visible' || ui.tab !== 'together') return;
+  chatTick++;
+  if (/^c:/.test(ui.sxView || '')) chatFetch();
+  else if (ui.sxTab === 'chat' && chatTick % 4 === 0) chatListRefresh();
+}, 4000);
+
+// Velg venner: ny gruppe, legg til i en gruppe, eller skriv til én venn
+function vSxPick(mode, cid){
+  const c = cid && chatOf(cid), busy = ui.sxBusy ? 'disabled' : '';
+  const fr = sxFriendIds().filter(id => !c || !c.members.includes(id)).sort((a, b) => uname(a).localeCompare(uname(b)));
+  const back = c ? `<button class="link" data-a="chopen:${c.id}">‹ ${esc(chatName(c))}</button>` : `<button class="link" data-a="sxtab:chat">‹ Chat</button>`;
+  const none = `<p class="muted small">${c ? 'Alle vennene dine er allerede med.' : 'Du har ingen venner ennå. Legg dem til under Venner.'}</p>`;
+  if (mode === 'cdm') return back + `<header class="head"><h1>Skriv til</h1></header>` + (fr.length
+    ? `<div class="sx-list">${fr.map(id => `<button class="sx-row ch-pick" data-a="chdm:${id}">${av(id)}<span><b>${uname(id)}</b></span></button>`).join('')}</div>` : none);
+  const list = fr.length ? `<div class="sx-list">${fr.map(id => `<label class="sx-row ch-pick">${av(id)}<span><b>${uname(id)}</b></span>
+      <input type="checkbox" class="ch-ck" value="${id}" aria-label="Velg ${uname(id)}"></label>`).join('')}</div>` : none;
+  if (mode === 'cadd') return back + `<header class="head"><h1>Legg til</h1><p class="muted">Du kan legge til vennene dine. De ser hele samtalen, også det som er skrevet før.</p></header>`
+    + list + (fr.length ? `<button class="btn" data-a="chaddgo:${c.id}" ${busy}>Legg til</button>` : '');
+  return back + `<header class="head"><h1>Ny gruppe</h1></header>
+    <section class="box sx-form"><label class="lbl">Navn<input id="chName" class="txt" type="text" maxlength="40" placeholder="For eksempel Treningsgruppen"></label></section>
+    <h3>Velg venner</h3>${list}${fr.length ? `<button class="btn" data-a="chcreate" ${busy}>Lag gruppe</button>` : ''}
+    <p class="muted small">Alle i gruppen kan legge til vennene sine.</p>`;
+}
+const chatPicked = () => [...document.querySelectorAll('.ch-ck:checked')].map(x => x.value);
+const chatGo = () => { const id = ui.chGo; ui.chGo = null; if (id) chatOpen(id); };
+
 // Konto under Mer
 function vSxAccount(){
   return `<h3>Konto for Sammen</h3>
     <div class="box">${auth
       ? `<p>${SX.me ? `Innlogget som <b>@${esc(SX.me.username)}</b>` : 'Innlogget'} <span class="muted">· ${esc(auth.user.email || '')}</span></p>
         <button class="btn ghost sm" data-a="sxlogout">Logg ut</button>
-        ${ui.confirm === 'sxdelacc' ? `<p class="small">Brukernavn, venner, timer, påmeldinger og forslag slettes for godt. Treningsloggen på telefonen beholdes.</p>
+        ${ui.confirm === 'sxdelacc' ? `<p class="small">Brukernavn, venner, timer, påmeldinger, forslag og meldingene dine slettes for godt. Treningsloggen på telefonen beholdes.</p>
           <div class="row"><button class="btn danger sm" data-a="sxdelacc">Slett kontoen</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div>`
           : `<button class="btn danger sm" data-a="confirm:sxdelacc">Slett konto</button>`}`
       : `<p class="muted small">Ingen konto. Konto trengs bare for Sammen, der du kan trene sammen med venner.</p>`}
-      <p class="muted small">Personvern: Med konto lagres e-post, brukernavn, navn hvis du har skrevet det, venner, timer, påmeldinger og tidsforslag hos Supabase i EU (Irland). Slår du på varsler, lagres også en adresse for varsler til telefonen. Bare vennene dine ser timene dine. Treningslogg, programmer og vekter sendes aldri. Sletter du kontoen, slettes alt dette.</p>
+      <p class="muted small">Personvern: Med konto lagres e-post, brukernavn, navn hvis du har skrevet det, venner, timer, påmeldinger, tidsforslag og chatmeldinger hos Supabase i EU (Irland). Slår du på varsler, lagres også en adresse for varsler til telefonen. Bare vennene dine ser timene dine, og bare de som er med i en samtale, kan lese den. Treningslogg, programmer og vekter sendes aldri. Sletter du kontoen, slettes alt dette.</p>
     </div>
     ${auth && SX.me ? `<h3>Varsler</h3><div class="box">${vPush()}</div>` : ''}`;
 }
 function vPush(){
   switch (ui.push) {
     case 'on': return `<p><b>Varsler er på</b> <span class="muted">på denne telefonen</span></p>
-      <p class="small muted">Du får varsel når noen blir med på eller foreslår tid på timene dine.</p>
+      <p class="small muted">Du får varsel når noen blir med på timene dine, foreslår tid eller skriver til deg.</p>
       <div class="row"><button class="btn ghost sm" data-a="pushtest">Send testvarsel</button><button class="btn ghost sm" data-a="pushoff">Slå av</button></div>`;
-    case 'off': return `<p class="small">Få varsel når noen blir med på eller foreslår tid på timene dine.</p>
+    case 'off': return `<p class="small">Få varsel når noen blir med på timene dine, foreslår tid eller skriver til deg.</p>
       <button class="btn sm" data-a="pushon">Slå på varsler</button>`;
     case 'denied': return `<p class="small muted">Varsler er avslått for Stanga. Slå dem på i Innstillinger → Varslinger → Stanga, og åpne appen på nytt.</p>`;
     case 'ios': return `<p class="small muted">Varsler virker når Stanga er lagt til på Hjem-skjermen og åpnes derfra (iOS 16.4 eller nyere).</p>`;
@@ -3209,6 +3419,22 @@ document.addEventListener('click', ev => {
     case 'pushoff': sxDo(pushOff, 'Varsler er slått av'); break;
     case 'pushtest': sxDo(() => rpc('push_test'), 'Testvarselet er sendt'); break;
     case 'pushno': S.settings.pushNo = true; save(); render(); break;
+    case 'sxtab': ui.sxTab = r[0]; ui.sxView = 'list'; ui.confirm = null; render(); toTop(); if (r[0] === 'chat') chatListRefresh(); break;
+    case 'chopen': chatOpen(r[0]); break;
+    case 'chsend': chatSend(); break;
+    case 'chdm': sxDo(async () => { ui.chGo = await rpc('chat_dm', {friend: r[0]}); }).then(chatGo); break;
+    case 'chcreate': {
+      const name = (($('#chName') || {}).value || '').trim(), members = chatPicked();
+      if (!name) { toast('Gi gruppen et navn'); break; }
+      if (!members.length) { toast('Velg minst én venn'); break; }
+      sxDo(async () => { ui.chGo = await rpc('chat_group', {name, members}); }, 'Gruppen er laget').then(chatGo); break;
+    }
+    case 'chaddgo': {
+      const members = chatPicked();
+      if (!members.length) { toast('Velg minst én venn'); break; }
+      sxDo(async () => { await rpc('chat_add', {cid: r[0], members}); ui.chGo = r[0]; }, 'Lagt til').then(chatGo); break;
+    }
+    case 'chleave': sxDo(async () => { await rpc('chat_leave', {cid: r[0]}); ui.sxView = 'list'; CH.cid = null; }, 'Du har forlatt gruppen'); break;
     case 'restadd': if (ui.rest) { const now = Date.now(); ui.rest.end = Math.max(ui.rest.end, now) + (+r[0])*1000; ui.rest.total = Math.max(ui.rest.total, (ui.rest.end - now)/1000); ui.rest.done = false; updateRest(); } break;
     case 'exopen': { const o = ui.exOpen = ui.exOpen || {}; o[r[0]] = !o[r[0]]; render(); break; }
     case 'restscale': S.settings.restScale = +r[0]; save(); render(); break;
@@ -3240,6 +3466,10 @@ document.addEventListener('input', ev => {
   const t = ev.target;
   if (t.dataset && t.dataset.sxf && ui.sxForm && t.type !== 'radio') ui.sxForm[t.dataset.sxf] = t.value;
   if (t.id === 'sxQ') { ui.sxQ = t.value; sxSearch(t.value); }
+  if (t.id === 'chIn') ui.chDraft = t.value;
+});
+document.addEventListener('keydown', ev => {
+  if (ev.target.id === 'chIn' && ev.key === 'Enter' && !ev.isComposing) { ev.preventDefault(); chatSend(); }
 });
 document.addEventListener('change', ev => {
   const t = ev.target;
@@ -3349,7 +3579,11 @@ function reloadWhenIdle(){
 }
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkUpdate(); });
 // Sammen: hent nytt når appen åpnes og våkner (høyst hvert minutt), så tallet i fanen stemmer
-if (auth) setTimeout(() => { if (ui.tab === 'together') sxOpen(); else sxLoad(); }, 400);
+if (auth) setTimeout(() => {
+  if (ui.tab !== 'together') return sxLoad();
+  sxOpen();
+  if (/^c:/.test(ui.sxView || '')) chatOpen(ui.sxView.slice(2));
+}, 400);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && auth && Date.now() - SX.at > 60000) { if (ui.tab === 'together') sxOpen(); else sxLoad(); } });
 addEventListener('pageshow', e => { if (e.persisted) checkUpdate(); });
 addEventListener('online', checkUpdate);
