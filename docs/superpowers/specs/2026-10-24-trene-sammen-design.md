@@ -118,6 +118,8 @@ Tabellene under er en skisse. Byggeren bestemmer endelig form.
 
 - **Tall på ikonet (APP_VERSION 36):** Appen setter tallet fra Sammen-fanen på ikonet med `navigator.setAppBadge`, men først når Sammen er hentet, så det ikke nullstilles uten nett. Tallet lagres i mellomlageret `stanga-badge`. Service workeren øker det med én per varsel når ingen vindu med appen er synlig, og `activate` lar det mellomlageret stå. Testet i nettleseren med falske klienter: utlogget, før henting, etter henting, opptelling mens appen er lukket, ingen opptelling mens den er åpen, og retting når den åpnes.
 
+- **Rettelse av varsler (APP_VERSION 37):** Etter en test mellom to iPhoner kom ikke alle chatvarsler fram, og tallet på ikonet endret seg ikke. Serveren hadde sendt alt den skulle, og Apple godtok det. Men regelen «ikke varsle den som har lest det siste minuttet» holdt tilbake svar som kom innen et minutt etter at mottakeren selv hadde skrevet, siden det å sende regnes som å lese. Nå sier appen fra hvert fjerde sekund mens samtalen står åpen og synlig (`chat_read(cid, active)` setter `viewing_at`), og varsel holdes bare tilbake når det er mindre enn ti sekunder siden. Tallet på ikonet følger nå med varselet (`badge` fra `private.badge_count`: samtaler med uleste meldinger, pluss påmeldinger og forslag siden du sist var i Sammen), i stedet for at service workeren teller selv. Er appen åpen når et varsel kommer, henter den nytt med en gang. Testet: rettelsen med to testbrukere i en transaksjon som ble rullet tilbake (7 sjekker, blant annet akkurat tilfellet som feilet), og appen og service workeren i nettleseren.
+
 ## Overlatt til byggeren
 
 - Endelig databaseskjema, indekser og om noe løses med databasefunksjoner.

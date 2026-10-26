@@ -578,7 +578,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 36;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 37;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -2663,7 +2663,11 @@ function sxGoto(sid, cid){
   sxOpen();
   if (cid) chatOpen(cid); else { render(); toTop(); }
 }
-if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', e => { if (e.data && (e.data.sx || e.data.chat)) sxGoto(e.data.sx, e.data.chat); });
+if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', e => {
+  if (e.data && (e.data.sx || e.data.chat)) sxGoto(e.data.sx, e.data.chat);
+  // Et varsel kom mens appen er åpen: hent nytt med en gang, så tallene og samtalen stemmer
+  else if (e.data && e.data.refresh && auth) { sxLoad(); if (/^c:/.test(ui.sxView || '')) chatFetch(); }
+});
 pushCheck().then(() => { if (ui.tab === 'together' || ui.tab === 'more') render(); });
 
 const pad = n => String(n).padStart(2, '0');
@@ -2722,11 +2726,10 @@ function sxBadge(){
   el.setAttribute('aria-label', n + ' nye');
   if (!auth || SX.loaded) iconBadge(n);   // før Sammen er hentet vet vi ikke tallet, så det på ikonet får stå
 }
-// Tall på ikonet på Hjem-skjermen: det samme som på Sammen-fanen. Mens appen er lukket, teller service workeren
-// opp med én per varsel (sw.js). Tallet lagres der den kan lese det, så den teller videre fra riktig sted.
+// Tall på ikonet på Hjem-skjermen: det samme som på Sammen-fanen. Mens appen er lukket, setter service workeren
+// tallet som følger med hvert varsel fra serveren (sw.js).
 function iconBadge(n){
   try { if (navigator.setAppBadge) (n ? navigator.setAppBadge(n) : navigator.clearAppBadge()).catch(() => {}); } catch(e) {}
-  if (window.caches) caches.open('stanga-badge').then(c => c.put('./badge', new Response(String(n)))).catch(() => {});
 }
 
 /* ---------- Sammen: visningene ---------- */
@@ -3083,8 +3086,9 @@ function chatAdd(rows){
   CH.msgs.push(...add);
   return add.length;
 }
+// Merker samtalen som lest og sier fra at den står åpen på skjermen. Da holdes varsler fra den tilbake i ti sekunder.
 function chatSeen(cid){
-  rpc('chat_read', {cid}).catch(() => {});
+  rpc('chat_read', {cid, active: true}).catch(() => {});
   const c = chatOf(cid), m = CH.msgs[CH.msgs.length - 1];
   if (c) { c.unread = 0; if (m) Object.assign(c, {last_body: m.body, last_user: m.user_id, last_system: m.system, last_at: m.created_at}); }
   sxBadge();
@@ -3106,7 +3110,8 @@ async function chatFetch(first){
     if (cid !== CH.cid) return;
     CH.loading = false; CH.err = '';
     const n = chatAdd(last ? rows : rows.reverse());
-    if (n || first) { chatSeen(cid); chatPaint(first); }
+    chatSeen(cid);   // hvert fjerde sekund: samtalen står fortsatt åpen
+    if (n || first) chatPaint(first);
   } catch(e) {
     if (cid === CH.cid) { CH.loading = false; CH.err = sxErr(e); chatPaint(); }
   } finally { CH.busy = false; }

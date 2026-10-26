@@ -3,8 +3,7 @@
 // Selve appen (index.html) hentes fra nettet hver gang den åpnes. Derfor trenger du IKKE endre noe
 // her når du oppdaterer appen. Det holder å øke APP_VERSION i index.html.
 // Øk SHELL under bare hvis du endrer logikken i denne filen eller listen over filer.
-const SHELL = 'stanga-shell-6';
-const BADGE = 'stanga-badge';   // tallet på ikonet, delt med appen (se iconBadge i index.html)
+const SHELL = 'stanga-shell-7';
 const FILES = ['./', './index.html', './manifest.json', './okter.json', './bg.webp', './icon-180.png', './icon-192.png', './icon-512.png'];
 
 // 1) Installasjon: legg alle filene i mellomlageret. cache:'reload' hopper over nettleserens
@@ -15,11 +14,11 @@ self.addEventListener('install', e => {
     .then(() => self.skipWaiting()));
 });
 
-// 2) Aktivering: rydd bort gamle mellomlagre (også de gamle stanga-v1 … stanga-v18). Tallet på ikonet beholdes.
+// 2) Aktivering: rydd bort gamle mellomlagre (også de gamle stanga-v1 … stanga-v18 og stanga-badge fra versjon 36).
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k !== SHELL && k !== BADGE).map(k => caches.delete(k))))
+      .then(keys => Promise.all(keys.filter(k => k !== SHELL).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -77,18 +76,19 @@ self.addEventListener('push', e => {
   try { d = e.data ? e.data.json() : {}; } catch (err) { d = {body: e.data && e.data.text()}; }
   e.waitUntil(Promise.all([self.registration.showNotification(d.title || 'Stanga', {
     body: d.body || '', tag: d.tag, icon: 'icon-192.png', badge: 'icon-192.png', data: {sid: d.sid || null, cid: d.cid || null}
-  }), bumpBadge()]));
+  }), setBadge(d.badge), tellOpen()]));
 });
 
-// Tallet på ikonet øker med én per varsel mens appen er lukket. Er appen åpen og synlig, setter den tallet selv.
-async function bumpBadge(){
+// Tallet på ikonet følger med varselet fra serveren: samtaler med uleste meldinger og nye påmeldinger og forslag
+async function setBadge(n){
   try {
-    const open = await self.clients.matchAll({type: 'window', includeUncontrolled: true});
-    if (open.some(w => w.visibilityState === 'visible')) return;
-    const c = await caches.open(BADGE), r = await c.match('./badge'), n = (r ? parseInt(await r.text(), 10) || 0 : 0) + 1;
-    await c.put('./badge', new Response(String(n)));
-    if (self.navigator.setAppBadge) await self.navigator.setAppBadge(n);
+    if (typeof n !== 'number' || !self.navigator.setAppBadge) return;
+    await (n > 0 ? self.navigator.setAppBadge(n) : self.navigator.clearAppBadge());
   } catch (err) {}
+}
+// Er appen åpen, får den beskjed om å hente nytt med en gang
+async function tellOpen(){
+  try { (await self.clients.matchAll({type: 'window'})).forEach(w => w.postMessage({refresh: true})); } catch (err) {}
 }
 
 // Trykk på varselet: åpne appen på timen eller samtalen. Er appen allerede åpen, bytter den bare skjerm.
