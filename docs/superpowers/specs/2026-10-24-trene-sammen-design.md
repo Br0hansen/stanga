@@ -116,6 +116,8 @@ Tabellene under er en skisse. Byggeren bestemmer endelig form.
   - Appen henter nye meldinger hvert fjerde sekund mens samtalen er åpen, og samtalelisten hvert 16. sekund når Chat er valgt. Bare meldingene tegnes på nytt, så det du skriver, blir stående.
   - Testet: migrasjonen med 29 sjekker i en transaksjon som ble rullet tilbake (fem testbrukere: tilgang, venneregler, varselregler, timechat og forlate gruppe). Skjermene i appen med en falsk server: samtaleliste, gruppe, sending, nye meldinger som kommer inn, ny gruppe, legg til, forlat, samtale med én venn og chat fra timen.
 
+- **Tall på ikonet (APP_VERSION 36):** Appen setter tallet fra Sammen-fanen på ikonet med `navigator.setAppBadge`, men først når Sammen er hentet, så det ikke nullstilles uten nett. Tallet lagres i mellomlageret `stanga-badge`. Service workeren øker det med én per varsel når ingen vindu med appen er synlig, og `activate` lar det mellomlageret stå. Testet i nettleseren med falske klienter: utlogget, før henting, etter henting, opptelling mens appen er lukket, ingen opptelling mens den er åpen, og retting når den åpnes.
+
 ## Overlatt til byggeren
 
 - Endelig databaseskjema, indekser og om noe løses med databasefunksjoner.

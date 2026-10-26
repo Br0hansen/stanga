@@ -578,7 +578,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 35;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 36;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -2720,6 +2720,13 @@ function sxBadge(){
   const n = auth && SX.me ? sxNews(SX.seenAt).length + chatUnread() : 0;
   el.textContent = n > 9 ? '9+' : n; el.hidden = !n;
   el.setAttribute('aria-label', n + ' nye');
+  if (!auth || SX.loaded) iconBadge(n);   // før Sammen er hentet vet vi ikke tallet, så det på ikonet får stå
+}
+// Tall på ikonet på Hjem-skjermen: det samme som på Sammen-fanen. Mens appen er lukket, teller service workeren
+// opp med én per varsel (sw.js). Tallet lagres der den kan lese det, så den teller videre fra riktig sted.
+function iconBadge(n){
+  try { if (navigator.setAppBadge) (n ? navigator.setAppBadge(n) : navigator.clearAppBadge()).catch(() => {}); } catch(e) {}
+  if (window.caches) caches.open('stanga-badge').then(c => c.put('./badge', new Response(String(n)))).catch(() => {});
 }
 
 /* ---------- Sammen: visningene ---------- */
