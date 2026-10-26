@@ -100,6 +100,14 @@ Tabellene under er en skisse. Byggeren bestemmer endelig form.
 - **Endret innlogging (APP_VERSION 28):** Supabase krever nå egen SMTP for å endre e-postmalene, og standardmalen sender bare en lenke. Jonas valgte derfor e-post og passord uten e-postbekreftelse. «Glemt passord» bruker standard e-post med lenke til Site URL. Appen leser nøkkelen fra adressen etter `#`, viser en side for nytt passord og rydder adressen. Testet: lag konto, dobbel registrering, feil passord, innlogging, nytt passord og utløpt lenke. Selve e-posten for glemt passord er ikke testet, fordi den krever en ekte adresse.
 - **Glemt passord med kode (APP_VERSION 29):** Brevo er satt opp som SMTP i Supabase, og malen *Reset password* sender en sekssifret kode på norsk. Appen tar koden og det nye passordet i samme skjerm: `verify` med `type: recovery` gir en innlogging, og så lagres passordet med `PUT /auth/v1/user`. Lenkehåndteringen etter `#` er beholdt for eldre e-poster. Testet lokalt: sending (til en adresse uten konto, så ingen e-post ble sendt), for kort kode, for kort passord og feil kode. En ekte e-post med kode er ikke testet.
 
+- **Pushvarsler (APP_VERSION 34):** Jonas ombestemte seg 26.10.2026 og ville ha varsel når noen melder seg på timene hans. Ikke-målet om push-varsler gjelder derfor ikke lenger. Slik virker det:
+  - Appen ber om lov fra et trykk (iPhone krever det), abonnerer med den offentlige VAPID-nøkkelen (`push_public_key`) og lagrer abonnementet med `push_register`. Ved utlogging fjernes abonnementet.
+  - Triggere på `participants` og `proposals` legger varselet i `push_outbox` og vekker edge-funksjonen `push` med `pg_net`. Påmeldinger som skjer når eieren velger et tidsforslag, gir ikke varsel, fordi det er eieren selv som gjør det.
+  - Funksjonen henter og merker varslene som sendt i ett steg (`push_claim`), krypterer dem etter RFC 8291 med WebCrypto og sender. Abonnementer som er borte (404/410), slettes. Kallet trenger ingen nøkkel, fordi funksjonen bare sender det som allerede ligger i utboksen.
+  - VAPID-nøklene lages av funksjonen første gang og ligger i Vault (`push_vapid`), aldri i koden.
+  - Utboksen er stengt for alle utenom funksjonen (`service_role`). Varsler eldre enn sju dager slettes.
+  - Testet: krypteringen og VAPID-signaturen mot referanseimplementasjonen `http_ece` (11 sjekker). Triggere og tilgang i databasen med tre testbrukere i en transaksjon som ble rullet tilbake (14 sjekker). Den utlagte funksjonen mot Apple, Google og Mozilla med falske abonnementer: Apple godtar signaturen og avviser bare det falske abonnementet, og Google og Mozilla svarer at abonnementene er borte, så funksjonen sletter dem. Testdataene er slettet. Et ekte varsel på telefon er ikke testet.
+
 ## Overlatt til byggeren
 
 - Endelig databaseskjema, indekser og om noe løses med databasefunksjoner.

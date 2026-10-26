@@ -24,8 +24,9 @@ En egen fane der du legger ut når du skal trene, og vennene dine kan bli med. K
 - **Brukernavn** velges første gang. Venner legges til ved å søke på brukernavn, og den andre må godta.
 - **To typer timer:** fast tid (andre melder seg på) og tidsvindu (andre foreslår et tidspunkt). Når du velger et forslag, blir timen fast, og de som foreslo det, står som påmeldt.
 - **Økt på timen** er valgfritt: bare trene samtidig, en metcon fra øktbanken eller fritekst.
-- **Nytt:** Fanen viser et tall for nye forslag, påmeldinger, timer og venneforespørsler når appen åpnes. Det er ingen push-varsler.
-- **Bare dette lagres i skyen** (Supabase, EU): e-post, brukernavn, navn, venner, timer, påmeldinger og forslag. Treningsloggen blir på telefonen. Under **Mer → Konto for Sammen** kan du logge ut eller slette kontoen.
+- **Nytt:** Fanen viser et tall for nye forslag, påmeldinger, timer og venneforespørsler når appen åpnes.
+- **Varsler:** Slå på under **Mer → Varsler** eller fra kortet øverst i Sammen. Da får du pushvarsel når noen blir med på eller foreslår tid på timene dine, og et trykk på varselet åpner timen. Hver telefon slår det på selv. På iPhone virker det bare når appen er åpnet fra Hjem-skjermen (iOS 16.4 eller nyere). Samme varsel fra samme person sendes høyst én gang per ti minutter. Når du logger ut, slås varslene av på telefonen.
+- **Bare dette lagres i skyen** (Supabase, EU): e-post, brukernavn, navn, venner, timer, påmeldinger, forslag og adressen for varsler hvis du har slått dem på. Treningsloggen blir på telefonen. Under **Mer → Konto for Sammen** kan du logge ut eller slette kontoen.
 - **Tilgang:** Reglene i databasen sørger for at bare venner ser timene dine. SQL-en ligger i `supabase/migrations/`.
 
 **Oppsett i Supabase (gjort):** *Confirm email* er slått av under *Authentication → Sign In / Providers*. E-post sendes gjennom Brevo (*Authentication → Emails → SMTP Settings*, `smtp-relay.brevo.com`, port 587), og malen *Reset password* er på norsk med `{{ .Token }}`. Avsender er foreløpig en gmail-adresse, som Brevo ikke anbefaler. Med eget domene kommer e-postene sikrere fram. *Site URL* er `https://br0hansen.github.io/stanga/`. Gratisprosjekter settes på pause etter en uke uten bruk og må da startes igjen i dashbordet.
@@ -66,6 +67,7 @@ Når du merker «Metcon i dag», velger en økt fra øktbanken eller logger en f
 | `manifest.json` | Navn, ikon og at appen skal åpne i fullskjerm |
 | `sw.js` | Service worker: lagrer filene så appen virker uten nett. Svar fra Supabase lagres aldri. |
 | `supabase/migrations/` | Databasen for Sammen: tabeller, tilgangsregler og funksjoner |
+| `supabase/functions/push/` | Edge-funksjonen som sender pushvarsler fra utboksen i databasen |
 | `docs/superpowers/specs/` | Designdokumentet for Sammen |
 | `icon-*.png` | Ikoner til hjemskjermen |
 

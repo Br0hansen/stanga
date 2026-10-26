@@ -550,7 +550,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 33;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 34;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -2500,6 +2500,11 @@ const SX = {loaded:false, loading:null, at:0, me:null, fr:[], ppl:{}, sess:[], p
 const jwtBody = t => { try { const b = t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'); return JSON.parse(atob(b + '='.repeat((4 - b.length % 4) % 4))); } catch(e) { return {}; } };
 (function sxFromLink(){
   const h = new URLSearchParams(location.hash.slice(1));
+  if (h.has('sammen')) {   // åpnet fra et pushvarsel
+    history.replaceState(null, '', location.pathname + location.search);
+    ui.tab = 'together'; ui.sxView = h.get('sammen') ? 's:' + h.get('sammen') : 'list';
+    return;
+  }
   if (!h.get('type') && !h.get('error_code')) return;
   history.replaceState(null, '', location.pathname + location.search);
   ui.tab = 'together';
@@ -2574,6 +2579,57 @@ function sxErr(e){
   if (e.status === 401 || e.status === 403 || e.code === '42501') return 'Du har ikke tilgang til dette.';
   return e.message || 'Noe gikk galt.';
 }
+
+/* ---------- Sammen: pushvarsler ----------
+   Varsel når noen blir med på eller foreslår tid på timen din. Hver telefon slår det på selv.
+   På iPhone virker det bare fra hjemskjermen (iOS 16.4 eller nyere), og spørsmålet om lov må komme rett fra et trykk.
+   Sendingen skjer i Supabase: en trigger legger varselet i en utboks, og edge-funksjonen «push» sender det. */
+const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+ui.push = '';   // '' ukjent ennå, 'on', 'off', 'denied', 'ios' (må åpnes fra hjemskjermen) eller 'na' (ikke mulig her)
+async function pushSub(){
+  if (!pushSupported()) return null;
+  const reg = await navigator.serviceWorker.getRegistration();
+  return reg ? reg.pushManager.getSubscription() : null;
+}
+const pushSave = sub => { const j = sub.toJSON(); return rpc('push_register', {endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth}); };
+async function pushCheck(){
+  try {
+    if (!pushSupported()) { ui.push = isIOS && !navigator.standalone ? 'ios' : 'na'; return; }
+    const sub = await pushSub();
+    ui.push = sub ? 'on' : Notification.permission === 'denied' ? 'denied' : (location.protocol === 'https:' || (await navigator.serviceWorker.getRegistration())) ? 'off' : 'na';
+    if (sub && auth) pushSave(sub).catch(() => {});   // hold abonnementet knyttet til kontoen som er innlogget nå
+  } catch(e) { ui.push = 'na'; }
+}
+const b64uBytes = s => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - s.length % 4) % 4)), c => c.charCodeAt(0));
+async function pushOn(){
+  const perm = await Notification.requestPermission();   // først, mens trykket fortsatt gjelder
+  if (perm !== 'granted') {
+    ui.push = perm === 'denied' ? 'denied' : 'off';
+    throw new Error(perm === 'denied' ? 'Varsler er avslått for Stanga. Slå dem på i Innstillinger → Varslinger.' : 'Varsler ble ikke slått på.');
+  }
+  const key = await rpc('push_public_key');
+  if (!key) throw new Error('Varsler er ikke klare på serveren ennå. Prøv igjen om litt.');
+  const reg = await navigator.serviceWorker.ready;
+  const sub = await reg.pushManager.getSubscription() || await reg.pushManager.subscribe({userVisibleOnly: true, applicationServerKey: b64uBytes(key)});
+  await pushSave(sub); ui.push = 'on';
+}
+async function pushOff(){
+  const sub = await pushSub().catch(() => null);
+  if (sub) {
+    if (auth) await db('push_subscriptions', 'endpoint=eq.' + encodeURIComponent(sub.endpoint), {method:'DELETE'}).catch(() => {});
+    await sub.unsubscribe().catch(() => {});
+  }
+  if (ui.push === 'on') ui.push = 'off';
+}
+// Trykk på et varsel mens appen er åpen: service workeren sier fra, og vi går til timen
+function sxGoto(sid){
+  Object.assign(ui, {tab:'together', detail:null, plan:null, confirm:null, free:false, bank:false, wod:null});
+  ui.sxView = typeof sid === 'string' ? 's:' + sid : 'list';
+  sxOpen(); render(); toTop();
+}
+if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', e => { if (e.data && e.data.sx) sxGoto(e.data.sx); });
+pushCheck().then(() => { if (ui.tab === 'together' || ui.tab === 'more') render(); });
 
 const pad = n => String(n).padStart(2, '0');
 const hm = t => { const d = new Date(t); return pad(d.getHours()) + ':' + pad(d.getMinutes()); };
@@ -2738,6 +2794,8 @@ function vSxList(){
   let h = `<header class="head h-row"><div><p class="eyebrow">Med vennene dine</p><h1>Sammen</h1></div>
       <div class="sx-acts"><button class="quick" data-a="sxview:friends">Venner</button><button class="quick acc" data-a="sxnew">+ Ny time</button></div></header>`;
   if (SX.err) h += `<div class="warn">${esc(SX.err)}</div>`;
+  if (ui.push === 'off' && !S.settings.pushNo) h += `<div class="box"><p class="small"><b>Vil du få varsel</b> når noen blir med på timene dine?</p>
+      <div class="row"><button class="btn sm" data-a="pushon">Slå på varsler</button><button class="btn ghost sm" data-a="pushno">Ikke nå</button></div></div>`;
   if (news.length) h += `<h3 class="sx-h">Nytt <span class="badge">${news.length}</span></h3>
     <div class="list">${news.slice(0, 8).map(n => `<button class="sx-news" data-a="${n.sid ? 'sxopen:' + n.sid : 'sxview:friends'}">
       ${av(n.who)}<span><b>${uname(n.who)} ${n.txt}</b><small>${esc(n.sub)}</small></span><i class="dot" aria-hidden="true"></i></button>`).join('')}</div>`;
@@ -2896,8 +2954,22 @@ function vSxAccount(){
           <div class="row"><button class="btn danger sm" data-a="sxdelacc">Slett kontoen</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div>`
           : `<button class="btn danger sm" data-a="confirm:sxdelacc">Slett konto</button>`}`
       : `<p class="muted small">Ingen konto. Konto trengs bare for Sammen, der du kan trene sammen med venner.</p>`}
-      <p class="muted small">Personvern: Med konto lagres e-post, brukernavn, navn hvis du har skrevet det, venner, timer, påmeldinger og tidsforslag hos Supabase i EU (Irland). Bare vennene dine ser timene dine. Treningslogg, programmer og vekter sendes aldri. Sletter du kontoen, slettes alt dette.</p>
-    </div>`;
+      <p class="muted small">Personvern: Med konto lagres e-post, brukernavn, navn hvis du har skrevet det, venner, timer, påmeldinger og tidsforslag hos Supabase i EU (Irland). Slår du på varsler, lagres også en adresse for varsler til telefonen. Bare vennene dine ser timene dine. Treningslogg, programmer og vekter sendes aldri. Sletter du kontoen, slettes alt dette.</p>
+    </div>
+    ${auth && SX.me ? `<h3>Varsler</h3><div class="box">${vPush()}</div>` : ''}`;
+}
+function vPush(){
+  switch (ui.push) {
+    case 'on': return `<p><b>Varsler er på</b> <span class="muted">på denne telefonen</span></p>
+      <p class="small muted">Du får varsel når noen blir med på eller foreslår tid på timene dine.</p>
+      <div class="row"><button class="btn ghost sm" data-a="pushtest">Send testvarsel</button><button class="btn ghost sm" data-a="pushoff">Slå av</button></div>`;
+    case 'off': return `<p class="small">Få varsel når noen blir med på eller foreslår tid på timene dine.</p>
+      <button class="btn sm" data-a="pushon">Slå på varsler</button>`;
+    case 'denied': return `<p class="small muted">Varsler er avslått for Stanga. Slå dem på i Innstillinger → Varslinger → Stanga, og åpne appen på nytt.</p>`;
+    case 'ios': return `<p class="small muted">Varsler virker når Stanga er lagt til på Hjem-skjermen og åpnes derfra (iOS 16.4 eller nyere).</p>`;
+    case 'na': return `<p class="small muted">Varsler virker ikke i denne nettleseren.</p>`;
+    default: return '<p class="small muted">Sjekker …</p>';
+  }
 }
 
 // Kjør en handling mot serveren, vis feil som melding, og hent på nytt etterpå
@@ -3127,12 +3199,16 @@ document.addEventListener('click', ev => {
     case 'sxdecline': { const me = uid();
       sxDo(() => db('friendships', 'or=' + encodeURIComponent(`(and(requester.eq.${me},addressee.eq.${r[0]}),and(requester.eq.${r[0]},addressee.eq.${me}))`), {method:'DELETE'}));
       break; }
-    case 'sxlogout': {
+    case 'sxlogout': pushOff().finally(() => {   // en annen som logger inn på telefonen, skal ikke få varslene dine
       const tok = auth && auth.access_token;
       if (tok) fetch(SB_URL + '/auth/v1/logout', {method:'POST', headers:{apikey: SB_KEY, Authorization: 'Bearer ' + tok}}).catch(() => {});
-      saveAuth(null); sxReset(); ui.confirm = null; render(); toast('Du er logget ut'); break;
-    }
-    case 'sxdelacc': sxDo(async () => { await rpc('delete_account'); saveAuth(null); sxReset(); }, 'Kontoen er slettet'); break;
+      saveAuth(null); sxReset(); ui.confirm = null; render(); toast('Du er logget ut');
+    }); break;
+    case 'sxdelacc': sxDo(async () => { await pushOff(); await rpc('delete_account'); saveAuth(null); sxReset(); }, 'Kontoen er slettet'); break;
+    case 'pushon': sxDo(pushOn, 'Varsler er på'); break;
+    case 'pushoff': sxDo(pushOff, 'Varsler er slått av'); break;
+    case 'pushtest': sxDo(() => rpc('push_test'), 'Testvarselet er sendt'); break;
+    case 'pushno': S.settings.pushNo = true; save(); render(); break;
     case 'restadd': if (ui.rest) { const now = Date.now(); ui.rest.end = Math.max(ui.rest.end, now) + (+r[0])*1000; ui.rest.total = Math.max(ui.rest.total, (ui.rest.end - now)/1000); ui.rest.done = false; updateRest(); } break;
     case 'exopen': { const o = ui.exOpen = ui.exOpen || {}; o[r[0]] = !o[r[0]]; render(); break; }
     case 'restscale': S.settings.restScale = +r[0]; save(); render(); break;
@@ -3273,7 +3349,7 @@ function reloadWhenIdle(){
 }
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkUpdate(); });
 // Sammen: hent nytt når appen åpnes og våkner (høyst hvert minutt), så tallet i fanen stemmer
-if (auth) setTimeout(() => { sxLoad(); }, 400);
+if (auth) setTimeout(() => { if (ui.tab === 'together') sxOpen(); else sxLoad(); }, 400);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && auth && Date.now() - SX.at > 60000) { if (ui.tab === 'together') sxOpen(); else sxLoad(); } });
 addEventListener('pageshow', e => { if (e.persisted) checkUpdate(); });
 addEventListener('online', checkUpdate);
