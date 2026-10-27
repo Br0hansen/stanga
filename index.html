@@ -709,7 +709,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 47;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 48;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -2162,6 +2162,15 @@ function logEditSave(){
       x.d = v;
     }
   }
+  // Minutter på metcon eller kondisjon: tomt betyr ukjent, og økta teller da ikke i metcon-budsjettet
+  let mc = h.mc;
+  const mn = $('#leMin');
+  if (mn) {
+    const raw = mn.value.trim(), v = numIn(raw);
+    if (raw === '') mc = undefined;
+    else if (!(Number.isInteger(v) && v >= 1 && v <= 600)) { toast('Skriv minuttene som et helt tall, for eksempel 18'); mn.focus(); return; }
+    else mc = Object.assign({type: h.wod ? mcGuess(h.wod.tekst) : 'M', rpe: null}, h.mc, {min: v});
+  }
   let date = h.date;
   const dv = ($('#leDate') || {}).value;
   if (dv && dv !== ymd(h.date)) {
@@ -2171,6 +2180,7 @@ function logEditSave(){
     while (S.history.some(x => x !== h && x.date === date)) date++;   // datoen er nøkkelen til økta
   }
   h.ex = ex; h.date = date;
+  if (mn) { h.mc = mc; if (mc) h.metcon = true; }
   const note = $('#leNote'); if (note) h.note = note.value.trim();
   const res = $('#leRes'); if (res && h.wod) h.wod.resultat = res.value.trim();
   S.history.sort((a, b) => b.date - a.date);
@@ -2193,6 +2203,8 @@ function vLogEdit(){
     </section>`).join('')}
     ${h.wod ? `<div class="box"><label for="leRes" class="lbl">Resultat · ${esc(h.wod.navn)}</label>
       <input id="leRes" class="le-txt" type="text" maxlength="80" value="${esc(h.wod.resultat || '')}"></div>` : ''}
+    ${h.metcon || h.mc || h.wod || h.pete || h.cond ? `<div class="box" style="gap:0"><div class="field"><label for="leMin">Minutter${h.pete && !h.wod ? ' kondisjon' : ' metcon'}<small class="muted">Teller i metcon-budsjettet${h.mc && h.mc.rpe ? ' · RPE ' + h.mc.rpe : ''}</small></label>
+      <span class="inp"><input id="leMin" type="text" inputmode="numeric" value="${h.mc && h.mc.min ? h.mc.min : ''}" placeholder="–" aria-label="Minutter"></span></div></div>` : ''}
     <div class="box notebox"><label for="leNote" class="lbl">Notat</label><textarea id="leNote">${esc(h.note || '')}</textarea></div>
     ${h.ex.length ? `<p class="muted small">Tomt felt for reps betyr at settet ikke ble tatt. Endringene gjelder loggen, kurvene og rekordene. Vektene i programmet flyttes ikke.</p>` : ''}
     <button class="btn" data-a="logsave">Lagre endringene</button>`;

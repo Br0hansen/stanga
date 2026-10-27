@@ -47,7 +47,7 @@ Appen har fire faner: **I dag** (dagens økt), **Program**, **Fremgang** og **Sa
 
 Trykk på en økt under **Fremgang** for å åpne den. Nederst står **Endre** og **Slett**.
 
-- **Endre** gir et skjema med dato, kg og reps for hvert sett, resultatet på en metcon og notatet. Tomt felt for reps betyr at settet ikke ble tatt. Endringene gjelder loggen, kurvene og rekordene, men flytter ikke vektene i programmet.
+- **Endre** gir et skjema med dato, kg og reps for hvert sett, resultatet på en metcon, minutter på metcon eller kondisjon og notatet. Minuttene teller i metcon-budsjettet. Tomt felt for minutter betyr ukjent lengde. Tomt felt for reps betyr at settet ikke ble tatt. Endringene gjelder loggen, kurvene og rekordene, men flytter ikke vektene i programmet.
 - **Slett** spør først. Den nyeste programøkta kan angres helt: programmet går tilbake til der det var før økta, med samme vekter og samme neste økt. Det gjelder også en økt som er hoppet over. Eldre økter slettes bare fra loggen, og vektene i programmet står som de er.
 - Teknisk: Den nyeste økta i `S.history` har en kopi av programmet fra før økta (`undo`). Kopien fjernes fra den forrige økta når en ny lagres, så bare én kopi finnes om gangen.
 
