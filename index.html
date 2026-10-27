@@ -576,6 +576,9 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .tag.same{color:var(--chalk-2)}
 .sx-what{font-weight:600;font-size:16px}
 .sx-sub{font-size:13px;color:var(--chalk-2)}
+.sx-mine{font-size:14px;padding-top:8px;margin-top:2px;border-top:1px solid var(--rule)}
+.sx-mine b{font-weight:600}
+.sx-mybox .ln{display:flex;justify-content:space-between;gap:12px;font-size:15px;font-variant-numeric:tabular-nums}
 .sx-people{display:flex;flex-wrap:wrap;gap:12px}
 .sx-people>span{display:flex;align-items:center;gap:8px;font-size:15px}
 .sx-prop{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
@@ -705,7 +708,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 45;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 46;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -2302,7 +2305,7 @@ function bankListHTML(){
   const list = bankFilter(), n = ui.bankN || 30, fav = new Set(S.fav || []), done = doneMap();
   if (!list.length) return `<p class="muted small">Ingen økter passer filtrene.</p>`;
   return `<p class="count muted small">${list.length} økter</p>` + list.slice(0, n).map(w => {
-    const lines = w.x.split('\n').filter(Boolean).slice(0, 3).join('\n');
+    const lines = w.x.split('\n').filter(Boolean).join('\n');   // hele økta, så du slipper å åpne den for å lese
     const d = done[w.i];
     return `<button class="bankitem" data-a="wod:${w.i}">
       <span class="bi-top"><b>${esc(wodTitle(w))}</b><span>${fav.has(w.i) ? '★' : ''}${d ? ` ✓${d.length > 1 ? d.length : ''}` : ''}</span></span>
@@ -3793,6 +3796,39 @@ function vSxUsername(){
     </section>`;
 }
 
+// Neste økt i programmet ditt, på den første timen du skal på (din egen eller en du er med på).
+// Bare du ser den. Vennene ser ikke vektene dine, slik Sammen er laget.
+function myNextSess(){
+  const p = S.active && prog(S.active.programId);
+  if (!p) return null;
+  const tot = totalOf(p, S.active);
+  if (!S.draft && tot && S.active.idx >= tot) return null;
+  const x = S.draft || buildSession(p, S.active);
+  return x && x.ex && x.ex.length ? x : null;
+}
+function myNextId(){
+  const me = uid(), now = Date.now();
+  const mine = SX.sess.filter(s => !s.cancelled_at && sxEnd(s) > now &&
+    (s.owner === me || SX.part.some(p => p.session_id === s.id && p.user_id === me)))
+    .sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at));
+  return mine.length ? mine[0].id : null;
+}
+const exTop = e => Math.max(0, ...e.sets.map(x => x.w || 0));
+function myLine(s){
+  const x = s.id === myNextId() && myNextSess();
+  if (!x) return '';
+  const lifts = x.ex.map(e => liftName(e.lift) + (exTop(e) ? ' ' + fmt(exTop(e)) : '')).join(' · ');
+  return `<span class="sx-mine"><b>Din økt: ${esc(x.day)}</b> · ${esc(lifts)}</span>`;
+}
+function myBox(s){
+  const x = s.id === myNextId() && myNextSess();
+  if (!x) return '';
+  const row = e => { const t = new Set(e.sets.map(y => y.t)), w = exTop(e);
+    return `<div class="ln"><span>${esc(liftName(e.lift))}</span><span>${t.size === 1 ? e.sets.length + '×' + [...t][0] : e.sets.length + ' sett'}${w ? ' · ' + fmt(w) + ' kg' : ''}</span></div>`; };
+  return `<section class="box sx-mybox"><span class="lbl">Din økt · bare du ser denne</span>
+    <p><b>${esc(x.day)}</b> <span class="muted small">${esc(prog(S.active.programId).name)}</span></p>${x.ex.map(row).join('')}</section>`;
+}
+
 function sxCard(s){
   const me = uid(), own = s.owner === me, w = sxWorkout(s);
   const ps = SX.part.filter(p => p.session_id === s.id), props = SX.prop.filter(p => p.session_id === s.id);
@@ -3804,6 +3840,7 @@ function sxCard(s){
         <span class="sx-cnt">${cancelled ? '' : s.kind === 'window' ? (props.length ? props.length + ' forslag' : 'Ingen forslag ennå') : (others.length ? others.length + ' med' : 'Ingen påmeldt ennå')}</span></span>
       <span class="sx-time">${sxTime(s)}</span>
       <span class="sx-sub">${esc(w.txt)}${s.place ? ' · ' + esc(s.place) : ''}</span>
+      ${myLine(s)}
     </button>`;
   const who = others.length ? (others.length > 2 ? others.slice(0, 2).join(', ') + ' og ' + (others.length - 2) + ' til' : others.join(' og ')) + ' er med' : '';
   return `<article class="sx-card${cancelled ? ' cancelled' : ''}">
@@ -3812,6 +3849,7 @@ function sxCard(s){
         <span class="tag${s.workout_kind === 'none' ? '' : ' same'}">${cancelled ? 'Avlyst' : (s.kind === 'window' ? 'Tidsvindu · ' : '') + w.lbl}</span>
         ${s.workout_kind !== 'none' ? `<span class="sx-what">${esc(w.txt)}</span>` : ''}
         ${s.place || who ? `<span class="sx-sub">${[s.place && esc(s.place), who].filter(Boolean).join(' · ')}</span>` : ''}
+        ${myLine(s)}
       </button>
       ${cancelled ? '' : s.kind === 'fixed'
         ? (joined ? `<button class="btn ghost sm" data-a="sxleave:${s.id}">Meld av</button>` : `<button class="btn sm" data-a="sxjoin:${s.id}">Bli med</button>`)
@@ -3910,6 +3948,7 @@ function vSxSess(id){
       <h1 style="text-transform:none">${sxTime(s)}</h1>${s.place ? `<p class="muted">${esc(s.place)}</p>` : ''}</header>`;
   if (cancelled) h += `<div class="warn">Timen er avlyst.</div>`;
   h += `<section class="box"><span class="lbl">Økt</span><p><b>${esc(w.txt)}</b></p>${w.body ? `<pre class="wodtxt">${esc(w.body)}</pre>` : ''}</section>`;
+  h += myBox(s);
   if (s.kind === 'window' && !cancelled) {
     const opts = props.map(p => `<div class="sx-prop">${av(p.user_id)}<span><b>${uname(p.user_id)}</b>${p.comment ? `<small>«${esc(p.comment)}»</small>` : ''}</span>
         <span class="sx-time">${hm(p.proposed_at)}</span>

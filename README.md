@@ -70,6 +70,7 @@ En egen fane der du legger ut når du skal trene, og vennene dine kan bli med. K
 - **Brukernavn** velges første gang. Venner legges til ved å søke på brukernavn, og den andre må godta.
 - **To typer timer:** fast tid (andre melder seg på) og tidsvindu (andre foreslår et tidspunkt). Når du velger et forslag, blir timen fast, og de som foreslo det, står som påmeldt.
 - **Økt på timen** er valgfritt: bare trene samtidig, en metcon fra øktbanken eller fritekst.
+- **Din økt:** Den første timen du skal på, din egen eller en du er med på, viser neste økt i programmet ditt med løft og vekt. På timen står hele økta med sett og reps. Bare du ser dette. Vennene ser ikke vektene dine.
 - **Nytt:** Fanen viser et tall for nye forslag, påmeldinger, timer og venneforespørsler når appen åpnes.
 - **Chat:** Øverst i Sammen velger du **Timer** eller **Chat**. Under Chat kan du skrive til én venn eller lage en gruppe med venner. Alle i en gruppe kan legge til vennene sine, og de nye ser hele samtalen. Hver time har sin egen chat for eieren og alle som er påmeldt, og den finnes også som knapp på timen. Nye meldinger hentes hvert fjerde sekund mens samtalen er åpen. Bare de som er med i en samtale, kan lese den.
 - **Varsler:** Slå på under **Innstillinger** eller fra kortet øverst i Sammen. Da får du pushvarsel når noen blir med på eller foreslår tid på timene dine, og når noen skriver i en samtale du er med i. Et trykk på varselet åpner timen eller samtalen. Fra en samtale får du ett varsel til du har lest den, uansett hvor mange meldinger som kommer. Har du samtalen åpen på skjermen, kommer det ikke varsel fra den. Ikonet på Hjem-skjermen viser samme tall som Sammen-fanen. Mens appen er lukket, følger tallet med varselet: samtaler med uleste meldinger og nye påmeldinger og forslag. Merker kan slås av i Innstillinger → Varslinger → Stanga. Hver telefon slår det på selv. På iPhone virker det bare når appen er åpnet fra Hjem-skjermen (iOS 16.4 eller nyere). Samme varsel fra samme person sendes høyst én gang per ti minutter. Når du logger ut, slås varslene av på telefonen.
@@ -119,6 +120,10 @@ Under **Program → Bytt program → Programguide** står det hva hvert program 
 Prioritering etter plasseringer på leaderboardet er ikke bygd ennå, fordi det ikke finnes resultater for 2027-øktene.
 
 **I øktbanken.** 17 økter ligger først i øktbanken med typen **ATHX**: Strength, Endurance og Metcon X slik de er på stevnet (individuelt og for par, med vektene for PRO og LITE), og treningsøktene fra planen. Under «Tilfeldig temaøkt» finnes en egen ATHX-knapp. Øktene er laget av oss, ikke hentet fra Sarpsborg, og har derfor ingen dato eller antall kjøringer.
+
+## Øktbanken
+
+Lista viser hele økta for hver metcon, så du kan lese den uten å åpne den. Trykk på en økt for å velge den, se tidligere resultater eller merke den som favoritt.
 
 ## Metcon-budsjett
 
