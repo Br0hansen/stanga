@@ -1,6 +1,6 @@
 # UX-trender for treningsapper: farger, elementer, sider og menyer
 
-Dato: 2026-10-27 · Status: analyse, grunnlag for redesign. Følger opp [trendanalysen av funksjoner](2026-10-27-trendanalyse-treningsapper.md), men handler om selve grensesnittet: hvordan appen ser ut, hvordan sidene er bygd opp og hvordan man finner fram.
+Dato: 2026-10-27 · Status: analyse med beslutninger og tre fargeforslag, grunnlag for redesign. Følger opp [trendanalysen av funksjoner](2026-10-27-trendanalyse-treningsapper.md), men handler om selve grensesnittet: hvordan appen ser ut, hvordan sidene er bygd opp og hvordan man finner fram.
 
 ## Slik er analysen laget
 
@@ -60,7 +60,7 @@ Sammen ─ Timer | Chat (eller innlogging)
 
 ```
 I dag ─── dagens økt (Start) · ukesmål · siste rekord      [● profil øverst til høyre]
-          └─ Aktiv økt (fullskjerm, ingen fanelinje) ─ Oppsummering (egen skjerm)
+          └─ Aktiv økt (fanelinja synes) ─ Oppsummering (egen skjerm)
 Program ─ aktivt program · hele planen · maksløft og pauser
           └─ Bytt program (programguide er første kort)
 Fremgang ─ ukeskort · kurver · rekorder · alle økter ─ økt (bunnark: Endre / Slett)
@@ -69,7 +69,7 @@ Profil (fra ikonet) ─ konto · skybackup · varsler · stang · lyd · eksport
 ```
 
 - **Fire faner som i dag**, men hver med én jobb. Profil og innstillinger flyttes til et ikon øverst til høyre på I dag.
-- **Aktiv økt i fullskjerm.** Fanelinja skjules. Øverst står «Avslutt» og navnet på økta. Kan krympes til pauselinja hvis du vil se på planen midt i økta.
+- **Aktiv økt med fanelinje** (bestemt 27. okt). Fanelinja synes hele økta, så du kan se på planen eller loggen midt i økta. Pauselinja ligger over fanelinja. Faren for feiltrykk på fanene løses med god avstand mellom pauselinja og fanelinja og at økta står uendret når du kommer tilbake.
 - **Pauselinja blir en «pågår nå»-linje** over fanelinja: pause, eller «Økt pågår · 3 av 5 øvelser» når du er utenfor økta.
 - **Bunnark** for: bekreft «Fullfør økt», endre et sett, velge metcon, økt-detaljer i Fremgang.
 - **Tilbake-knapp** som ikon med 44 × 44 px trykkflate.
@@ -258,19 +258,48 @@ Treningsappen brukes under forhold som få andre apper: én hånd, svette fingre
 
 Et utkast til redesign med skisser av disse sidene, i denne rekkefølgen:
 
-1. **Aktiv økt** (fullskjerm, knapp i tommelsonen, pauselinje, neste sett i blyant)
+1. **Aktiv økt** (fanelinje, knapp i tommelsonen, pauselinje, neste sett i blyant)
 2. **Oppsummering etter økt**
 3. **I dag** (hjem, med og uten program)
 4. **Fremgang**
 5. **Program** og **Profil**
 6. **Sammen**
 
-## Åpne spørsmål
+## Beslutninger (27. okt)
 
-1. **Bakgrunnsbildet:** beholde overalt, bare på tomme sider, eller fjerne?
-2. **Lyst eller mørkt som utgangspunkt?** I dag er rammen alltid mørk og arket lyst (eller mørkt i mørk modus). Trenden er mørkt først, men det lyse arket er en del av treningsbok-ideen.
-3. **Fanenavn:** «I dag / Program / Fremgang / Sammen» eller dagens «Økt / Plan / Logg / Sammen»?
-4. **Fargen for kondisjon:** ønsker du en egen farge, eller holder fylt og åpen form?
+Jonas bestemte:
+
+1. **Bakgrunnsbildet** brukes på alle sider. Toningen over bildet gjøres litt kraftigere, fordi grå tekst faller til 4,2:1 der bildet er lysest.
+2. **Mørkt er utgangspunktet.** Arket er mørkt (kveldsark) som standard.
+3. **Fanene** blir *I dag · Program · Fremgang · Sammen*.
+4. **Aktiv økt viser fanelinja.** Dette erstatter forslaget om fullskjerm.
+
+## Tre fargeforslag
+
+Vist på skissene Aktiv økt og Fremgang her: https://claude.ai/artifact/4KQcAsvyRFkmGCkmr7MfrP
+
+Alle tre har de samme rollene: plan (grått), gjort, avvik, rekord og kondisjon. Neste sett markeres med tykk strek i tekstfargen. Kontrasten er målt mot arket.
+
+| Rolle | 1. Kveldsark | 2. Dommerlys | 3. Skivefarger |
+|---|---|---|---|
+| Bakgrunn bak bildet | `#0E0F12` | `#0B0B0C` | `#0C0E14` |
+| Ark | `#22252B` | `#1C1C1E` | `#1B1F2A` |
+| Ark, trykket / pauselinje | `#2B2F36` | `#26262A` | `#242938` |
+| Tekst | `#ECEBE6` · 12,9:1 | `#E6E4DE` · 13,4:1 | `#EEF0F4` · 14,4:1 |
+| Tekst 2 | `#B3B7BE` · 7,6:1 | `#ABA9A3` · 7,2:1 | `#B0B6C3` · 8,1:1 |
+| Tekst 3 | `#959AA3` · 5,4:1 | `#8F8D88` · 5,1:1 | `#9098A8` · 5,7:1 |
+| Kant (settruter) | `#6E737B` · 3,2:1 | `#6E6C68` · 3,3:1 | `#687083` · 3,3:1 |
+| Gjort | `#9AACFF` · 7,1:1 (blå penn) | `#FFFFFF` · 17,0:1 (fylt rute) | `#6AA5FF` · 6,6:1 (blå skive) |
+| Avvik | `#FF6A55` · 5,4:1 | `#FF5B4A` · 5,6:1 | `#FF5E52` · 5,5:1 |
+| Rekord | `#9AACFF` (blå ring) | `#FFFFFF` (hvit ring) | `#FFD23F` · 11,4:1 (gul skive) |
+| Kondisjon | `#5CCFBE` · 8,1:1 | `#F0B13C` · 9,0:1 | `#41C985` · 7,8:1 (grønn skive) |
+| Hovedknapp (tekst på knapp) | `#ECEBE6` / `#0E0F12` · 16,1:1 | `#FFFFFF` / `#111112` · 18,9:1 | `#EEF0F4` / `#0C0E14` · 16,9:1 |
+
+- **Kveldsark** er treningsboka slik den er, mørk og ryddet. Minst endring.
+- **Dommerlys** bygger på lysene i styrkeløft: hvitt er godkjent, rødt er underkjent. Ferdige sett lyser opp som fylte hvite ruter. Mest særegen, størst endring.
+- **Skivefarger** bruker fargene på vektskivene. Rekorder får egen farge (gul). Mest farge, og skivetegningen deler farger med resten av appen.
+
+**Anbefaling:** Kveldsark. Den retter det som ikke virker i dag uten å ta bort treningsboka, og gir kondisjon en egen farge.
 
 ## Kilder
 
