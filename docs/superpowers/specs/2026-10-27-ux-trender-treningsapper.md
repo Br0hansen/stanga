@@ -303,6 +303,8 @@ Alle tre har de samme rollene: plan (grått), gjort, avvik, rekord og kondisjon.
 
 **Bygget (versjon 43):** Alle tre ligger i appen som temaer under Plan → Innstillinger → Utseende, sammen med *Lyst ark* (det lyse arket fra før, med mørkere grå og synlige kanter). Kveldsark er standard.
 
+**Bygget (versjon 44):** Femte tema, *Monokrom blå* (blått overalt, gull på hovedknappene og rekorden, rødt for avvik). Fanene heter *I dag · Program · Fremgang · Sammen*, og Innstillinger åpnes med tannhjulet øverst til høyre på I dag.
+
 ## Kilder
 
 - Apple, WWDC25 «Build a UIKit app with the new design» (fanelinje som flyter og krymper, *bottom accessory*, fargevarianter): [developer.apple.com](https://developer.apple.com/videos/play/wwdc2025/284/)

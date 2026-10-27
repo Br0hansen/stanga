@@ -23,7 +23,7 @@
    Blyant (ink) = planlagt, blå penn (pen) = det du har gjort, rød penn (red) = avvik: bom, hoppet over, tiden er ute.
    Skivefargene brukes bare i skivetegningen. Én skriftfamilie, hierarki med størrelse og bredde.
    Utenfor arket (bildet, fanelinja, pausen) gjelder de mørke verdiene. Inne i arket byttes de samme navnene til papirets. */
-/* Temaer (Plan → Innstillinger → Utseende). Kveldsark er standard. Hvert tema setter de samme navnene:
+/* Temaer (Innstillinger → Utseende). Kveldsark er standard. Hvert tema setter de samme navnene:
    edge = kanten på settrutene (minst 3:1 mot arket), kond = kondisjon, rekord = ringen rundt en rekord.
    All tekst har minst 4,5:1 mot arket. */
 :root{
@@ -52,6 +52,13 @@
   --chalk:#EEF0F4; --chalk-2:#B0B6C3; --chalk-3:#9098A8; --accent:#6AA5FF; --accent-ink:#0C0E14; --miss:#FF5E52;
   --paper:#1B1F2A; --ink:#EEF0F4; --ink-2:#B0B6C3; --ink-3:#9098A8; --rule:#323848; --edge:#687083;
   --pen:#6AA5FF; --red:#FF5E52; --field:#151924; --press:#2A3040; --kond:#41C985; --rekord:#FFD23F}
+/* Monokrom blå: alt i blått, mørkest bak bildet og lysere på arket. Rødt for avvik og gull for hovedknapp og rekord. */
+:root[data-theme="blaa"]{
+  --iron:#070D1A; --iron-2:#0D1528; --iron-3:#17213A; --line:rgba(220,230,255,.16);
+  --chalk:#E8EEFB; --chalk-2:#A9B8D6; --chalk-3:#8796B5; --accent:#8AB4F8; --accent-ink:#070D1A; --miss:#FF6B5E;
+  --paper:#16233F; --ink:#E8EEFB; --ink-2:#A9B8D6; --ink-3:#8D9CBB; --rule:#26345A; --edge:#5B6F9A;
+  --pen:#8AB4F8; --red:#FF6B5E; --field:#0F1A30; --press:#1F2E52; --kond:#7FD8F5; --rekord:#F2C14E}
+:root[data-theme="blaa"] .btn:not(.ghost):not(.danger){background:#F2C14E;color:#1A1405}
 /* Lyst ark: det lyse arket fra før, med mørkere grå og synlige kanter */
 :root[data-theme="lys"]{
   --paper:#F3F2EE; --ink:#22252A; --ink-2:#5B6068; --ink-3:#686D75; --rule:#D5D7DA; --edge:#878C94;
@@ -256,6 +263,7 @@ p{margin:0}
 .look-opt{appearance:none;display:grid;gap:8px;text-align:left;min-height:44px;padding:12px;border:1px solid var(--line);border-radius:4px;background:transparent;color:var(--chalk);font:600 16px/1.2 var(--face);cursor:pointer}
 .look-opt small{font:400 13px/1.3 var(--face);color:var(--chalk-2)}
 .look-opt[aria-pressed="true"]{box-shadow:inset 0 0 0 2px var(--chalk);border-color:var(--chalk)}
+.look-opt:last-child:nth-child(odd){grid-column:1/-1}
 .look-sw{display:flex;gap:4px}
 .look-sw i{width:18px;height:18px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(128,128,128,.45)}
 textarea{width:100%;min-height:110px;background:var(--iron);border:1px solid var(--line);border-radius:3px;color:var(--chalk);font:16px/1.4 ui-monospace,Menlo,monospace;padding:10px;resize:vertical}
@@ -435,7 +443,8 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 /* Økta: fremdrift øverst, ett ark som er «nå», ferdige øvelser som én linje */
 .h-row{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
 .h-row h1{margin:0}
-.h-row>span{font-size:14px;color:var(--chalk-2);white-space:nowrap;padding-bottom:2px;font-variant-numeric:tabular-nums}
+.h-row>span{font-size:14px;color:var(--chalk-2);white-space:nowrap;padding-bottom:2px;font-variant-numeric:tabular-nums;margin-left:auto}
+.h-row.h-end{justify-content:flex-end}
 .prog{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:4px;margin-top:6px;order:2}
 .prog i{display:block;height:3px;background:var(--line);overflow:hidden}
 .prog b{display:block;height:100%;background:var(--chalk)}
@@ -671,9 +680,9 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 </div>
 <div class="toast" id="toast" hidden></div>
 <nav class="tabs" aria-label="Faner"><div class="tabs-in">
-  <button class="tab" data-a="tab:today"><svg viewBox="0 0 24 24"><path d="M2 12h20M5 8v8M8 6v12M16 6v12M19 8v8"/></svg>Økt</button>
-  <button class="tab" data-a="tab:plan"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h10"/></svg>Plan</button>
-  <button class="tab" data-a="tab:log"><svg viewBox="0 0 24 24"><path d="M3 19h18M5 15l4-4 4 3 6-7"/></svg>Logg</button>
+  <button class="tab" data-a="tab:today"><svg viewBox="0 0 24 24"><path d="M2 12h20M5 8v8M8 6v12M16 6v12M19 8v8"/></svg>I dag</button>
+  <button class="tab" data-a="tab:plan"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h10"/></svg>Program</button>
+  <button class="tab" data-a="tab:log"><svg viewBox="0 0 24 24"><path d="M3 19h18M5 15l4-4 4 3 6-7"/></svg>Fremgang</button>
   <button class="tab" data-a="tab:together"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c.6-3.2 3-5 6-5s5.4 1.8 6 5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2c2.6.2 4.4 1.8 5 4.8"/></svg>Sammen<span class="tab-badge" id="sxBadge" hidden></span></button>
 </div></nav>
 </div>
@@ -688,7 +697,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 43;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 44;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -712,7 +721,7 @@ const LIFTS = {
 };
 const ALTS = slot => Object.keys(LIFTS).filter(k => LIFTS[k].alt === slot);
 const sw = (a, slot) => (a.swaps && a.swaps[slot]) || slot;   // hvilket løft ligger i plassen nå?
-// Stanga: 20 kg som standard, 15 kg kan velges under Plan → Innstillinger. Laveste vekt på stangøvelser er tom stang.
+// Stanga: 20 kg som standard, 15 kg kan velges under Innstillinger. Laveste vekt på stangøvelser er tom stang.
 const BAR = () => S.settings.bar === 15 ? 15 : 20;
 // Temaene under Innstillinger → Utseende: id, navn, forklaring, fire fargeprøver fra temaet og fargen bak bildet.
 // Fargene i temaene står i CSS-en øverst (:root[data-theme]).
@@ -720,6 +729,7 @@ const LOOKS = [
   ['kveld', 'Kveldsark', 'Blå penn på mørkt ark', ['#22252B','#9AACFF','#FF6A55','#5CCFBE'], '#0E0F12'],
   ['dommer', 'Dommerlys', 'Ferdige sett lyser hvitt', ['#1C1C1E','#FFFFFF','#FF5B4A','#F0B13C'], '#0B0B0C'],
   ['skive', 'Skivefarger', 'Fargene fra vektskivene', ['#1B1F2A','#6AA5FF','#FFD23F','#41C985'], '#0C0E14'],
+  ['blaa', 'Monokrom blå', 'Blått overalt, gull på knappene', ['#16233F','#8AB4F8','#7FD8F5','#F2C14E'], '#070D1A'],
   ['lys', 'Lyst ark', 'Blå penn på lyst papir', ['#F3F2EE','#2343C4','#C9301F','#0B7A6C'], '#0E0F12']];
 const look = () => LOOKS.some(t => t[0] === S.settings.theme) ? S.settings.theme : 'kveld';
 function applyLook(){
@@ -2476,7 +2486,7 @@ function vPlan(){
       <p class="muted small">${PLAN_NOTE[p.prog] || ''}${P.active ? '' : ' Vektene er regnet ut fra tallene du har skrevet inn.'}${totalOf(p, a) ? '' : ' Programmet har ingen fast slutt, så planen viser 12 uker.'}</p></header>
     ${planWeeks(P, p, a)}`;
 }
-// Ukene i planen. Brukes både i Plan-fanen og når du ser planen til et program før du aktiverer det.
+// Ukene i planen. Brukes både i Program-fanen og når du ser planen til et program før du aktiverer det.
 function planWeeks(P, p, a){
   const per = planPer(p, a), ax = p.prog === 'athx', tot = totalOf(p, a);
   const N = tot || Math.max(12 * per, a.idx + 4 * per);
@@ -2505,7 +2515,7 @@ function planWeeks(P, p, a){
 
 /* ---------- Pete Plan (Pete Marston) ----------
    Tre-ukers rotasjon med seks økter per uke, kontrollert mot Pete Marstons egen tabell
-   (machars.net/waspeteplan.htm). Kan slås av under Plan.
+   (machars.net/waspeteplan.htm). Kan slås av under Program.
    off = målfart i sekunder per 500 m i forhold til 2K-farten (negativ = raskere).
    Progresjon (fra planen): snittet fra alle dragene i en intervalløkt blir målet neste gang samme økt kommer.
    Hard distanse: prøv å komme nær din beste tid. Rolige økter følger 2K-farten.
@@ -2672,6 +2682,7 @@ function vToday(){
   if (ui.bank) return vBank();
   if (ui.free) return vFree();
   if (!S.active) return `
+    <div class="h-row h-end">${gearBtn()}</div>
     <div class="empty">
       <div class="bar" aria-hidden="true"></div>
       <h1>Ingen program ennå</h1>
@@ -2702,7 +2713,7 @@ function vToday(){
   }
   if (over) {
     const a = S.active;
-    return h + `<header class="head"><p class="eyebrow">${p.name}</p><h1>Programmet er fullført</h1></header>
+    return h + `<header class="head"><p class="eyebrow">${p.name}</p><div class="h-row"><h1>Programmet er fullført</h1>${gearBtn()}</div></header>
       ${a.e1rm ? `<div class="box trend">${Object.keys(a.e1rm).map(l => `<div class="tr"><b>${liftName(l)}</b><span>${fmt(a.base[l])} → ${fmt(Math.round(a.e1rm[l]*2)/2)} kg</span></div>`).join('')}</div>
       <p class="muted small">Startverdi mot estimert 1RM nå.</p>` : ''}
       <button class="btn" data-a="go:library">Velg neste program</button>`;
@@ -2717,7 +2728,7 @@ function vToday(){
   const mins = Math.floor((Date.now() - s.started) / 60000);
   h += `<header class="head">
       <p class="eyebrow">${p.name} · ${s.sub}</p>
-      <div class="h-row"><h1>${s.day}</h1>${anyTouched ? `<span>${mins} min · ${setsLeft ? setsLeft + ' sett igjen' : 'alt gjort'}</span>` : ''}</div>
+      <div class="h-row"><h1>${s.day}</h1>${anyTouched ? `<span>${mins} min · ${setsLeft ? setsLeft + ' sett igjen' : 'alt gjort'}</span>` : ''}${gearBtn()}</div>
       <div class="prog" aria-label="${cur < 0 ? 'Alle øvelser er gjort' : 'Øvelse ' + (cur+1) + ' av ' + s.ex.length}">${s.ex.map(e => {
         const d = e.sets.filter(x => x.d != null).length;
         return `<i class="${d === e.sets.length ? 'full' : ''}"><b style="width:${Math.round(d / e.sets.length * 100)}%"></b></i>`; }).join('')}</div>
@@ -2824,7 +2835,7 @@ function vToday(){
         ${next ? 'Neste økt blir ' + esc(next.day) + (next.sub && next.sub !== s.sub ? ' (' + esc(next.sub) + ')' : '') + '.' : 'Dette var siste økt i programmet.'}</p>
       <div class="row"><button class="btn danger sm" data-a="skipday">Ja, hopp over</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div></section>`;
   }
-  // Planen ligger under Plan og fri økt under Logg, så her står bare det som gjelder dagens økt
+  // Planen ligger under Program og fri økt under Fremgang, så her står bare det som gjelder dagens økt
   if (ui.confirm !== 'skipday') h += `<div class="links"><button class="link" data-a="confirm:skipday">Hopp over økta</button></div>`;
   ui.fresh = null;   // blekket tegnes bare én gang, på settet du nettopp førte inn
   return h;
@@ -2945,12 +2956,12 @@ function vActiveCard(){
       ${lifts.length ? `<div class="act-facts">${lifts.map(([l, w]) => `<div><b>${fmt(w)}</b><span>${liftName(l)}</span></div>`).join('')}</div>` : ''}
     </button>`;
 }
-// Biblioteket. root: Plan-fanen uten aktivt program, med tannhjulet øverst. Ellers åpnet fra «Bytt program».
+// Biblioteket. root: Program-fanen uten aktivt program. Ellers åpnet fra «Bytt program».
 function vPrograms(root){
   const f = ui.progF || '', act = S.active && S.active.programId;
   const list = PROGRAMS.filter(p => p.id !== act && (!f || p.level.toLowerCase().includes(f.toLowerCase())));
-  return `${root ? '' : '<button class="link" data-a="back">‹ Plan</button>'}
-    <header class="head h-row"><h1>${root ? 'Plan' : 'Bytt program'}</h1>${root ? gearBtn() : ''}</header>
+  return `${root ? '' : '<button class="link" data-a="back">‹ Program</button>'}
+    <header class="head"><h1>${root ? 'Program' : 'Bytt program'}</h1></header>
     <p class="muted small">${root ? 'Velg et styrkeprogram. Trykk på ett for å se øktene og aktivere det.' : 'Det aktive programmet byttes først når du aktiverer et nytt. Loggen din blir liggende.'}</p>
     <div class="filt" role="group" aria-label="Filtrer etter nivå">${[''].concat(LEVELS).map(l =>
       `<button data-a="progf:${l}" aria-pressed="${f === l}">${l || 'Alle'}</button>`).join('')}</div>
@@ -2987,7 +2998,7 @@ function vDetail(p){
       <div class="field"><label for="in-${i}">${keyLabel(k)}</label>
         <span class="inp"><input id="in-${i}" data-key="${k}" type="text" inputmode="decimal" value="${fmt(v)}">kg</span></div>`; }).join('')}${p.orm ? '</details>' : '</div>'}
     <p class="muted small">${p.prog === '531' ? 'Appen regner ut treningsmaks som 90 % av dette.' : p.prog === 'jugg' ? 'Appen regner ut arbeidsmaks som 90 % av dette.' : p.prog === 'sp12' ? 'Startvektene regnes ut fra dette. Etter hvert styrer RPE-en din vektene.' : p.prog === 'cube' ? 'Alle vekter regnes ut som prosent av dette.' : 'Start lett. Teknikken skal sitte før vekten blir tung.'}
-      ${slotsOf(p).length ? ' Vil du bytte et løft, gjør du det under Plan → Maksløft, pauser og Pete Plan når programmet er aktivt.' : ''}
+      ${slotsOf(p).length ? ' Vil du bytte et løft, gjør du det under Program → Maksløft, pauser og Pete Plan når programmet er aktivt.' : ''}
       ${other ? ' Dette erstatter '+other.name+'. Loggen din blir liggende.' : ''}${isActive ? ' Programmet er aktivt. Aktiverer du på nytt, starter det fra økt 1 med vektene over.' : ''}</p>`}
     <button class="btn ghost" data-a="planprev:${p.id}">Se hele planen</button>
     <button class="btn" data-a="activate:${p.id}">${isActive ? 'Start på nytt' : 'Aktiver program'}</button>`;
@@ -3022,7 +3033,7 @@ function vCalendar(){
 }
 function vLog(){
   if (ui.logEdit) return vLogEdit();
-  let h =`<header class="head h-row"><div><p class="eyebrow">Siste 4 uker</p><h1>Logg</h1></div><button class="quick" data-a="free">+ Fri økt</button></header>`;
+  let h =`<header class="head h-row"><div><p class="eyebrow">Siste 4 uker</p><h1>Fremgang</h1></div><button class="quick" data-a="free">+ Fri økt</button></header>`;
   if (!S.history.length) return h + `<p class="muted">Øktene du fullfører havner her, med vekt, reps og notater.</p>`;
   const now = Date.now(), last28 = S.history.filter(x => x.date > now - 28*864e5);
   const nSt = last28.filter(isStrength).length, nMc = last28.filter(isMetcon).length;
@@ -3137,18 +3148,17 @@ function vPeteSettings(){
 const gearSVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>';
 const gearBtn = () => `<button class="gear" data-a="go:settings" aria-label="Innstillinger">${gearSVG}</button>`;
 
-// Plan: det aktive programmet, snarveier til innstillingene for treningen og et annet program, og hele planen under.
-// Uten aktivt program er Plan biblioteket.
+// Program: det aktive programmet, snarveier til innstillingene for treningen og et annet program, og hele planen under.
+// Uten aktivt program er Program biblioteket.
 function vPlanTab(){
   const d = ui.detail;
-  if (d === 'settings') return vSettings();
   if (d === 'training') return vTraining();
   if (d === 'guide') return vGuide();
   if (d === 'library') return vPrograms(false);
   if (d) return vDetail(prog(d));
   if (!S.active || !prog(S.active.programId)) return vPrograms(true);
   const p = prog(S.active.programId), P = {id: p.id, active: true};
-  return `<header class="head h-row"><h1>Plan</h1>${gearBtn()}</header>
+  return `<header class="head"><h1>Program</h1></header>
     ${vActiveCard()}
     <div class="plist">
       <button data-a="go:training"><span><b>Maksløft, pauser og Pete Plan</b><small>Det appen regner vektene og pausene ut fra</small></span>${chev}</button>
@@ -3162,7 +3172,7 @@ function vPlanTab(){
 // Det som styrer treningen: maksløft, pauser, Pete Plan, løft i programmet og å avslutte programmet
 function vTraining(){
   const p = S.active && prog(S.active.programId);
-  return `<button class="link" data-a="back">‹ Plan</button>
+  return `<button class="link" data-a="back">‹ Program</button>
     <header class="head"><h1>Maksløft og pauser</h1></header>
     <h3>Mine maksløft (1RM)</h3>
     <div class="box" style="gap:0">${Object.keys(S.maxes).length ? Object.keys(S.maxes).map(l => `
@@ -3227,7 +3237,8 @@ function render(){
   let h = ui.storageOK ? '' : `<div class="warn">Lagring er ikke tilgjengelig her. Endringer forsvinner når siden lukkes.</div>`;
   h += vSyncAsk();   // skybackup: skyen og telefonen er endret hver for seg, brukeren må velge
   if (ui.plan) { const v = vPlan(); if (ui.plan) { $('#view').innerHTML = h + v; return; } }
-  if (ui.tab === 'today') h += vToday();
+  if (ui.detail === 'settings') h += vSettings();   // åpnes fra tannhjulet på I dag
+  else if (ui.tab === 'today') h += vToday();
   else if (ui.tab === 'together') h += vTogether();
   else if (ui.tab === 'log') h += vLog();
   else h += vPlanTab();
@@ -3242,7 +3253,7 @@ function render(){
 }
 
 /* ---------- Pausetimer, skjerm-på, toast ---------- */
-// Lyd når pausen er over (innstilling under Plan → Innstillinger). Lyden må låses opp i et trykk, derfor skjer det i startRest.
+// Lyd når pausen er over (innstilling under Innstillinger). Lyden må låses opp i et trykk, derfor skjer det i startRest.
 let audio = null;
 function unlockAudio(){
   if (!S.settings.sound) return;
@@ -3453,7 +3464,7 @@ async function syncAfterLogin(){
     const rows = await db('backups', 'select=rev,updated_at,data&user_id=eq.' + uid());
     if (!rows.length) return;
     if (syncEmpty(S)) { SY = {on: true, uid: uid()}; syncAdopt(rows[0]); render(); toast('Loggen din er hentet fra skyen'); }
-    else { ui.syncHint = Date.parse(rows[0].updated_at); toast('Du har en backup i skyen. Se Plan → Innstillinger.'); }
+    else { ui.syncHint = Date.parse(rows[0].updated_at); toast('Du har en backup i skyen. Se Innstillinger (tannhjulet på I dag).'); }
   } catch(e) {}
 }
 function vSyncAsk(){
@@ -3743,7 +3754,7 @@ function vSxSignup(){
   return `<header class="head"><p class="eyebrow">Valgfritt</p><h1>Sammen</h1>
       <p class="muted">Legg ut når du skal trene, og la vennene dine bli med. Det krever en konto. Resten av appen virker som før uten.</p></header>
     <section class="box sx-form">${box}</section>
-    <p class="muted small">Bare brukernavn, venner og timer lagres, hos Supabase i EU. Treningsloggen din blir på telefonen, med mindre du slår på skybackup under Plan → Innstillinger. Der kan kontoen også slettes.</p>`;
+    <p class="muted small">Bare brukernavn, venner og timer lagres, hos Supabase i EU. Treningsloggen din blir på telefonen, med mindre du slår på skybackup under Innstillinger (tannhjulet på I dag). Der kan kontoen også slettes.</p>`;
 }
 
 function vSxNewPw(){
@@ -4243,7 +4254,7 @@ document.addEventListener('click', ev => {
       if (r[0] === 'together') { ui.sxView = 'list'; sxOpen(); }
       render(); toTop(); break;
     // Undersider i Plan: Tilbake går dit du kom fra (planen, biblioteket eller guiden)
-    case 'open': case 'go': ui.tab = 'plan'; (ui.stack = ui.stack || []).push(ui.detail); ui.detail = r[0]; ui.confirm = null; render(); toTop(); break;
+    case 'open': case 'go': if (r[0] !== 'settings') ui.tab = 'plan'; (ui.stack = ui.stack || []).push(ui.detail); ui.detail = r[0]; ui.confirm = null; render(); toTop(); break;
     case 'back': ui.detail = (ui.stack || []).pop() || null; ui.confirm = null; render(); toTop(); break;
     case 'activate': activate(r[0]); break;
     case 'set': {
