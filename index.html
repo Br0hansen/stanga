@@ -16,32 +16,41 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap">
 <style>
-/* Layout: én smal kolonne som et treningskort, fast fanelinje nederst.
-   Mørk jernflate; skivefargene (25 rød, 20 blå, 15 gul, 10 grønn) brukes som betydning, ikke pynt. */
+/* Treningsboka: programmet står trykt på et ark over treningsrommet.
+   Blyant (ink) = planlagt, blå penn (pen) = det du har gjort, rød penn (red) = avvik: bom, hoppet over, tiden er ute.
+   Skivefargene brukes bare i skivetegningen. Én skriftfamilie, hierarki med størrelse og bredde.
+   Utenfor arket (bildet, fanelinja, pausen) gjelder de mørke verdiene. Inne i arket byttes de samme navnene til papirets. */
 :root{
-  --iron:#111317; --iron-2:#191C22; --iron-3:#232730; --line:#2E333C;
-  --chalk:#ECEAE4; --chalk-2:#A4A8B1; --chalk-3:#6F747E;
-  --accent:#4C86F0; --accent-ink:#08111F;
-  --ok:#3FB872; --ok-ink:#06150C;
-  --tint-run:rgba(76,134,240,.20); --tint-warn:rgba(237,190,58,.22); --miss:#E5533F; --amrap:#EDBE3A;
+  --iron:#0E0F12; --iron-2:#17191D; --iron-3:#24272D; --line:rgba(236,235,230,.16);
+  --chalk:#ECEBE6; --chalk-2:#B3B7BE; --chalk-3:#80858E;
+  --accent:#9AACFF; --accent-ink:#0E0F12;
+  --ok:var(--accent); --ok-ink:var(--accent-ink); --miss:#FF6A55; --amrap:var(--chalk-2);
+  /* Arket. Kveldsark (mørkt papir) følger telefonens mørke modus. */
+  --paper:#F3F2EE; --ink:#22252A; --ink-2:#5B6068; --ink-3:#8A8F97; --rule:#D5D7DA;
+  --pen:#2343C4; --red:#C9301F; --field:#FBFBF9; --press:#E7E6E1;
+  --lift:0 14px 30px -16px rgba(0,0,0,.75),0 1px 3px rgba(0,0,0,.35);
   --p25:#D93A2F; --p20:#2F6FDB; --p15:#E3B42B; --p10:#2E9E5B; --p5:#E6E4DE; --p2:#B8413A; --p1:#A9AEB6;
-  --display:'Barlow Condensed','Arial Narrow','Helvetica Neue',sans-serif;
-  --body:'Barlow',-apple-system,system-ui,'Segoe UI',sans-serif;
+  --face:'Archivo','Arial Narrow','Helvetica Neue',Arial,sans-serif;
+  --display:var(--face); --body:var(--face);
   color-scheme:dark;
 }
+@media (prefers-color-scheme:dark){:root{
+  --paper:#24272D; --ink:#E8E7E2; --ink-2:#A6ABB3; --ink-3:#7E838C; --rule:#393D45;
+  --pen:#9AACFF; --red:#FF6A55; --field:#1B1E23; --press:#2E3138}}
+
 /* App-skall: bare innholdet scroller. Fanelinjen er en fast del av oppsettet, ikke position:fixed,
    så iOS ikke kan flytte den når sidehøyden endrer seg mellom faner. */
 html{height:100%;box-sizing:border-box}
 html,body{background:var(--iron);color:var(--chalk)}
 body{height:100%;overflow:hidden;
-  font:16px/1.45 var(--body);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+  font:16px/1.45 var(--face);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
 *{box-sizing:border-box}
-/* Bakgrunnsbilde: mørkt treningsrom. Ligger på skallet, så det står stille mens innholdet scroller.
-   Toningen over holder teksten lesbar; vektstanga til høyre i bildet får vises på smal skjerm. */
+::selection{background:var(--pen);color:var(--paper)}
+/* Bakgrunnsbilde: mørkt treningsrom. Ligger på skallet, så det står stille mens innholdet scroller. */
 .app{position:fixed;inset:0;display:flex;flex-direction:column;
-  background:linear-gradient(rgba(17,19,23,.35),rgba(17,19,23,.7)),url(bg.webp) 78% center/cover no-repeat,var(--iron);
+  background:linear-gradient(rgba(10,11,13,.5),rgba(10,11,13,.82)),url(bg.webp) 78% center/cover no-repeat,var(--iron);
   padding-top:env(safe-area-inset-top,0px);
   /* iOS oppgir av og til en altfor stor bunnsone i hjemskjerm-apper. 34 px er hjemmelinjen på iPhone. */
   padding-bottom:min(env(safe-area-inset-bottom,0px),34px)}
@@ -51,392 +60,422 @@ button{font-family:inherit;touch-action:manipulation}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 .wrap{max-width:560px;margin:0 auto;
-  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
-  padding-block:20px 104px;
-  display:grid;gap:16px}
+  padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));
+  padding-block:20px 112px;
+  display:grid;gap:14px}
 
-.eyebrow{font:600 12px/1.2 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--chalk-2);margin:0}
-h1{font:700 42px/.95 var(--display);text-transform:uppercase;letter-spacing:.01em;margin:6px 0 0;text-wrap:balance}
-h2{font:700 22px/1.05 var(--display);text-transform:uppercase;letter-spacing:.02em;margin:0;text-wrap:balance}
-h3{font:600 12px/1.2 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--chalk-2);margin:8px 0 0}
+/* Arket: alt du leser ligger på papir. Samme fargenavn, papirets verdier. */
+.ex,.ex-row,.card,.box,.sess,.done,.day,.plist,.bankitem,.sx-card,.sx-news,.sx-list,.act-card,.guide-row,.warn,.ch-msg{
+  --chalk:var(--ink); --chalk-2:var(--ink-2); --chalk-3:var(--ink-3); --line:var(--rule);
+  --iron:var(--field); --iron-2:var(--paper); --iron-3:var(--press);
+  --accent:var(--pen); --accent-ink:var(--paper); --ok:var(--pen); --ok-ink:var(--paper); --miss:var(--red);
+  background:var(--paper);color:var(--ink);border:0;border-radius:3px;box-shadow:var(--lift)}
+
+/* Overskrifter: vanlige bokstaver. Linjen som før sto over tittelen, står under den. */
+.eyebrow{font:500 13px/1.3 var(--face);color:var(--chalk-2);margin:0}
+h1{font:700 32px/1 var(--face);font-stretch:85%;letter-spacing:-.01em;margin:0;text-wrap:balance}
+h2{font:700 20px/1.15 var(--face);margin:0;text-wrap:balance}
+h3{font:600 13px/1.3 var(--face);color:var(--chalk-2);margin:10px 0 -4px}
 p{margin:0}
 .muted{color:var(--chalk-2)}
 .small{font-size:14px}
-.head{display:grid;gap:4px;padding-top:4px}
+.head{display:flex;flex-direction:column;gap:5px;padding-top:4px}
+.head>*{order:2}
+.head>h1,.head>.h-row{order:0}
+.head>.eyebrow{order:1}
+.head.h-row{flex-direction:row}
+.head.h-row>*{order:0}
+.head.h-row>div:first-child{display:flex;flex-direction:column;gap:5px}
+.head.h-row>div:first-child>.eyebrow{order:1}
 
-/* Knapper */
-.btn{appearance:none;border:0;border-radius:12px;background:var(--accent);color:var(--accent-ink);
-  font:700 19px/1 var(--display);letter-spacing:.06em;text-transform:uppercase;padding:17px 20px;width:100%;cursor:pointer}
+/* Knapper: hovedknappen er kritt på mørkt og blyant på arket. Blått er forbeholdt det du har gjort. */
+.btn{appearance:none;border:0;border-radius:4px;background:var(--chalk);color:var(--iron);
+  font:600 17px/1 var(--face);padding:16px 18px;width:100%;cursor:pointer}
 .btn[disabled]{opacity:.35;cursor:default}
-.btn.ghost{background:var(--iron-3);color:var(--chalk)}
+.btn.ghost{background:transparent;color:var(--chalk);box-shadow:inset 0 0 0 1px var(--line)}
 .btn.danger{background:transparent;box-shadow:inset 0 0 0 1px var(--miss);color:var(--miss)}
-.btn.sm{font-size:16px;padding:12px 14px;width:auto}
+.btn.sm{font-size:15px;padding:11px 14px;width:auto}
+.btn:active:not([disabled]){transform:translateY(1px)}
 .row{display:flex;gap:10px;flex-wrap:wrap}
 .row>.btn{flex:1 1 140px}
-.link{appearance:none;background:none;border:0;color:var(--chalk-2);font:600 15px var(--body);padding:8px 0;cursor:pointer;display:inline-flex;align-items:center;gap:6px;justify-self:start}
+.link{appearance:none;background:none;border:0;color:var(--chalk-2);font:600 15px var(--face);padding:8px 0;cursor:pointer;display:inline-flex;align-items:center;gap:6px;justify-self:start}
 
-/* Øvelseskort */
-.ex{background:var(--iron-2);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:14px}
-.ex-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+/* Øvelsen: navnet, det store tallet og skivene er én trykkflate som fører inn neste sett */
+.ex{padding:14px 16px 16px;display:grid;gap:12px}
+.ex-hit{display:grid;gap:4px;margin:-14px -16px 0;padding:14px 16px 0;border-radius:3px 3px 0 0;cursor:pointer;-webkit-user-select:none;user-select:none}
+.ex-hit:active{background:var(--press)}
+.ex-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
 .ex-head>div{min-width:0}
-.tag{font:700 11px/1 var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:6px}
-.kg{font:700 36px/1 var(--display);font-variant-numeric:tabular-nums;white-space:nowrap}
-.kg small{font-size:16px;color:var(--chalk-2);margin-left:3px;letter-spacing:.04em}
+.ex-head h2{font-size:19px}
+.tag{font:500 13px/1.2 var(--face);color:var(--chalk-2);display:block;white-space:nowrap}
+.kg{font:800 40px/.9 var(--face);font-stretch:62%;letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap;display:flex;align-items:baseline;gap:8px}
+.ex.now .kg{font-size:104px;line-height:.8;margin-top:4px;letter-spacing:-.03em}
+.kg small{font:600 19px/1 var(--face);font-stretch:75%;color:var(--chalk-2);letter-spacing:0}
 
-.chips{display:flex;flex-wrap:wrap;gap:10px}
+/* Settene: én rekke, oppvarmingen mindre og grå, en strek før arbeidssettene */
+/* To grupper som brekker hver for seg: oppvarmingen (små, grå) og arbeidssettene. Avstanden mellom dem skiller dem. */
+.chips{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:flex-start}
+.chip-grp{display:flex;flex-wrap:wrap;gap:10px 6px}
 .cw{display:grid;justify-items:center;gap:4px}
-.cw small{font-size:12px;color:var(--chalk-3);font-variant-numeric:tabular-nums}
-.chip{width:54px;height:54px;border-radius:50%;border:2px solid var(--line);background:transparent;color:var(--chalk-3);
-  font:700 23px/1 var(--display);font-variant-numeric:tabular-nums;cursor:pointer;position:relative;transition:transform .08s}
-.chip:active{transform:scale(.93)}
-.chip.ok{background:var(--ok);border-color:var(--ok);color:var(--ok-ink)}
-.chip.miss{border-color:var(--miss);color:var(--miss)}
-.chip.am{border-style:dashed;border-color:var(--amrap)}
-.chip.am.ok{border-style:solid;background:var(--amrap);border-color:var(--amrap);color:var(--accent-ink)}
-.chip sup{position:absolute;top:7px;right:9px;font-size:13px}
+.cw small{font-size:12px;color:var(--chalk-2);font-variant-numeric:tabular-nums}
+.chip{width:50px;height:54px;border-radius:3px;border:1px solid var(--rule);background:transparent;color:var(--ink);
+  font:700 26px/1 var(--face);font-stretch:70%;font-variant-numeric:tabular-nums;cursor:pointer;position:relative;transition:transform .08s}
+.chip:active{transform:scale(.94)}
+.chip.next{box-shadow:inset 0 -3px 0 var(--pen);background:color-mix(in srgb,var(--pen) 8%,transparent);border-color:var(--pen)}
+.chip.ok{color:var(--pen);border-color:color-mix(in srgb,var(--pen) 35%,var(--rule))}
+.chip.ok::after{content:"";position:absolute;right:5px;top:6px;width:5px;height:9px;border:solid var(--pen);border-width:0 2px 2px 0;transform:rotate(45deg)}
+.chip.ok.fresh::after{animation:ink .3s cubic-bezier(.2,.8,.2,1)}
+@keyframes ink{from{clip-path:inset(100% 0 0 0)}to{clip-path:inset(0)}}
+.chip.miss{color:var(--red);border-color:color-mix(in srgb,var(--red) 40%,var(--rule))}
+.chip.miss::after{border-color:var(--red)}
+.chip.am{border-style:dashed;border-color:var(--ink-3)}
+.chip.am.ok{border-style:solid}
+.chip sup{position:absolute;top:6px;left:6px;font-size:12px}
+.chip.sm{width:42px;height:44px;font-size:18px;color:var(--ink-2);flex:none;padding-top:6px}
+.chip.sm.ok{color:var(--pen)}
+.chip.sm.ok::after{right:3px;top:3px;width:3px;height:7px;border-width:0 1.5px 1.5px 0}
+.chip-hint{font-size:13px;color:var(--chalk-2);margin:-2px 0 0}
 
-.amrap{display:flex;align-items:center;gap:12px;background:var(--iron-3);border-radius:12px;padding:8px 8px 8px 14px}
+.amrap{display:flex;align-items:center;gap:12px;background:var(--press);border-radius:3px;padding:6px 6px 6px 14px}
 .amrap span{flex:1;font-size:14px;color:var(--chalk-2)}
-.amrap b{font:700 26px/1 var(--display);min-width:2ch;text-align:center;font-variant-numeric:tabular-nums}
-.step{width:44px;height:44px;border-radius:10px;border:0;background:var(--iron-2);color:var(--chalk);font:600 24px/1 var(--body);cursor:pointer}
+.amrap b{font:800 28px/1 var(--face);font-stretch:70%;min-width:2ch;text-align:center;font-variant-numeric:tabular-nums}
+.step{width:44px;height:44px;border-radius:3px;border:0;background:var(--paper);color:var(--chalk);font:600 24px/1 var(--face);cursor:pointer;box-shadow:inset 0 0 0 1px var(--rule)}
 
 /* Skiver per side */
 .platesrow{display:flex;align-items:center;gap:12px;min-height:30px;color:var(--chalk-2);font-size:13px;flex-wrap:wrap}
 .plates{display:flex;align-items:center;gap:2px;height:32px;position:relative;padding-left:16px}
-.plates::before{content:"";position:absolute;left:0;top:50%;width:16px;height:5px;margin-top:-2.5px;background:var(--chalk-3);border-radius:2px}
-.pl{display:block;border-radius:2px}
+.plates::before{content:"";position:absolute;left:0;top:50%;width:16px;height:5px;margin-top:-2.5px;background:#8E939B;border-radius:1px}
+.pl{display:block;border-radius:1px}
 .p25{width:9px;height:32px;background:var(--p25)} .p20{width:8px;height:32px;background:var(--p20)}
 .p15{width:7px;height:32px;background:var(--p15)} .p10{width:6px;height:32px;background:var(--p10)}
-.p5{width:5px;height:20px;background:var(--p5)} .p2{width:4px;height:15px;background:var(--p2)} .p1{width:3px;height:12px;background:var(--p1)}
+.p5{width:5px;height:20px;background:var(--p5);box-shadow:inset 0 0 0 1px #B7B5AE} .p2{width:4px;height:15px;background:var(--p2)} .p1{width:3px;height:12px;background:var(--p1)}
 .pl-txt{font-variant-numeric:tabular-nums}
+.platebox{padding:8px 0 12px;min-height:52px;border-bottom:1px solid var(--rule)}
+.platebox .plates{height:40px;padding-left:20px}
+.platebox .plates::before{width:20px;height:6px;margin-top:-3px}
+.platebox .p25{width:11px;height:40px} .platebox .p20{width:10px;height:40px} .platebox .p15{width:9px;height:40px} .platebox .p10{width:8px;height:40px}
+.platebox .p5{width:6px;height:26px} .platebox .p2{width:5px;height:19px} .platebox .p1{width:4px;height:15px}
+.platebox .pl-txt{font:700 18px/1 var(--face);color:var(--chalk)}
+.platebox .pl-txt small{font:500 13px var(--face);color:var(--chalk-2);margin-left:6px}
 
-/* Fullført-kort */
-.done{background:var(--iron-3);border-radius:14px;padding:18px;display:grid;gap:12px}
-.done .big{font:700 34px/1 var(--display);font-variant-numeric:tabular-nums}
-.notes{list-style:none;margin:0;padding:0;display:grid;gap:8px}
-.notes li{display:flex;gap:10px;align-items:baseline;font-size:15px}
+/* Fullført-kortet: det du løftet i blått, rekorder ringet rundt, avvik i rødt */
+.done{padding:16px;display:grid;gap:12px}
+.done .big{font:800 34px/1 var(--face);font-stretch:68%;font-variant-numeric:tabular-nums}
+.notes{list-style:none;margin:0;padding:0;display:grid}
+.notes li{display:flex;gap:12px;align-items:baseline;font-size:15px;padding:9px 0;border-top:1px solid var(--rule)}
 .notes li b{font-weight:600;min-width:7.5em}
-.notes .up{color:var(--ok)} .notes .down{color:var(--miss)} .notes .same{color:var(--chalk-2)} .notes .stage{color:var(--amrap)}
+.notes .up{color:var(--pen)} .notes .down{color:var(--red)} .notes .same,.notes .stage{color:var(--ink-2)}
+.prs{display:grid;gap:6px}
+.pr{display:flex;align-items:baseline;justify-content:space-between;gap:12px;font-size:15px}
+.pr b{font-weight:600}
+.ring{position:relative;display:inline-block;padding:0 4px;color:var(--pen);font-weight:700;font-variant-numeric:tabular-nums}
+.ring svg{position:absolute;left:-8px;top:-7px;width:calc(100% + 16px);height:calc(100% + 14px);fill:none;stroke:var(--pen);stroke-width:1.8;overflow:visible}
+
+/* Lister: ett ark med hårstreker mellom radene */
+.list{display:grid;gap:0;border-radius:3px;box-shadow:var(--lift);overflow:hidden}
+.list>*{border-radius:0;box-shadow:none}
+.list>*+*{border-top:1px solid var(--rule)}
+.list>.btn,.list>p{background:var(--paper);color:var(--ink);border-radius:0}
+.list>.btn.ghost{color:var(--ink);box-shadow:none}
+.list>p{padding:10px 16px}
+.wrap>.sess+.sess,.wrap>.sx-card+.sx-card{margin-top:-14px;border-top:1px solid var(--rule);border-top-left-radius:0;border-top-right-radius:0}
+.wrap>.sess:has(+.sess),.wrap>.sx-card:has(+.sx-card){border-bottom-left-radius:0;border-bottom-right-radius:0}
 
 /* Programkort */
-.list{display:grid;gap:12px}
-.card{appearance:none;text-align:left;width:100%;background:var(--iron-2);border:1px solid var(--line);border-radius:14px;padding:16px;color:var(--chalk);display:grid;gap:8px;cursor:pointer}
-.card:active{background:var(--iron-3)}
+.card{appearance:none;text-align:left;width:100%;padding:14px 16px;display:grid;gap:8px;cursor:pointer;font:inherit}
+.card:active{background:var(--press)}
 .card .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
 .meta{display:flex;flex-wrap:wrap;gap:6px}
-.pill{font:600 12px/1 var(--body);letter-spacing:.04em;padding:6px 9px;border-radius:999px;background:var(--iron-3);color:var(--chalk-2)}
-.pill.on{background:var(--accent);color:var(--accent-ink)}
-.box{background:var(--iron-2);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:10px}
+.pill{font:600 12px/1 var(--face);padding:6px 8px;border-radius:3px;box-shadow:inset 0 0 0 1px var(--line);color:var(--chalk-2)}
+.pill.on{background:var(--chalk);color:var(--iron);box-shadow:none}
+.box{padding:16px;display:grid;gap:10px}
 .days{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
-.day{background:var(--iron-2);border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:6px}
-.day h4{margin:0;font:700 17px/1 var(--display);text-transform:uppercase;letter-spacing:.03em}
+.day{padding:12px;display:grid;gap:6px}
+.day h4{margin:0;font:700 16px/1.1 var(--face)}
 .day div{font-size:14px;display:flex;justify-content:space-between;gap:8px}
 .day div span{color:var(--chalk-2);font-variant-numeric:tabular-nums;white-space:nowrap}
-.day b{color:var(--accent);font-size:12px;margin-right:4px}
+.day b{color:var(--ink-2);font-size:12px;margin-right:4px}
 
 .field{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
 .field:last-child{border-bottom:0}
 .field label{font-weight:500}
 .inp{display:flex;align-items:center;gap:6px;color:var(--chalk-2)}
-.inp input{width:92px;background:var(--iron);border:1px solid var(--line);border-radius:10px;color:var(--chalk);
-  font:700 21px/1 var(--display);padding:9px 10px;text-align:right;font-variant-numeric:tabular-nums}
+.inp input{width:92px;background:var(--iron);border:1px solid var(--line);border-radius:3px;color:var(--chalk);
+  font:700 21px/1 var(--face);font-stretch:75%;padding:9px 10px;text-align:right;font-variant-numeric:tabular-nums}
+.inp input:focus{border-color:var(--accent);outline:none}
 /* ATHX: skjema og kondisjonsdelen */
 .inp input.sm{width:52px}
-.inp input[type=date]{width:auto;font:500 16px var(--body);text-align:left}
+.inp input[type=date]{width:auto;font:500 16px var(--face);text-align:left}
 .ax-two{display:flex;gap:8px;align-items:center}
 .ax-cond h2{margin:0}
 .ax-lines{margin:0;padding-left:18px;display:grid;gap:4px}
 .ax-res{display:grid;gap:8px}
-.ax-slow button{flex:1 1 30%;font:600 14px/1.1 var(--body);padding:10px 4px}
+.ax-slow button{flex:1 1 30%;font:600 14px/1.1 var(--face);padding:10px 4px}
 .ax-score{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .ax-score div{display:grid;gap:2px}
-.ax-score b{font:700 24px/1 var(--display)}
+.ax-score b{font:800 26px/1 var(--face);font-stretch:68%}
 .ax-score span{font-size:12px;color:var(--chalk-2)}
 
 /* Logg */
-.sess{background:var(--iron-2);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:grid;gap:8px}
+.sess{padding:14px 16px;display:grid;gap:8px}
 .sess .top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
 .sess .ln{display:flex;justify-content:space-between;gap:12px;font-size:14px}
-.sess .ln>span:last-child{color:var(--chalk-2);text-align:right;font-variant-numeric:tabular-nums;min-width:0}
-.trend{display:grid;gap:4px}
-.tr{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
+.sess .ln>span:last-child{color:var(--pen);text-align:right;font-variant-numeric:tabular-nums;min-width:0}
+.trend{display:grid;gap:0}
+.tr{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
 .tr:last-child{border-bottom:0}
 .tr b{flex:1;font-weight:500}
 .tr span{font-variant-numeric:tabular-nums;color:var(--chalk-2);font-size:14px;white-space:nowrap}
 .tr svg{flex:none}
 
-/* Mer */
-.seg{display:flex;gap:6px;flex-wrap:wrap}
-.seg button{flex:1 1 56px;border:0;border-radius:10px;padding:12px 0;background:var(--iron-3);color:var(--chalk);font:700 18px/1 var(--display);cursor:pointer}
-.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
-textarea{width:100%;min-height:110px;background:var(--iron);border:1px solid var(--line);border-radius:10px;color:var(--chalk);font:16px/1.4 ui-monospace,Menlo,monospace;padding:10px;resize:vertical}
-.warn{background:var(--iron-3);border-radius:12px;padding:12px 14px;font-size:14px;color:var(--amrap)}
+/* Valg */
+.seg{display:flex;gap:4px;flex-wrap:wrap;padding:3px;border-radius:4px;box-shadow:inset 0 0 0 1px var(--line)}
+.seg button{flex:1 1 56px;border:0;border-radius:3px;padding:11px 0;background:transparent;color:var(--chalk);font:600 16px/1 var(--face);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--chalk);color:var(--iron)}
+textarea{width:100%;min-height:110px;background:var(--iron);border:1px solid var(--line);border-radius:3px;color:var(--chalk);font:16px/1.4 ui-monospace,Menlo,monospace;padding:10px;resize:vertical}
+textarea:focus{border-color:var(--accent);outline:none}
+.warn{padding:12px 14px;font-size:14px;color:var(--red)}
 
 .empty{display:grid;gap:14px;padding:28px 0}
-.empty .bar{height:6px;width:120px;background:var(--chalk-3);border-radius:3px;position:relative;margin:8px 0 6px 18px}
-.empty .bar::before,.empty .bar::after{content:"";position:absolute;top:-17px;width:9px;height:40px;border-radius:2px;background:var(--p20)}
+.empty .bar{height:6px;width:120px;background:var(--chalk-3);border-radius:2px;position:relative;margin:8px 0 6px 18px}
+.empty .bar::before,.empty .bar::after{content:"";position:absolute;top:-17px;width:9px;height:40px;border-radius:1px;background:var(--p20)}
 .empty .bar::before{left:6px;box-shadow:-11px 0 0 var(--p25)} .empty .bar::after{right:6px;box-shadow:11px 0 0 var(--p25)}
 
-/* Pausetimer og faner */
+/* Pausen: en linjal som brukes opp. Tiden står stort, rødt de siste sekundene, kritt når den er over. */
 .rest{position:absolute;left:0;right:0;z-index:21;bottom:0;
-  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-.rest-in{max-width:528px;margin:0 auto 8px;background:var(--chalk);color:var(--iron);border-radius:12px;overflow:hidden;position:relative;display:flex;align-items:center;gap:12px;padding:10px 10px 10px 16px}
-.rest-in b{font:700 38px/1 var(--display);font-variant-numeric:tabular-nums;min-width:3.4ch}
-.rest-in span{flex:1;font-size:15px;font-weight:600}
-.stage[data-rest="over"] .rest-in{background:var(--ok);color:var(--ok-ink)}
-
-/* Pausen som farge over hele skjermen: et svakt lag som synker nedover mens pausen går.
-   Blått mens den går, gult mot slutten, grønt blink ved null, gult som vokser igjen ved overtid.
-   pointer-events:none, så alt under kan trykkes som før. */
-.rest-fill{position:absolute;left:0;right:0;bottom:0;height:var(--lvl,0%);z-index:20;pointer-events:none;display:none;
-  background:var(--tint-run);border-top:2px solid var(--accent);transition:height .25s linear}
-.stage[data-rest] .rest-fill{display:block}
-.stage[data-rest="warn"] .rest-fill{background:var(--tint-warn);border-top-color:var(--amrap)}
-.stage[data-rest="over"] .rest-fill{display:none}
-.rest-flash{position:absolute;inset:0;z-index:22;pointer-events:none;background:var(--ok);opacity:0}
+  padding-left:max(10px,env(safe-area-inset-left,0px));padding-right:max(10px,env(safe-area-inset-right,0px))}
+.rest-in{max-width:540px;margin:0 auto 8px;background:rgba(14,15,18,.94);color:var(--chalk);border:1px solid var(--line);border-radius:4px;padding:8px 8px 10px 14px;display:grid;gap:8px;
+  box-shadow:0 10px 30px -10px rgba(0,0,0,.8)}
+.rest-r1{display:flex;align-items:center;gap:10px}
+.rest-r1>b{font:800 38px/1 var(--face);font-stretch:66%;font-variant-numeric:tabular-nums;min-width:2.6ch;flex:none}
+.rest-r1>span{flex:1;min-width:0;font-size:13px;color:var(--chalk-2)}
+.rest-r1 button{height:44px;padding:0 12px;border:1px solid var(--line);background:transparent;color:var(--chalk);border-radius:3px;font:600 14px var(--face);cursor:pointer;flex:none}
+.ruler{height:10px;position:relative;margin-right:6px;background:repeating-linear-gradient(90deg,var(--chalk-3) 0 1px,transparent 1px 10%)}
+.ruler i{position:absolute;left:0;top:3px;height:4px;width:var(--lvl,0%);background:var(--chalk);transition:width .25s linear}
+.stage[data-rest="warn"] .rest-r1>b,.stage[data-rest="warn"] .rest-r1>span{color:var(--miss)}
+.stage[data-rest="warn"] .ruler i{background:var(--miss)}
+.stage[data-rest="over"] .ruler{display:none}
+.stage[data-rest="over"] .rest-r1>span{color:var(--chalk)}
+.rest-flash{position:absolute;inset:0;z-index:22;pointer-events:none;background:var(--chalk);opacity:0}
 .rest-flash.go{animation:restflash .9s ease-out}
-@keyframes restflash{0%{opacity:0}15%{opacity:.55}100%{opacity:0}}
+@keyframes restflash{0%{opacity:0}15%{opacity:.35}100%{opacity:0}}
 @media (prefers-reduced-motion:reduce){.rest-flash.go{animation:none}}
-.rest-in button{border:0;background:var(--iron);color:var(--chalk);border-radius:8px;padding:9px 12px;font:600 14px var(--body);cursor:pointer}
+
+/* Faner: fire, den valgte har en kritt-strek over */
 .tabs{flex:none;background:var(--iron);border-top:1px solid var(--line);
   padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}
-.tabs-in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr)}
-.tab{appearance:none;background:none;border:0;color:var(--chalk-3);font:600 12px/1 var(--body);letter-spacing:.03em;
-  display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 0 12px;cursor:pointer}
-.tab svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tabs-in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
+.tab{appearance:none;background:none;border:0;color:var(--chalk-3);font:600 11px/1 var(--face);
+  display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 0 12px;cursor:pointer;position:relative}
+.tab svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .tab[aria-current="page"]{color:var(--chalk)}
-.tab[aria-current="page"] svg{stroke:var(--accent)}
-.toast{position:fixed;left:50%;transform:translateX(-50%);top:calc(14px + env(safe-area-inset-top,0px));z-index:40;background:var(--chalk);color:var(--iron);font-weight:600;padding:10px 16px;border-radius:999px;font-size:14px}
-select{background:var(--iron);border:1px solid var(--line);border-radius:10px;color:var(--chalk);font:500 16px var(--body);padding:9px 10px;width:58%;min-width:0}
+.tab[aria-current="page"]::before{content:"";position:absolute;top:-1px;left:50%;width:24px;margin-left:-12px;height:2px;background:var(--chalk)}
+.tab-badge{position:absolute;top:5px;left:calc(50% + 6px);min-width:18px;height:18px;border-radius:9px;background:var(--miss);color:#fff;font:700 11px/18px var(--face);text-align:center;padding:0 5px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);top:calc(14px + env(safe-area-inset-top,0px));z-index:40;background:var(--chalk);color:var(--iron);font-weight:600;padding:10px 16px;border-radius:4px;font-size:14px;box-shadow:0 8px 24px -8px rgba(0,0,0,.6)}
+select{background:var(--iron);border:1px solid var(--line);border-radius:3px;color:var(--chalk);font:500 16px var(--face);padding:9px 10px;width:58%;min-width:0}
 .swapbox{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:4px 0 12px;border-bottom:1px solid var(--line)}
 .swapbox>label,.swapbox>span.small{flex:1 1 100%}
 .swapbox .inp{flex:1}
-.swapbox .txt{flex:1 1 100%;background:var(--iron);border:1px solid var(--line);border-radius:10px;color:var(--chalk);font:500 16px var(--body);padding:10px 12px}
+.swapbox .txt{flex:1 1 100%;background:var(--iron);border:1px solid var(--line);border-radius:3px;color:var(--chalk);font:500 16px var(--face);padding:10px 12px}
 .chk{display:flex;align-items:center;gap:10px;color:var(--chalk-2)}
-.chk input{width:22px;height:22px;accent-color:var(--accent)}
+.chk input{width:22px;height:22px;accent-color:var(--ink)}
 .bankctl{display:grid;gap:10px}
 .themes{display:flex;flex-wrap:wrap;gap:8px}
-.randlbl{font:600 12px/1.2 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--amrap);margin:0}
-.quick2 .btn{font-size:17px}
+.randlbl{font:600 13px/1.2 var(--face);color:var(--chalk-2);margin:0}
+.quick2 .btn{font-size:16px}
 .selrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .selrow select{width:100%;max-width:none;font-size:16px;padding:10px 8px}
-.bankctl .txt,.wodbox .txt{width:100%;background:var(--iron);border:1px solid var(--line);border-radius:10px;color:var(--chalk);font:500 16px var(--body);padding:11px 12px}
-.bankitem{appearance:none;text-align:left;width:100%;background:var(--iron-2);border:1px solid var(--line);border-radius:14px;padding:14px 16px;color:var(--chalk);display:grid;gap:8px;cursor:pointer;font:inherit}
-.bankitem:active{background:var(--iron-3)}
+.bankctl .txt,.wodbox .txt{width:100%;background:var(--iron);border:1px solid var(--line);border-radius:3px;color:var(--chalk);font:500 16px var(--face);padding:11px 12px}
+.bankitem{appearance:none;text-align:left;width:100%;padding:14px 16px;display:grid;gap:8px;cursor:pointer;font:inherit}
+.bankitem:active{background:var(--press)}
 .bi-top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
-.bi-top b{font:700 18px/1.1 var(--display);text-transform:uppercase;letter-spacing:.02em;min-width:0;overflow-wrap:anywhere}
-.bi-top span{color:var(--amrap);font-weight:600;white-space:nowrap}
+.bi-top b{font:700 17px/1.15 var(--face);min-width:0;overflow-wrap:anywhere}
+.bi-top span{color:var(--pen);font-weight:600;white-space:nowrap}
 .bi-txt{white-space:pre-line;color:var(--chalk-2);font-size:14px;overflow-wrap:anywhere}
-.wodtxt{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font:15px/1.5 var(--body);color:var(--chalk)}
-.wodbox{gap:10px;border-color:var(--amrap)}
+.wodtxt{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font:15px/1.5 var(--face);color:var(--chalk)}
+.wodbox{gap:10px}
 .wodbox h2{font-size:20px}
 .wodbox .top{display:flex;justify-content:space-between;align-items:center}
 .prev{display:grid;gap:4px}
 .prev .ln{display:flex;justify-content:space-between;gap:12px;font-size:14px;color:var(--chalk-2);font-variant-numeric:tabular-nums}
 .sess-wod{display:grid;gap:4px}
 .sess-wod p{font-size:15px}
-.sess-wod .res{color:var(--amrap);font-weight:600}
+.sess-wod .res{color:var(--pen);font-weight:600}
 .sess-wod summary{cursor:pointer;color:var(--chalk-2);font-size:13px}
-.topbar{display:flex;justify-content:flex-end;margin-bottom:-8px}
-.quick{border:1px solid var(--line);background:var(--iron-2);color:var(--chalk);border-radius:999px;padding:10px 16px;font:600 14px var(--body);cursor:pointer}
+.topbar{display:flex;justify-content:flex-end;gap:8px;margin-bottom:-6px}
+.quick{border:1px solid var(--line);background:rgba(14,15,18,.55);color:var(--chalk);border-radius:4px;padding:10px 14px;font:600 14px var(--face);cursor:pointer}
 .quick:active{background:var(--iron-3)}
 .adj summary{cursor:pointer;color:var(--chalk-2);font-weight:600;padding:2px 0}
 .adj[open] summary{margin-bottom:6px}
 .notebox{gap:12px}
-.notebox textarea{min-height:88px;font:16px/1.45 var(--body)}
-.lbl{font:600 12px/1.2 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--chalk-2)}
-.tog{justify-self:start;border:1px solid var(--line);background:transparent;color:var(--chalk-2);border-radius:999px;padding:10px 16px;font:600 14px var(--body);cursor:pointer}
-.tog[aria-pressed="true"]{background:var(--amrap);border-color:var(--amrap);color:var(--accent-ink)}
-.pill.mc{background:var(--amrap);color:var(--accent-ink);justify-self:start}
+.notebox textarea{min-height:88px;font:16px/1.45 var(--face)}
+.lbl{font:600 13px/1.2 var(--face);color:var(--chalk-2)}
+.tog{justify-self:start;border:1px solid var(--line);background:transparent;color:var(--chalk);border-radius:4px;padding:10px 14px;font:600 14px var(--face);cursor:pointer}
+.tog[aria-pressed="true"]{background:var(--chalk);border-color:var(--chalk);color:var(--iron)}
+.pill.mc{justify-self:start}
 .sess-note{display:grid;gap:6px;padding-top:8px;border-top:1px solid var(--line)}
 .sess-note p{font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
 .wu{font-size:14px;color:var(--chalk-2);font-variant-numeric:tabular-nums;margin:0}
 .wu b{color:var(--chalk);font-weight:600;margin-right:8px}
 .rpe{display:grid;gap:8px}
 .rpe>span{font-size:14px;color:var(--chalk-2)}
-.rpe .seg button{font-size:16px;padding:11px 4px;flex:1 1 30%}
-.rpe .seg.num button{flex:1 1 30px;font-size:17px}
-/* Sekundærøvelser i øktoversikten */
+.rpe .seg button{font-size:15px;padding:11px 4px;flex:1 1 30%}
+.rpe .seg.num button{flex:1 1 30px;font-size:16px}
 .day .xs{color:var(--chalk-2);font-size:13px}
 
 /* Metcon-logg */
 .mc-sum{display:flex;gap:16px}
 .mc-sum>div{flex:1;display:grid;gap:2px}
-.mc-sum b{font:700 30px/1 var(--display);font-variant-numeric:tabular-nums}
+.mc-sum b{font:800 30px/1 var(--face);font-stretch:68%;font-variant-numeric:tabular-nums}
 .mc-sum span{font-size:13px;color:var(--chalk-2)}
-.meter{height:6px;border-radius:3px;background:var(--iron-3);overflow:hidden}
-.meter i{display:block;height:100%;background:var(--accent);border-radius:3px}
+.meter{height:4px;background:var(--line);overflow:hidden}
+.meter i{display:block;height:100%;background:var(--accent)}
 .meter i.over{background:var(--miss)}
 .mc-form{display:grid;gap:10px;padding-top:4px}
 .mc-type button{display:grid;gap:3px;padding:10px 8px;flex:1 1 45%;text-align:left}
-.mc-type button b{font:700 16px/1 var(--display);text-transform:uppercase;letter-spacing:.03em}
-.mc-type button small{font:500 12px/1.25 var(--body);color:inherit;opacity:.75}
-.x{appearance:none;border:0;background:none;color:var(--chalk-3);font:600 22px/1 var(--body);padding:4px 6px;cursor:pointer}
-.warn-t{color:var(--amrap)} .ok-t{color:var(--ok)}
+.mc-type button b{font:700 15px/1 var(--face)}
+.mc-type button small{font:500 12px/1.25 var(--face);color:inherit;opacity:.75}
+.x{appearance:none;border:0;background:none;color:var(--chalk-3);font:600 22px/1 var(--face);padding:4px 6px;cursor:pointer}
+.warn-t{color:var(--miss)} .ok-t{color:var(--accent)}
 
 /* Valg om lett uke */
 .dl .tr span{font-size:13px}
 .crit{margin:0;padding-left:18px;display:grid;gap:4px;color:var(--chalk-2)}
 
-/* Programguide */
+/* Programguide: evidensnivå som grå bokstaver, sikrest fylt */
 .guide{gap:12px}
 .gk{display:grid;gap:3px}
-.gk>span{font:600 12px/1.2 var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.gk>span{font:600 13px/1.2 var(--face);color:var(--chalk-2)}
 .gk p{font-size:15px}
 .acc{gap:12px}
-.acc summary{cursor:pointer;font:700 17px/1.1 var(--display);text-transform:uppercase;letter-spacing:.03em;list-style:none;display:flex;justify-content:space-between;align-items:center}
+.acc summary{cursor:pointer;font:700 16px/1.2 var(--face);list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px}
 .acc summary::-webkit-details-marker{display:none}
-.acc summary::after{content:"+";font:600 22px/1 var(--body);color:var(--chalk-2)}
+.acc summary::after{content:"+";font:500 22px/1 var(--face);color:var(--chalk-2)}
 .acc[open] summary::after{content:"−"}
 .claims{list-style:none;margin:0;padding:0;display:grid;gap:10px}
 .claims li{display:flex;gap:10px;align-items:flex-start;font-size:15px}
-.lvl{flex:none;width:24px;height:24px;border-radius:6px;display:grid;place-items:center;font:700 13px/1 var(--body);margin-top:1px}
-.lvl-A{background:var(--ok);color:var(--ok-ink)}
-.lvl-B{background:var(--accent);color:var(--accent-ink)}
-.lvl-C{background:var(--amrap);color:var(--accent-ink)}
-.lvl-H{background:var(--iron-3);color:var(--chalk);box-shadow:inset 0 0 0 1px var(--line)}
+.lvl{flex:none;width:22px;height:22px;border-radius:2px;display:grid;place-items:center;font:700 12px/1 var(--face);margin-top:1px;color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink-3)}
+.lvl-A{background:var(--ink);color:var(--paper);box-shadow:none}
+.lvl-B{background:var(--press);box-shadow:inset 0 0 0 1px var(--ink-2)}
+.lvl-C{background:transparent}
+.lvl-H{background:transparent;box-shadow:inset 0 0 0 1px var(--rule);color:var(--ink-2)}
 .refs{color:var(--chalk-3);font-size:13px}
 .refs a,.reflist a{color:var(--chalk-2);text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:2px}
 .reflist{margin:0;padding-left:18px;display:grid;gap:6px;color:var(--chalk-2)}
 .link.inl{padding:0;font-size:inherit;text-decoration:underline;display:inline}
 
-/* Oppvarming */
-.chip.sm{width:44px;height:44px;font-size:19px;flex:none}
-
-/* Hele planen */
+/* Hele planen: gjort i blått, hoppet over strøket i rødt, neste markert med blå strek */
 .plan-s summary{align-items:flex-start}
 .ps{display:grid;gap:3px;min-width:0;flex:1}
 .ps-top{display:flex;align-items:center;gap:8px}
-.ps-top b{font:700 18px/1.1 var(--display);text-transform:uppercase;letter-spacing:.03em}
-.ps>span:not(.ps-top){font:400 14px/1.35 var(--body);text-transform:none;letter-spacing:0}
-.ps .pill{font:600 12px/1 var(--body);text-transform:none;letter-spacing:.04em}
-.plan-s.done-s{opacity:.7}
-.plan-s.next-s{border-color:var(--accent)}
+.ps-top b{font:700 16px/1.15 var(--face)}
+.ps>span:not(.ps-top){font:400 14px/1.35 var(--face)}
+.ps .pill{font:600 12px/1 var(--face)}
+.plan-s.done-s .ps>span:last-child{color:var(--pen)}
+.plan-s.done-s .ps-top .pill{color:var(--pen);box-shadow:none;padding-left:0}
+.plan-s.skip-s .ps-top b{text-decoration:line-through;text-decoration-color:var(--red);text-decoration-thickness:1.5px;color:var(--ink-2)}
+.plan-s.skip-s .ps-top .pill{color:var(--red);box-shadow:none;padding-left:0}
+.plan-s.next-s{box-shadow:inset 0 -3px 0 var(--pen),var(--lift);background:color-mix(in srgb,var(--pen) 6%,var(--paper))}
+.list>.plan-s.next-s{box-shadow:inset 0 -3px 0 var(--pen)}
 .plan-ex{display:grid;gap:6px}
 .plan-ex .ln{display:flex;justify-content:space-between;gap:12px;font-size:14px}
 .plan-ex .ln>span:last-child{color:var(--chalk-2);text-align:right;font-variant-numeric:tabular-nums}
+.plan-s.done-s .plan-ex .ln>span:last-child{color:var(--pen)}
 
 /* Pete Plan */
 .pp-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
-.pp-mach{display:flex;gap:6px}
-.pp-mach button{flex:1;border:0;border-radius:9px;padding:10px 4px;background:var(--iron-3);color:var(--chalk);font:700 16px/1 var(--display);text-transform:uppercase;letter-spacing:.03em;cursor:pointer}
+.pp-mach{display:flex;gap:4px;padding:3px;border-radius:4px;box-shadow:inset 0 0 0 1px var(--line)}
+.pp-mach button{flex:1;border:0;border-radius:3px;padding:10px 4px;background:transparent;color:var(--chalk);font:600 15px/1 var(--face);cursor:pointer}
 .pp-mach button[aria-pressed="true"]{background:var(--chalk);color:var(--iron)}
-.pp-facts{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px}
-.pp-facts div{background:var(--iron);border-radius:10px;padding:8px 10px;display:grid;gap:2px;min-width:0}
-.pp-facts b{font:700 21px/1 var(--display);font-variant-numeric:tabular-nums}
-.pp-facts b.pp-src{font:600 13px/1.25 var(--body)}
-.pp-facts span{font-size:11px;color:var(--chalk-2);letter-spacing:.04em;text-transform:uppercase}
+.pp-facts{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.pp-facts div{padding:8px 10px 8px 0;display:grid;gap:2px;min-width:0}
+.pp-facts div+div{border-left:1px solid var(--line);padding-left:10px}
+.pp-facts b{font:800 24px/1 var(--face);font-stretch:68%;font-variant-numeric:tabular-nums}
+.pp-facts b.pp-src{font:600 13px/1.25 var(--face)}
+.pp-facts span{font-size:12px;color:var(--chalk-2)}
 .pp-card .field label small{display:block;font-size:12px;font-weight:400}
 .pp-unit button{font-size:15px;padding:10px 6px}
 .box .field label small{display:block;font-size:12px;font-weight:400}
 
-/* Økta: fremdrift øverst, ett kort som er «nå», ferdige øvelser som én linje, neste som kort sammendrag */
-.topbar{gap:8px}
+/* Økta: fremdrift øverst, ett ark som er «nå», ferdige øvelser som én linje */
 .h-row{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
 .h-row h1{margin:0}
-.h-row span{font-size:14px;color:var(--chalk-2);white-space:nowrap;padding-bottom:2px;font-variant-numeric:tabular-nums}
-.prog{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px;margin-top:6px}
-.prog i{display:block;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
-.prog b{display:block;height:100%;background:var(--accent)}
-.prog i.full b{background:var(--ok)}
-.ex.now{border:2px solid var(--accent);padding:15px}
-.ex-row{appearance:none;width:100%;text-align:left;background:var(--iron-2);border:1px solid var(--line);border-radius:14px;padding:12px 16px;color:var(--chalk);display:flex;align-items:center;gap:12px;cursor:pointer;font:inherit}
-.ex-row:active{background:var(--iron-3)}
-.ex-row .ck{flex:none;width:28px;height:28px;border-radius:50%;background:var(--ok);display:grid;place-items:center}
-.ex-row .ck.miss{background:transparent;box-shadow:inset 0 0 0 2px var(--miss)}
-.ex-row .ck svg{width:16px;height:16px;fill:none;stroke:var(--ok-ink);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
-.ex-row .ck.miss svg{stroke:var(--miss)}
-.ex-row b{flex:1;font:700 18px/1 var(--display);text-transform:uppercase;letter-spacing:.02em;min-width:0}
-.ex-row span{font-size:14px;color:var(--chalk-2);text-align:right;font-variant-numeric:tabular-nums}
-/* Blått og versaler bare for det som gjelder nå. Resten av etikettene på økt-skjermen er vanlig grå tekst. */
-.notebox .lbl,.pp-top .lbl,.after .lbl{font:600 14px/1.2 var(--body);letter-spacing:0;text-transform:none;color:var(--chalk-2)}
-.chip-hint{font-size:13px;color:var(--chalk-2);margin:-4px 0 0}
-/* Oppvarming som en rad små sett, og en linje over hver rad som sier hva settene er */
-.wu-cap{font-size:13px;font-weight:600;color:var(--chalk-2);margin:0 0 -6px}
-.wu-cap span{font-weight:400}
-.chips.wu-chips{grid-template-columns:repeat(auto-fill,44px);justify-content:start;gap:6px 8px}
-/* Neste og senere: én linje med navn og vekt */
+.h-row>span{font-size:14px;color:var(--chalk-2);white-space:nowrap;padding-bottom:2px;font-variant-numeric:tabular-nums}
+.prog{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:4px;margin-top:6px;order:2}
+.prog i{display:block;height:3px;background:var(--line);overflow:hidden}
+.prog b{display:block;height:100%;background:var(--chalk)}
+.ex-row{appearance:none;width:100%;text-align:left;padding:12px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;font:inherit}
+.ex-row:active{background:var(--press)}
+.ex-row .ck{flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center}
+.ex-row .ck svg{width:18px;height:18px;fill:none;stroke:var(--pen);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.ex-row .ck.miss{box-shadow:inset 0 0 0 1.5px var(--red)}
+.ex-row .ck.miss svg{stroke:var(--red);width:14px;height:14px}
+.ex-row b{flex:1;font:700 16px/1.1 var(--face);min-width:0}
+.ex-row span{font-size:14px;color:var(--pen);text-align:right;font-variant-numeric:tabular-nums}
+.notebox .lbl,.pp-top .lbl,.after .lbl{font:600 14px/1.2 var(--face);color:var(--chalk-2)}
 .ex-line{min-height:52px}
-.ex-line small{flex:none;width:4.4em;font:600 13px/1 var(--body);color:var(--chalk-2)}
-.ex-line span{font:700 18px/1 var(--display);color:var(--chalk)}
-/* Etter styrken og tekstraden nederst */
+.ex-line small{flex:none;width:4.4em;font:600 13px/1 var(--face);color:var(--chalk-2)}
+.ex-line span{font:700 18px/1 var(--face);font-stretch:75%;color:var(--chalk)}
 .after-add{display:flex;flex-wrap:wrap;gap:8px}
 .after-add .tog{min-height:44px}
-.after-add .tog[aria-pressed="true"]{background:var(--iron-3);border-color:var(--chalk-3);color:var(--chalk)}
+.after-add .tog[aria-pressed="true"]{background:var(--press);border-color:var(--ink-3);color:var(--ink)}
 .links{display:flex;flex-wrap:wrap;justify-content:center;gap:0 20px}
 .links .link{min-height:44px}
-.chips{display:grid;grid-template-columns:repeat(auto-fill,54px);gap:10px 6px;justify-content:space-between}
-.chip.next{border-color:var(--accent);background:rgba(76,134,240,.14);color:var(--chalk)}
-.platebox{background:var(--iron);border-radius:12px;padding:8px 12px;min-height:56px}
-.platebox .plates{height:40px;padding-left:20px}
-.platebox .plates::before{width:20px;height:6px;margin-top:-3px}
-.platebox .p25{width:11px;height:40px} .platebox .p20{width:10px;height:40px} .platebox .p15{width:9px;height:40px} .platebox .p10{width:8px;height:40px}
-.platebox .p5{width:6px;height:26px} .platebox .p2{width:5px;height:19px} .platebox .p1{width:4px;height:15px}
-.platebox .pl-txt{font:700 20px/1 var(--display);color:var(--chalk)}
-.platebox .pl-txt small{display:block;font:500 13px/1.3 var(--body);color:var(--chalk-2);margin-top:2px}
 
-/* Pausen: fargelaget bærer informasjonen. Tiden rir på kanten av laget, linjen nederst er lav og mørk. */
-.rest-in{background:rgba(17,19,23,.86);color:var(--chalk);border:1px solid var(--line);border-radius:14px;padding:6px 6px 6px 14px;gap:8px;margin-bottom:8px}
-.rest-in span{font-size:14px;font-weight:500;color:var(--chalk-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.rest-in span b{font:inherit;color:var(--chalk)}
-.rest-in button{height:44px;padding:0 12px;background:var(--iron-3);color:var(--chalk);border-radius:10px;font:600 14px var(--body);flex:none}
-.stage[data-rest="over"] .rest-in{background:rgba(17,19,23,.86);color:var(--chalk)}
-.stage[data-rest="over"] .rest-in span{color:var(--ok)}
-/* Tiden står stort i linjen, så den kan leses fra benken. Neste sett får to linjer ved siden av. */
-.rest-in>b{font-size:34px;min-width:3.2ch;flex:none}
-.stage[data-rest="over"] .rest-in>b{color:var(--ok)}
-.rest-in span{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;font-size:13px;line-height:1.25}
-.rest-t{position:absolute;right:max(16px,env(safe-area-inset-right,0px));bottom:clamp(74px,var(--lvl,0%),calc(100% - 24px));transform:translateY(50%);z-index:21;pointer-events:none;
-  background:var(--iron);border:2px solid var(--accent);color:var(--chalk);border-radius:999px;padding:4px 10px;
-  font:700 18px/1 var(--display);font-variant-numeric:tabular-nums;transition:bottom .25s linear}
-.stage[data-rest="warn"] .rest-t{border-color:var(--amrap)}
-.rest-t{display:none}
-.stage[data-rest] .rest-t{display:block}
-
-/* Programmer */
+/* Plan */
 .chev{width:18px;height:18px;flex:none;fill:none;stroke:var(--chalk-3);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.act-card{appearance:none;width:100%;text-align:left;font:inherit;color:var(--chalk);background:var(--iron-2);border:2px solid var(--accent);border-radius:16px;padding:15px;display:grid;gap:10px;cursor:pointer}
-.act-card:active{background:var(--iron-3)}
-.act-card h2{font-size:28px}
+.gear{appearance:none;border:1px solid var(--line);background:rgba(14,15,18,.55);color:var(--chalk);border-radius:4px;width:44px;height:44px;display:grid;place-items:center;cursor:pointer;flex:none}
+.gear svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.act-card{appearance:none;width:100%;text-align:left;font:inherit;padding:16px;display:grid;gap:10px;cursor:pointer}
+.act-card:active{background:var(--press)}
+.act-card h2{font-size:24px;font-stretch:90%}
 .act-card .tag{margin:0}
 .act-top,.act-sub{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;color:var(--chalk-2)}
-.act-facts{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px}
-.act-facts div{background:var(--iron);border-radius:10px;padding:8px 10px;display:grid;gap:2px;min-width:0}
-.act-facts b{font:700 20px/1 var(--display);font-variant-numeric:tabular-nums}
-.act-facts span{font:600 11px/1.2 var(--body);letter-spacing:.04em;text-transform:uppercase;color:var(--chalk-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.filt{display:flex;gap:8px;flex-wrap:wrap}
-.filt button{min-height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--chalk-2);font:600 13px var(--body);cursor:pointer}
+.act-facts{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:0;border-top:1px solid var(--line)}
+.act-facts div{padding:8px 10px 0 0;display:grid;gap:2px;min-width:0}
+.act-facts div+div{border-left:1px solid var(--line);padding-left:10px}
+.act-facts b{font:800 24px/1 var(--face);font-stretch:68%;font-variant-numeric:tabular-nums}
+.act-facts span{font:500 12px/1.2 var(--face);color:var(--chalk-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.filt{display:flex;gap:6px;flex-wrap:wrap}
+.filt button{min-height:36px;padding:0 12px;border-radius:3px;border:1px solid var(--line);background:rgba(14,15,18,.4);color:var(--chalk);font:600 13px var(--face);cursor:pointer}
 .filt button[aria-pressed="true"]{background:var(--chalk);border-color:var(--chalk);color:var(--iron)}
-.guide-row{appearance:none;width:100%;text-align:left;font:inherit;display:flex;align-items:center;gap:12px;padding:12px 14px;border:0;border-radius:14px;background:rgba(76,134,240,.10);color:var(--chalk);cursor:pointer}
-.guide-row>svg:first-child{width:22px;height:22px;flex:none;fill:none;stroke:var(--accent);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.guide-row{appearance:none;width:100%;text-align:left;font:inherit;display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer}
+.guide-row>svg:first-child{width:22px;height:22px;flex:none;fill:none;stroke:var(--ink-2);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .guide-row>span,.plist button>span{flex:1;display:grid;gap:2px;min-width:0}
 .guide-row b{font-weight:600;font-size:15px}
 .guide-row small,.plist small{font-size:13px;color:var(--chalk-2)}
-.plist{border:1px solid var(--line);border-radius:14px;background:var(--iron-2);overflow:hidden}
-.plist button{appearance:none;width:100%;text-align:left;font:inherit;display:flex;align-items:center;gap:12px;min-height:60px;padding:12px 14px;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--chalk);cursor:pointer}
+.plist{overflow:hidden}
+.plist button{appearance:none;width:100%;text-align:left;font:inherit;display:flex;align-items:center;gap:12px;min-height:58px;padding:11px 14px;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--chalk);cursor:pointer}
 .plist button:last-child{border-bottom:0}
-.plist button:active{background:var(--iron-3)}
-.plist b{font:700 18px/1.1 var(--display);text-transform:uppercase;letter-spacing:.02em}
+.plist button:active{background:var(--press)}
+.plist b{font:700 16px/1.15 var(--face)}
 
 /* Logg */
 .head.h-row .quick{flex:none}
-.log-sum{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.log-sum{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;border-bottom:1px solid var(--line);padding-bottom:10px}
 .log-sum div{display:grid;gap:2px}
-.log-sum b{font:700 30px/1 var(--display);font-variant-numeric:tabular-nums}
+.log-sum div+div{border-left:1px solid var(--line);padding-left:10px}
+.log-sum b{font:800 30px/1 var(--face);font-stretch:68%;font-variant-numeric:tabular-nums}
 .log-sum b small{font-size:14px;color:var(--chalk-2);margin-left:2px}
 .log-sum span{font-size:12px;color:var(--chalk-2)}
-.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
-.cal span{font:600 11px/1 var(--body);color:var(--chalk-2);text-align:center}
-.cal i{height:26px;border-radius:6px;background:var(--iron-3)}
-.cal i.st{background:var(--accent)} .cal i.mc{background:var(--amrap)}
-.cal i.both{background:var(--p20);box-shadow:inset 0 0 0 3px var(--amrap)}
-.cal i.today{outline:2px solid var(--chalk);outline-offset:1px}
-.cal i.fut{opacity:.35}
-.cal-key{display:flex;gap:14px;font-size:12px;color:var(--chalk-2)}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px 0;justify-items:center}
+.cal span{font:600 11px/1 var(--face);color:var(--chalk-2);text-align:center}
+.cal i{width:26px;height:26px;border-radius:50%;position:relative}
+.cal i::after{content:"";position:absolute;left:50%;top:50%;width:4px;height:4px;margin:-2px 0 0 -2px;border-radius:50%;background:var(--rule)}
+.cal i.st::after{width:9px;height:9px;margin:-4.5px 0 0 -4.5px;background:var(--pen)}
+.cal i.mc{box-shadow:inset 0 0 0 1.5px var(--pen)}
+.cal i.both{box-shadow:inset 0 0 0 1.5px var(--pen)}
+.cal i.both::after{width:9px;height:9px;margin:-4.5px 0 0 -4.5px;background:var(--pen)}
+.cal i.sk::after{width:12px;height:2px;margin:-1px 0 0 -6px;border-radius:1px;background:var(--red)}
+.cal i.today{outline:2px solid var(--ink);outline-offset:1px}
+.cal i.fut{opacity:.4}
+.cal-key{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--chalk-2)}
 .cal-key span{display:flex;align-items:center;gap:6px}
-.cal-key i{width:10px;height:10px;border-radius:3px}
-.cal-key i.st{background:var(--accent)} .cal-key i.mc{background:var(--amrap)} .cal-key i.both{background:var(--p20);box-shadow:inset 0 0 0 2px var(--amrap)}
-.tr .tr-kg{font:700 20px/1 var(--display);color:var(--chalk);min-width:3.2ch;text-align:right}
+.cal-key i{width:12px;height:12px;border-radius:50%;position:relative}
+.cal-key i.st{background:var(--pen);width:9px;height:9px}
+.cal-key i.mc{box-shadow:inset 0 0 0 1.5px var(--pen)}
+.cal-key i.sk{width:12px;height:2px;border-radius:1px;background:var(--red)}
+.tr .tr-kg{font:800 22px/1 var(--face);font-stretch:68%;color:var(--chalk);min-width:3.2ch;text-align:right}
 .tr .tr-d{font-weight:600;font-size:13px;min-width:4ch;text-align:right}
 .miss-t{color:var(--miss)}
 .sess{padding:0;gap:0;overflow:hidden}
@@ -444,45 +483,45 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
 .sess.open>:not(.sess-row){margin:0 16px}
 .sess.open>.ln,.sess.open>p{margin-top:8px}
 .sess-row{appearance:none;width:100%;text-align:left;font:inherit;display:flex;align-items:center;gap:12px;padding:12px 14px;border:0;background:transparent;color:var(--chalk);cursor:pointer;min-height:60px}
-.sess-row:active{background:var(--iron-3)}
+.sess-row:active{background:var(--press)}
 .sess-row .chev{transition:transform .15s}
 .sess-row[aria-expanded="true"] .chev{transform:rotate(90deg)}
 .sess-d{width:40px;flex:none;display:grid;justify-items:center;gap:1px}
-.sess-d b{font:700 20px/1 var(--display)}
-.sess-d small{font:600 11px/1 var(--body);text-transform:uppercase;color:var(--chalk-2)}
+.sess-d b{font:800 22px/1 var(--face);font-stretch:68%}
+.sess-d small{font:600 11px/1 var(--face);color:var(--chalk-2)}
 .sess-t{flex:1;display:grid;gap:2px;min-width:0}
-.sess-t b{font:700 17px/1.1 var(--display);text-transform:uppercase;letter-spacing:.02em}
+.sess-t b{font:700 16px/1.15 var(--face)}
 .sess-note .pill{justify-self:start}
 .sess-t small{font-size:13px;color:var(--chalk-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* Sammen */
-.tab{position:relative;font-size:11px}
-.tab-badge{position:absolute;top:5px;left:calc(50% + 6px);min-width:18px;height:18px;border-radius:9px;background:var(--miss);color:#fff;font:700 11px/18px var(--body);text-align:center;padding:0 5px}
-.quick.acc{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.quick.acc{background:var(--chalk);border-color:var(--chalk);color:var(--iron);font-weight:700}
 .sx-acts{display:flex;gap:8px;flex:none}
-.badge{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--miss);color:#fff;font:700 12px/1 var(--body);letter-spacing:0}
+.badge{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--miss);color:#fff;font:700 12px/1 var(--face);letter-spacing:0}
 .sx-h{display:flex;align-items:center;gap:8px}
-.av{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font:700 14px/1 var(--body)}
+.av{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font:700 14px/1 var(--face)}
 .av.sm{width:24px;height:24px;font-size:10px}
-.sx-news{appearance:none;width:100%;text-align:left;font:inherit;color:var(--chalk);display:flex;align-items:center;gap:12px;background:var(--iron-2);border:1px solid var(--line);border-radius:14px;padding:12px 14px;cursor:pointer}
-.sx-news:active,.sx-card.own:active,.sx-hit:active{background:var(--iron-3)}
+.sx-news{appearance:none;width:100%;text-align:left;font:inherit;display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer}
+.sx-news:active,.sx-card.own:active,.sx-hit:active{background:var(--press)}
 .sx-news>span:not(.av){flex:1;display:grid;gap:2px;min-width:0}
 .sx-news b{font-weight:600;font-size:15px}
 .sx-news small{font-size:13px;color:var(--chalk-2)}
-.sx-news .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none}
-.sx-card{appearance:none;width:100%;text-align:left;font:inherit;color:var(--chalk);display:grid;gap:10px;background:var(--iron-2);border:1px solid var(--line);border-radius:16px;padding:14px 16px}
-.sx-card.own{border:2px solid var(--accent);padding:13px 15px;gap:6px;cursor:pointer}
+.sx-news .dot{width:8px;height:8px;border-radius:50%;background:var(--red);flex:none}
+.sx-card{appearance:none;width:100%;text-align:left;font:inherit;display:grid;gap:10px;padding:14px 16px}
+.sx-card.own{gap:6px;cursor:pointer}
+.sx-card.own .tag{color:var(--pen)}
 .sx-card.cancelled{opacity:.6}
+.sx-card.cancelled .sx-time{text-decoration:line-through;text-decoration-color:var(--red)}
 .sx-card .btn.sm{width:100%}
-.sx-hit{appearance:none;background:none;border:0;padding:0;margin:0;text-align:left;font:inherit;color:inherit;display:grid;gap:6px;cursor:pointer;border-radius:8px}
+.sx-hit{appearance:none;background:none;border:0;padding:0;margin:0;text-align:left;font:inherit;color:inherit;display:grid;gap:6px;cursor:pointer;border-radius:3px}
 .sx-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
 .sx-top .tag,.sx-hit .tag{margin:0}
-.sx-cnt{font-size:13px;font-weight:600;color:var(--amrap)}
-.sx-time{font:700 28px/1 var(--display);font-variant-numeric:tabular-nums}
-.sx-time.sm{font-size:24px}
+.sx-cnt{font-size:13px;font-weight:600;color:var(--chalk-2)}
+.sx-time{font:800 30px/1 var(--face);font-stretch:62%;font-variant-numeric:tabular-nums}
+.sx-time.sm{font-size:26px}
 .sx-who{display:flex;align-items:center;gap:8px;font-size:14px}
 .sx-who b{font-weight:600}
-.tag.same{color:var(--amrap)}
+.tag.same{color:var(--chalk-2)}
 .sx-what{font-weight:600;font-size:16px}
 .sx-sub{font-size:13px;color:var(--chalk-2)}
 .sx-people{display:flex;flex-wrap:wrap;gap:12px}
@@ -492,91 +531,93 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
 .sx-prop>span:not(.sx-time):not(.av){flex:1;display:grid;gap:1px;min-width:0}
 .sx-prop b{font-weight:600}
 .sx-prop small{font-size:13px;color:var(--chalk-2);overflow-wrap:anywhere}
-.sx-prop .sx-time{font-size:24px}
+.sx-prop .sx-time{font-size:26px}
 .sx-form{display:grid;gap:14px}
 .sx-form .lbl{display:grid;gap:6px}
 .sx-form p.lbl{margin:0 0 8px}
-.sx-form input[type=time],.sx-form .txt{width:100%;background:var(--iron);border:1px solid var(--line);border-radius:12px;color:var(--chalk);font:500 16px var(--body);padding:12px 14px;min-height:48px;letter-spacing:0;text-transform:none}
-.sx-form input[type=time]{font:700 24px/1 var(--display);-webkit-appearance:none;appearance:none}
+.sx-form input[type=time],.sx-form .txt{width:100%;background:var(--iron);border:1px solid var(--line);border-radius:3px;color:var(--chalk);font:500 16px var(--face);padding:12px 14px;min-height:48px;letter-spacing:0}
+.sx-form input[type=time]{font:800 26px/1 var(--face);font-stretch:68%;-webkit-appearance:none;appearance:none}
+.sx-form .txt:focus,.sx-form input[type=time]:focus{border-color:var(--accent);outline:none}
 .sx-form textarea.txt{min-height:90px}
 .sx-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .sx-fs{border:0;margin:0;padding:0;min-width:0}
 .sx-fs legend{padding:0;margin-bottom:8px}
 .sx-radio{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line);min-height:56px;cursor:pointer}
 .sx-radio:last-child{border-bottom:0}
-.sx-radio input{width:20px;height:20px;accent-color:var(--accent);margin:0;flex:none}
+.sx-radio input{width:20px;height:20px;accent-color:var(--ink);margin:0;flex:none}
 .sx-radio span{display:grid;gap:1px}
 .sx-radio b{font-weight:600;font-size:15px}
 .sx-radio small{font-size:13px;color:var(--chalk-2)}
-.seg2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;background:var(--iron-2);border-radius:12px;padding:4px}
-.seg2 button{min-height:48px;border:0;border-radius:9px;background:transparent;color:var(--chalk-2);display:grid;place-items:center;gap:2px;padding:6px;cursor:pointer}
-.seg2 button b{font:700 16px/1 var(--display);text-transform:uppercase;letter-spacing:.04em}
-.seg2 button small{font:500 11px var(--body)}
+.seg2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;border-radius:4px;padding:3px;box-shadow:inset 0 0 0 1px var(--line);background:rgba(14,15,18,.4)}
+.seg2 button{min-height:44px;border:0;border-radius:3px;background:transparent;color:var(--chalk);display:grid;place-items:center;gap:2px;padding:6px;cursor:pointer}
+.seg2 button b{font:600 15px/1 var(--face)}
+.seg2 button small{font:500 11px var(--face);opacity:.75}
 .seg2 button[aria-pressed="true"]{background:var(--chalk);color:var(--iron)}
-.sx-search{display:flex;align-items:center;gap:8px;background:var(--iron-2);border:1px solid var(--line);border-radius:12px;padding:0 12px;min-height:48px}
+.box .seg2{background:transparent}
+.sx-search{display:flex;align-items:center;gap:8px;background:var(--iron);border:1px solid var(--line);border-radius:3px;padding:0 12px;min-height:48px}
 .sx-search:focus-within{border-color:var(--accent)}
-.sx-search input{flex:1;min-width:0;background:transparent;border:0;color:var(--chalk);font:500 16px var(--body);outline:none;padding:12px 0}
-.sx-list{border:1px solid var(--line);border-radius:14px;background:var(--iron-2);overflow:hidden}
+.sx-search input{flex:1;min-width:0;background:transparent;border:0;color:var(--chalk);font:500 16px var(--face);outline:none;padding:12px 0}
+.sx-list{overflow:hidden}
 .sx-row{display:flex;align-items:center;gap:10px;padding:10px 12px 10px 14px;border-bottom:1px solid var(--line)}
 .sx-row:last-child{border-bottom:0}
 .sx-row>span:not(.av){flex:1;display:grid;gap:1px;min-width:0}
 .sx-row b{font-weight:600;font-size:15px}
 .sx-row small{font-size:13px;color:var(--chalk-2)}
 .sx-row .st{flex:none;font-size:13px;font-weight:600;color:var(--chalk-2)}
-.sx-row .st.ok{color:var(--ok)}
+.sx-row .st.ok{color:var(--pen)}
 .sx-row .btn.sm{padding:10px 12px;font-size:15px}
 
-/* Chat i Sammen: samtaleliste, meldinger og skrivefelt som står nederst mens du blar */
-.ch-row .ch-t{flex:none;font-size:12px;color:var(--chalk-3)}
-.ch-row .ch-n{flex:none;min-width:22px;height:22px;padding:0 7px;border-radius:11px;background:var(--accent);color:var(--accent-ink);font:700 12px/22px var(--body);font-style:normal;text-align:center}
-.ch-row.new b{color:var(--chalk)}
-.ch-row.new small{color:var(--chalk)}
+/* Chat: meldingene er lapper av samme papir. Det du skriver selv, står i blå penn. */
+.ch-row .ch-t{flex:none;font-size:12px;color:var(--chalk-3);font-style:normal}
+.ch-row .ch-n{flex:none;min-width:22px;height:22px;padding:0 7px;border-radius:11px;background:var(--red);color:#fff;font:700 12px/22px var(--face);font-style:normal;text-align:center}
+.ch-row.new b,.ch-row.new small{color:var(--ink)}
 .ch-row small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ch-acts{display:flex;gap:8px}
 .ch-acts .btn{flex:1}
 .ch-pick{appearance:none;width:100%;background:none;border:0;border-bottom:1px solid var(--line);color:inherit;font:inherit;text-align:left;cursor:pointer;min-height:58px}
-.ch-ck{width:22px;height:22px;accent-color:var(--accent);flex:none}
+.ch-ck{width:22px;height:22px;accent-color:var(--ink);flex:none}
 .ch-head{display:flex;align-items:center;gap:12px}
 .ch-head>div{display:grid;gap:2px;min-width:0}
-.ch-head h2{text-transform:none;letter-spacing:0}
 .ch-msgs{display:flex;flex-direction:column;gap:4px;min-height:30vh}
-.ch-day{align-self:center;font:600 12px/1.2 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--chalk-3);margin:12px 0 4px}
-.ch-sys{align-self:center;text-align:center;font-size:13px;color:var(--chalk-2);margin:6px 0}
+.ch-day{align-self:center;font:600 12px/1.2 var(--face);color:var(--chalk-3);margin:12px 0 4px}
+.ch-sys{align-self:center;text-align:center;font-size:13px;color:var(--chalk-2);margin:6px 0;padding:6px 10px;border-block:1px solid var(--line)}
 .ch-who{font-size:12px;color:var(--chalk-3);margin:8px 6px 0}
 .ch-who.me{align-self:flex-end}
-.ch-msg{max-width:80%;align-self:flex-start;background:var(--iron-3);border-radius:16px;padding:9px 13px;font-size:16px;line-height:1.35;white-space:pre-wrap;overflow-wrap:anywhere}
-.ch-msg.me{align-self:flex-end;background:var(--accent);color:var(--accent-ink)}
+.ch-msg{max-width:80%;align-self:flex-start;border-radius:3px 14px 14px 14px;padding:9px 13px;font-size:16px;line-height:1.35;white-space:pre-wrap;overflow-wrap:anywhere;box-shadow:0 4px 12px -6px rgba(0,0,0,.6)}
+.ch-msg.me{align-self:flex-end;border-radius:14px 3px 14px 14px;color:var(--pen)}
 .wrap.chat{padding-bottom:0;display:flex;flex-direction:column;min-height:100%}
 .wrap.chat>.link{align-self:flex-start}
 .wrap.chat .ch-msgs{flex:1;justify-content:flex-end}
-.ch-compose{position:sticky;bottom:0;display:flex;gap:8px;align-items:center;background:var(--iron);margin:0 -16px;padding:10px 16px 12px;border-top:1px solid var(--line)}
-.ch-compose .txt{flex:1;min-width:0;background:var(--iron-2);border:1px solid var(--line);border-radius:22px;color:var(--chalk);font:16px var(--body);padding:11px 16px}
-.ch-compose .txt:focus{border-color:var(--accent);outline:none}
+.ch-compose{position:sticky;bottom:0;display:flex;gap:8px;align-items:center;background:var(--iron);margin:0 -12px;padding:10px 12px 12px;border-top:1px solid var(--line)}
+.ch-compose .txt{flex:1;min-width:0;background:var(--iron-2);border:1px solid var(--line);border-radius:4px;color:var(--chalk);font:16px var(--face);padding:11px 14px}
+.ch-compose .txt:focus{border-color:var(--chalk-2);outline:none}
 .ch-compose .btn{width:auto;flex:none;padding:12px 16px;font-size:16px}
 
-/* Hopp over økt */
-.skipbox{border-color:var(--miss)}
-.sess.skipped .sess-row{cursor:default;opacity:.7}
+/* Hopp over økt: det som hoppes over, strykes i rødt */
+.skipbox{box-shadow:inset 0 0 0 1px var(--red),var(--lift)}
+.sess.skipped .sess-row{cursor:default}
+.sess.skipped .sess-t b{text-decoration:line-through;text-decoration-color:var(--red);text-decoration-thickness:1.5px;color:var(--ink-2)}
+.sess.skipped .sess-t small{color:var(--red)}
 
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
 <div class="app">
 <div class="stage">
   <div class="scroller" id="scroller"><main class="wrap" id="view"></main></div>
-  <div class="rest-fill" id="restFill" aria-hidden="true"></div>
   <div class="rest-flash" id="restFlash" aria-hidden="true"></div>
-  <div class="rest-t" id="restT" aria-hidden="true">1:30</div>
-  <div class="rest" id="rest" hidden><div class="rest-in"><b id="restB" role="timer" aria-label="Pause">1:30</b><span id="restL">Pause</span><button data-a="restadd:30" aria-label="30 sekunder lengre pause">+30 s</button><button data-a="skip">Start nå</button></div></div>
+  <div class="rest" id="rest" hidden><div class="rest-in">
+    <div class="rest-r1"><b id="restB" role="timer" aria-label="Pause">1:30</b><span id="restL">av 1:30</span><button data-a="restadd:30" aria-label="30 sekunder lengre pause">+30 s</button><button data-a="skip">Start nå</button></div>
+    <div class="ruler" aria-hidden="true"><i></i></div>
+  </div></div>
 </div>
 <div class="toast" id="toast" hidden></div>
 <nav class="tabs" aria-label="Faner"><div class="tabs-in">
   <button class="tab" data-a="tab:today"><svg viewBox="0 0 24 24"><path d="M2 12h20M5 8v8M8 6v12M16 6v12M19 8v8"/></svg>Økt</button>
-  <button class="tab" data-a="tab:programs"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h10"/></svg>Programmer</button>
-  <button class="tab" data-a="tab:together"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c.6-3.2 3-5 6-5s5.4 1.8 6 5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2c2.6.2 4.4 1.8 5 4.8"/></svg>Sammen<span class="tab-badge" id="sxBadge" hidden></span></button>
+  <button class="tab" data-a="tab:plan"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h10"/></svg>Plan</button>
   <button class="tab" data-a="tab:log"><svg viewBox="0 0 24 24"><path d="M3 19h18M5 15l4-4 4 3 6-7"/></svg>Logg</button>
-  <button class="tab" data-a="tab:more"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg>Mer</button>
+  <button class="tab" data-a="tab:together"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c.6-3.2 3-5 6-5s5.4 1.8 6 5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2c2.6.2 4.4 1.8 5 4.8"/></svg>Sammen<span class="tab-badge" id="sxBadge" hidden></span></button>
 </div></nav>
 </div>
 
@@ -590,7 +631,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 39;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 40;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -1440,14 +1481,29 @@ function wuKind(s, ei){
   if (ei === 0) return 'full';
   return /Sekundær|T2|T3/.test(e.tag || '') ? 'short' : 'full';
 }
-// Oppvarmingen er en rad med små sett over arbeidssettene. Raden står også når oppvarmingen er gjort,
-// så arbeidssettene ikke flytter seg under tommelen. Vekt og skiver for neste oppvarmingssett står øverst i kortet.
+// Oppvarmingen står først i samme rekke som arbeidssettene, mindre og grå, med en strek før arbeidssettene.
+// Rutene står også når oppvarmingen er gjort, så arbeidssettene ikke flytter seg under tommelen.
 function vWarmup(e, ei, wu, wuNext, warm){
   const done = e.wuDone || [];
-  return `<p class="wu-cap">Oppvarming <span>· teller ikke som arbeidssett</span></p>
-    <div class="chips wu-chips">${wu.map(([w, r], wi) => { const kk = w + 'x' + r, ok = done.includes(kk), last = wi === wu.length - 1 ? 1 : 0;
-      return `<div class="cw"><button class="chip sm ${ok ? 'ok' : warm && wi === wuNext ? 'next' : ''}" data-a="wu:${ei}:${kk}:${last}" aria-label="Oppvarming: ${r} reps på ${fmt(w)} kg${ok ? ', gjort' : ''}">${r}</button><small>${fmt(w)}</small></div>`; }).join('')}</div>
-    <p class="wu-cap">Arbeidssett <span>· ${setsLine(e)}</span></p>`;
+  return wu.map(([w, r], wi) => { const kk = w + 'x' + r, ok = done.includes(kk), last = wi === wu.length - 1 ? 1 : 0;
+      const fr = ok && ui.fresh === 'wu:' + ei + ':' + kk ? ' fresh' : '';
+      return `<div class="cw"><button class="chip sm ${ok ? 'ok' : warm && wi === wuNext ? 'next' : ''}${fr}" data-a="wu:${ei}:${kk}:${last}" aria-label="Oppvarming, teller ikke som arbeidssett: ${r} reps på ${fmt(w)} kg${ok ? ', gjort' : ''}">${r}</button><small>${fmt(w)}</small></div>`; }).join('');
+}
+// Nytt PR-anslag (Epley) for løftene i økta, sammenlignet med det beste fra før. Bare sett med 1–12 reps teller.
+const e1 = (w, r) => w * (1 + r / 30);
+function bestE1(ex){
+  return ex.reduce((m, x) => x.d > 0 && x.d <= 12 && x.w > 0 ? Math.max(m, e1(x.w, x.d)) : m, 0);
+}
+function findRecords(s){
+  const out = [];
+  [...new Set(s.ex.map(e => e.lift))].forEach(l => {
+    const sets = s.ex.filter(e => e.lift === l).flatMap(e => e.sets), now = bestE1(sets);
+    const before = S.history.filter(h => !h.skipped && h.ex).reduce((m, h) => Math.max(m, bestE1(h.ex.filter(e => e.lift === l).flatMap(e => e.sets))), 0);
+    if (!before || now <= before + 0.01) return;
+    const top = sets.filter(x => x.d > 0 && x.d <= 12).reduce((a, x) => e1(x.w, x.d) > e1(a.w, a.d) ? x : a);
+    out.push({name: liftName(l), w: top.w, d: top.d, e: Math.round(now * 2) / 2});
+  });
+  return out;
 }
 
 function spExtras(e, ei){
@@ -1826,7 +1882,7 @@ function mergeCustom(){
   Object.assign(LIFTS, S.custom || {});
 }
 mergeCustom();
-const ui = {tab: S.active ? 'today' : 'programs', detail:null, rest:null, summary:null, confirm:null, exportText:'', storageOK:true, keepDl:null};
+const ui = {tab: S.active ? 'today' : 'plan', stack:[], detail:null, rest:null, summary:null, confirm:null, exportText:'', storageOK:true, keepDl:null};
 try { localStorage.setItem(KEY+'.t','1'); localStorage.removeItem(KEY+'.t'); } catch(e){ ui.storageOK = false; }
 
 /* ---------- Motor: lag dagens økt fra mal + instans ---------- */
@@ -1932,6 +1988,7 @@ function finish(){
   const p = prog(S.active.programId), s = S.draft;
   // ATHX: kondisjonsdelen teller i metcon-budsjettet, med mindre du har lagt inn en egen metcon
   if (s.cond && s.cond.min > 0 && !(s.mc && s.mc.min)) { s.metcon = true; s.mc = {type:s.cond.type, min:s.cond.min, rpe:(s.cond.res || {}).rpe || (s.mc && s.mc.rpe) || null}; }
+  const prs = findRecords(s);   // før økta legges i loggen, så den ikke sammenlignes med seg selv
   const notes = progress(p, S.active, s);
   const vol = s.ex.reduce((sum,e) => sum + e.sets.reduce((v,x) => v + (x.d||0)*x.w, 0), 0);
   S.history.unshift({date:Date.now(), programId:p.id, day:s.day, sub:s.sub, note:(s.note||'').trim(), metcon:!!(s.metcon || s.wod), mc: (s.metcon || s.wod) ? mcSaved(s.mc) : undefined,
@@ -1941,7 +1998,7 @@ function finish(){
     ex: s.ex.map(e => ({lift:e.lift, tag:e.tag, rpe:e.rpe, q:e.q, sets:e.sets.map(x => ({t:x.t, w:x.w, d:x.d}))}))});
   S.active.idx++;
   S.draft = null;
-  ui.summary = {day:s.day, notes, vol};
+  ui.summary = {day:s.day, notes, vol, prs};
   ui.rest = null; updateRest();
   save(); render(); toTop();
 }
@@ -1984,7 +2041,7 @@ function activate(id){
   else if (p.orm) Object.keys(p.orm).forEach(l => { const v = num($('#orm-' + l)); if (v) S.maxes[l] = v; });
   else if (p.inputLabel === '1RM') Object.keys(p.inputs).forEach((k, i) => { const v = num($('#in-' + i)); if (v) S.maxes[k] = v; });
   S.active = a; S.draft = null;
-  ui.detail = null; ui.summary = null; ui.tab = 'today';
+  ui.detail = null; ui.stack = []; ui.summary = null; ui.tab = 'today';
   save(); render(); toTop(); toast(p.name+' er aktivert');
 }
 
@@ -2254,6 +2311,13 @@ function setsLine(e, done){
 function vPlan(){
   const P = ui.plan, p = prog(P.id), a = P.active ? S.active : P.inst;
   if (!p || !a) { ui.plan = null; return ''; }
+  return `<button class="link" data-a="planclose">‹ Tilbake</button>
+    <header class="head"><h1>Hele planen</h1><p class="eyebrow">${p.name}</p>
+      <p class="muted small">${PLAN_NOTE[p.prog] || ''}${P.active ? '' : ' Vektene er regnet ut fra tallene du har skrevet inn.'}${totalOf(p, a) ? '' : ' Programmet har ingen fast slutt, så planen viser 12 uker.'}</p></header>
+    ${planWeeks(P, p, a)}`;
+}
+// Ukene i planen. Brukes både i Plan-fanen og når du ser planen til et program før du aktiverer det.
+function planWeeks(P, p, a){
   const per = planPer(p, a), ax = p.prog === 'athx', tot = totalOf(p, a);
   const N = tot || Math.max(12 * per, a.idx + 4 * per);
   const doneH = P.active ? S.history.filter(h => h.programId === p.id && !h.free && h.date >= a.startedAt).reverse().slice(-a.idx) : [];
@@ -2266,14 +2330,11 @@ function vPlan(){
   const weeks = [];
   rows.forEach(r => { const w = Math.floor(r.k / per); (weeks[w] = weeks[w] || []).push(r); });
   const subOf = (r, w) => ax ? r.sub.replace(/^Uke \d+ av \d+ · /, '') : r.sub !== 'Uke ' + (w + 1) ? r.sub : '';
-  return `<button class="link" data-a="planclose">‹ Tilbake</button>
-    <header class="head"><p class="eyebrow">${p.name}</p><h1>Hele planen</h1>
-      <p class="muted small">${PLAN_NOTE[p.prog] || ''}${P.active ? '' : ' Vektene er regnet ut fra tallene du har skrevet inn.'}${tot ? '' : ' Programmet har ingen fast slutt, så planen viser 12 uker.'}</p></header>
-    ${ax ? axScore(a) : ''}
+  return `${ax ? axScore(a) : ''}
     ${weeks.map((list, w) => list ? `<h3>Uke ${w + 1}${ax && a.ax.weeks[w] ? ' · ' + AX_PH[a.ax.weeks[w].ph] : ''}</h3><div class="list">${list.map(r => {
       const m = r.ex[0], sub = r.sub ? subOf(r, w) : '';
-      return `<details class="box acc plan-s${r.done || r.skipped ? ' done-s' : ''}${r.next ? ' next-s' : ''}"${r.next ? ' open' : ''}>
-        <summary><span class="ps"><span class="ps-top"><b>${esc(r.day)}</b>${r.done ? '<span class="pill">✓ Gjort</span>' : r.skipped ? '<span class="pill">Hoppet over</span>' : r.next ? '<span class="pill on">Neste</span>' : ''}</span>
+      return `<details class="box acc plan-s${r.done ? ' done-s' : ''}${r.skipped ? ' skip-s' : ''}${r.next ? ' next-s' : ''}"${r.next ? ' open' : ''}>
+        <summary><span class="ps"><span class="ps-top"><b>${esc(r.day)}</b>${r.done ? '<span class="pill">Gjort</span>' : r.skipped ? '<span class="pill">Hoppet over</span>' : r.next ? '<span class="pill on">Neste</span>' : ''}</span>
           ${sub ? `<span class="small muted">${esc(sub)}</span>` : ''}
           <span class="small">${m ? liftName(m.lift) + ' · ' + setsLine(m, r.done) : r.cond ? esc(r.cond.title) : ''}</span></span></summary>
         <div class="plan-ex">${r.ex.map(e => `<div class="ln"><span>${liftName(e.lift)}${e.tag ? ` <span class="muted">${e.tag}</span>` : ''}</span><span>${setsLine(e, r.done)}</span></div>`).join('')}
@@ -2284,7 +2345,7 @@ function vPlan(){
 
 /* ---------- Pete Plan (Pete Marston) ----------
    Tre-ukers rotasjon med seks økter per uke, kontrollert mot Pete Marstons egen tabell
-   (machars.net/waspeteplan.htm). Kan slås av under Mer.
+   (machars.net/waspeteplan.htm). Kan slås av under Plan.
    off = målfart i sekunder per 500 m i forhold til 2K-farten (negativ = raskere).
    Progresjon (fra planen): snittet fra alle dragene i en intervalløkt blir målet neste gang samme økt kommer.
    Hard distanse: prøv å komme nær din beste tid. Rolige økter følger 2K-farten.
@@ -2455,7 +2516,7 @@ function vToday(){
       <div class="bar" aria-hidden="true"></div>
       <h1>Ingen program ennå</h1>
       <p class="muted">Velg et styrkeprogram, legg inn startvektene dine, så lager appen øktene for deg.</p>
-      <button class="btn" data-a="tab:programs">Velg program</button>
+      <button class="btn" data-a="tab:plan">Velg program</button>
       <button class="btn ghost" data-a="free">+ Logg fri økt</button>
     </div>`;
   const p = prog(S.active.programId);
@@ -2468,9 +2529,13 @@ function vToday(){
   let h = over ? '<div class="topbar"><button class="quick" data-a="free">+ Logg fri økt</button></div>' : '';
   if (ui.summary) {
     const u = ui.summary;
+    // Rekord: ringet rundt med blå penn, fordi det er noe du har gjort. Rødt er bare for avvik.
+    const ring = '<svg viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true"><path d="M8 22C6 8 40 2 70 4c22 2 30 10 26 20-4 11-36 15-62 12C14 34 4 28 10 16"/></svg>';
     h += `<section class="done" aria-live="polite">
-      <p class="eyebrow">${u.day} fullført</p>
+      <h2>${u.day} fullført</h2>
       ${u.vol > 0 ? `<div class="big">${fmt(Math.round(u.vol))} kg <span class="muted small">løftet totalt</span></div>` : ''}
+      ${u.prs && u.prs.length ? `<div class="prs">${u.prs.map(r => `<div class="pr"><b>Rekord i ${r.name.toLowerCase()}</b>
+        <span class="ring">${fmt(r.w)} × ${r.d}${ring}</span></div><p class="small muted">Anslått 1RM ${fmt(r.e)} kg</p>`).join('')}</div>` : ''}
       <ul class="notes">${u.notes.map(n => `<li><b>${n.name}</b><span class="${n.kind}">${n.text}</span></li>`).join('')}</ul>
       <button class="link" data-a="dismiss">Lukk</button>
     </section>`;
@@ -2480,7 +2545,7 @@ function vToday(){
     return h + `<header class="head"><p class="eyebrow">${p.name}</p><h1>Programmet er fullført</h1></header>
       ${a.e1rm ? `<div class="box trend">${Object.keys(a.e1rm).map(l => `<div class="tr"><b>${liftName(l)}</b><span>${fmt(a.base[l])} → ${fmt(Math.round(a.e1rm[l]*2)/2)} kg</span></div>`).join('')}</div>
       <p class="muted small">Startverdi mot estimert 1RM nå.</p>` : ''}
-      <button class="btn" data-a="tab:programs">Velg neste program</button>`;
+      <button class="btn" data-a="go:library">Velg neste program</button>`;
   }
   const anyTouched = s.ex.some(e => e.sets.some(x => x.d != null));
   const allDone = e => e.sets.every(x => x.d != null);
@@ -2529,25 +2594,29 @@ function vToday(){
     const nextSi = now && !warm ? e.sets.findIndex(x => x.d == null) : -1;
     const varies = new Set(e.sets.map(x => x.w)).size > 1;
     const amIdx = e.sets.findIndex(x => x.am && x.d != null);
-    const tag = warm ? `Oppvarming ${wuNext + 1} av ${wu.length}`
-      : now ? (nextSi > -1 ? `Nå · sett ${nextSi+1} av ${e.sets.length}` : 'Nå') + (e.tag ? ' · ' + e.tag : '') : e.tag;
-    const [bigW, bigR] = warm ? wu[wuNext] : [top, 0];
+    // Ett tall om gangen: det store tallet er alltid neste sett. Den markerte ruta viser hvor i rekka du er,
+    // så kortet trenger ikke si «Oppvarming 2 av 3» eller «sett 2 av 5» i tillegg.
+    const [bigW, bigR] = warm ? wu[wuNext] : nextSi > -1 ? [e.sets[nextSi].w, e.sets[nextSi].t] : [top, 0];
+    const bigAm = !warm && nextSi > -1 && e.sets[nextSi].am;
+    const head = `<div class="ex-head"><h2>${liftName(e.lift)}</h2>${e.tag ? `<span class="tag">${e.tag}</span>` : ''}</div>
+        <div class="kg">${fmt(bigW)}<small>kg${bigR ? ' × ' + bigR + (bigAm ? '+' : '') : ''}</small></div>
+        ${LIFTS[e.lift].bar ? `<div class="platesrow ${now ? 'platebox' : ''}">${plateHTML(bigW, now)}</div>` : ''}`;
+    // Hele toppen av arket er knappen for neste sett: stor flate, ingen leting etter riktig rute
+    const canNext = now && (warm || nextSi > -1);
     h += `<section class="ex ${now ? 'now' : ''}">
-      <div class="ex-head"><div>${tag ? `<span class="tag">${tag}</span>` : ''}<h2>${liftName(e.lift)}</h2></div>
-        <div class="kg">${fmt(bigW)}<small>KG${bigR ? ' × ' + bigR : ''}</small></div></div>
-      ${LIFTS[e.lift].bar ? `<div class="platesrow ${now ? 'platebox' : ''}">${plateHTML(bigW, now)}</div>` : ''}
-      ${wu.length ? vWarmup(e, ei, wu, wuNext, warm) : ''}
+      ${canNext ? `<div class="ex-hit" role="button" tabindex="0" data-a="next:${ei}" aria-label="Før inn ${bigR}${bigAm ? '+' : ''} reps på ${fmt(bigW)} kg${warm ? ', oppvarming' : ''}">${head}</div>` : head}
       ${e.hint ? `<p class="wu">${e.hint}</p>` : ''}
-      <div class="chips">${e.sets.map((x,si) => {
+      <div class="chips">${wu.length ? `<div class="chip-grp wu-grp">${vWarmup(e, ei, wu, wuNext, warm)}</div>` : ''}<div class="chip-grp">${e.sets.map((x,si) => {
         const st = x.d == null ? (si === nextSi ? 'next' : '') : (x.d >= x.t ? 'ok' : 'miss');
+        const fr = x.d != null && ui.fresh === ei + ':' + si ? ' fresh' : '';
         const lbl = 'Sett '+(si+1)+': '+(x.d == null ? 'ikke gjort, mål '+x.t+' reps' : x.d+' reps')+(x.am ? ', så mange du klarer' : '');
-        return `<div class="cw"><button class="chip ${st} ${x.am?'am':''}" data-a="set:${ei}:${si}" aria-label="${lbl}">${x.d == null ? x.t : x.d}${x.am ? '<sup>+</sup>' : ''}</button>${varies ? `<small>${fmt(x.w)}</small>` : ''}</div>`;
-      }).join('')}</div>
+        return `<div class="cw"><button class="chip ${st} ${x.am?'am':''}${fr}" data-a="set:${ei}:${si}" aria-label="${lbl}">${x.d == null ? x.t : x.d}${x.am ? '<sup>+</sup>' : ''}</button>${varies || wu.length ? `<small>${fmt(x.w)}</small>` : ''}</div>`;
+      }).join('')}</div></div>
       ${amIdx > -1 ? `<div class="amrap"><span>Siste sett, så mange du klarer</span>
         <button class="step" data-a="am:${ei}:${amIdx}:-1" aria-label="Én rep mindre">−</button>
         <b>${e.sets[amIdx].d}</b>
         <button class="step" data-a="am:${ei}:${amIdx}:1" aria-label="Én rep mer">+</button></div>` : ''}
-      ${(warm || (nextSi > -1 && !e.sets[nextSi].am)) ? '<p class="chip-hint">Trykk = gjort · trykk igjen = én rep mindre</p>' : ''}
+      ${canNext && S.history.filter(x => !x.free && !x.skipped).length < 3 ? '<p class="chip-hint">Trykk på tallet = gjort · trykk på et sett igjen = én rep mindre</p>' : ''}
       ${e.sp ? spExtras(e, ei) : ''}
     </section>`;
   });
@@ -2593,8 +2662,9 @@ function vToday(){
         ${next ? 'Neste økt blir ' + esc(next.day) + (next.sub && next.sub !== s.sub ? ' (' + esc(next.sub) + ')' : '') + '.' : 'Dette var siste økt i programmet.'}</p>
       <div class="row"><button class="btn danger sm" data-a="skipday">Ja, hopp over</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div></section>`;
   }
-  h += `<div class="links"><button class="link" data-a="plan">Se planen</button><button class="link" data-a="free">Logg fri økt</button>${
-    ui.confirm === 'skipday' ? '' : '<button class="link" data-a="confirm:skipday">Hopp over økta</button>'}</div>`;
+  // Planen ligger under Plan og fri økt under Logg, så her står bare det som gjelder dagens økt
+  if (ui.confirm !== 'skipday') h += `<div class="links"><button class="link" data-a="confirm:skipday">Hopp over økta</button></div>`;
+  ui.fresh = null;   // blekket tegnes bare én gang, på settet du nettopp førte inn
   return h;
 }
 
@@ -2674,7 +2744,7 @@ function vGuide(){
       <div class="top"><h2>${p.name}</h2><span class="pill">${p.perWeek}/uke</span></div>
       <div class="meta"><span class="pill">${p.level}</span></div>
       <p class="small">${GUIDE[p.id] ? GUIDE[p.id].focus : p.summary}</p></button>`).join('');
-  return `<button class="link" data-a="back">‹ Programmer</button>
+  return `<button class="link" data-a="back">‹ Tilbake</button>
     <header class="head"><p class="eyebrow">Programguide</p><h1>Hvilket program passer?</h1>
       <p class="muted small">Hva programmene gjør, hva de fokuserer på og hva du realistisk kan forvente. Basert på forskning slått opp i PubMed i oktober 2026.</p></header>
     <h3>Kort oppsummert</h3>
@@ -2713,11 +2783,13 @@ function vActiveCard(){
       ${lifts.length ? `<div class="act-facts">${lifts.map(([l, w]) => `<div><b>${fmt(w)}</b><span>${liftName(l)}</span></div>`).join('')}</div>` : ''}
     </button>`;
 }
-function vPrograms(){
+// Biblioteket. root: Plan-fanen uten aktivt program, med tannhjulet øverst. Ellers åpnet fra «Bytt program».
+function vPrograms(root){
   const f = ui.progF || '', act = S.active && S.active.programId;
   const list = PROGRAMS.filter(p => p.id !== act && (!f || p.level.toLowerCase().includes(f.toLowerCase())));
-  return `<header class="head"><p class="eyebrow">Bibliotek</p><h1>Programmer</h1></header>
-    ${act ? vActiveCard() : '<p class="muted small">Kjente styrkeprogrammer og din egen modell. Trykk på ett for å se øktene og aktivere det.</p>'}
+  return `${root ? '' : '<button class="link" data-a="back">‹ Plan</button>'}
+    <header class="head h-row"><h1>${root ? 'Plan' : 'Bytt program'}</h1>${root ? gearBtn() : ''}</header>
+    <p class="muted small">${root ? 'Velg et styrkeprogram. Trykk på ett for å se øktene og aktivere det.' : 'Det aktive programmet byttes først når du aktiverer et nytt. Loggen din blir liggende.'}</p>
     <div class="filt" role="group" aria-label="Filtrer etter nivå">${[''].concat(LEVELS).map(l =>
       `<button data-a="progf:${l}" aria-pressed="${f === l}">${l || 'Alle'}</button>`).join('')}</div>
     <button class="guide-row" data-a="guide">
@@ -2732,7 +2804,7 @@ function vPrograms(){
 function vDetail(p){
   const isActive = S.active && S.active.programId === p.id;
   const other = S.active && !isActive ? prog(S.active.programId) : null;
-  return `<button class="link" data-a="back">‹ Programmer</button>
+  return `<button class="link" data-a="back">‹ Tilbake</button>
     <header class="head"><p class="eyebrow">${p.origin}</p><h1>${p.name}</h1>
       <div class="meta" style="margin-top:8px"><span class="pill">${p.level}</span><span class="pill">${p.perWeek} økter/uke</span></div></header>
     <p>${p.summary}</p>
@@ -2753,7 +2825,7 @@ function vDetail(p){
       <div class="field"><label for="in-${i}">${keyLabel(k)}</label>
         <span class="inp"><input id="in-${i}" data-key="${k}" type="text" inputmode="decimal" value="${fmt(v)}">kg</span></div>`; }).join('')}${p.orm ? '</details>' : '</div>'}
     <p class="muted small">${p.prog === '531' ? 'Appen regner ut treningsmaks som 90 % av dette.' : p.prog === 'jugg' ? 'Appen regner ut arbeidsmaks som 90 % av dette.' : p.prog === 'sp12' ? 'Startvektene regnes ut fra dette. Etter hvert styrer RPE-en din vektene.' : p.prog === 'cube' ? 'Alle vekter regnes ut som prosent av dette.' : 'Start lett. Teknikken skal sitte før vekten blir tung.'}
-      ${slotsOf(p).length ? ' Vil du bytte et løft, gjør du det under Mer når programmet er aktivt.' : ''}
+      ${slotsOf(p).length ? ' Vil du bytte et løft, gjør du det under Plan → Maksløft, pauser og Pete Plan når programmet er aktivt.' : ''}
       ${other ? ' Dette erstatter '+other.name+'. Loggen din blir liggende.' : ''}${isActive ? ' Programmet er aktivt. Aktiverer du på nytt, starter det fra økt 1 med vektene over.' : ''}</p>`}
     <button class="btn ghost" data-a="planprev:${p.id}">Se hele planen</button>
     <button class="btn" data-a="activate:${p.id}">${isActive ? 'Start på nytt' : 'Aktiver program'}</button>`;
@@ -2778,13 +2850,13 @@ function vCalendar(){
   const cells = [];
   for (let i = 0; i < 28; i++) {
     const t0 = start + i * day, t1 = t0 + day, hs = S.history.filter(h => h.date >= t0 && h.date < t1);
-    const st = hs.some(isStrength), mc = hs.some(isMetcon);
-    const cls = st && mc ? 'both' : st ? 'st' : mc ? 'mc' : '';
-    const lbl = new Date(t0).toLocaleDateString('nb-NO', {weekday:'long', day:'numeric', month:'long'}) + ': ' + (st && mc ? 'styrke og metcon' : st ? 'styrke' : mc ? 'metcon' : 'ingen økt');
+    const st = hs.some(isStrength), mc = hs.some(isMetcon), sk = !st && !mc && hs.some(h => h.skipped);
+    const cls = st && mc ? 'both' : st ? 'st' : mc ? 'mc' : sk ? 'sk' : '';
+    const lbl = new Date(t0).toLocaleDateString('nb-NO', {weekday:'long', day:'numeric', month:'long'}) + ': ' + (st && mc ? 'styrke og metcon' : st ? 'styrke' : mc ? 'metcon' : sk ? 'økt hoppet over' : 'ingen økt');
     cells.push(`<i class="${cls}${t0 === today.getTime() ? ' today' : ''}${t0 > today.getTime() ? ' fut' : ''}" title="${lbl}"></i>`);
   }
   return `<div class="cal" role="img" aria-label="Treningsdager de siste fire ukene">${['M','T','O','T','F','L','S'].map(d => `<span>${d}</span>`).join('')}${cells.join('')}</div>
-    <div class="cal-key"><span><i class="st"></i>Styrke</span><span><i class="mc"></i>Metcon</span><span><i class="both"></i>Begge</span></div>`;
+    <div class="cal-key"><span><i class="st"></i>Styrke</span><span><i class="mc"></i>Metcon</span><span><i class="sk"></i>Hoppet over</span></div>`;
 }
 function vLog(){
   let h = `<header class="head h-row"><div><p class="eyebrow">Siste 4 uker</p><h1>Logg</h1></div><button class="quick" data-a="free">+ Fri økt</button></header>`;
@@ -2794,7 +2866,7 @@ function vLog(){
   h += `<section class="box">
       <div class="log-sum">
         <div><b>${nSt}</b><span>${nSt === 1 ? 'styrkeøkt' : 'styrkeøkter'}</span></div>
-        <div><b class="${nMc ? 'warn-t' : ''}">${nMc}</b><span>${nMc === 1 ? 'metcon' : 'metcons'}</span></div>
+        <div><b>${nMc}</b><span>${nMc === 1 ? 'metcon' : 'metcons'}</span></div>
         <div><b>${fmt(mcWindow(now - 7*864e5, now).min)}<small>min</small></b><span>kondisjon 7 d</span></div>
       </div>
       ${vCalendar()}
@@ -2831,7 +2903,7 @@ function vLog(){
     const title = sess.free ? (sess.pete ? 'Pete Plan' : sess.wod ? 'Metcon' : 'Fri økt') : sess.day;
     // Én linje per økt: løftene med toppvekt, eller hva den frie økta var. Trykk for detaljer.
     const sum = sess.free ? (sess.pete ? esc(sess.pete.name) : sess.wod ? esc(sess.wod.navn) : sess.note ? esc(sess.note.slice(0, 60)) : '')
-      : sess.ex.length ? [...new Map(sess.ex.map(e => [e.lift, Math.max(...e.sets.map(x => x.w))])).entries()].map(([l, w]) => liftName(l) + ' ' + fmt(w)).join(' · ')
+      : sess.ex.length ? Object.entries(sess.ex.reduce((m, e) => (m[e.lift] = Math.max(m[e.lift] || 0, ...e.sets.map(x => x.w)), m), {})).map(([l, w]) => liftName(l) + ' ' + fmt(w)).join(' · ')
       : sess.cond ? esc(sess.cond.title) : '';
     const vol = sess.free ? 0 : sess.ex.reduce((s,e) => s + e.sets.reduce((v,x) => v + (x.d||0)*x.w, 0), 0);
     const body = !open ? '' : sess.free ? noteH : `<p class="muted small">${p ? p.name : ''} · ${sess.sub} · ${fmt(Math.round(vol))} kg totalt</p>
@@ -2886,9 +2958,36 @@ function vPeteSettings(){
     </div>`;
 }
 
-function vMore(){
+const gearSVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>';
+const gearBtn = () => `<button class="gear" data-a="go:settings" aria-label="Innstillinger">${gearSVG}</button>`;
+
+// Plan: det aktive programmet, snarveier til innstillingene for treningen og et annet program, og hele planen under.
+// Uten aktivt program er Plan biblioteket.
+function vPlanTab(){
+  const d = ui.detail;
+  if (d === 'settings') return vSettings();
+  if (d === 'training') return vTraining();
+  if (d === 'guide') return vGuide();
+  if (d === 'library') return vPrograms(false);
+  if (d) return vDetail(prog(d));
+  if (!S.active || !prog(S.active.programId)) return vPrograms(true);
+  const p = prog(S.active.programId), P = {id: p.id, active: true};
+  return `<header class="head h-row"><h1>Plan</h1>${gearBtn()}</header>
+    ${vActiveCard()}
+    <div class="plist">
+      <button data-a="go:training"><span><b>Maksløft, pauser og Pete Plan</b><small>Det appen regner vektene og pausene ut fra</small></span>${chev}</button>
+      <button data-a="go:library"><span><b>Bytt program</b><small>Bibliotek og programguide</small></span>${chev}</button>
+    </div>
+    <h2 style="margin-top:12px">Hele planen</h2>
+    <p class="muted small">${PLAN_NOTE[p.prog] || ''}${totalOf(p, S.active) ? '' : ' Programmet har ingen fast slutt, så planen viser 12 uker.'}</p>
+    ${planWeeks(P, p, S.active)}`;
+}
+
+// Det som styrer treningen: maksløft, pauser, Pete Plan, løft i programmet og å avslutte programmet
+function vTraining(){
   const p = S.active && prog(S.active.programId);
-  return `<header class="head"><p class="eyebrow">Innstillinger</p><h1>Mer</h1></header>
+  return `<button class="link" data-a="back">‹ Plan</button>
+    <header class="head"><h1>Maksløft og pauser</h1></header>
     <h3>Mine maksløft (1RM)</h3>
     <div class="box" style="gap:0">${Object.keys(S.maxes).length ? Object.keys(S.maxes).map(l => `
       <div class="field"><label for="max-${l}">${liftName(l)}</label>
@@ -2899,14 +2998,23 @@ function vMore(){
     <h3>Pause mellom sett</h3>
     <div class="seg">${REST_SCALE.map(([f, l]) => `<button data-a="restscale:${f}" aria-pressed="${(S.settings.restScale || 1) === f}">${l}</button>`).join('')}</div>
     <p class="muted small">Hvert program har pauser etter hva slags sett det er: tunge sett 3 min eller mer, volumsett 2 min og lette hjelpeøvelser 90 s, slik forskningen anbefaler. Kortere gir 75 % og Lengre 125 % av alle pausene.</p>
-    <button class="tog" data-a="sound" aria-pressed="${!!S.settings.sound}">Lyd når pausen er over</button>
-    <p class="muted small">Hele skjermen viser pausen: fargen synker nedover og blinker grønt når pausen er over. På iPhone kan nettapper ikke vibrere, og lyd spilles ikke når skjermen er låst.</p>
+    ${p ? swapRows(p, S.active) : ''}
     <h3>Aktivt program</h3>
     <div class="box">${p ? `<p><b>${p.name}</b> <span class="muted">· ${S.active.idx} økter fullført siden ${dateFmt(S.active.startedAt)}</span></p>
       ${ui.confirm === 'quit' ? `<div class="row"><button class="btn danger sm" data-a="quit">Ja, avslutt</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div>`
         : `<button class="btn ghost sm" data-a="confirm:quit">Avslutt program</button>`}`
-      : `<p class="muted">Ingen program er aktivt.</p>`}</div>
-    ${p ? swapRows(p, S.active) : ''}
+      : `<p class="muted">Ingen program er aktivt.</p>`}</div>`;
+}
+
+// Innstillinger for appen: lyd, konto og varsler, sikkerhetskopi og sletting
+function vSettings(){
+  return `<button class="link" data-a="back">‹ Tilbake</button>
+    <header class="head"><h1>Innstillinger</h1></header>
+    <h3>Pause</h3>
+    <div class="box">
+      <button class="tog" data-a="sound" aria-pressed="${!!S.settings.sound}">Lyd når pausen er over</button>
+      <p class="muted small">Linjalen nederst viser pausen og blinker når den er over. På iPhone kan nettapper ikke vibrere, og lyd spilles ikke når skjermen er låst.</p>
+    </div>
     ${vSxAccount()}
     <h3>Sikkerhetskopi</h3>
     <div class="box">
@@ -2928,10 +3036,9 @@ function render(){
   let h = ui.storageOK ? '' : `<div class="warn">Lagring er ikke tilgjengelig her. Endringer forsvinner når siden lukkes.</div>`;
   if (ui.plan) { const v = vPlan(); if (ui.plan) { $('#view').innerHTML = h + v; return; } }
   if (ui.tab === 'today') h += vToday();
-  else if (ui.tab === 'programs') h += ui.detail === 'guide' ? vGuide() : ui.detail ? vDetail(prog(ui.detail)) : vPrograms();
   else if (ui.tab === 'together') h += vTogether();
   else if (ui.tab === 'log') h += vLog();
-  else h += vMore();
+  else h += vPlanTab();
   $('#view').innerHTML = h;
   const inChat = ui.tab === 'together' && /^c:/.test(ui.sxView || '');
   $('#view').classList.toggle('chat', inChat);
@@ -2942,7 +3049,7 @@ function render(){
 }
 
 /* ---------- Pausetimer, skjerm-på, toast ---------- */
-// Lyd når pausen er over (innstilling under Mer). Lyden må låses opp i et trykk, derfor skjer det i startRest.
+// Lyd når pausen er over (innstilling under Plan → Innstillinger). Lyden må låses opp i et trykk, derfor skjer det i startRest.
 let audio = null;
 function unlockAudio(){
   if (!S.settings.sound) return;
@@ -2961,24 +3068,10 @@ function beep(){
 }
 function startRest(sec){
   sec = Math.round((sec || 120) * (S.settings.restScale || 1)); unlockAudio();
-  ui.rest = {end: Date.now() + sec*1000, total: sec, done: false, next: nextUp()};
+  ui.rest = {end: Date.now() + sec*1000, total: sec, done: false};
   updateRest();
 }
-// Neste sett i økta, til linjen nederst i pausen: oppvarming først, så arbeidssett i rekkefølge
-function nextUp(){
-  const s = S.draft; if (!s) return '';
-  for (let ei = 0; ei < s.ex.length; ei++) {
-    const e = s.ex[ei], n = liftName(e.lift), started = e.sets.some(x => x.d != null);
-    const wk = !started && wuKind(s, ei), done = e.wuDone || [];
-    const w = wk ? warmups(e.slot, e.sets[0].w, e.sets[0].t, wk).find(([w, r]) => !done.includes(w + 'x' + r)) : null;
-    if (w) return n + ' · oppvarming ' + w[1] + ' × ' + fmt(w[0]) + ' kg';
-    const si = e.sets.findIndex(x => x.d == null);
-    // Løftets navn bare når du bytter øvelse, så linjen holder seg kort
-    if (si > -1) { const x = e.sets[si]; return (si ? '' : n + ' · ') + 'sett ' + (si+1) + ' · ' + x.t + (x.am ? '+' : '') + ' × ' + fmt(x.w) + ' kg'; }
-  }
-  return 'Alle sett er gjort';
-}
-// Gult de siste 10 sekundene, eller den siste femdelen hvis pausen er kortere enn 50 sekunder
+// Rødt de siste 10 sekundene, eller den siste femdelen hvis pausen er kortere enn 50 sekunder
 const restWarn = total => Math.min(10, total * .2);
 const mmss = s => Math.floor(s/60) + ':' + String(Math.floor(s % 60)).padStart(2,'0');
 function updateRest(){
@@ -2989,21 +3082,18 @@ function updateRest(){
   let lvl, state;
   if (left > 0) { lvl = left / ui.rest.total; state = left <= restWarn(ui.rest.total) ? 'warn' : 'run'; }
   else {
-    if (!ui.rest.done) {   // pausen er over: ett grønt blink og eventuelt lyd
+    if (!ui.rest.done) {   // pausen er over: ett lyst blink og eventuelt lyd
       ui.rest.done = true; beep();
       const f = $('#restFlash'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
     }
-    lvl = 0; state = 'over';   // overtid vises som tekst i linjen, ikke som et eget fargelag
+    lvl = 0; state = 'over';   // overtid teller oppover i linjen
   }
   el.hidden = false;
   stage.dataset.rest = state;
+  // Linjalen: lengden er tiden som er igjen. Neste sett står allerede som det store tallet i arket.
   stage.style.setProperty('--lvl', (lvl * 100).toFixed(2) + '%');
-  const t = left > 0 ? mmss(Math.ceil(left)) : '+' + mmss(-left);
-  $('#restB').textContent = t;
-  // Merket på kanten skjules øverst, der det ville dekket innhold. Tiden står alltid i linjen.
-  $('#restT').textContent = t; $('#restT').hidden = state === 'over' || lvl > .85;
-  const nx = esc(ui.rest.next || '');
-  $('#restL').innerHTML = left > 0 ? (nx ? 'Neste: <b>' + nx + '</b>' : 'Pause') : 'Klar for neste sett' + (nx ? ': <b>' + nx + '</b>' : '');
+  $('#restB').textContent = left > 0 ? mmss(Math.ceil(left)) : '+' + mmss(-left);
+  $('#restL').textContent = left > 0 ? 'av ' + mmss(ui.rest.total) : 'Klar for neste sett';
 }
 setInterval(updateRest, 250);
 
@@ -3199,7 +3289,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('mess
   // Et varsel kom mens appen er åpen: hent nytt med en gang, så tallene og samtalen stemmer
   else if (e.data && e.data.refresh && auth) { sxLoad(); if (/^c:/.test(ui.sxView || '')) chatFetch(); }
 });
-pushCheck().then(() => { if (ui.tab === 'together' || ui.tab === 'more') render(); });
+pushCheck().then(() => { if (ui.tab === 'together' || ui.detail === 'settings') render(); });
 
 const pad = n => String(n).padStart(2, '0');
 const hm = t => { const d = new Date(t); return pad(d.getHours()) + ':' + pad(d.getMinutes()); };
@@ -3312,7 +3402,7 @@ function vSxSignup(){
   return `<header class="head"><p class="eyebrow">Valgfritt</p><h1>Sammen</h1>
       <p class="muted">Legg ut når du skal trene, og la vennene dine bli med. Det krever en konto. Resten av appen virker som før uten.</p></header>
     <section class="box sx-form">${box}</section>
-    <p class="muted small">Bare brukernavn, venner og timer lagres, hos Supabase i EU. Treningsloggen din blir på telefonen. Kontoen kan slettes under Mer.</p>`;
+    <p class="muted small">Bare brukernavn, venner og timer lagres, hos Supabase i EU. Treningsloggen din blir på telefonen. Kontoen kan slettes under Plan → Innstillinger.</p>`;
 }
 
 function vSxNewPw(){
@@ -3697,7 +3787,7 @@ function vSxPick(mode, cid){
 const chatPicked = () => [...document.querySelectorAll('.ch-ck:checked')].map(x => x.value);
 const chatGo = () => { const id = ui.chGo; ui.chGo = null; if (id) chatOpen(id); };
 
-// Konto under Mer
+// Konto under Innstillinger
 function vSxAccount(){
   return `<h3>Konto for Sammen</h3>
     <div class="box">${auth
@@ -3807,17 +3897,36 @@ document.addEventListener('click', ev => {
   const b = ev.target.closest('[data-a]'); if (!b || b.disabled) return;
   const [a, ...r] = b.dataset.a.split(':');
   switch (a) {
-    case 'tab': ui.tab = r[0]; ui.detail = null; ui.plan = null; ui.confirm = null; ui.free = false; ui.bank = false; ui.wod = null;
+    case 'tab': ui.tab = r[0]; ui.detail = null; ui.stack = []; ui.plan = null; ui.confirm = null; ui.free = false; ui.bank = false; ui.wod = null;
       if (r[0] === 'together') { ui.sxView = 'list'; sxOpen(); }
       render(); toTop(); break;
-    case 'open': ui.detail = r[0]; render(); toTop(); break;
-    case 'back': ui.detail = null; render(); break;
+    // Undersider i Plan: Tilbake går dit du kom fra (planen, biblioteket eller guiden)
+    case 'open': case 'go': ui.tab = 'plan'; (ui.stack = ui.stack || []).push(ui.detail); ui.detail = r[0]; ui.confirm = null; render(); toTop(); break;
+    case 'back': ui.detail = (ui.stack || []).pop() || null; ui.confirm = null; render(); toTop(); break;
     case 'activate': activate(r[0]); break;
     case 'set': {
       const ex = S.draft.ex[+r[0]], x = ex.sets[+r[1]];
       if (x.am) x.d = x.d == null ? x.t : null;
       else x.d = x.d == null ? x.t : (x.d > 0 ? x.d - 1 : null);
       if (x.d != null) startRest(ex.rest);
+      ui.fresh = r[0] + ':' + r[1];
+      save(); render(); wake(); break;
+    }
+    // Trykk på arket: neste oppvarmingssett, ellers neste arbeidssett, føres inn med målet som reps
+    case 'next': {
+      const ei = +r[0], s = S.draft, e = s && s.ex[ei]; if (!e) break;
+      const wk = !e.sets.some(x => x.d != null) && wuKind(s, ei), done = e.wuDone || [];
+      const wu = wk ? warmups(e.slot, e.sets[0].w, e.sets[0].t, wk) : [];
+      const wi = wu.findIndex(([w, n]) => !done.includes(w + 'x' + n));
+      if (wi > -1) {
+        const kk = wu[wi][0] + 'x' + wu[wi][1];
+        e.wuDone = done.concat(kk); ui.fresh = 'wu:' + ei + ':' + kk;
+        startRest(wi === wu.length - 1 ? REST.warmupLast : REST.warmup);
+      } else {
+        const si = e.sets.findIndex(x => x.d == null); if (si < 0) break;
+        e.sets[si].d = e.sets[si].t; ui.fresh = ei + ':' + si;
+        startRest(e.rest);
+      }
       save(); render(); wake(); break;
     }
     case 'am': { const x = S.draft.ex[+r[0]].sets[+r[1]]; x.d = Math.max(0, Math.min(99, x.d + (+r[2]))); save(); render(); break; }
@@ -3828,7 +3937,7 @@ document.addEventListener('click', ev => {
     case 'wu': {
       const e = S.draft.ex[+r[0]], k = r[1]; e.wuDone = e.wuDone || [];
       const j = e.wuDone.indexOf(k);
-      if (j > -1) e.wuDone.splice(j, 1); else { e.wuDone.push(k); startRest(r[2] === '1' ? REST.warmupLast : REST.warmup); }
+      if (j > -1) e.wuDone.splice(j, 1); else { e.wuDone.push(k); ui.fresh = 'wu:' + r[0] + ':' + k; startRest(r[2] === '1' ? REST.warmupLast : REST.warmup); }
       save(); render(); wake(); break;
     }
     case 'cut': { const e = S.draft.ex[+r[0]]; if (e.sets.length > 1 && e.sets[e.sets.length-1].d == null) { e.sets.pop(); e.cut = (e.cut||0) + 1; } save(); render(); break; }
@@ -3859,7 +3968,7 @@ document.addEventListener('click', ev => {
     case 'skipdl':
       S.active.skipDl = Object.assign({}, S.active.skipDl, {[r[0]]: true});
       S.draft = null; save(); render(); toTop(); toast('Lett uke hoppet over. Du kjører én uke til.'); break;
-    case 'guide': ui.detail = 'guide'; render(); toTop(); break;
+    case 'guide': (ui.stack = ui.stack || []).push(ui.detail); ui.detail = 'guide'; render(); toTop(); break;
     case 'free': ui.tab = 'today'; ui.free = true; ui.freeNote = ui.freeNote || ''; render(); toTop(); break;
     case 'freecancel': ui.free = false; render(); break;
     case 'freemc': ui.freeMc = ui.freeMc === false; render(); break;
@@ -4001,7 +4110,7 @@ document.addEventListener('click', ev => {
     case 'confirm': ui.confirm = r.join(':'); render(); break;
     case 'cancel': ui.confirm = null; render(); break;
     case 'quit': S.active = null; S.draft = null; ui.summary = null; ui.confirm = null; save(); render(); toast('Programmet er avsluttet'); break;
-    case 'reset': S = fresh(); mergeCustom(); ui.summary = null; ui.confirm = null; ui.exportText = ''; save(); ui.tab = 'programs'; render(); toast('Alle data er slettet'); break;
+    case 'reset': S = fresh(); mergeCustom(); ui.summary = null; ui.confirm = null; ui.exportText = ''; save(); ui.tab = 'plan'; ui.detail = null; ui.stack = []; render(); toast('Alle data er slettet'); break;
     case 'export': ui.exportText = JSON.stringify(S); render(); break;
     case 'copy': {
       const ta = $('#exportBox');
@@ -4029,6 +4138,8 @@ document.addEventListener('input', ev => {
 });
 document.addEventListener('keydown', ev => {
   if (ev.target.id === 'chIn' && ev.key === 'Enter' && !ev.isComposing) { ev.preventDefault(); chatSend(); }
+  // Arket i økta er en knapp laget av en div, så Enter og mellomrom må gjøre det samme som et trykk
+  if (ev.target.matches && ev.target.matches('[role="button"][data-a]') && (ev.key === 'Enter' || ev.key === ' ')) { ev.preventDefault(); ev.target.click(); }
 });
 document.addEventListener('change', ev => {
   const t = ev.target;
