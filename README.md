@@ -22,6 +22,7 @@ Skriften er Archivo, en familie i flere bredder.
 | **Dommerlys** | Fylt hvit rute, som et godkjent løft | Hvit ring | Rav |
 | **Skivefarger** | Blå (20 kg-skiva) | Gul (15 kg) | Grønn (10 kg) |
 | **Monokrom blå** | Lys blå, hovedknappene i gull | Gull ring | Isblå |
+| **Grønn ro** | Grønn, arkene går svakt fra grønt til blått | Blågrønn ring | Blå |
 | **Lyst ark** | Blå penn på lyst papir | Blå ring | Mørk grønnblå |
 
 All tekst har minst 4,5:1 i kontrast mot arket, og kanten på settrutene minst 3:1. Fargene står som `:root[data-theme="…"]` øverst i CSS-en, og listen over temaer er `LOOKS` i skriptet. Valget lagres i `S.settings.theme` og følger med i skybackup. En kopi i `stanga.theme` leses i `<head>`, så riktig tema vises før resten av appen er lastet.

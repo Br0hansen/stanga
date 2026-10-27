@@ -305,6 +305,8 @@ Alle tre har de samme rollene: plan (grått), gjort, avvik, rekord og kondisjon.
 
 **Bygget (versjon 44):** Femte tema, *Monokrom blå* (blått overalt, gull på hovedknappene og rekorden, rødt for avvik). Fanene heter *I dag · Program · Fremgang · Sammen*, og Innstillinger åpnes med tannhjulet øverst til høyre på I dag.
 
+**Bygget (versjon 45):** Sjette tema, *Grønn ro* (grønt for gjort, blått for kondisjon, blågrønt for rekord). Arkene går svakt fra mørk grønn til mørk blå, og hovedknappen fra grønn til blå. All tekst holder 4,5:1 mot begge ender av overgangen.
+
 ## Kilder
 
 - Apple, WWDC25 «Build a UIKit app with the new design» (fanelinje som flyter og krymper, *bottom accessory*, fargevarianter): [developer.apple.com](https://developer.apple.com/videos/play/wwdc2025/284/)

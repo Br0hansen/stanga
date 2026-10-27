@@ -58,7 +58,15 @@
   --chalk:#E8EEFB; --chalk-2:#A9B8D6; --chalk-3:#8796B5; --accent:#8AB4F8; --accent-ink:#070D1A; --miss:#FF6B5E;
   --paper:#16233F; --ink:#E8EEFB; --ink-2:#A9B8D6; --ink-3:#8D9CBB; --rule:#26345A; --edge:#5B6F9A;
   --pen:#8AB4F8; --red:#FF6B5E; --field:#0F1A30; --press:#1F2E52; --kond:#7FD8F5; --rekord:#F2C14E}
-:root[data-theme="blaa"] .btn:not(.ghost):not(.danger){background:#F2C14E;color:#1A1405}
+:root[data-theme="blaa"] .btn:not(.ghost):not(.danger):not(.list>.btn){background:#F2C14E;color:#1A1405}
+/* Grønn ro: grønt (gjort), blått (kondisjon) og blågrønt (rekord). Arkene går svakt fra grønt til blått,
+   og all tekst holder 4,5:1 mot begge ender av overgangen. */
+:root[data-theme="gronn"]{
+  --iron:#07120F; --iron-2:#0C1A17; --iron-3:#16292A; --line:rgba(225,245,238,.16);
+  --chalk:#E9F3EF; --chalk-2:#A7C2BA; --chalk-3:#86A29B; --accent:#4ADE80; --accent-ink:#07120F; --miss:#FF6B6B;
+  --paper:#13293A; --sheet:linear-gradient(135deg,#12302A,#15243F); --ink:#E9F3EF; --ink-2:#A7C2BA; --ink-3:#8EAAA3; --rule:#264244; --edge:#5F807A;
+  --pen:#4ADE80; --red:#FF6B6B; --field:#0E201D; --press:#1D3A3A; --kond:#60A5FA; --rekord:#2DD4BF}
+:root[data-theme="gronn"] .btn:not(.ghost):not(.danger):not(.list>.btn){background:linear-gradient(135deg,#4ADE80,#3B82F6);color:#04140C}
 /* Lyst ark: det lyse arket fra før, med mørkere grå og synlige kanter */
 :root[data-theme="lys"]{
   --paper:#F3F2EE; --ink:#22252A; --ink-2:#5B6068; --ink-3:#686D75; --rule:#D5D7DA; --edge:#878C94;
@@ -93,7 +101,7 @@ button{font-family:inherit;touch-action:manipulation}
   --chalk:var(--ink); --chalk-2:var(--ink-2); --chalk-3:var(--ink-3); --line:var(--rule);
   --iron:var(--field); --iron-2:var(--paper); --iron-3:var(--press);
   --accent:var(--pen); --accent-ink:var(--paper); --ok:var(--pen); --ok-ink:var(--paper); --miss:var(--red);
-  background:var(--paper);color:var(--ink);border:0;border-radius:3px;box-shadow:var(--lift)}
+  background:var(--sheet,var(--paper));color:var(--ink);border:0;border-radius:3px;box-shadow:var(--lift)}
 
 /* Overskrifter: vanlige bokstaver. Linjen som før sto over tittelen, står under den. */
 .eyebrow{font:500 13px/1.3 var(--face);color:var(--chalk-2);margin:0}
@@ -697,7 +705,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 44;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 45;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -730,6 +738,7 @@ const LOOKS = [
   ['dommer', 'Dommerlys', 'Ferdige sett lyser hvitt', ['#1C1C1E','#FFFFFF','#FF5B4A','#F0B13C'], '#0B0B0C'],
   ['skive', 'Skivefarger', 'Fargene fra vektskivene', ['#1B1F2A','#6AA5FF','#FFD23F','#41C985'], '#0C0E14'],
   ['blaa', 'Monokrom blå', 'Blått overalt, gull på knappene', ['#16233F','#8AB4F8','#7FD8F5','#F2C14E'], '#070D1A'],
+  ['gronn', 'Grønn ro', 'Grønt, blått og blågrønt', ['#12302A','#4ADE80','#60A5FA','#2DD4BF'], '#07120F'],
   ['lys', 'Lyst ark', 'Blå penn på lyst papir', ['#F3F2EE','#2343C4','#C9301F','#0B7A6C'], '#0E0F12']];
 const look = () => LOOKS.some(t => t[0] === S.settings.theme) ? S.settings.theme : 'kveld';
 function applyLook(){
