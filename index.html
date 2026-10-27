@@ -32,6 +32,7 @@
   --accent:#9AACFF; --accent-ink:#0E0F12;
   --ok:var(--accent); --ok-ink:var(--accent-ink); --miss:#FF6A55; --amrap:var(--chalk-2);
   --live:#2FB463;   /* grønn prikk: vennen har Sammen åpen nå. Samme i alle temaer */
+  --train:#E3B42B; --train-ink:#1A1405;   /* manualen: vennen har en økt i gang */
   /* Arket: Kveldsark, blå penn på mørkt papir */
   --paper:#22252B; --ink:#ECEBE6; --ink-2:#B3B7BE; --ink-3:#959AA3; --rule:#393D45; --edge:#6E737B;
   --pen:#9AACFF; --red:#FF6A55; --field:#1B1E23; --press:#2E3138; --kond:#5CCFBE; --rekord:var(--pen);
@@ -554,8 +555,14 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .sx-h{display:flex;align-items:center;gap:8px}
 .av{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font:700 14px/1 var(--face)}
 .av.sm{width:24px;height:24px;font-size:10px}
-.av.live{position:relative}
+.av.live,.av.train{position:relative}
 .av.live::after{content:'';position:absolute;right:-1px;bottom:-1px;width:32%;height:32%;min-width:9px;min-height:9px;border-radius:50%;background:var(--live);box-shadow:0 0 0 2px var(--paper)}
+/* Trener nå: en manual som løftes i hjørnet av bildet */
+.av-tr{position:absolute;right:-6px;bottom:-6px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:var(--train);color:var(--train-ink);box-shadow:0 0 0 2px var(--paper)}
+.av.sm .av-tr{width:16px;height:16px;right:-6px;bottom:-5px}
+.av-tr svg{width:80%;height:80%;animation:lift 1.6s ease-in-out infinite;transform-origin:50% 60%}
+@keyframes lift{0%,100%{transform:translateY(1.5px) rotate(-14deg)}50%{transform:translateY(-1.5px) rotate(14deg)}}
+@media (prefers-reduced-motion:reduce){.av-tr svg{animation:none}}
 .sx-news{appearance:none;width:100%;text-align:left;font:inherit;display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer}
 .sx-news:active,.sx-card.own:active,.sx-hit:active{background:var(--press)}
 .sx-news>span:not(.av){flex:1;display:grid;gap:2px;min-width:0}
@@ -712,7 +719,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 51;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 52;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -1973,7 +1980,20 @@ function save(){
   try { localStorage.setItem(KEY, JSON.stringify(S)); ui.storageOK = true; }
   catch(e) { ui.storageOK = false; }
   syncMark();   // skybackup, hvis den er slått på (se Skybackup)
+  if (TR.on && !trainingNow()) trainSend(false);   // økta er ferdig, hoppet over eller slettet
 }
+
+// Trener nå: vennene ser en manual på deg fra du krysser av første sett (også oppvarming) til økta er ferdig.
+// Mens du krysser av, fornyes det hvert 20. minutt. Serveren glemmer det to timer etter siste gang.
+// TR huskes på telefonen, så slutten blir sendt også om appen ble startet på nytt midt i økta.
+const trainingNow = () => !!(S && S.draft && S.draft.ex.some(e => e.sets.some(x => x.d != null) || (e.wuDone && e.wuDone.length)));
+let TR = (() => { try { return JSON.parse(localStorage.getItem(KEY + '.tr')) || {on:false, at:0}; } catch(e) { return {on:false, at:0}; } })();
+function trainSend(on){
+  TR = {on, at: Date.now()};
+  try { localStorage.setItem(KEY + '.tr', JSON.stringify(TR)); } catch(e) {}
+  setTimeout(() => { if (auth) rpc('presence_train', {training: on}, {keepalive: true}).catch(() => {}); });   // etter oppstart, når kontoen er lest
+}
+function trainTick(){ if (trainingNow() && (!TR.on || Date.now() - TR.at > 20 * 60000)) trainSend(true); }
 
 let S = load();
 S.maxes = S.maxes || {};
@@ -3528,7 +3548,7 @@ const vSyncDel = () => ui.confirm === 'syncdel'
      <div class="row"><button class="btn danger sm" data-a="sync:del">Slett kopien</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div>`
   : `<button class="link" data-a="confirm:syncdel">Slett kopien i skyen</button>`;
 
-const SX = {loaded:false, loading:null, at:0, me:null, fr:[], ppl:{}, sess:[], part:[], prop:[], chats:[], live:new Set(), hidden:false, seenAt:0, prev:0, err:''};
+const SX = {loaded:false, loading:null, at:0, me:null, fr:[], ppl:{}, sess:[], part:[], prop:[], chats:[], live:new Map(), hidden:false, seenAt:0, prev:0, err:''};
 const jwtBody = t => { try { const b = t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'); return JSON.parse(atob(b + '='.repeat((4 - b.length % 4) % 4))); } catch(e) { return {}; } };
 (function sxFromLink(){
   const h = new URLSearchParams(location.hash.slice(1));
@@ -3554,7 +3574,7 @@ const jwtBody = t => { try { const b = t.split('.')[1].replace(/-/g, '+').replac
   }
 })();
 
-function sxReset(){ Object.assign(SX, {loaded:false, at:0, me:null, fr:[], ppl:{}, sess:[], part:[], prop:[], chats:[], live:new Set(), hidden:false, seenAt:0, prev:0, err:''}); ui.sxView = 'list'; ui.sxTab = ''; sxBadge(); }
+function sxReset(){ Object.assign(SX, {loaded:false, at:0, me:null, fr:[], ppl:{}, sess:[], part:[], prop:[], chats:[], live:new Map(), hidden:false, seenAt:0, prev:0, err:''}); ui.sxView = 'list'; ui.sxTab = ''; sxBadge(); }
 
 // Hent alt Sammen-fanen trenger: profilen din, venner, kommende timer, påmeldinger, forslag og navnene på de involverte.
 // quiet: hentingen i bakgrunnen. Da tegnes skjermen bare på nytt hvis noe er endret.
@@ -3589,7 +3609,7 @@ function sxLoad(quiet){
         SX.ppl = Object.fromEntries(ppl.map(p => [p.id, p])); SX.ppl[me] = SX.me;
         const sig = JSON.stringify([fr, sess, part, prop, chats, ppl, live]);
         same = quiet && sig === SX.sig && SX.loaded && !SX.err;
-        Object.assign(SX, {fr, sess, part, prop, chats, sig, live: new Set(live), hidden: !!(pres[0] && pres[0].hidden)});
+        Object.assign(SX, {fr, sess, part, prop, chats, sig, live: new Map(live.map(x => [x.user_id, x.state])), hidden: !!(pres[0] && pres[0].hidden)});
       }
       SX.loaded = true; SX.err = ''; SX.at = Date.now();
     } catch(e) {
@@ -3700,13 +3720,15 @@ const uname = id => SX.ppl[id] ? '@' + SX.ppl[id].username : 'en venn';
 const AV = [['#2E9E5B','#06150C'],['#E3B42B','#2A2005'],['#2F6FDB','#FFFFFF'],['#D93A2F','#FFFFFF'],['#A9AEB6','#111317'],['#B8413A','#FFFFFF']];
 function av(id, sm){
   const p = SX.ppl[id] || {};
-  return avTxt(p.display_name || p.username || '?', p.username || '', sm, id !== uid() && SX.live.has(id));
+  return avTxt(p.display_name || p.username || '?', p.username || '', sm, id !== uid() && SX.live.get(id));
 }
+// live: 'live' gir grønn prikk (har Sammen åpen), 'train' gir manualen (har en økt i gang)
+const DB_ICON = '<svg viewBox="0 0 16 16" aria-hidden="true"><g fill="currentColor"><rect x="0.5" y="6" width="2" height="4" rx=".6"/><rect x="2.5" y="3.5" width="2.6" height="9" rx=".8"/><rect x="10.9" y="3.5" width="2.6" height="9" rx=".8"/><rect x="13.5" y="6" width="2" height="4" rx=".6"/><rect x="5" y="7" width="6" height="2"/></g></svg>';
 function avTxt(name, key, sm, live){
   const ini = name.split(/[\s._]+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?';
   let h = 0; for (const c of key) h = (h * 31 + c.charCodeAt(0)) >>> 0;
   const [bg, ink] = AV[h % AV.length];
-  return `<span class="av${sm ? ' sm' : ''}${live ? ' live' : ''}" style="background:${bg};color:${ink}" aria-hidden="true">${esc(ini)}</span>`;
+  return `<span class="av${sm ? ' sm' : ''}${live ? ' ' + live : ''}" style="background:${bg};color:${ink}" aria-hidden="true">${esc(ini)}${live === 'train' ? `<i class="av-tr">${DB_ICON}</i>` : ''}</span>`;
 }
 function sxWorkout(s){
   if (s.workout_kind === 'bank') {
@@ -4066,7 +4088,7 @@ function vSxFriends(){
     ${out.length ? `<h3>Sendt</h3><div class="sx-list">${out.map(f => `<div class="sx-row">${av(f.addressee)}<span><b>${uname(f.addressee)}</b><small>Venter på svar</small></span>
         <button class="btn ghost sm" data-a="sxdecline:${f.addressee}">Angre</button></div>`).join('')}</div>` : ''}
     <h3>Vennene dine · ${acc.length}</h3>
-    ${acc.length ? `<div class="sx-list">${acc.map(id => { const sub = [SX.live.has(id) ? 'Aktiv nå' : '', nextOf(id)].filter(Boolean).join(' · ');
+    ${acc.length ? `<div class="sx-list">${acc.map(id => { const st = SX.live.get(id), sub = [st === 'train' ? 'Trener nå' : st === 'live' ? 'Aktiv nå' : '', nextOf(id)].filter(Boolean).join(' · ');
         return `<div class="sx-row">${av(id, 1)}<span><b>${uname(id)}</b>${sub ? `<small>${sub}</small>` : ''}</span>
         ${ui.confirm === 'unf:' + id ? `<button class="btn danger sm" data-a="sxdecline:${id}">Fjern</button><button class="btn ghost sm" data-a="cancel">Nei</button>`
           : `<button class="x" data-a="confirm:unf:${id}" aria-label="Fjern ${uname(id)} som venn">×</button>`}</div>`; }).join('')}</div>`
@@ -4253,11 +4275,11 @@ function vSxAccount(){
           <div class="row"><button class="btn danger sm" data-a="sxdelacc">Slett kontoen</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div>`
           : `<button class="btn danger sm" data-a="confirm:sxdelacc">Slett konto</button>`}`
       : `<p class="muted small">Ingen konto. Konto trengs bare for Sammen, der du kan trene sammen med venner, og for skybackup.</p>`}
-      <p class="muted small">Personvern: Med konto lagres e-post, brukernavn, navn hvis du har skrevet det, venner, timer, påmeldinger, tidsforslag og chatmeldinger hos Supabase i EU (Irland). Slår du på varsler, lagres også en adresse for varsler til telefonen. Mens du har Sammen åpen, lagres når du sist var der, så vennene kan se at du er aktiv nå. Det kan slås av under Aktiv nå. Bare vennene dine ser timene dine, og bare de som er med i en samtale, kan lese den. Treningslogg, programmer og vekter sendes bare hvis du slår på skybackup, og bare du kan lese dem. Sletter du kontoen, slettes alt dette.</p>
+      <p class="muted small">Personvern: Med konto lagres e-post, brukernavn, navn hvis du har skrevet det, venner, timer, påmeldinger, tidsforslag og chatmeldinger hos Supabase i EU (Irland). Slår du på varsler, lagres også en adresse for varsler til telefonen. Mens du har Sammen åpen eller en økt i gang, lagres når du sist var der eller krysset av, så vennene kan se at du er aktiv eller trener nå. Det kan slås av under Aktiv nå. Bare vennene dine ser timene dine, og bare de som er med i en samtale, kan lese den. Treningslogg, programmer og vekter sendes bare hvis du slår på skybackup, og bare du kan lese dem. Sletter du kontoen, slettes alt dette.</p>
     </div>
     ${auth && SX.me ? `<h3>Aktiv nå</h3><div class="box">
-      <label class="chk"><input type="checkbox" data-a="sxlive" ${SX.hidden ? '' : 'checked'} ${ui.sxBusy ? 'disabled' : ''}> Vis vennene når jeg er i Sammen</label>
-      <p class="muted small">Mens du har Sammen åpen, ser vennene dine en grønn prikk på deg. De ser ikke når du var der sist. Gjelder alle telefonene dine.</p></div>
+      <label class="chk"><input type="checkbox" data-a="sxlive" ${SX.hidden ? '' : 'checked'} ${ui.sxBusy ? 'disabled' : ''}> Vis vennene når jeg er i Sammen eller trener</label>
+      <p class="muted small">Mens du har Sammen åpen, ser vennene dine en grønn prikk på deg. Fra du krysser av første sett til økta er ferdig, ser de en manual. De ser ikke når du var der sist, eller hva du trener. Gjelder alle telefonene dine.</p></div>
       <h3>Varsler</h3><div class="box">${vPush()}</div>` : ''}`;
 }
 function vPush(){
@@ -4371,7 +4393,7 @@ document.addEventListener('click', ev => {
       else x.d = x.d == null ? x.t : (x.d > 0 ? x.d - 1 : null);
       if (x.d != null) startRest(ex.rest);
       ui.fresh = r[0] + ':' + r[1];
-      save(); render(); wake(); break;
+      save(); trainTick(); render(); wake(); break;
     }
     // Trykk på arket: neste oppvarmingssett, ellers neste arbeidssett, føres inn med målet som reps
     case 'next': {
@@ -4388,7 +4410,7 @@ document.addEventListener('click', ev => {
         e.sets[si].d = e.sets[si].t; ui.fresh = ei + ':' + si;
         startRest(e.rest);
       }
-      save(); render(); wake(); break;
+      save(); trainTick(); render(); wake(); break;
     }
     case 'am': { const x = S.draft.ex[+r[0]].sets[+r[1]]; x.d = Math.max(0, Math.min(99, x.d + (+r[2]))); save(); render(); break; }
     case 'rpe': S.draft.ex[+r[0]].rpe = +r[1]; save(); render(); break;
@@ -4557,9 +4579,9 @@ document.addEventListener('click', ev => {
       sxDo(() => db('friendships', 'or=' + encodeURIComponent(`(and(requester.eq.${me},addressee.eq.${r[0]}),and(requester.eq.${r[0]},addressee.eq.${me}))`), {method:'DELETE'}));
       break; }
     case 'sxlive': { const show = ev.target.checked;
-      sxDo(async () => { await rpc('presence_show', {show}); SX.hidden = !show; if (show && ui.tab === 'together') sxPing(true); },
-        show ? 'Vennene ser når du er i Sammen' : 'Vennene ser ikke lenger når du er i Sammen'); break; }
-    case 'sxlogout': sxPing(false); pushOff().finally(() => {   // en annen som logger inn på telefonen, skal ikke få varslene dine
+      sxDo(async () => { await rpc('presence_show', {show}); SX.hidden = !show; if (show && ui.tab === 'together') sxPing(true); if (show && trainingNow()) trainSend(true); },
+        show ? 'Vennene ser når du er i Sammen eller trener' : 'Vennene ser ikke lenger når du er i Sammen eller trener'); break; }
+    case 'sxlogout': sxPing(false); if (TR.on) trainSend(false); pushOff().finally(() => {   // en annen som logger inn på telefonen, skal ikke få varslene dine
       const tok = auth && auth.access_token;
       if (tok) fetch(SB_URL + '/auth/v1/logout', {method:'POST', headers:{apikey: SB_KEY, Authorization: 'Bearer ' + tok}}).catch(() => {});
       saveAuth(null); syncOff(); sxReset(); ui.confirm = null; render(); toast('Du er logget ut');
