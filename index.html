@@ -256,6 +256,15 @@ textarea:focus{border-color:var(--accent);outline:none}
 .stage[data-rest="warn"] .ruler i{background:var(--miss)}
 .stage[data-rest="over"] .ruler{display:none}
 .stage[data-rest="over"] .rest-r1>span{color:var(--chalk)}
+/* Klokka i arket: tiden der vekten sto, en tykk strek under som brukes opp. Linjen nederst viser da bare knappene. */
+.rest-bar{display:none;height:8px;background:var(--rule);position:relative;margin:6px 0 2px}
+.rest-bar i{position:absolute;left:0;top:0;bottom:0;width:var(--lvl,0%);background:var(--ink);transition:width .25s linear}
+.stage[data-clock] .rest-bar{display:block}
+.stage[data-clock] .ex.now .kg small{color:var(--ink)}
+.stage[data-clock][data-rest="warn"] #kgN{color:var(--red)}
+.stage[data-clock][data-rest="warn"] .rest-bar i{background:var(--red)}
+.stage[data-clock]:not([data-rest="over"]) .rest-r1>b,.stage[data-clock] .ruler{display:none}
+.stage[data-clock] .rest-in{gap:0}
 .rest-flash{position:absolute;inset:0;z-index:22;pointer-events:none;background:var(--chalk);opacity:0}
 .rest-flash.go{animation:restflash .9s ease-out}
 @keyframes restflash{0%{opacity:0}15%{opacity:.35}100%{opacity:0}}
@@ -631,7 +640,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 40;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 41;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -2599,7 +2608,9 @@ function vToday(){
     const [bigW, bigR] = warm ? wu[wuNext] : nextSi > -1 ? [e.sets[nextSi].w, e.sets[nextSi].t] : [top, 0];
     const bigAm = !warm && nextSi > -1 && e.sets[nextSi].am;
     const head = `<div class="ex-head"><h2>${liftName(e.lift)}</h2>${e.tag ? `<span class="tag">${e.tag}</span>` : ''}</div>
-        <div class="kg">${fmt(bigW)}<small>kg${bigR ? ' × ' + bigR + (bigAm ? '+' : '') : ''}</small></div>
+        ${now ? `<div class="kg"><span id="kgN" data-w="${fmt(bigW)}">${fmt(bigW)}</span><small id="kgU" data-u="kg${bigR ? ' × ' + bigR + (bigAm ? '+' : '') : ''}">kg${bigR ? ' × ' + bigR + (bigAm ? '+' : '') : ''}</small></div>
+        <div class="rest-bar" aria-hidden="true"><i></i></div>`
+          : `<div class="kg">${fmt(bigW)}<small>kg${bigR ? ' × ' + bigR + (bigAm ? '+' : '') : ''}</small></div>`}
         ${LIFTS[e.lift].bar ? `<div class="platesrow ${now ? 'platebox' : ''}">${plateHTML(bigW, now)}</div>` : ''}`;
     // Hele toppen av arket er knappen for neste sett: stor flate, ingen leting etter riktig rute
     const canNext = now && (warm || nextSi > -1);
@@ -3046,6 +3057,7 @@ function render(){
   document.querySelectorAll('.tab').forEach(t => {
     if (t.dataset.a === 'tab:' + ui.tab) t.setAttribute('aria-current','page'); else t.removeAttribute('aria-current');
   });
+  updateRest();   // klokka i arket skal stå der med en gang, ikke vente på neste tikk
 }
 
 /* ---------- Pausetimer, skjerm-på, toast ---------- */
@@ -3074,9 +3086,16 @@ function startRest(sec){
 // Rødt de siste 10 sekundene, eller den siste femdelen hvis pausen er kortere enn 50 sekunder
 const restWarn = total => Math.min(10, total * .2);
 const mmss = s => Math.floor(s/60) + ':' + String(Math.floor(s % 60)).padStart(2,'0');
+// Under pausen blir det store tallet i arket til klokka, med neste vekt ved siden av. Når pausen er over, står vekten der igjen.
+function sheetClock(t){
+  const n = $('#kgN'), u = $('#kgU'), stage = document.querySelector('.stage');
+  if (!n || !u) { delete stage.dataset.clock; return; }
+  if (t) { stage.dataset.clock = '1'; n.textContent = t; u.textContent = 'neste ' + n.dataset.w + ' ' + u.dataset.u; }
+  else { delete stage.dataset.clock; n.textContent = n.dataset.w; u.textContent = u.dataset.u; }
+}
 function updateRest(){
   const el = $('#rest'), stage = document.querySelector('.stage');
-  if (!ui.rest) { el.hidden = true; delete stage.dataset.rest; return; }
+  if (!ui.rest) { el.hidden = true; delete stage.dataset.rest; sheetClock(null); return; }
   const left = (ui.rest.end - Date.now()) / 1000;
   if (left < -600) { ui.rest = null; updateRest(); return; }   // gi opp etter 10 minutter overtid
   let lvl, state;
@@ -3093,7 +3112,9 @@ function updateRest(){
   // Linjalen: lengden er tiden som er igjen. Neste sett står allerede som det store tallet i arket.
   stage.style.setProperty('--lvl', (lvl * 100).toFixed(2) + '%');
   $('#restB').textContent = left > 0 ? mmss(Math.ceil(left)) : '+' + mmss(-left);
-  $('#restL').textContent = left > 0 ? 'av ' + mmss(ui.rest.total) : 'Klar for neste sett';
+  sheetClock(left > 0 ? mmss(Math.ceil(left)) : null);
+  // Står klokka i arket, viser linjen nederst bare knappene, så tiden ikke står to steder
+  $('#restL').textContent = left > 0 ? (stage.dataset.clock ? 'Pause på ' + mmss(ui.rest.total) : 'av ' + mmss(ui.rest.total)) : 'Klar for neste sett';
 }
 setInterval(updateRest, 250);
 
