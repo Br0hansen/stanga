@@ -6,12 +6,24 @@ Styrkeprogrammer (StrongLifts 5×5, Starting Strength, GZCLP, 5/3/1 FSL og BBB, 
 
 Appen ser ut som en treningsbok. Programmet står trykt på et ark over bildet av treningsrommet. Fargene betyr én ting hver:
 
-- **Blyant (grått og svart):** planen og det som venter.
-- **Blå penn:** det du har gjort. Det gjelder avkryssede sett, løftet vekt, økning i vekt og egne meldinger. En ny rekord ringes rundt i blått, med ordet «Rekord» og anslått 1RM.
+- **Blyant (grått og svart):** planen og det som venter. Neste sett og neste økt i planen har en tykk strek i tekstfargen.
+- **Blå penn:** det du har gjort. Det gjelder avkryssede sett, løftet vekt, økning i vekt og egne meldinger. En ny rekord ringes rundt, med ordet «Rekord» og anslått 1RM.
 - **Rød penn:** avvik. Det gjelder bom, hoppede økter (strøket over i loggen og planen), de siste sekundene av pausen og varsler om noe nytt.
-- **Skivefargene** brukes bare i skivetegningen.
+- **Kondisjon** har en egen farge i kalenderen under Logg.
+- **Skivefargene** brukes i skivetegningen.
 
-Skriften er Archivo, en familie i flere bredder. Arket blir mørkt (kveldsark) når telefonen står i mørk modus.
+Skriften er Archivo, en familie i flere bredder.
+
+**Tema** velges under **Plan → Innstillinger → Utseende**. Arket er mørkt som standard:
+
+| Tema | Gjort | Rekord | Kondisjon |
+|---|---|---|---|
+| **Kveldsark** (standard) | Blå penn | Blå ring | Grønnblå |
+| **Dommerlys** | Fylt hvit rute, som et godkjent løft | Hvit ring | Rav |
+| **Skivefarger** | Blå (20 kg-skiva) | Gul (15 kg) | Grønn (10 kg) |
+| **Lyst ark** | Blå penn på lyst papir | Blå ring | Mørk grønnblå |
+
+All tekst har minst 4,5:1 i kontrast mot arket, og kanten på settrutene minst 3:1. Fargene står som `:root[data-theme="…"]` øverst i CSS-en, og listen over temaer er `LOOKS` i skriptet. Valget lagres i `S.settings.theme` og følger med i skybackup. En kopi i `stanga.theme` leses i `<head>`, så riktig tema vises før resten av appen er lastet.
 
 Appen har fire faner: **Økt**, **Plan**, **Logg** og **Sammen**.
 

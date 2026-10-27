@@ -301,6 +301,8 @@ Alle tre har de samme rollene: plan (grått), gjort, avvik, rekord og kondisjon.
 
 **Anbefaling:** Kveldsark. Den retter det som ikke virker i dag uten å ta bort treningsboka, og gir kondisjon en egen farge.
 
+**Bygget (versjon 43):** Alle tre ligger i appen som temaer under Plan → Innstillinger → Utseende, sammen med *Lyst ark* (det lyse arket fra før, med mørkere grå og synlige kanter). Kveldsark er standard.
+
 ## Kilder
 
 - Apple, WWDC25 «Build a UIKit app with the new design» (fanelinje som flyter og krymper, *bottom accessory*, fargevarianter): [developer.apple.com](https://developer.apple.com/videos/play/wwdc2025/284/)

@@ -7,7 +7,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Stanga">
-<meta name="theme-color" content="#111317">
+<meta name="theme-color" content="#0E0F12">
+<script>try{var t=localStorage.getItem('stanga.theme');if(t&&t!=='kveld')document.documentElement.dataset.theme=t}catch(e){}</script>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
@@ -22,23 +23,39 @@
    Blyant (ink) = planlagt, blå penn (pen) = det du har gjort, rød penn (red) = avvik: bom, hoppet over, tiden er ute.
    Skivefargene brukes bare i skivetegningen. Én skriftfamilie, hierarki med størrelse og bredde.
    Utenfor arket (bildet, fanelinja, pausen) gjelder de mørke verdiene. Inne i arket byttes de samme navnene til papirets. */
+/* Temaer (Plan → Innstillinger → Utseende). Kveldsark er standard. Hvert tema setter de samme navnene:
+   edge = kanten på settrutene (minst 3:1 mot arket), kond = kondisjon, rekord = ringen rundt en rekord.
+   All tekst har minst 4,5:1 mot arket. */
 :root{
   --iron:#0E0F12; --iron-2:#17191D; --iron-3:#24272D; --line:rgba(236,235,230,.16);
   --chalk:#ECEBE6; --chalk-2:#B3B7BE; --chalk-3:#80858E;
   --accent:#9AACFF; --accent-ink:#0E0F12;
   --ok:var(--accent); --ok-ink:var(--accent-ink); --miss:#FF6A55; --amrap:var(--chalk-2);
-  /* Arket. Kveldsark (mørkt papir) følger telefonens mørke modus. */
-  --paper:#F3F2EE; --ink:#22252A; --ink-2:#5B6068; --ink-3:#8A8F97; --rule:#D5D7DA;
-  --pen:#2343C4; --red:#C9301F; --field:#FBFBF9; --press:#E7E6E1;
+  /* Arket: Kveldsark, blå penn på mørkt papir */
+  --paper:#22252B; --ink:#ECEBE6; --ink-2:#B3B7BE; --ink-3:#959AA3; --rule:#393D45; --edge:#6E737B;
+  --pen:#9AACFF; --red:#FF6A55; --field:#1B1E23; --press:#2E3138; --kond:#5CCFBE; --rekord:var(--pen);
   --lift:0 14px 30px -16px rgba(0,0,0,.75),0 1px 3px rgba(0,0,0,.35);
   --p25:#D93A2F; --p20:#2F6FDB; --p15:#E3B42B; --p10:#2E9E5B; --p5:#E6E4DE; --p2:#B8413A; --p1:#A9AEB6;
   --face:'Archivo','Arial Narrow','Helvetica Neue',Arial,sans-serif;
   --display:var(--face); --body:var(--face);
   color-scheme:dark;
 }
-@media (prefers-color-scheme:dark){:root{
-  --paper:#24272D; --ink:#E8E7E2; --ink-2:#A6ABB3; --ink-3:#7E838C; --rule:#393D45;
-  --pen:#9AACFF; --red:#FF6A55; --field:#1B1E23; --press:#2E3138}}
+/* Dommerlys: hvitt lys er godkjent, rødt er underkjent. Ferdige sett er fylte hvite ruter. */
+:root[data-theme="dommer"]{
+  --iron:#0B0B0C; --iron-2:#151517; --iron-3:#222225; --line:rgba(230,228,222,.16);
+  --chalk:#E6E4DE; --chalk-2:#ABA9A3; --chalk-3:#8F8D88; --accent:#FFFFFF; --accent-ink:#111112; --miss:#FF5B4A;
+  --paper:#1C1C1E; --ink:#E6E4DE; --ink-2:#ABA9A3; --ink-3:#8F8D88; --rule:#343437; --edge:#6E6C68;
+  --pen:#FFFFFF; --red:#FF5B4A; --field:#151517; --press:#2C2C30; --kond:#F0B13C; --rekord:#FFFFFF}
+/* Skivefarger: blå 20 kg = gjort, rød 25 kg = avvik, gul 15 kg = rekord, grønn 10 kg = kondisjon */
+:root[data-theme="skive"]{
+  --iron:#0C0E14; --iron-2:#141824; --iron-3:#222838; --line:rgba(238,240,244,.16);
+  --chalk:#EEF0F4; --chalk-2:#B0B6C3; --chalk-3:#9098A8; --accent:#6AA5FF; --accent-ink:#0C0E14; --miss:#FF5E52;
+  --paper:#1B1F2A; --ink:#EEF0F4; --ink-2:#B0B6C3; --ink-3:#9098A8; --rule:#323848; --edge:#687083;
+  --pen:#6AA5FF; --red:#FF5E52; --field:#151924; --press:#2A3040; --kond:#41C985; --rekord:#FFD23F}
+/* Lyst ark: det lyse arket fra før, med mørkere grå og synlige kanter */
+:root[data-theme="lys"]{
+  --paper:#F3F2EE; --ink:#22252A; --ink-2:#5B6068; --ink-3:#686D75; --rule:#D5D7DA; --edge:#878C94;
+  --pen:#2343C4; --red:#C9301F; --field:#FBFBF9; --press:#E7E6E1; --kond:#0B7A6C; --rekord:var(--pen)}
 
 /* App-skall: bare innholdet scroller. Fanelinjen er en fast del av oppsettet, ikke position:fixed,
    så iOS ikke kan flytte den når sidehøyden endrer seg mellom faner. */
@@ -50,7 +67,7 @@ body{height:100%;overflow:hidden;
 ::selection{background:var(--pen);color:var(--paper)}
 /* Bakgrunnsbilde: mørkt treningsrom. Ligger på skallet, så det står stille mens innholdet scroller. */
 .app{position:fixed;inset:0;display:flex;flex-direction:column;
-  background:linear-gradient(rgba(10,11,13,.5),rgba(10,11,13,.82)),url(bg.webp) 78% center/cover no-repeat,var(--iron);
+  background:linear-gradient(rgba(10,11,13,.62),rgba(10,11,13,.88)),url(bg.webp) 78% center/cover no-repeat,var(--iron);
   padding-top:env(safe-area-inset-top,0px);
   /* iOS oppgir av og til en altfor stor bunnsone i hjemskjerm-apper. 34 px er hjemmelinjen på iPhone. */
   padding-bottom:min(env(safe-area-inset-bottom,0px),34px)}
@@ -118,16 +135,18 @@ p{margin:0}
 .chip-grp{display:flex;flex-wrap:wrap;gap:10px 6px}
 .cw{display:grid;justify-items:center;gap:4px}
 .cw small{font-size:12px;color:var(--chalk-2);font-variant-numeric:tabular-nums}
-.chip{width:50px;height:54px;border-radius:3px;border:1px solid var(--rule);background:transparent;color:var(--ink);
+.chip{width:50px;height:54px;border-radius:3px;border:1.5px solid var(--edge);background:transparent;color:var(--ink);
   font:700 26px/1 var(--face);font-stretch:70%;font-variant-numeric:tabular-nums;cursor:pointer;position:relative;transition:transform .08s}
 .chip:active{transform:scale(.94)}
-.chip.next{box-shadow:inset 0 -3px 0 var(--pen);background:color-mix(in srgb,var(--pen) 8%,transparent);border-color:var(--pen)}
-.chip.ok{color:var(--pen);border-color:color-mix(in srgb,var(--pen) 35%,var(--rule))}
+.chip.next{box-shadow:inset 0 -3px 0 var(--ink);background:color-mix(in srgb,var(--ink) 6%,transparent);border-color:var(--ink);color:var(--ink)}
+.chip.ok{color:var(--pen);border-color:color-mix(in srgb,var(--pen) 55%,var(--edge))}
 .chip.ok::after{content:"";position:absolute;right:5px;top:6px;width:5px;height:9px;border:solid var(--pen);border-width:0 2px 2px 0;transform:rotate(45deg)}
 .chip.ok.fresh::after{animation:ink .3s cubic-bezier(.2,.8,.2,1)}
 @keyframes ink{from{clip-path:inset(100% 0 0 0)}to{clip-path:inset(0)}}
-.chip.miss{color:var(--red);border-color:color-mix(in srgb,var(--red) 40%,var(--rule))}
+.chip.miss{color:var(--red);border-color:color-mix(in srgb,var(--red) 55%,var(--edge))}
 .chip.miss::after{border-color:var(--red)}
+:root[data-theme="dommer"] .chip.ok{background:var(--pen);color:var(--paper);border-color:var(--pen);box-shadow:0 0 12px -3px rgba(255,255,255,.5)}
+:root[data-theme="dommer"] .chip.ok::after{border-color:var(--paper)}
 .chip.am{border-style:dashed;border-color:var(--ink-3)}
 .chip.am.ok{border-style:solid}
 .chip sup{position:absolute;top:6px;left:6px;font-size:12px}
@@ -168,8 +187,8 @@ p{margin:0}
 .prs{display:grid;gap:6px}
 .pr{display:flex;align-items:baseline;justify-content:space-between;gap:12px;font-size:15px}
 .pr b{font-weight:600}
-.ring{position:relative;display:inline-block;padding:0 4px;color:var(--pen);font-weight:700;font-variant-numeric:tabular-nums}
-.ring svg{position:absolute;left:-8px;top:-7px;width:calc(100% + 16px);height:calc(100% + 14px);fill:none;stroke:var(--pen);stroke-width:1.8;overflow:visible}
+.ring{position:relative;display:inline-block;padding:0 4px;color:var(--rekord);font-weight:700;font-variant-numeric:tabular-nums}
+.ring svg{position:absolute;left:-8px;top:-7px;width:calc(100% + 16px);height:calc(100% + 14px);fill:none;stroke:var(--rekord);stroke-width:1.8;overflow:visible}
 
 /* Lister: ett ark med hårstreker mellom radene */
 .list{display:grid;gap:0;border-radius:3px;box-shadow:var(--lift);overflow:hidden}
@@ -232,6 +251,13 @@ p{margin:0}
 .seg{display:flex;gap:4px;flex-wrap:wrap;padding:3px;border-radius:4px;box-shadow:inset 0 0 0 1px var(--line)}
 .seg button{flex:1 1 56px;border:0;border-radius:3px;padding:11px 0;background:transparent;color:var(--chalk);font:600 16px/1 var(--face);cursor:pointer}
 .seg button[aria-pressed="true"]{background:var(--chalk);color:var(--iron)}
+/* Temavalg: fire kort med fargeprøver fra hvert tema */
+.looks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.look-opt{appearance:none;display:grid;gap:8px;text-align:left;min-height:44px;padding:12px;border:1px solid var(--line);border-radius:4px;background:transparent;color:var(--chalk);font:600 16px/1.2 var(--face);cursor:pointer}
+.look-opt small{font:400 13px/1.3 var(--face);color:var(--chalk-2)}
+.look-opt[aria-pressed="true"]{box-shadow:inset 0 0 0 2px var(--chalk);border-color:var(--chalk)}
+.look-sw{display:flex;gap:4px}
+.look-sw i{width:18px;height:18px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(128,128,128,.45)}
 textarea{width:100%;min-height:110px;background:var(--iron);border:1px solid var(--line);border-radius:3px;color:var(--chalk);font:16px/1.4 ui-monospace,Menlo,monospace;padding:10px;resize:vertical}
 textarea:focus{border-color:var(--accent);outline:none}
 .warn{padding:12px 14px;font-size:14px;color:var(--red)}
@@ -384,8 +410,8 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .plan-s.done-s .ps-top .pill{color:var(--pen);box-shadow:none;padding-left:0}
 .plan-s.skip-s .ps-top b{text-decoration:line-through;text-decoration-color:var(--red);text-decoration-thickness:1.5px;color:var(--ink-2)}
 .plan-s.skip-s .ps-top .pill{color:var(--red);box-shadow:none;padding-left:0}
-.plan-s.next-s{box-shadow:inset 0 -3px 0 var(--pen),var(--lift);background:color-mix(in srgb,var(--pen) 6%,var(--paper))}
-.list>.plan-s.next-s{box-shadow:inset 0 -3px 0 var(--pen)}
+.plan-s.next-s{box-shadow:inset 0 -3px 0 var(--ink),var(--lift);background:color-mix(in srgb,var(--ink) 5%,var(--paper))}
+.list>.plan-s.next-s{box-shadow:inset 0 -3px 0 var(--ink)}
 .plan-ex{display:grid;gap:6px}
 .plan-ex .ln{display:flex;justify-content:space-between;gap:12px;font-size:14px}
 .plan-ex .ln>span:last-child{color:var(--chalk-2);text-align:right;font-variant-numeric:tabular-nums}
@@ -472,8 +498,8 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .cal i{width:26px;height:26px;border-radius:50%;position:relative}
 .cal i::after{content:"";position:absolute;left:50%;top:50%;width:4px;height:4px;margin:-2px 0 0 -2px;border-radius:50%;background:var(--rule)}
 .cal i.st::after{width:9px;height:9px;margin:-4.5px 0 0 -4.5px;background:var(--pen)}
-.cal i.mc{box-shadow:inset 0 0 0 1.5px var(--pen)}
-.cal i.both{box-shadow:inset 0 0 0 1.5px var(--pen)}
+.cal i.mc{box-shadow:inset 0 0 0 1.5px var(--kond)}
+.cal i.both{box-shadow:inset 0 0 0 1.5px var(--kond)}
 .cal i.both::after{width:9px;height:9px;margin:-4.5px 0 0 -4.5px;background:var(--pen)}
 .cal i.sk::after{width:12px;height:2px;margin:-1px 0 0 -6px;border-radius:1px;background:var(--red)}
 .cal i.today{outline:2px solid var(--ink);outline-offset:1px}
@@ -482,7 +508,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .cal-key span{display:flex;align-items:center;gap:6px}
 .cal-key i{width:12px;height:12px;border-radius:50%;position:relative}
 .cal-key i.st{background:var(--pen);width:9px;height:9px}
-.cal-key i.mc{box-shadow:inset 0 0 0 1.5px var(--pen)}
+.cal-key i.mc{box-shadow:inset 0 0 0 1.5px var(--kond)}
 .cal-key i.sk{width:12px;height:2px;border-radius:1px;background:var(--red)}
 .tr .tr-kg{font:800 22px/1 var(--face);font-stretch:68%;color:var(--chalk);min-width:3.2ch;text-align:right}
 .tr .tr-d{font-weight:600;font-size:13px;min-width:4ch;text-align:right}
@@ -662,7 +688,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 42;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 43;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -688,6 +714,22 @@ const ALTS = slot => Object.keys(LIFTS).filter(k => LIFTS[k].alt === slot);
 const sw = (a, slot) => (a.swaps && a.swaps[slot]) || slot;   // hvilket løft ligger i plassen nå?
 // Stanga: 20 kg som standard, 15 kg kan velges under Plan → Innstillinger. Laveste vekt på stangøvelser er tom stang.
 const BAR = () => S.settings.bar === 15 ? 15 : 20;
+// Temaene under Innstillinger → Utseende: id, navn, forklaring, fire fargeprøver fra temaet og fargen bak bildet.
+// Fargene i temaene står i CSS-en øverst (:root[data-theme]).
+const LOOKS = [
+  ['kveld', 'Kveldsark', 'Blå penn på mørkt ark', ['#22252B','#9AACFF','#FF6A55','#5CCFBE'], '#0E0F12'],
+  ['dommer', 'Dommerlys', 'Ferdige sett lyser hvitt', ['#1C1C1E','#FFFFFF','#FF5B4A','#F0B13C'], '#0B0B0C'],
+  ['skive', 'Skivefarger', 'Fargene fra vektskivene', ['#1B1F2A','#6AA5FF','#FFD23F','#41C985'], '#0C0E14'],
+  ['lys', 'Lyst ark', 'Blå penn på lyst papir', ['#F3F2EE','#2343C4','#C9301F','#0B7A6C'], '#0E0F12']];
+const look = () => LOOKS.some(t => t[0] === S.settings.theme) ? S.settings.theme : 'kveld';
+function applyLook(){
+  const t = look(), root = document.documentElement;
+  const m = document.querySelector('meta[name="theme-color"]'), bg = LOOKS.find(x => x[0] === t)[4];
+  if (m && m.content !== bg) m.content = bg;
+  if ((root.dataset.theme || 'kveld') === t) return;
+  if (t === 'kveld') delete root.dataset.theme; else root.dataset.theme = t;
+  try { localStorage.setItem('stanga.theme', t); } catch(e) {}   // leses i <head>, så riktig tema vises før skriptet kjører
+}
 
 // GZCLP-trinn: [sett, reps]. Bommer du, går du ett trinn ned i reps.
 const T1S = [[5,3],[6,2],[10,1]];
@@ -3144,6 +3186,11 @@ function vTraining(){
 function vSettings(){
   return `<button class="link" data-a="back">‹ Tilbake</button>
     <header class="head"><h1>Innstillinger</h1></header>
+    <h3>Utseende</h3>
+    <div class="box">
+      <div class="looks" role="group" aria-label="Tema">${LOOKS.map(([id, name, desc, sw]) =>
+        `<button class="look-opt" data-a="look:${id}" aria-pressed="${look() === id}"><span class="look-sw" aria-hidden="true">${sw.map(c => `<i style="background:${c}"></i>`).join('')}</span>${name}<small>${desc}</small></button>`).join('')}</div>
+    </div>
     <h3>Pause</h3>
     <div class="box">
       <button class="tog" data-a="sound" aria-pressed="${!!S.settings.sound}">Lyd når pausen er over</button>
@@ -3176,6 +3223,7 @@ function vSettings(){
 }
 
 function render(){
+  applyLook();
   let h = ui.storageOK ? '' : `<div class="warn">Lagring er ikke tilgjengelig her. Endringer forsvinner når siden lukkes.</div>`;
   h += vSyncAsk();   // skybackup: skyen og telefonen er endret hver for seg, brukeren må velge
   if (ui.plan) { const v = vPlan(); if (ui.plan) { $('#view').innerHTML = h + v; return; } }
@@ -4284,6 +4332,7 @@ document.addEventListener('click', ev => {
     case 'logsave': logEditSave(); break;
     case 'logdel': logDelete(+r[0]); break;
     case 'bar': S.settings.bar = +r[0] === 15 ? 15 : 20; save(); render(); toast(BAR() + ' kg stang'); break;
+    case 'look': if (LOOKS.some(t => t[0] === r[0])) { S.settings.theme = r[0]; save(); render(); } break;
     case 'sync': {
       const c = r[0];
       if (c === 'on') { if (!auth) break; b.disabled = true; syncEnable().finally(() => render()); }
