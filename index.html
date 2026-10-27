@@ -578,6 +578,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .sx-sub{font-size:13px;color:var(--chalk-2)}
 .sx-mine{font-size:14px;padding-top:8px;margin-top:2px;border-top:1px solid var(--rule)}
 .sx-mine b{font-weight:600}
+.sx-extra{display:grid;gap:4px;padding-top:10px;margin-top:4px;border-top:1px solid var(--rule)}
 .sx-mybox .ln{display:flex;justify-content:space-between;gap:12px;font-size:15px;font-variant-numeric:tabular-nums}
 .sx-people{display:flex;flex-wrap:wrap;gap:12px}
 .sx-people>span{display:flex;align-items:center;gap:8px;font-size:15px}
@@ -708,7 +709,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 46;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 47;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -3804,7 +3805,17 @@ function myNextSess(){
   const tot = totalOf(p, S.active);
   if (!S.draft && tot && S.active.idx >= tot) return null;
   const x = S.draft || buildSession(p, S.active);
-  return x && x.ex && x.ex.length ? x : null;
+  return x && ((x.ex && x.ex.length) || myExtras(x).length) ? x : null;
+}
+// Det som er lagt til på økta: kondisjonsdelen i ATHX, Pete Plan, metcon og notat
+function myExtras(x){
+  const out = [];
+  if (x.cond) out.push({k:'Kondisjon', t:x.cond.title, body:(x.cond.lines || []).join('\n')});
+  if (x.pete) { const ss = peteSession(x.pete.idx, x.pete.ver, x.pete.mach); out.push({k:'Pete Plan', t:ss.name + ' · ' + (PETE_MACH[x.pete.mach] || ''), body:''}); }
+  if (x.wod) out.push({k:'Metcon', t:x.wod.navn, body:x.wod.tekst});
+  else if (x.metcon && !x.pete) out.push({k:'Metcon', t: x.mc && MC[x.mc.type] ? MC[x.mc.type].n + (x.mc.min ? ' · ' + fmt(x.mc.min) + ' min' : '') : 'Metcon i dag', body:''});
+  if ((x.note || '').trim()) out.push({k:'Notat', t:x.note.trim(), body:''});
+  return out;
 }
 function myNextId(){
   const me = uid(), now = Date.now();
@@ -3817,8 +3828,9 @@ const exTop = e => Math.max(0, ...e.sets.map(x => x.w || 0));
 function myLine(s){
   const x = s.id === myNextId() && myNextSess();
   if (!x) return '';
-  const lifts = x.ex.map(e => liftName(e.lift) + (exTop(e) ? ' ' + fmt(exTop(e)) : '')).join(' · ');
-  return `<span class="sx-mine"><b>Din økt: ${esc(x.day)}</b> · ${esc(lifts)}</span>`;
+  const parts = x.ex.map(e => liftName(e.lift) + (exTop(e) ? ' ' + fmt(exTop(e)) : ''))
+    .concat(myExtras(x).filter(m => m.k !== 'Notat').map(m => '+ ' + m.k + ': ' + m.t));
+  return `<span class="sx-mine"><b>Din økt: ${esc(x.day)}</b>${parts.length ? ' · ' + esc(parts.join(' · ')) : ''}</span>`;
 }
 function myBox(s){
   const x = s.id === myNextId() && myNextSess();
@@ -3826,7 +3838,8 @@ function myBox(s){
   const row = e => { const t = new Set(e.sets.map(y => y.t)), w = exTop(e);
     return `<div class="ln"><span>${esc(liftName(e.lift))}</span><span>${t.size === 1 ? e.sets.length + '×' + [...t][0] : e.sets.length + ' sett'}${w ? ' · ' + fmt(w) + ' kg' : ''}</span></div>`; };
   return `<section class="box sx-mybox"><span class="lbl">Din økt · bare du ser denne</span>
-    <p><b>${esc(x.day)}</b> <span class="muted small">${esc(prog(S.active.programId).name)}</span></p>${x.ex.map(row).join('')}</section>`;
+    <p><b>${esc(x.day)}</b> <span class="muted small">${esc(prog(S.active.programId).name)}</span></p>${x.ex.map(row).join('')}
+    ${myExtras(x).map(m => `<div class="sx-extra"><span class="lbl">${m.k}</span><p><b>${esc(m.t)}</b></p>${m.body ? `<pre class="wodtxt">${esc(m.body)}</pre>` : ''}</div>`).join('')}</section>`;
 }
 
 function sxCard(s){
