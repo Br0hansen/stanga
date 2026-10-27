@@ -1,6 +1,6 @@
 # ATHX 2027 – treningsplan
 
-Dato: 2026-10-26 · Status: utkast 2, etter første review. Øktene ligger i `okter.json` med typen ATHX (APP_VERSION 38). Planen med faser og anslag er ennå ikke et program i appen.
+Dato: 2026-10-26 · Status: bygget. Øktene ligger i `okter.json` med typen ATHX (APP_VERSION 38). Planen er programmet «ATHX 2027» under Programmer (APP_VERSION 39). Kapittel 11 beskriver hvor appen avviker fra teksten.
 
 Kilder: [2027 Workouts](https://athxgames.com/workouts/2027), [2027 Movement Standards](https://athxgames.com/movement-standards/2027), [How It Works](https://athxgames.com/how-it-works), [FAQ](https://athxgames.com/faqs), [leaderboard 2026](https://athxgames.com/team-leaderboards) og [BLK BOX om 2027-øktene](https://www.blkboxfitness.com/blogs/blog/athx-2027-workouts-everything-you-need-to-know). Alt lest 2026-10-26. Forskningen er slått opp i PubMed samme dag.
 
@@ -402,12 +402,29 @@ Uten SkiErg mister planen mye av endurance-treningen, og det finnes ingen god er
 
 ## 10. Åpne spørsmål til review
 
-1. **Mixed par:** bruker hver utøver vektene for sitt kjønn, eller bruker paret én vekt? Nettsiden sier det ikke. Planen antar at hver bruker sin.
+1. **Mixed par:** bruker hver utøver vektene for sitt kjønn, eller bruker paret én vekt? Nettsiden sier det ikke. Besluttet 2026-10-27: hver bruker sin. Bør sjekkes med ATHX.
 2. **Bom i markløft:** teller et bomforsøk som 0 kg i snittet? I så fall bør begge forsøkene være sikre (slik planen nå anbefaler). Bør sjekkes med ATHX før stevnet.
 3. **Par i endurance:** workouts-siden sier at begge løper samtidig. How It Works sier at den ene venter ved skien. Planen følger workouts-siden og movement standards, som er nyere.
-4. **Valg av stevne:** skal brukeren skrive inn en dato, velge fra en liste over 2027-stevner, eller begge? Lista må i så fall vedlikeholdes.
-5. **Forhold til andre programmer:** planen erstatter styrkeprogrammet. Skal den telle i metcon-budsjettet, eller står budsjettet av mens planen er aktiv?
+4. **Valg av stevne:** besluttet: begge. Lista (`AX_EVENTS` i `index.html`) må oppdateres når ATHX legger ut nye stevner.
+5. **Forhold til andre programmer:** besluttet: planen erstatter styrkeprogrammet, og kondisjonsdelen teller i metcon-budsjettet.
 6. **Lang Grunn:** til Malmö blir Grunn 24 uker og til Amsterdam 33. Anslagene holder vektene riktige, men er det nok variasjon med varianter ved stillstand, eller vil vi ha en egen første halvdel med mer volum og mer løping?
 7. **Rolige turer uten klokke:** holder det med «rolig, passe, tungt», eller skal appen også ta imot puls?
 8. **Nivåfila:** hvem oppdaterer `athx-nivaa.json`, og hvor ofte? Leaderboardet har alle stevner samlet og kan filtreres på klasse og divisjon.
 9. **Øktene i øktbanken:** gjort. 17 ATHX-økter ligger først i `okter.json`, med vektene for ATHX. Vektene for PRO og LITE står i «ATHX Metcon X – par». Når planen blir et program, bør øktene hente vektene fra brukerens klasse.
+
+---
+
+## 11. Slik er det bygd i appen (versjon 39)
+
+Programmet heter «ATHX 2027» og har `prog:'athx'`. Koden ligger i blokken «ATHX 2027» i `index.html`. Her er det som avviker fra teksten over:
+
+- **Arbeidsmaks:** RPE på siste sett sammenlignes med målet. Godt under gir +2,5 %, litt under +1 %, over −1 %, og godt over eller bom gir −2,5 %. Tunge sett (RPE 8 eller mer, 5 reps eller færre) gir anslag, men de kan bare **heve** arbeidsmaksen. Grunnen: siste sett etter flere sett er preget av tretthet, så anslaget blir for lavt. Bom gir heller ikke anslag, bare −2,5 %. Én økt flytter arbeidsmaksen høyst +2,5 % eller −5 %.
+- **Justering i økta:** ingen automatisk −5 % etter første sett. Brukeren bruker − og + («Juster vekt etter dagsform»).
+- **Løp og ski:** medianen av de tre siste anslagene (fart minus tillegget for økttypen). Regelen om 2 s/km raskere eller 3 s/km tregere er ikke bygd. Medianen gjør samme jobb.
+- **For tungt:** to styrkeøkter på rad med RPE minst 1,5 over målet, eller bom, gjør neste uke lett. Det skjer høyst én gang per fire uker, og bare i Grunn, Bygg, S1 og S2. «Tungt» på en rolig tur teller ikke.
+- **Ikke bygd:** varianter ved stillstand (kapittel 5) og prioritering etter plasseringer på leaderboardet (kapittel 6). Det eneste som prioriteres, er den tregeste stasjonen i mini-Metcon X.
+- **DB-benk:** faller bort i økter med hele Metcon X (Bygg blokk 2 uke a og c, og S1), fordi Metcon X har 30 benk.
+- **S3:** økt 2 er 20 min rolig løp med stigningsløp, og økt 4 er hvile eller en kort tur. Generalprøven er økt 3.
+- **Stevneuka:** økt 3 er «Stevnet», med forsøk regnet ut fra arbeidsmaksen og felt for resultatene. Økt 4 er hvile.
+- **Kalenderen:** planen starter mandagen i uka den aktiveres. Henger brukeren etter, hopper den til første økt i denne uka. Økter som ikke er gjort, forsvinner.
+- **Par:** øktene er for én person, med individuelle reps og klassens vekter. Par-detaljene står i teksten.

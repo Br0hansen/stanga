@@ -140,6 +140,18 @@ p{margin:0}
 .inp{display:flex;align-items:center;gap:6px;color:var(--chalk-2)}
 .inp input{width:92px;background:var(--iron);border:1px solid var(--line);border-radius:10px;color:var(--chalk);
   font:700 21px/1 var(--display);padding:9px 10px;text-align:right;font-variant-numeric:tabular-nums}
+/* ATHX: skjema og kondisjonsdelen */
+.inp input.sm{width:52px}
+.inp input[type=date]{width:auto;font:500 16px var(--body);text-align:left}
+.ax-two{display:flex;gap:8px;align-items:center}
+.ax-cond h2{margin:0}
+.ax-lines{margin:0;padding-left:18px;display:grid;gap:4px}
+.ax-res{display:grid;gap:8px}
+.ax-slow button{flex:1 1 30%;font:600 14px/1.1 var(--body);padding:10px 4px}
+.ax-score{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.ax-score div{display:grid;gap:2px}
+.ax-score b{font:700 24px/1 var(--display)}
+.ax-score span{font-size:12px;color:var(--chalk-2)}
 
 /* Logg */
 .sess{background:var(--iron-2);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:grid;gap:8px}
@@ -578,7 +590,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:10px;co
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 38;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 39;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -596,7 +608,9 @@ const LIFTS = {
   squatclean:{n:'Clean',bar:1,alt:'clean',r:1.1}, hangsquatclean:{n:'Hang clean',bar:1,alt:'clean',r:1}, hangclean:{n:'Hang power clean',bar:1,alt:'clean',r:.92},
   blockclean:{n:'Power clean fra blokk',bar:1,alt:'clean',r:.97}, powersnatch:{n:'Power snatch',bar:1,alt:'clean',r:.78},
   // Trekk uten catch. Ingen alt, så det dukker ikke opp som erstatning for power clean.
-  cleanpull:{n:'Clean pull',bar:1}
+  cleanpull:{n:'Clean pull',bar:1},
+  // ATHX: konkurranseløftet (press, push press, push jerk eller split jerk) og manualbenk med klassens vekt
+  s2oh:{n:'Shoulder to overhead',bar:1}, dbbench:{n:'DB-benk'}
 };
 const ALTS = slot => Object.keys(LIFTS).filter(k => LIFTS[k].alt === slot);
 const sw = (a, slot) => (a.swaps && a.swaps[slot]) || slot;   // hvilket løft ligger i plassen nå?
@@ -729,6 +743,460 @@ function progressJug(p, a, s){
   return [{name:liftName(e.lift), text:`${am.d} reps, ${extra} over målet: arbeidsmaks ${fmt(old)} → ${fmt(a.tm[e.lift])} kg`, kind:'up'}];
 }
 
+/* ---------- ATHX 2027 (egen modell) ----------
+   Planen står i docs/superpowers/specs/2026-10-26-athx-2027-treningsplan.md.
+   Lengden regnes baklengs fra stevnedatoen: Grunn, Bygg, Spesifikk og Taper.
+   Uka følger kalenderen. Henger du etter, hopper planen til første økt i denne uka.
+   Vektene er prosent av arbeidsmaksen (a.e1rm). Etter hver økt justeres den ut fra RPE på siste sett mot
+   målet. Tunge sett (RPE 8 eller mer, 5 reps eller færre) gir et anslag. Er medianen av de tre siste anslagene
+   fra seks uker høyere (som i Pete Plan), går arbeidsmaksen opp dit. Én økt flytter den høyst +2,5 % eller −5 %.
+   Løpe- og skifarten (per km og per 500 m) anslås på samme måte fra intervallene, med et fast tillegg per
+   økttype. Startverdiene kommer fra det brukeren vet fra før. Ingen testuke. */
+const AX_EVENTS = [
+  ['2027-01-23','London'],['2027-01-23','San Diego'],['2027-02-06','Las Vegas'],['2027-02-13','Paris'],['2027-02-20','Valencia'],
+  ['2027-03-06','Milano'],['2027-03-13','Denver'],['2027-03-20','Brussel'],['2027-04-10','St. Gallen'],['2027-04-17','Stuttgart'],
+  ['2027-04-17','Houston'],['2027-04-24','Wien'],['2027-05-08','Madrid'],['2027-05-22','Frankfurt'],['2027-05-28','Montpellier'],
+  ['2027-06-05','Glasgow'],['2027-06-12','Dublin'],['2027-06-12','Miami'],['2027-06-26','Lisboa'],['2027-07-03','Poznań'],
+  ['2027-07-31','Malmö'],['2027-08-14','Berlin'],['2027-08-14','Nashville'],['2027-08-20','Birmingham'],['2027-08-28','Hamburg'],
+  ['2027-08-28','New York'],['2027-09-04','Roma'],['2027-09-10','Marseille'],['2027-09-11','Chicago'],['2027-09-25','Torino'],
+  ['2027-10-02','Amsterdam'],['2027-10-09','Liverpool'],['2027-11-06','Bilbao']
+];
+const AX_ORDER = {3:[1,2,3], 4:[1,2,4,3]};   // med fire økter ligger den rolige turen før markløftdagen
+const AX_NAME = {1:'Økt 1 · Styrke og ski', 2:'Økt 2 · Løp og ski', 3:'Økt 3 · Markløft og metcon', 4:'Økt 4 · Rolig løp og teknikk'};
+const AX_PH = {grunn:'Grunn', bygg:'Bygg', spes:'Spesifikk', taper:'Taper'};
+const AX_SLOW = {row:'Ro', gtoh:'Ground to overhead', bench:'Benk', sq:'Sandsekk-knebøy', carry:'Bæring', burp:'Burpees'};
+const AX_EST_DAYS = 42;
+
+// Ukene fra start til og med stevneuka (N uker). Tabellen står i kapittel 3 i planen.
+function axWeeks(N){
+  const out = [], tap = Math.min(2, N), spes = N >= 9 ? 6 : Math.max(0, N - 2);
+  const bygg = N >= 22 ? 8 : N >= 9 ? N - 8 : 0, grunn = N >= 22 ? N - 16 : 0;
+  // Grunn: blokker på fire uker. Uker som ikke går opp i blokker, legges først som uke a.
+  for (let i = 0; i < grunn % 4; i++) out.push({ph:'grunn', key:'a', blk:1});
+  for (let b = 0; b < Math.floor(grunn / 4); b++) ['a','b','c','l'].forEach(k => out.push({ph:'grunn', key:k, blk:b + 1}));
+  // Bygg: to blokker. Lengre: ekstra uker fra blokk 1 først, også med lett uke. Kortere: de første ukene kuttes.
+  const B = [];
+  [1,2].forEach(bl => ['a','b','c','l'].forEach(k => B.push({ph:'bygg', key:k, blk:bl})));
+  for (let i = 0; i < bygg - 8; i++) out.push({ph:'bygg', key:['a','b','c','l'][i % 4], blk:1});
+  out.push(...(bygg >= 8 ? B : B.slice(8 - bygg)));
+  // Spesifikk: S2 faller bort først, så S1
+  const Sp = ['S1','S2','S3','S4','S5','S6'];
+  (spes >= 6 ? Sp : spes === 5 ? ['S1','S3','S4','S5','S6'] : Sp.slice(2).slice(4 - spes)).forEach(k => out.push({ph:'spes', key:k}));
+  (tap === 2 ? ['T1','T2'] : tap === 1 ? ['T2'] : []).forEach(k => out.push({ph:'taper', key:k}));
+  return out;
+}
+const axCount = W => ['grunn','bygg','spes','taper'].map(ph => [ph, W.filter(w => w.ph === ph).length]).filter(x => x[1]);
+const axMonday = t => { const d = new Date(t); d.setHours(0,0,0,0); d.setDate(d.getDate() - (d.getDay() + 6) % 7); return d.getTime(); };
+const axWeeksTo = (from, date) => Math.round((axMonday(new Date(date + 'T12:00')) - axMonday(from)) / (7 * DAY)) + 1;
+const axCalWeek = a => Math.floor(Math.round((axMonday(Date.now()) - a.ax.ws) / DAY) / 7);
+const axDateTxt = d => new Date(d + 'T12:00').toLocaleDateString('nb-NO', {day:'numeric', month:'short', year:'numeric'});
+const axNum = v => { const x = parseFloat(String(v == null ? '' : v).replace(',', '.')); return x > 0 ? x : null; };
+// «25:00» eller «1:05:00» → sekunder
+const axTime = v => { const p = String(v || '').trim().split(':').map(x => parseFloat(x.replace(',', '.')));
+  return p.length < 2 || p.length > 3 || p.some(x => !(x >= 0)) ? null : p.length === 3 ? p[0]*3600 + p[1]*60 + p[2] : p[0]*60 + p[1]; };
+const totalOf = (p, a) => p.prog === 'athx' ? a && a.total : p.total;
+
+// Vekter og kalorier for klassen. Ved mixed bruker hver utøver vektene for sitt kjønn.
+function axSpec(X){
+  const m = X.sex !== 'K';
+  const W = {LITE:[15, 7.5, 30, 20, 40, 30], ATHX:[20, 12.5, 50, 30, 45, 35], PRO:[22.5, 15, 70, 50, 45, 35]}[X.cls] || [20, 12.5, 50, 30, 45, 35];
+  return {db: m ? W[0] : W[1], sb: m ? W[2] : W[3], row: m ? W[4] : W[5], m, cls: X.cls, km: X.cls === 'LITE' ? 2.4 : 3, par: X.form === 'par'};
+}
+const axGtoh = S => S.cls === 'PRO' ? 'DB ground to overhead, to manualer' : S.cls === 'ATHX' ? 'DB ground to overhead, vekslende' : 'DB ground to overhead, én arm';
+const axClassTxt = X => `${X.cls} ${X.form === 'par' ? 'par' : 'individuell'}, ${X.div === 'mixed' ? 'mixed' : X.div === 'K' ? 'kvinne' : 'mann'}`;
+// Metcon X for én person. f = andel av repsene. heavy = 2,5 kg tyngre manualer og 10 kg tyngre sekk.
+function axMx(S, f, heavy){
+  const r = n => Math.max(1, Math.round(n * f)), db = S.db + (heavy ? 2.5 : 0), sb = S.sb + (heavy ? 10 : 0);
+  return [`${r(S.row)} kal ro`, `${r(30)} ${axGtoh(S)} @ ${fmt(db)} kg`, `${r(30)} DB-benk @ 2 × ${fmt(db)} kg`,
+    `${r(30)} sandsekk-knebøy @ ${fmt(sb)} kg`, `30 m sandsekkbæring @ ${fmt(sb)} kg`, `${r(30)} burpees over myk benk`, `${r(S.row)} kal ro`];
+}
+// Tregeste stasjon i de tre siste metcon-øktene der den er registrert
+function axSlowest(a){
+  const s = (a.mc || []).filter(x => x.slow).slice(-3).map(x => x.slow);
+  if (!s.length) return null;
+  const c = {}; s.forEach(k => c[k] = (c[k] || 0) + 1);
+  return Object.keys(c).sort((x, y) => c[y] - c[x] || s.lastIndexOf(y) - s.lastIndexOf(x))[0];
+}
+// Én runde mini-Metcon X. Den tregeste stasjonen får dobbelt så mange reps.
+function axMini(a, S){
+  const sl = axSlowest(a), d = k => sl === k ? 2 : 1;
+  const L = [`${(S.m ? 10 : 8) * d('row')} kal ro`, `${8 * d('gtoh')} ${axGtoh(S)} @ ${fmt(S.db)} kg`];
+  if (sl === 'bench') L.push(`8 DB-benk @ 2 × ${fmt(S.db)} kg`);
+  L.push(`${8 * d('sq')} sandsekk-knebøy @ ${fmt(S.sb)} kg`, `${30 * d('carry')} m sandsekkbæring @ ${fmt(S.sb)} kg`, `${6 * d('burp')} burpees over myk benk`);
+  if (sl) L.push(`${AX_SLOW[sl]} er doblet, fordi det har vært den tregeste stasjonen din.`);
+  return L;
+}
+// Fart nå: medianen av de tre siste anslagene fra seks uker, ellers startverdien
+function axPace(a, k){
+  const P = a[k] || {}, e = (P.est || []).filter(x => Date.now() - x.t < AX_EST_DAYS * DAY).slice(-3);
+  return e.length ? median(e.map(x => x.v)) : P.p0 || null;
+}
+const axPush = (a, k, v) => { a[k].est = (a[k].est || []).concat({t: Date.now(), v}).slice(-10); };
+const axRunZ = (a, off, txt) => { const p = axPace(a, 'run'); return p ? axTxt(p + off) + '/km' : txt; };
+const axSkiZ = (a, off, txt) => { const p = axPace(a, 'ski'); return p ? axTxt(p + off) + '/500 m' : txt; };
+const axTxt = x => splitTxt(Math.round(x));   // tid og fart i hele sekunder
+const axEasy = (a, base) => Math.min(45, base + (a.easyAdd || 0));
+
+function axLift(a, slot, n, reps, pct, o){
+  o = o || {};
+  const L = sw(a, slot), f = o.inn ? .95 : 1, w = pc => Math.max(20, r25(a.e1rm[L] * pc * f));
+  const sets = o.list ? o.list.map(([r, pc]) => ({t:r, w:w(pc), am:false, d:null})) : mk(n, reps, w(pct));
+  return {key: L + '.' + (o.k || 'main'), lift:L, slot, part: o.part || 'top', sp:1, athx:1, rpeT: o.rpe == null ? null : o.rpe,
+    rest: o.rest || (slot === 's2oh' ? 150 : 180), tag: o.tag || 'Arbeidssett', hint: o.hint || '', sets};
+}
+const axDb = (S, n, reps, o) => ({key:'dbbench', lift:'dbbench', slot:'dbbench', part:'fixed', sp:1, athx:1, rest:90,
+  tag: (o && o.tag) || 'Manualer', hint: `Klassens vekt er ${fmt(S.db)} kg per manual.${o && o.hint ? ' ' + o.hint : ''}`, sets: mk(n, reps, S.db, o && o.am)});
+const axTech = (a, pct) => axLift(a, 's2oh', 5, 2, pct, {part:'fixed', k:'tech', tag:'Teknikk', rest:60,
+  hint:'Push jerk og split jerk, rolig og presist. Bruk stilen som gir flest kilo i den tunge økta.'});
+const axC = (title, lines, logs, min, type) => ({title, lines: lines.filter(Boolean), logs, min: Math.round(min), type: type || 'M', res:{}});
+
+// Innholdet i én økt: stangløft (ex) og kondisjonsdelen (cond)
+function axDay(a, w, day, inn){
+  const S = axSpec(a.ax), E = a.ax.per === 3, k = w.key, i = {a:0, b:1, c:2}[k], lett = k === 'l';
+  const R = (off, t) => axRunZ(a, off, t), K = (off, t) => axSkiZ(a, off, t);
+  const run0 = R(0, '3 km-fart'), ski0 = K(0, 'målfart');
+  const rpe = w.ph === 'grunn' ? 7 : w.ph === 'bygg' ? (w.blk === 2 ? 8 : 7.5) : 8;
+  const T = (slot, n, reps, pct, o) => axLift(a, slot, n, reps, pct, Object.assign({inn, rpe: lett ? null : rpe}, o));
+  const warmRun = E ? '10–15 min rolig løp først' : null;
+  const transit = 'Øv overgangen: damperen satt på forhånd, ingen stopp mellom løpet og skien.';
+  const easyRun = m => axC('Rolig løp', [`${m} min rolig @ ${R(75, 'snakketempo')}`, '10 min bevegelighet: brystrygg, hofter, ankler og skuldre over hodet'], [{k:'feel'}], m);
+  let ex = [], c = null;
+  if (w.ph === 'grunn') {
+    if (day === 1) {
+      ex = lett ? [T('s2oh',3,3,.65), T('squat',3,5,.60)] : [T('s2oh',5,3,[.70,.725,.75][i]), T('squat',4,6,[.675,.70,.725][i])];
+      const n = lett ? 4 : [6,7,8][i];
+      c = axC('SkiErg, jevn fart', [`${n} × 2 min @ ${K(7, 'jevn fart (RPE 6–7)')}, 1 min pause`], [{k:'ski', off:7}], n * 3);
+    } else if (day === 2) {
+      const n = lett ? 3 : [3,4,5][i], sm = lett ? 6 : [8,10,12][i];
+      c = axC('Terskelløp og ski', [warmRun, `${n} × 1 km terskel @ ${R(22, 'korte setninger, ikke prate fritt')}, 90 s rolig jogg`,
+        `Rett på SkiErg: ${sm} min rolig @ ${K(10, 'rolig fart')}`], [{k:'run', off:22, lbl:'Snittfart på dragene'}], n * 6.5 + sm);
+    } else if (day === 3) {
+      ex = [...(E ? [axTech(a, .575)] : []), lett ? T('deadlift',3,3,.65) : T('deadlift',4,5,[.70,.725,.75][i]), axDb(S, lett ? 2 : 3, lett ? 10 : [12,14,16][i])];
+      const n = lett ? 2 : [3,4,5][i];
+      c = axC('Mini-Metcon X', [`${n} runder, 1 min pause mellom rundene. RPE 7, jevn fart.`, ...axMini(a, S)], [{k:'mc', kind:'mini', lbl:'Snittid per runde'}], n * 4, 'L');
+    } else { ex = [axTech(a, .5)]; c = easyRun(axEasy(a, {a:25, b:30, c:35, l:25}[k])); }
+  } else if (w.ph === 'bygg') {
+    const b2 = w.blk === 2;
+    if (day === 1) {
+      ex = lett ? [T('s2oh',3,2,.70), T('squat',3,3,.70)]
+        : b2 ? [T('s2oh',4,1,[.875,.90,.925][i],{tag:'Singler'}), T('s2oh',2,2,.80,{k:'back', part:'back', tag:'Backoff'}), T('squat',4,2,[.85,.875,.90][i])]
+        : [T('s2oh',5,2,[.80,.825,.85][i]), T('squat',5,3,[.775,.80,.825][i])];
+      c = lett ? axC('SkiErg, jevn fart', [`4 × 2 min @ ${K(7, 'jevn fart')}, 1 min pause`], [{k:'ski', off:7}], 12)
+        : b2 ? axC('SkiErg 1000-ere', [`${[3,3,4][i]} × 1000 m @ ${ski0}, 2 min pause`], [{k:'ski', off:0}], [3,3,4][i] * 6)
+        : axC('SkiErg 500-ere', [`${[5,6,6][i]} × 500 m @ ${K(-2, 'litt raskere enn målfart')}, 1:30 pause`], [{k:'ski', off:-2}], [5,6,6][i] * 3.5);
+    } else if (day === 2) {
+      c = lett ? axC('Løp og ski', [warmRun, `2 runder: 1 km terskel @ ${R(22, 'korte setninger, ikke prate fritt')} + 2 min ski. 3 min pause.`], [{k:'run', off:22, lbl:'Snittfart på løpet'}], 18)
+        : b2 ? axC('Løp rett på ski, 1,5 km', [warmRun, `${[2,2,3][i]} runder: 1,5 km @ ${R(-3, 'litt raskere enn 3 km-fart')} + 5 min SkiErg @ ${ski0}. 4 min pause.`, transit],
+               [{k:'run', off:-3, lbl:'Snittfart på løpet'}, {k:'ski', off:0}], [2,2,3][i] * 13)
+        : axC('Løp rett på ski, 1 km', [warmRun, `${[3,4,4][i]} runder: 1 km @ ${run0} + 3 min SkiErg @ ${ski0}. 3 min pause.`, transit],
+               [{k:'run', off:0, lbl:'Snittfart på løpet'}, {k:'ski', off:0}], [3,4,4][i] * 8);
+    } else if (day === 3) {
+      ex = [...(E ? [axTech(a, .65)] : []), lett ? T('deadlift',3,3,.70)
+        : b2 ? T('deadlift',2,3,[.85,.875,.90][i],{tag:'To vinduer', hint:'Som på stevnet: sett 2 starter 2 minutter etter sett 1. Tre i strekk eller tre singler innen ett minutt.'})
+        : T('deadlift',5,3,[.775,.80,.825][i])];
+      // Hele Metcon X har 30 benk, så da er det ingen egen benkøvelse
+      if (lett) ex.push(axDb(S, 2, 10));
+      else if (!b2) ex.push(axDb(S, 2, 15, {am:true, tag:'Maks minus 2', hint:'Stopp to reps før du ikke klarer flere.'}));
+      else if (k === 'b') ex.push(axDb(S, 1, 30, {tag:'30 på tid', hint:'Del opp før det stopper, for eksempel 12–10–8.'}));
+      c = lett ? axC('Mini-Metcon X', ['2 runder, 1 min pause. RPE 7.', ...axMini(a, S)], [{k:'mc', kind:'mini', lbl:'Snittid per runde'}], 8, 'L')
+        : !b2 ? axC('Metcon X i to deler', ['Del 1 for tid:', ...axMx(S, 1).slice(0, 3), `Pause ${[4,3,2][i]} min`, 'Del 2 for tid:', ...axMx(S, 1).slice(3)],
+                    [{k:'mc', kind:'del', lbl:'Samlet tid uten pausen'}], 18, 'L')
+        : k === 'b' ? axC('Metcon X med tyngre utstyr', ['Halve repsene for tid, med tyngre vekter:', ...axMx(S, .5, true)], [{k:'mc', kind:'heavy'}], 9, 'L')
+        : axC(`Hele Metcon X @ RPE ${k === 'a' ? '8' : '8,5'}`, ['For tid, 25 min tak:', ...axMx(S, 1)], [{k:'mc', kind: k === 'a' ? 'full8' : 'full'}], 17, 'L');
+    } else { ex = [axTech(a, .65)]; c = easyRun(axEasy(a, lett ? 30 : 35)); if (!lett) c.lines.splice(1, 0, '6 × 20 s stigningsløp til slutt'); }
+  } else if (w.ph === 'spes') {
+    if (day === 4) {
+      if (k === 'S3') c = axC('Hvile eller kort tur', ['Hvil, eller 15 min rolig løp og bevegelighet. Generalprøven kommer.'], [{k:'feel'}], 15);
+      else { ex = k === 'S6' ? [] : [axTech(a, .70)]; c = easyRun(axEasy(a, k === 'S4' || k === 'S6' ? 30 : 35)); }
+    } else if (k === 'S1') {
+      if (day === 1) {
+        ex = [T('s2oh',0,0,0,{list:[[1,.875],[1,.90],[1,.92]], rpe:null, tag:'Styrkesonen · 0–5 min', hint:'Tre forsøk på fem minutter. Bytt skiver og sett på låser selv.'}),
+              T('squat',0,0,0,{list:[[2,.875],[2,.90]], rpe:null, tag:'Styrkesonen · 5–10 min', hint:'To forsøk på 2 reps. Setter du stanga i racket før to reps, starter du på null.'})];
+        c = axC('SkiErg i målfart', [`3 × 4 min @ ${ski0}, 2 min pause`], [{k:'ski', off:0}], 12);
+      } else if (day === 2) c = axC(`${fmt(S.km)} km i målfart og ski`, [warmRun, `${fmt(S.km)} km @ ${run0}`, `Rett på SkiErg: 8 min @ ${ski0}`, transit],
+                                  [{k:'run', off:0, lbl:'Snittfart på løpet'}, {k:'ski', off:0}], 23);
+      else { ex = [...(E ? [axTech(a, .70)] : []), T('deadlift',2,3,.875,{tag:'To vinduer', hint:'Sett 2 starter 2 minutter etter sett 1.'})];
+        c = axC('Hele Metcon X @ RPE 8', ['For tid, 25 min tak:', ...axMx(S, 1)], [{k:'mc', kind:'full8'}], 17, 'L'); }
+    } else if (k === 'S2') {
+      if (day === 1) { ex = [T('s2oh',3,1,.90,{tag:'Singler'}), T('squat',3,2,.875)]; c = axC('SkiErg i målfart', [`2 × 6 min @ ${ski0}, 2 min pause`], [{k:'ski', off:0}], 12); }
+      else if (day === 2) c = axC('600-ere og ski', [warmRun, `6 × 600 m @ ${R(-5, 'litt raskere enn 3 km-fart')}, 1 min pause`, `Så 2 × 5 min SkiErg @ ${K(-2, 'litt raskere enn målfart')}, 2 min pause`],
+                                  [{k:'run', off:-5, lbl:'Snittfart på 600-erne'}, {k:'ski', off:-2}], 30);
+      else { ex = [...(E ? [axTech(a, .70)] : []), T('deadlift',3,2,.875)];
+        c = axC('Halve Metcon X × 2', ['2 runder for tid i stevnefart, 3 min pause:', ...axMx(S, .5)], [{k:'mc', kind:'half', lbl:'Snittid per runde'}], 18, 'L'); }
+    } else if (k === 'S3') {
+      if (day === 1) { ex = [T('s2oh',3,2,.75,{rpe:null}), T('squat',3,3,.70,{rpe:null})]; c = axC('SkiErg, jevn fart', [`4 × 2 min @ ${K(7, 'jevn fart')}, 1 min pause`], [{k:'ski', off:7}], 12); }
+      else if (day === 2) c = axC('Rolig løp', [`20 min rolig @ ${R(75, 'snakketempo')}`, '4 × 20 s stigningsløp til slutt'], [{k:'feel'}], 22);
+      else {
+        ex = [T('s2oh',0,0,0,{list:[[1,.92],[1,.95]], rpe:null, tag:'Styrkesonen · 0–5 min', hint:'Åpningsforsøk og planlagt forsøk nr. 2. Ingen rekordjakt.'}),
+              T('squat',0,0,0,{list:[[2,.875],[2,.90]], rpe:null, tag:'Styrkesonen · 5–10 min'}),
+              T('deadlift',0,0,0,{list:[[3,.875],[3,.90]], rpe:null, tag:'Styrkesonen · to vinduer', hint:'10–12 oppvarming. Kl. 12 og 14: ett minutt på tre reps.'})];
+        c = axC('Generalprøve: hele stevnedagen', ['30 min oppvarming før styrken. Spis, drikk og kle deg som på stevnet.', '10 min pause etter styrken: vann og litt karbohydrat.',
+          `Endurance: ${fmt(S.km)} km løp, så maks meter på SkiErg til 24:00.`, '30 min pause: 30–60 g karbohydrat, hold deg i bevegelse.',
+          'Metcon X for tid, 25 min tak:', ...axMx(S, 1), 'Uka etter er lett.'], [{k:'end'}, {k:'mc', kind:'full', lbl:'Tid Metcon X'}], 60, 'L');
+      }
+    } else if (k === 'S4') {
+      if (day === 1) { ex = [T('s2oh',3,2,.80,{rpe:null}), T('squat',3,3,.80,{rpe:null})]; c = axC('SkiErg, jevn fart', [`4 × 3 min @ ${K(7, 'jevn fart')}, 1 min pause`], [{k:'ski', off:7}], 16); }
+      else if (day === 2) c = axC('Terskelløp og ski', [warmRun, `4 × 1 km terskel @ ${R(22, 'korte setninger, ikke prate fritt')}, 90 s jogg`, `Rett på SkiErg: 8 min rolig @ ${K(10, 'rolig fart')}`],
+                                  [{k:'run', off:22, lbl:'Snittfart på dragene'}], 34);
+      else { ex = [...(E ? [axTech(a, .65)] : []), T('deadlift',3,3,.80,{rpe:null})];
+        c = axC('Metcon X, sluttdelen @ RPE 7', ['For tid:', ...axMx(S, 1).slice(3)], [{k:'mc', kind:'del2'}], 9, 'L'); }
+    } else if (k === 'S5') {
+      if (day === 1) {
+        ex = [T('s2oh',0,0,0,{list:[[1,.92],[1,.95]], rpe:null, tag:'Åpningsløft', hint:'Ta forsøk nr. 2 bare hvis åpningen var RPE 8 eller lettere. Ellers fullfører du uten.'}),
+              T('squat',0,0,0,{list:[[2,.875]], rpe:null, tag:'Åpningsløft'})];
+        c = axC('SkiErg i målfart', [`3 × 3 min @ ${ski0}, 2 min pause`], [{k:'ski', off:0}], 9);
+      } else if (day === 2) c = axC('Målfart på løp og ski', [warmRun, `2 runder: 1,5 km @ ${run0} + 4 min SkiErg @ ${ski0}. 3 min pause.`, transit],
+                                  [{k:'run', off:0, lbl:'Snittfart på løpet'}, {k:'ski', off:0}], 22);
+      else { ex = [...(E ? [axTech(a, .70)] : []), T('deadlift',0,0,0,{list:[[3,.90]], rpe:null, tag:'Forsøk 1', hint:'Ett vindu med planlagt åpningsvekt.'})];
+        c = axC('Halve Metcon X @ stevnefart', ['For tid:', ...axMx(S, .5)], [{k:'mc', kind:'half'}], 9, 'L'); }
+    } else {
+      if (day === 1) ex = [T('s2oh',3,1,.85,{rpe:null, tag:'Singler'}), T('squat',3,2,.80,{rpe:null})];
+      else if (day === 2) c = axC('Målfart på løp og ski', [warmRun, `2 km @ ${run0}`, `Rett på SkiErg: 6 min @ ${ski0}`], [{k:'run', off:0, lbl:'Snittfart på løpet'}, {k:'ski', off:0}], 16);
+      else { ex = [...(E ? [axTech(a, .65)] : []), T('deadlift',2,2,.85,{rpe:null})];
+        c = axC('Metcon X, to tredjedeler @ RPE 7', ['For tid, jevn rytme:', ...axMx(S, 2/3)], [{k:'mc', kind:'part'}], 12, 'L'); }
+    }
+  } else if (k === 'T1') {
+    if (day === 1) { ex = [T('s2oh',2,1,.90,{rpe:null, tag:'Singler'}), T('s2oh',2,1,.92,{k:'open', rpe:null, tag:'Åpningsvekt'}), T('squat',2,2,.875,{rpe:null})];
+      c = axC('SkiErg i målfart', [`3 × 3 min @ ${ski0}, 2 min pause`], [{k:'ski', off:0}], 9); }
+    else if (day === 2) c = axC('Målfart på løp og ski', [`2 km @ ${run0}`, `Rett på SkiErg: 5 min @ ${ski0}`, '4 × 20 s stigningsløp'], [{k:'run', off:0, lbl:'Snittfart på løpet'}, {k:'ski', off:0}], 16);
+    else if (day === 3) { ex = [T('deadlift',2,2,.875,{rpe:null})]; c = axC('Halve Metcon X @ stevnefart', ['For tid:', ...axMx(S, .5)], [{k:'mc', kind:'half'}], 9, 'L'); }
+    else c = easyRun(Math.min(30, axEasy(a, 25)));
+  } else {
+    if (day === 1) { ex = [T('s2oh',3,1,.80,{rpe:null, tag:'Singler'}), T('squat',2,2,.75,{rpe:null}), T('deadlift',2,2,.75,{rpe:null})];
+      c = axC('Kort på skien', [`3 × 1 min @ ${ski0}, 1 min pause`], [], 3); }
+    else if (day === 2) c = axC('Kort og lett', [`15 min rolig løp, så 3 × 1 min @ ${run0}`, '3 × 10 kal ro', '2 × 5 burpees over benk'], [{k:'feel'}], 20);
+    else if (day === 4) c = axC('Hvile', ['Hvil, eller 15 min rolig og bevegelighet.'], [], 0);
+    else c = axRace(a, S);
+  }
+  return {ex, cond: c};
+}
+// Stevnedagen: forsøkene og farten regnet ut fra anslagene
+function axRace(a, S){
+  const e = L => a.e1rm[sw(a, L)], kg = x => fmt(Math.max(20, r25(x))), P = axPace(a, 'run');
+  const o = e('s2oh'), q = e('squat') * .95, d = e('deadlift') * .93;
+  return axC('ATHX-stevnet', [
+    `Strength: S2OH ${kg(o*.92)} → ${kg(o*.97)} → ${kg(o)} kg. Knebøy 2RM ${kg(q*.95)} → ${kg(q)} kg. Markløft 3RM ${kg(d*.97)} og ${kg(d)} kg, ingen sjansespill.`,
+    `Endurance: ${fmt(S.km)} km${P ? ' på rundt ' + axTxt(P * S.km) : ''}. De første 600 m litt rolig. Tell rundene.`,
+    'Ski: de første 2 min litt roligere enn målet, så jevnt, så alt du har de siste 2 min.',
+    'Metcon X: første roing kontrollert. Del opp ground to overhead og benk tidlig. Faste sett i sandsekk-knebøy.',
+    'Mat: vann og litt karbohydrat etter styrken, 30–60 g karbohydrat før Metcon X.'],
+    [{k:'kg'}, {k:'end'}, {k:'mc', kind:'race', lbl:'Tid Metcon X'}], 0, 'L');
+}
+
+function buildAthx(p, a){
+  const X = a.ax, per = X.per, wi = Math.min(Math.floor(a.idx / per), X.weeks.length - 1), day = AX_ORDER[per][a.idx % per];
+  let w = X.weeks[wi];
+  // To tunge økter på rad flytter den lette uka fram (se progressAthx)
+  const light = a.lightAt === wi && (w.ph === 'grunn' || w.ph === 'bygg' || w.key === 'S1' || w.key === 'S2');
+  if (light) w = w.ph === 'spes' ? {ph:'spes', key:'S4'} : Object.assign({}, w, {key:'l'});
+  const {ex, cond} = axDay(a, w, day, wi < 2);
+  const det = w.ph === 'grunn' || w.ph === 'bygg' ? ` · blokk ${w.blk}${w.key === 'l' ? ' · lett uke' : ''}`
+    : w.ph === 'spes' ? (w.key === 'S3' ? ' · generalprøve' : w.key === 'S4' ? ' · lett uke' : '') : w.key === 'T2' ? ' · stevneuka' : '';
+  const name = w.key === 'T2' && day === 3 ? 'Stevnet' : w.key === 'S3' && day === 3 ? 'Generalprøve' : AX_NAME[day];
+  return {programId:p.id, day:name, sub:`Uke ${wi + 1} av ${X.weeks.length} · ${AX_PH[w.ph]}${det}${wi < 2 ? ' · innkjøring' : ''}${light ? ' (flyttet fram)' : ''}`,
+    ex, cond, ph:w.ph, wk:wi, started:Date.now()};
+}
+
+// Henger du etter kalenderen, hopper planen til første økt i denne uka. Gir true hvis den hoppet.
+function axSync(a){
+  const cw = axCalWeek(a), wi = Math.floor(a.idx / a.ax.per);
+  if (cw > wi) { a.idx = Math.min(cw, a.ax.weeks.length) * a.ax.per; return true; }
+  return false;
+}
+
+function progressAthx(p, a, s){
+  const notes = [], now = Date.now(), X = a.ax, wi = Math.floor(a.idx / X.per), seen = {};
+  let strain = null;
+  a.est = a.est || {};
+  s.ex.forEach(e => {
+    // Første arbeidsøvelse per løft styrer arbeidsmaksen. Teknikk og manualer påvirker den ikke.
+    if ((e.part !== 'top' && e.part !== 'back') || seen[e.lift]) return;
+    const done = e.sets.filter(x => x.d != null);
+    if (!done.length) return;
+    seen[e.lift] = 1;
+    const L = e.lift, old = a.e1rm[L], last = done[done.length - 1], fail = done.find(x => x.d < x.t), r = e.rpe;
+    let est = null, d = 0, why;
+    if (fail) {
+      why = 'Ikke alle reps';
+      if (e.rpeT != null) { d = -.025; strain = true; }
+    } else if (r == null) why = 'Ingen RPE registrert';
+    else {
+      if (r >= 8 && last.d <= 5 && last.w >= old * .8) est = est1(last.w, last.d, r);
+      const dv = e.rpeT == null ? 0 : r - e.rpeT;
+      if (e.rpeT == null) why = 'RPE ' + fmt(r);
+      else if (dv <= -1.5) { d = .025; why = 'RPE ' + fmt(r) + ', godt under målet'; }
+      else if (dv <= -.5) { d = .01; why = 'RPE ' + fmt(r) + ', litt under målet'; }
+      else if (dv >= 1.5) { d = -.025; why = 'RPE ' + fmt(r) + ', godt over målet'; strain = true; }
+      else if (dv >= 1) { d = -.01; why = 'RPE ' + fmt(r) + ', over målet'; }
+      else why = 'RPE ' + fmt(r) + ', på mål';
+      if (e.rpeT != null && strain !== true) strain = false;
+    }
+    // Anslag fra tunge sett kan bare heve arbeidsmaksen. Siste sett etter flere sett er preget av tretthet
+    // og gir for lave anslag, så nedjustering skjer bare når RPE er over målet eller reps mangler.
+    let next = old * (1 + d);
+    if (est) {
+      a.est[L] = (a.est[L] || []).concat({t:now, v:est}).slice(-10);
+      const med = median(a.est[L].filter(x => now - x.t < AX_EST_DAYS * DAY).slice(-3).map(x => x.v));
+      if (med > next) { next = med; why += '. Tunge sett tyder på mer'; }
+    }
+    next = Math.round(Math.min(old * 1.025, Math.max(old * .95, next)) * 2) / 2;
+    a.e1rm[L] = next;
+    notes.push({name: liftName(L), text: why + ': arbeidsmaks ' + (next === old ? 'står på ' + fmt(old) + ' kg' : fmt(old) + ' → ' + fmt(next) + ' kg'),
+      kind: next > old ? 'up' : next < old ? 'down' : 'same'});
+  });
+  if (strain === true) a.strain = (a.strain || 0) + 1; else if (strain === false) a.strain = 0;
+  const nx = X.weeks[wi + 1];
+  if (a.strain >= 2 && nx && (nx.ph === 'grunn' || nx.ph === 'bygg' || nx.key === 'S1' || nx.key === 'S2') && nx.key !== 'l'
+      && a.lightAt !== wi + 1 && !(a.lightSet != null && wi - a.lightSet < 4)) {
+    a.lightAt = wi + 1; a.lightSet = wi; a.strain = 0;
+    notes.push({name:'Neste uke', text:'To tunge økter på rad. Neste uke blir lett, og vektene holdes.', kind:'down'});
+  }
+  const c = s.cond, r = (c && c.res) || {}, S = axSpec(X);
+  (c ? c.logs : []).forEach(l => {
+    if (l.k === 'run') { const v = parseSplit(r.run);
+      if (v >= 150 && v <= 600) { axPush(a, 'run', v - l.off); notes.push({name:'Løp', text:`Snittfart ${axTxt(v)}/km. 3 km-fart nå: ${axTxt(axPace(a, 'run'))}/km`, kind:'same'}); } }
+    if (l.k === 'ski') { const v = parseSplit(r.ski);
+      if (v >= 80 && v <= 200) { axPush(a, 'ski', v - l.off); notes.push({name:'Ski', text:`Snittfart ${axTxt(v)}/500 m. Målfart nå: ${axTxt(axPace(a, 'ski'))}/500 m`, kind:'same'}); } }
+    if (l.k === 'end') { const t = axTime(r.endrun), m = axNum(r.endm);
+      if (t > 300 && t < 1400) { axPush(a, 'run', t / S.km); if (m > 100) axPush(a, 'ski', (1440 - t - 20) / (m / 500));
+        notes.push({name:'Endurance', text:`${fmt(S.km)} km på ${axTxt(t)}${m ? ' og ' + fmt(m) + ' m ski' : ''}`, kind:'up'}); } }
+    if (l.k === 'mc') { const t = axTime(r.mc);
+      if (t > 0 || r.slow) { a.mc = (a.mc || []).concat({t:now, kind:l.kind, sec:t || null, slow:r.slow || null}).slice(-20);
+        if (t) notes.push({name:c.title, text:'Tid ' + axTxt(t) + (r.slow ? ' · tregest: ' + AX_SLOW[r.slow].toLowerCase() : ''), kind:'same'}); } }
+    if (l.k === 'feel' && r.feel) {
+      a.easy = (a.easy || []).concat({t:now, v:r.feel}).slice(-10);
+      const l3 = a.easy.slice(-3).map(x => x.v);
+      if (l3.length === 3 && l3.every(v => v === 'rolig') && now - (a.easyAt || 0) > 21 * DAY && (a.easyAdd || 0) < 20) {
+        a.easyAdd = (a.easyAdd || 0) + 5; a.easyAt = now;
+        notes.push({name:'Rolig løp', text:'Tre rolige turer på rad. De rolige turene blir 5 min lengre.', kind:'up'});
+      }
+    }
+  });
+  return notes;
+}
+
+// Skjemaet på programsiden. Verdiene ligger i ui.ax, så de overlever at skjermen tegnes på nytt.
+function axFormInit(){
+  const up = AX_EVENTS.map((e, i) => [i, e]).filter(([, e]) => axWeeksTo(Date.now(), e[0]) >= 1), M = S.maxes || {};
+  const f = ui.ax = {ev: up.length ? String(up[0][0]) : '', date: up.length ? up[0][1][0] : '', cls:'ATHX', form:'ind', div:'M', sex:'M', per:'4',
+    s2ohKg: M.s2oh ? fmt(M.s2oh) : M.ohp ? fmt(r25(M.ohp * 1.25)) : '', s2ohR:'1', squatKg: M.squat ? fmt(M.squat) : '', squatR:'1',
+    deadliftKg: M.deadlift ? fmt(M.deadlift) : '', deadliftR:'1', runKm:'5', runT:'', ski:''};
+  const r = peteRef('ski'); if (r.split) f.ski = splitTxt(r.split * 4);
+  return f;
+}
+function axSetup(other, isActive){
+  const f = ui.ax || axFormInit(), N = /^\d{4}-\d{2}-\d{2}$/.test(f.date) ? axWeeksTo(Date.now(), f.date) : 0;
+  const W = N >= 1 ? axWeeks(N) : [], S = axSpec({cls:f.cls, sex: f.div === 'mixed' ? f.sex : f.div, form:f.form});
+  const evs = AX_EVENTS.map((e, i) => [i, e]).filter(([, e]) => axWeeksTo(Date.now(), e[0]) >= 1);
+  const seg = (key, opts) => `<div class="seg" role="group">${opts.map(([v, l]) => `<button data-a="ax:${key}:${v}" aria-pressed="${f[key] === v}">${l}</button>`).join('')}</div>`;
+  const lift = (L, n) => `<div class="field"><label for="ax-${L}">${n}</label><span class="ax-two">
+      <span class="inp"><input id="ax-${L}" data-ax="${L}Kg" type="text" inputmode="decimal" value="${esc(f[L + 'Kg'])}" placeholder="–">kg</span>
+      <span class="inp">×<input class="sm" data-ax="${L}R" type="text" inputmode="numeric" value="${esc(f[L + 'R'])}" aria-label="Reps i ${n.toLowerCase()}"></span></span></div>`;
+  return `<h3>Stevnet</h3>
+    <div class="box" style="gap:0">
+      <div class="field"><label for="ax-ev">Stevne</label><select id="ax-ev" data-axsel="ev">${evs.map(([i, e]) =>
+        `<option value="${i}"${f.ev === String(i) ? ' selected' : ''}>${e[1]} · ${axDateTxt(e[0])}</option>`).join('')}<option value=""${f.ev === '' ? ' selected' : ''}>Egen dato</option></select></div>
+      ${f.ev === '' ? `<div class="field"><label for="ax-date">Dato</label><span class="inp"><input id="ax-date" type="date" data-axsel="date" value="${esc(f.date)}"></span></div>` : ''}
+    </div>
+    <p class="muted small">${N >= 1 ? `Planen blir ${N} ${N === 1 ? 'uke' : 'uker'}: ${axCount(W).map(([ph, n]) => AX_PH[ph] + ' ' + n).join(', ')}.${N < 5 ? ' Det er kort tid, så planen er bare spesifikk trening og nedtrapping.' : ''}` : 'Velg en dato fram i tid.'}</p>
+    <h3>Klasse</h3>
+    <div class="box">
+      ${seg('cls', [['LITE','LITE'],['ATHX','ATHX'],['PRO','PRO']])}
+      ${seg('form', [['ind','Individuell'],['par','Par']])}
+      ${seg('div', [['M','Mann'],['K','Kvinne'],['mixed','Mixed']])}
+      ${f.div === 'mixed' ? `<span class="small muted">Dine vekter i mixed</span>${seg('sex', [['M','Mann'],['K','Kvinne']])}` : ''}
+      <p class="small muted">Metcon X: ${S.row} kal ro, ${axGtoh(S)} @ ${fmt(S.db)} kg, sandsekk ${fmt(S.sb)} kg. Endurance: ${fmt(S.km)} km løp.${
+        f.cls === 'LITE' ? ' LITE finnes bare for par.' : ''}${f.div === 'mixed' ? ' I mixed bruker hver utøver vektene for sitt kjønn.' : ''}${
+        f.form === 'par' ? ' Øktene er for én person. Trener dere sammen, deler dere repsene.' : ''}</p>
+    </div>
+    <h3>Økter per uke</h3>
+    <div class="box">${seg('per', [['4','4 (anbefalt)'],['3','3 (minimum)']])}
+      <p class="small muted">${f.per === '3' ? 'Med tre økter faller den rolige løpeturen bort, og S2OH-teknikken flyttes til markløftdagen. Løpingen får mindre fremgang.'
+        : 'Fire økter gir to løpeøkter i uka: én med intervaller og én rolig. Den rolige ligger før markløftdagen.'}</p></div>
+    <h3>Det du vet fra før</h3>
+    <div class="box" style="gap:0">
+      ${lift('s2oh', 'Shoulder to overhead')}${lift('squat', 'Knebøy')}${lift('deadlift', 'Markløft')}
+      <div class="field"><label for="ax-km">Løp, distanse</label><span class="inp"><input id="ax-km" data-ax="runKm" type="text" inputmode="decimal" value="${esc(f.runKm)}">km</span></div>
+      <div class="field"><label for="ax-rt">Tid på distansen</label><span class="inp"><input id="ax-rt" data-ax="runT" type="text" inputmode="decimal" value="${esc(f.runT)}" placeholder="25:00"></span></div>
+      <div class="field"><label for="ax-ski">SkiErg 2000 m</label><span class="inp"><input id="ax-ski" data-ax="ski" type="text" inputmode="decimal" value="${esc(f.ski)}" placeholder="8:00"></span></div>
+    </div>
+    <p class="muted small">Alt er valgfritt. Et tungt sett skrives som vekt × reps (1–10), så regner appen ut maksen. Står et felt tomt, gjetter appen, og RPE-en din de første ukene finner riktig nivå. Ingen testuke.${
+      other ? ' Dette erstatter ' + other.name + '. Loggen din blir liggende.' : ''}${isActive ? ' Programmet er aktivt. Aktiverer du på nytt, starter det fra uke 1.' : ''}</p>`;
+}
+// Ny instans fra skjemaet. Gir null (og en melding) hvis datoen ikke kan brukes.
+function axInstance(p){
+  const f = ui.ax || axFormInit();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(f.date || '')) { toast('Velg et stevne eller en dato'); return null; }
+  const N = axWeeksTo(Date.now(), f.date);
+  if (N < 1) { toast('Datoen har vært. Velg et stevne fram i tid.'); return null; }
+  if (N > 60) { toast('Velg et stevne innen 60 uker'); return null; }
+  const X = {date:f.date, ev:f.ev, cls:f.cls, form:f.form, div:f.div, sex: f.div === 'mixed' ? f.sex : f.div === 'K' ? 'K' : 'M',
+    per: +f.per === 3 ? 3 : 4, ws: axMonday(Date.now()), weeks: axWeeks(N)};
+  const a = {programId:p.id, startedAt:Date.now(), idx:0, lifts:{}, tm:{}, e1rm:{}, base:{}, est:{}, guess:{}, ax:X, total: N * X.per,
+    run:{p0:null, est:[]}, ski:{p0:null, est:[]}, mc:[], easy:[], easyAdd:0, strain:0};
+  const m = X.sex === 'M', dflt = {s2oh: m ? 70 : 45, squat: m ? 120 : 80, deadlift: m ? 150 : 100};
+  ['s2oh','squat','deadlift'].forEach(L => {
+    const kg = axNum(f[L + 'Kg']), reps = Math.max(1, Math.min(10, Math.round(axNum(f[L + 'R']) || 1)));
+    if (!kg) a.guess[L] = true;
+    a.e1rm[L] = a.base[L] = kg ? Math.round(est1(kg, reps, 10) * 2) / 2 : dflt[L];
+  });
+  // Løpstid på en annen distanse → fart per km på 3 km (Riegels formel)
+  const rt = axTime(f.runT), km = axNum(f.runKm);
+  if (rt && km >= 1.5 && km <= 21.1) a.run.p0 = rt * Math.pow(3 / km, 1.06) / 3;
+  // 2K på ski → fart per 500 m etter løpet: litt tregere enn 2K-farten
+  const st = axTime(f.ski);
+  if (st > 240 && st < 900) a.ski.p0 = st / 4 + 3;
+  return a;
+}
+// Linjen øverst i økta: stevnet, klassen og anslagene nå
+function axStatus(a, s){
+  const X = a.ax, left = X.weeks.length - 1 - Math.floor(a.idx / X.per), P = axPace(a, 'run'), K = axPace(a, 'ski');
+  const g = Object.keys(a.guess || {}).filter(L => a.guess[L]);
+  return `<p class="muted small">Stevnet ${axDateTxt(X.date)}${left > 0 ? ' · om ' + left + (left === 1 ? ' uke' : ' uker') : ''} · ${axClassTxt(X)}<br>
+    Arbeidsmaks: S2OH ${fmt(a.e1rm.s2oh)} · knebøy ${fmt(a.e1rm[sw(a, 'squat')])} · markløft ${fmt(a.e1rm[sw(a, 'deadlift')])} kg${P ? ' · 3 km ' + axTxt(P) + '/km' : ''}${K ? ' · ski ' + axTxt(K) + '/500 m' : ''}</p>
+    ${g.length && s && s.wk < 2 ? `<p class="small warn-t">Startvekten er gjettet for ${listNo(g.map(liftName).map((n, i) => i ? n.toLowerCase() : n))}. Juster med − og + til RPE stemmer.</p>` : ''}`;
+}
+// Kondisjonsdelen av økta, med felt for resultatet
+function axCondBox(s){
+  const c = s.cond, r = c.res || (c.res = {});
+  const fld = (k, lbl, hint, ph) => `<div class="field"><label for="axr-${k}">${lbl}<small class="muted">${hint}</small></label>
+    <span class="inp"><input id="axr-${k}" data-axres="${k}" type="text" inputmode="decimal" value="${esc(r[k] || '')}" placeholder="${ph}"></span></div>`;
+  const parts = c.logs.map(l => l.k === 'run' ? fld('run', l.lbl || 'Snittfart løp', 'per km', '4:55')
+    : l.k === 'ski' ? fld('ski', l.lbl || 'Snittfart ski', 'per 500 m', '2:05')
+    : l.k === 'mc' ? fld('mc', l.lbl || 'Tid', 'minutter:sekunder', l.kind === 'mini' ? '3:30' : /half|heavy|del2/.test(l.kind) ? '8:00' : '15:30') + `<span class="small muted">Tregeste stasjon</span>
+        <div class="seg ax-slow">${Object.entries(AX_SLOW).map(([v, n]) => `<button data-a="axslow:${v}" aria-pressed="${r.slow === v}">${n}</button>`).join('')}</div>`
+    : l.k === 'end' ? fld('endrun', 'Løpstid', 'minutter:sekunder', '13:30') + fld('endm', 'Meter på skien', 'til 24:00', '2600')
+    : l.k === 'kg' ? fld('kg', 'Strength totalt', 'kg', '400')
+    : l.k === 'feel' ? `<span class="small muted">Hvordan føltes det?</span><div class="seg">${[['rolig','Rolig'],['passe','Passe'],['tungt','Tungt']].map(([v, n]) =>
+        `<button data-a="axfeel:${v}" aria-pressed="${r.feel === v}">${n}</button>`).join('')}</div>` : '').join('');
+  return `<section class="box ax-cond">
+    <span class="lbl">Kondisjon${c.min ? ' · ca. ' + c.min + ' min' : ''}</span>
+    <h2>${esc(c.title)}</h2>
+    <ul class="ax-lines">${c.lines.map(l => `<li>${esc(l)}</li>`).join('')}</ul>
+    ${parts ? `<div class="ax-res">${parts}</div>` : ''}
+    ${c.min ? `<span class="small muted">Hvor hard var den? (RPE)</span><div class="seg num">${[4,5,6,7,8,9,10].map(v =>
+      `<button data-a="axrpe:${v}" aria-pressed="${r.rpe === v}">${v}</button>`).join('')}</div>` : ''}
+  </section>`;
+}
+// Resultatet i loggen: «5:02/km · 2:04/500 m · 15:30»
+function axResTxt(c){
+  const r = c.res || {};
+  return [r.run && r.run + '/km', r.ski && r.ski + '/500 m', r.endrun && 'løp ' + r.endrun, r.endm && r.endm + ' m ski', r.mc, r.kg && r.kg + ' kg',
+    r.slow && 'tregest: ' + AX_SLOW[r.slow].toLowerCase(), r.feel].filter(Boolean).join(' · ');
+}
+// Anslått stevnescore ut fra arbeidsmaksen og fartene
+function axScore(a){
+  const e = L => a.e1rm[sw(a, L)], S = axSpec(a.ax), P = axPace(a, 'run'), K = axPace(a, 'ski');
+  const kg = Math.round(e('s2oh') + e('squat') * .95 + e('deadlift') * .93);
+  const runT = P ? P * S.km : null, m = runT && K ? Math.round((1440 - runT - 20) / K * 500 / 10) * 10 : null;
+  const full = (a.mc || []).filter(x => (x.kind === 'full' || x.kind === 'race') && x.sec).slice(-1)[0];
+  return `<section class="box"><span class="lbl">Anslått stevnescore nå</span>
+    <div class="ax-score"><div><b>${fmt(kg)}</b><span>kg i Strength</span></div>
+      <div><b>${m ? fmt(m) : '–'}</b><span>${m ? 'meter ski etter ' + axTxt(runT) + ' løp' : 'meter ski: mangler fart'}</span></div>
+      <div><b>${full ? axTxt(full.sec) : '–'}</b><span>Metcon X${full ? '' : ': ikke kjørt helt'}</span></div></div>
+    <p class="small muted">Knebøy 2RM ≈ 95 % og markløft 3RM ≈ 93 % av arbeidsmaksen. Meterne bygger på 3 km-farten og skifarten nå.</p></section>`;
+}
+
 /* ---------- Bytte løft ----------
    Vekten lagres på LØFTET, ikke på plassen. Frontbøy får sin egen vekt, og knebøyvektene
    ligger urørt hvis du bytter tilbake. */
@@ -741,7 +1209,7 @@ function refValue(p, a, L){
 const refLabel = p => ({linear:'Arbeidsvekt', gzclp:'T1-vekt', '531':'Treningsmaks', jugg:'Arbeidsmaks'})[p.prog] || '1RM';
 const ratio = L => LIFTS[L].r || 1;
 const estFor = (p, a, from, to) => r25(refValue(p, a, from) / ratio(from) * ratio(to));
-const slotsOf = p => [...new Set(p.days.flatMap(d => d.ex ? d.ex.map(e => e.lift) : [d.lift]))].filter(s => ALTS(s).length);
+const slotsOf = p => [...new Set(p.days.flatMap(d => d.ex ? d.ex.map(e => e.lift) : [d.lift]))].filter(s => s && ALTS(s).length);
 
 function doSwap(slot){
   const a = S.active, p = prog(a.programId), A = sw(a, slot);
@@ -994,7 +1462,8 @@ function spExtras(e, ei){
   if ((e.part === 'top' || e.part === 'back') && all) {
     if (e.slot === 'clean') h +=`<div class="rpe"><span>Hvordan gikk løftene?</span><div class="seg">${
       [['god','Raske og rene'],['treg','Tregere'],['teknisk','Teknikk sviktet']].map(([v,l]) => `<button data-a="q:${ei}:${v}" aria-pressed="${e.q === v}">${l}</button>`).join('')}</div></div>`;
-    else h += `<div class="rpe"><span>RPE for ${e.part === 'top' ? 'toppsettet' : 'backoff-settene'}</span><div class="seg num">${
+    else h += `<div class="rpe"><span>${e.athx ? 'RPE på siste sett' + (e.rpeT != null ? ' (mål ' + fmt(e.rpeT) + ')' : '')
+      : 'RPE for ' + (e.part === 'top' ? 'toppsettet' : 'backoff-settene')}</span><div class="seg num">${
       [6,7,7.5,8,8.5,9,9.5,10].map(v => `<button data-a="rpe:${ei}:${v}" aria-pressed="${e.rpe === v}">${fmt(v)}</button>`).join('')}</div></div>`;
   }
   if (e.part === 'back' && !all && (e.cut||0) < 2 && e.sets.length > 1 && e.sets[e.sets.length-1].d == null)
@@ -1064,7 +1533,15 @@ const PROGRAMS = [
     summary:'12 uker med ett hovedløft per økt: benkpress på dag 1, knebøy på dag 2 og power clean på dag 3. Toppsett pluss backoff-sett, korte sekundærøvelser, lette uker i uke 4 og 8, taper i uke 11 og test i uke 12. Metcons logges i appen med et ukebudsjett.',
     rule:'Benk og knebøy styres av RPE. Alle reps og RPE 7 eller lavere gir +2,5 kg (knebøy +5 kg ved RPE 6 eller lavere). RPE 7,5–9 gir samme vekt. Bom eller RPE over 9 gir −2,5 kg. Power clean øker 2,5 kg når alle løft er raske og rene, står stille når farten faller og går ned 2,5 kg ved teknisk svikt. Sekundærøvelsene skal ligge på RPE 6–7,5: RPE 6 eller lavere gir +2,5 kg, RPE 8 eller mer gir −2,5 kg. Når en ny fase starter, regnes vektene ut fra estimert 1RM. Uke 4 og 8 kan hoppes over hvis appen ser at du er i rute. Uke 11 halverer volumet og holder intensiteten, så du er uthvilt til testen.',
     days:[{name:'Dag 1',lift:'bench'},{name:'Dag 2',lift:'squat'},{name:'Dag 3',lift:'clean'}],
-    inputs:{bench:110,squat:135,clean:100}, inputLabel:'1RM' }
+    inputs:{bench:110,squat:135,clean:100}, inputLabel:'1RM' },
+
+  { id:'athx27', name:'ATHX 2027', origin:'Egen modell', level:'Middels til erfaren', perWeek:'3–4', prog:'athx', inputs:{},
+    summary:'Forberedelse til ATHX Games 2027: shoulder to overhead, knebøy og markløft i tidsvinduer, 3 km løp rett over på SkiErg, og Metcon X med manualer, sandsekk og burpees. Du velger stevne, klasse og 3 eller 4 økter i uka, og planen regnes baklengs fra stevnedatoen.',
+    rule:'Ingen testuke. Vektene er prosent av en arbeidsmaks som starter fra det du vet fra før. Etter hver økt sammenligner appen RPE på siste sett med målet: 1,5 under målet gir +2,5 %, litt under gir +1 %, 1 over gir −1 %, og 1,5 over eller bom gir −2,5 %. Tunge sett (RPE 8 eller mer, 5 reps eller færre) gir et anslag, og er medianen av de tre siste fra seks uker høyere, går arbeidsmaksen opp dit. Anslagene senker den aldri. Løpe- og skifarten anslås på samme måte fra intervallene. To tunge økter på rad flytter den lette uka fram. Henger du etter kalenderen, hopper planen til første økt i denne uka.',
+    days:[{name:'Økt 1', lines:[['Shoulder to overhead','tung'],['Knebøy','tung'],['SkiErg','15–25 min']]},
+          {name:'Økt 2', lines:[['Løpeintervaller','hard'],['Rett på SkiErg','30–45 min totalt']]},
+          {name:'Økt 3', lines:[['Markløft','tung'],['DB-benk','klassens vekt'],['ATHX-metcon','20–35 min']]},
+          {name:'Økt 4 (anbefalt)', lines:[['Rolig løp','25–45 min'],['S2OH-teknikk','lett'],['Bevegelighet','10 min']]}] }
 ];
 
 /* ---------- Programguide ----------
@@ -1101,7 +1578,13 @@ const REFS = {
   latella22:{a:'Latella mfl. 2022', j:'Med Sci Sports Exerc', doi:'10.1249/MSS.0000000000002858', t:'Knebøy og markløft øker omtrent dobbelt så raskt som benk'},
   latella20:{a:'Latella mfl. 2020', j:'J Strength Cond Res', doi:'10.1519/JSC.0000000000003657', t:'De sterkeste utvikler seg langsomst'},
   hubal:    {a:'Hubal mfl. 2005', j:'Med Sci Sports Exerc', pmid:'15947721', t:'Fra 0 til +250 % styrke på samme program over 12 uker'},
-  colq:     {a:'Colquhoun mfl. 2018', j:'J Strength Cond Res', doi:'10.1519/JSC.0000000000002414', t:'Trente menn, seks uker: knebøy +17 kg, benk +8–9 kg'}
+  colq:     {a:'Colquhoun mfl. 2018', j:'J Strength Cond Res', doi:'10.1519/JSC.0000000000002414', t:'Trente menn, seks uker: knebøy +17 kg, benk +8–9 kg'},
+  // ATHX 2027, slått opp i PubMed 2026-10-26
+  rosenblat25:{a:'Rosenblat mfl. 2025', j:'Sports Med', doi:'10.1007/s40279-024-02149-3', t:'Mosjonister ser ut til å ha mest igjen for mye rolig trening, en del terskel og lite svært hardt'},
+  oliveira24: {a:'Silva Oliveira mfl. 2024', j:'Sports Med', doi:'10.1007/s40279-024-02034-z', t:'Polarisert trening gir litt mer VO2maks, men lik fremgang på tid i konkurranse'},
+  lempke25:   {a:'DeJong Lempke mfl. 2025', j:'Sports Med', doi:'10.1007/s40279-025-02304-4', t:'Flere løpeturer i uka hang sammen med raskere maratontider'},
+  huang25:    {a:'Huang mfl. 2025', j:'J Exerc Sci Fit', doi:'10.1016/j.jesf.2025.07.006', t:'RPE og andre former for autoregulering rangerte over faste prosenter for 1RM'},
+  larsen21:   {a:'Larsen mfl. 2021', j:'PeerJ', doi:'10.7717/peerj.10663', t:'Styring etter RPE og fart ga økt 1RM i alle studiene i oversikten'}
 };
 
 const GUIDE_GENERAL = {
@@ -1281,6 +1764,30 @@ const GUIDE = {
     metcon:'Når du merker «Metcon i dag», velger fra øktbanken eller logger en fri økt, legger du inn type, minutter og RPE. Appen viser ukebudsjettet for fasen, varsler når belastningen øker mer enn 15 % fra uka før, og sier fra hvis en metcon kolliderer med neste styrkeøkt.',
     metconRefs:['schumann','petre','eddens'],
     watch:'Ta aldri metcon før power clean samme dag. Beintunge metcons hører hjemme minst 48 timer før knebøy.'
+  },
+  athx27: {
+    focus:'Alle tre øvelsene i ATHX: tunge løft i tidsvinduer, 3 km løp rett over på SkiErg og Metcon X med manualer, sandsekk og burpees.',
+    fits:'Deg som skal konkurrere i ATHX 2027, kan trene 3–4 ganger i uka og har tilgang til SkiErg, romaskin, manualer og sandsekk.',
+    notFor:'Deg som bare vil bli sterkest mulig, for kondisjonen tar plass fra styrkevolumet. Uten SkiErg mister planen mye av endurance-treningen.',
+    how:'Fasene regnes baklengs fra stevnet: Grunn i blokker på fire uker, Bygg i åtte uker, Spesifikk i seks uker med generalprøve, og Taper i to uker. Økt 1 er S2OH og knebøy med ski, økt 2 løp rett over på ski, økt 3 markløft, DB-benk og metcon, og økt 4 rolig løp og teknikk. Vektene og fartene følger anslag fra treningen, ikke tester.',
+    science:[
+      ['Mosjonister ser ut til å ha mest igjen for mye rolig trening, en del terskel og lite svært hardt. Derfor er det en rolig løpetur i uka.','B',['rosenblat25']],
+      ['Polarisert trening gir litt mer VO2maks, men lik fremgang på tid i konkurranse.','B',['oliveira24']],
+      ['RPE-styrt og prosentstyrt last gir lik styrkeøkning. RPE gjør at planen følger dagsformen og holder seg riktig over mange uker.','B',['hickmott','larsen21']],
+      ['Styrke før kondisjon i samme økt gir mer beinstyrke.','B',['eddens']],
+      ['Kondisjon hemmer maksimal styrke lite, men eksplosiv styrke noe.','B',['schumann','petre']],
+      ['Taper: kutt volumet 40–60 % og hold intensiteten.','A',['bosquet']],
+      ['Trening til failure er ikke nødvendig.','A',['grgic']],
+      ['Taktikken for løp, ski og forsøk bygger på reglene og trenererfaring. ATHX-formatet er ikke testet i studier.','H',[]]
+    ],
+    expect:[
+      ['Blant maratonløpere hadde de som løp oftere, raskere tider. Fire økter gir trolig mer fremgang på 3 km enn tre.','C',['lempke25']],
+      ['Autoregulering kan gi litt mer 1RM enn faste prosenter, men studiene er få og små.','C',['huang25']],
+      ['Folk responderer svært ulikt på samme trening. Sammenlign deg med deg selv.','B',['hubal']]
+    ],
+    metcon:'Kondisjonen ligger i hver økt og teller i metcon-budsjettet med minutter og RPE. Du trenger ikke legge til egne metcons.',
+    metconRefs:['eddens','petre'],
+    watch:'Marker RPE på siste sett hver gang. Uten RPE står arbeidsmaksen stille. Er startvektene gjettet, juster med − og + de første ukene.'
   }
 };
 
@@ -1343,6 +1850,7 @@ function buildSession(p, a){
   if (p.prog === 'sp12') return buildSP(p, a);
   if (p.prog === 'cube') return buildCube(p, a);
   if (p.prog === 'jugg') return buildJug(p, a);
+  if (p.prog === 'athx') return buildAthx(p, a);
   const i = a.idx, n = p.days.length, day = p.days[i % n];
   // Økta heter det programmet kaller den (Økt A, Dag 1). Linjen over viser uka, ikke et eget øktnummer.
   let ex = [], sub = 'Uke ' + (Math.floor(i / (parseInt(p.perWeek) || 3)) + 1);
@@ -1375,6 +1883,7 @@ function progress(p, a, s){
   if (p.prog === 'sp12') return progressSP(p, a, s);
   if (p.prog === 'cube') return progressCube(p, a, s);
   if (p.prog === 'jugg') return progressJug(p, a, s);
+  if (p.prog === 'athx') return progressAthx(p, a, s);
   const notes = [];
   const hit = x => x.d != null && x.d >= x.t;
   const touched = e => e.sets.some(x => x.d != null);
@@ -1421,11 +1930,14 @@ function progress(p, a, s){
 
 function finish(){
   const p = prog(S.active.programId), s = S.draft;
+  // ATHX: kondisjonsdelen teller i metcon-budsjettet, med mindre du har lagt inn en egen metcon
+  if (s.cond && s.cond.min > 0 && !(s.mc && s.mc.min)) { s.metcon = true; s.mc = {type:s.cond.type, min:s.cond.min, rpe:(s.cond.res || {}).rpe || (s.mc && s.mc.rpe) || null}; }
   const notes = progress(p, S.active, s);
   const vol = s.ex.reduce((sum,e) => sum + e.sets.reduce((v,x) => v + (x.d||0)*x.w, 0), 0);
   S.history.unshift({date:Date.now(), programId:p.id, day:s.day, sub:s.sub, note:(s.note||'').trim(), metcon:!!(s.metcon || s.wod), mc: (s.metcon || s.wod) ? mcSaved(s.mc) : undefined,
     wod: s.wod ? {id:s.wod.id, navn:s.wod.navn, tekst:s.wod.tekst, resultat:(s.wod.resultat||'').trim()} : undefined,
-    pete: s.pete ? peteDone(s.pete) : undefined,
+    pete: s.pete ? peteDone(s.pete) : undefined, idx: S.active.idx,
+    cond: s.cond ? {title:s.cond.title, lines:s.cond.lines, res:s.cond.res || {}} : undefined,
     ex: s.ex.map(e => ({lift:e.lift, tag:e.tag, rpe:e.rpe, q:e.q, sets:e.sets.map(x => ({t:x.t, w:x.w, d:x.d}))}))});
   S.active.idx++;
   S.draft = null;
@@ -1438,7 +1950,7 @@ function finish(){
 // så «Hele planen» fortsatt kobler hver økt til riktig linje i loggen.
 function skipSession(){
   const p = prog(S.active.programId), s = S.draft;
-  S.history.unshift({date:Date.now(), programId:p.id, day:s.day, sub:s.sub, skipped:true,
+  S.history.unshift({date:Date.now(), programId:p.id, day:s.day, sub:s.sub, skipped:true, idx:S.active.idx,
     ex: s.ex.map(e => ({lift:e.lift, tag:e.tag, sets:e.sets.map(x => ({t:x.t, w:x.w, d:null}))}))});
   S.active.idx++;
   S.draft = null; ui.confirm = null; ui.summary = null;
@@ -1450,6 +1962,7 @@ const listNo = a => a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' og
 
 // Lager en ny instans fra tallene i feltene på programsiden. Brukes både til å aktivere og til å vise planen.
 function newInstance(p){
+  if (p.prog === 'athx') return axInstance(p);
   const a = {programId:p.id, startedAt:Date.now(), idx:0, lifts:{}, tm:{}};
   if (p.prog === 'sp12' || p.prog === 'cube') { a.e1rm = {}; a.base = {}; }
   Object.keys(p.inputs).forEach((k,i) => {
@@ -1464,9 +1977,11 @@ function newInstance(p){
 
 function activate(id){
   const p = prog(id), a = newInstance(p);
+  if (!a) return;
   // Husk maksløftene, så neste program fylles ut automatisk
   const num = el => { const v = parseFloat(String(el && el.value || '').replace(',', '.')); return v > 0 ? v : null; };
-  if (p.orm) Object.keys(p.orm).forEach(l => { const v = num($('#orm-' + l)); if (v) S.maxes[l] = v; });
+  if (p.prog === 'athx') ['s2oh','squat','deadlift'].forEach(l => { if (!a.guess[l]) S.maxes[l] = a.e1rm[l]; });
+  else if (p.orm) Object.keys(p.orm).forEach(l => { const v = num($('#orm-' + l)); if (v) S.maxes[l] = v; });
   else if (p.inputLabel === '1RM') Object.keys(p.inputs).forEach((k, i) => { const v = num($('#in-' + i)); if (v) S.maxes[k] = v; });
   S.active = a; S.draft = null;
   ui.detail = null; ui.summary = null; ui.tab = 'today';
@@ -1711,16 +2226,18 @@ const PLAN_NOTE = {
   '531':'Treningsmaksen øker etter hver syklus på fire uker. Repsene i siste sett påvirker ikke planen.',
   jugg:'Arbeidsmaksen øker bare med reps over målet i testsettene. Planen viser vektene hvis du akkurat når målet, så de blir høyere hvis du tar flere reps.',
   cube:'Vektene er prosent av 1RM og endres ikke underveis. Uke 10 er test, og beste løft blir ny 1RM.',
-  sp12:'Planen viser vektene hvis toppsett og backoff går på RPE 7 og clean er rask og ren. Da øker vekten 2,5 kg fra uke til uke. Ved RPE 7,5–9 står vekten stille. Når en ny fase starter, regnes vektene ut fra estimert 1RM.'
+  sp12:'Planen viser vektene hvis toppsett og backoff går på RPE 7 og clean er rask og ren. Da øker vekten 2,5 kg fra uke til uke. Ved RPE 7,5–9 står vekten stille. Når en ny fase starter, regnes vektene ut fra estimert 1RM.',
+  athx:'Vektene er prosent av arbeidsmaksen din i dag, og fartene følger anslaget ditt. Begge oppdateres etter hver økt, så tallene framover endrer seg. Henger du etter kalenderen, hopper planen til første økt i denne uka.'
 };
-const planPer = p => ['531','jugg','cube','sp12'].includes(p.prog) ? p.days.length : (parseInt(p.perWeek) || 3);
+const planPer = (p, a) => p.prog === 'athx' ? a.ax.per : ['531','jugg','cube','sp12'].includes(p.prog) ? p.days.length : (parseInt(p.perWeek) || 3);
 function simulate(p, a0, n){
-  const a = JSON.parse(JSON.stringify(a0)), out = [];
-  while (out.length < n && !(p.total && a.idx >= p.total)) {
+  const a = JSON.parse(JSON.stringify(a0)), out = [], tot = totalOf(p, a0);
+  while (out.length < n && !(tot && a.idx >= tot)) {
     const s = buildSession(p, a);
     out.push({idx: a.idx, s: JSON.parse(JSON.stringify(s))});
     s.ex.forEach(e => { e.sets.forEach(x => x.d = x.t); e.rpe = 7; e.q = 'god'; });
-    progress(p, a, s);
+    // ATHX styres av anslag fra ekte økter, så planen viser vektene ut fra arbeidsmaksen i dag
+    if (p.prog !== 'athx') progress(p, a, s);
     a.idx++;
   }
   return out;
@@ -1737,26 +2254,31 @@ function setsLine(e, done){
 function vPlan(){
   const P = ui.plan, p = prog(P.id), a = P.active ? S.active : P.inst;
   if (!p || !a) { ui.plan = null; return ''; }
-  const per = planPer(p);
-  const N = p.total || Math.max(12 * per, a.idx + 4 * per);
+  const per = planPer(p, a), ax = p.prog === 'athx', tot = totalOf(p, a);
+  const N = tot || Math.max(12 * per, a.idx + 4 * per);
   const doneH = P.active ? S.history.filter(h => h.programId === p.id && !h.free && h.date >= a.startedAt).reverse().slice(-a.idx) : [];
-  const rows = doneH.map((h, k) => ({k, done:!h.skipped, skipped:!!h.skipped, day:h.day, sub:h.sub, ex:h.ex}));
+  // ATHX kan hoppe fram i kalenderen, så økta husker sin egen plass (idx)
+  const rows = doneH.map((h, k) => ({k: ax && h.idx != null ? h.idx : k, done:!h.skipped, skipped:!!h.skipped, day:h.day, sub:h.sub, ex:h.ex, cond:h.cond}));
   simulate(p, a, N - a.idx).forEach(f => {
     const s = P.active && f.idx === a.idx && S.draft ? S.draft : f.s;
-    rows.push({k: f.idx, done:false, next: P.active && f.idx === a.idx, day:s.day, sub:s.sub, ex:s.ex});
+    rows.push({k: f.idx, done:false, next: P.active && f.idx === a.idx, day:s.day, sub:s.sub, ex:s.ex, cond:s.cond});
   });
   const weeks = [];
   rows.forEach(r => { const w = Math.floor(r.k / per); (weeks[w] = weeks[w] || []).push(r); });
+  const subOf = (r, w) => ax ? r.sub.replace(/^Uke \d+ av \d+ · /, '') : r.sub !== 'Uke ' + (w + 1) ? r.sub : '';
   return `<button class="link" data-a="planclose">‹ Tilbake</button>
     <header class="head"><p class="eyebrow">${p.name}</p><h1>Hele planen</h1>
-      <p class="muted small">${PLAN_NOTE[p.prog] || ''}${P.active ? '' : ' Vektene er regnet ut fra tallene du har skrevet inn.'}${p.total ? '' : ' Programmet har ingen fast slutt, så planen viser 12 uker.'}</p></header>
-    ${weeks.map((list, w) => list ? `<h3>Uke ${w + 1}</h3><div class="list">${list.map(r => {
-      const m = r.ex[0];
+      <p class="muted small">${PLAN_NOTE[p.prog] || ''}${P.active ? '' : ' Vektene er regnet ut fra tallene du har skrevet inn.'}${tot ? '' : ' Programmet har ingen fast slutt, så planen viser 12 uker.'}</p></header>
+    ${ax ? axScore(a) : ''}
+    ${weeks.map((list, w) => list ? `<h3>Uke ${w + 1}${ax && a.ax.weeks[w] ? ' · ' + AX_PH[a.ax.weeks[w].ph] : ''}</h3><div class="list">${list.map(r => {
+      const m = r.ex[0], sub = r.sub ? subOf(r, w) : '';
       return `<details class="box acc plan-s${r.done || r.skipped ? ' done-s' : ''}${r.next ? ' next-s' : ''}"${r.next ? ' open' : ''}>
         <summary><span class="ps"><span class="ps-top"><b>${esc(r.day)}</b>${r.done ? '<span class="pill">✓ Gjort</span>' : r.skipped ? '<span class="pill">Hoppet over</span>' : r.next ? '<span class="pill on">Neste</span>' : ''}</span>
-          ${r.sub && r.sub !== 'Uke ' + (w + 1) ? `<span class="small muted">${esc(r.sub)}</span>` : ''}
-          <span class="small">${m ? liftName(m.lift) + ' · ' + setsLine(m, r.done) : ''}</span></span></summary>
-        <div class="plan-ex">${r.ex.map(e => `<div class="ln"><span>${liftName(e.lift)}${e.tag ? ` <span class="muted">${e.tag}</span>` : ''}</span><span>${setsLine(e, r.done)}</span></div>`).join('')}</div>
+          ${sub ? `<span class="small muted">${esc(sub)}</span>` : ''}
+          <span class="small">${m ? liftName(m.lift) + ' · ' + setsLine(m, r.done) : r.cond ? esc(r.cond.title) : ''}</span></span></summary>
+        <div class="plan-ex">${r.ex.map(e => `<div class="ln"><span>${liftName(e.lift)}${e.tag ? ` <span class="muted">${e.tag}</span>` : ''}</span><span>${setsLine(e, r.done)}</span></div>`).join('')}
+          ${r.cond ? `<div class="ln"><span><b>${esc(r.cond.title)}</b></span><span>${r.done ? esc(axResTxt(r.cond)) : ''}</span></div>
+            ${r.cond.lines ? `<ul class="ax-lines small">${r.cond.lines.map(l => `<li>${esc(l)}</li>`).join('')}</ul>` : ''}` : ''}</div>
       </details>`; }).join('')}</div>` : '').join('')}`;
 }
 
@@ -1937,7 +2459,9 @@ function vToday(){
       <button class="btn ghost" data-a="free">+ Logg fri økt</button>
     </div>`;
   const p = prog(S.active.programId);
-  const over = p.total && S.active.idx >= p.total && !S.draft;
+  // ATHX følger kalenderen. En økt du ikke har begynt på, byttes når uka er over.
+  if (p.prog === 'athx' && !(S.draft && S.draft.ex.some(e => e.sets.some(x => x.d != null))) && axSync(S.active)) { S.draft = null; save(); }
+  const tot = totalOf(p, S.active), over = tot && S.active.idx >= tot && !S.draft;
   if (!S.draft && !over) { S.draft = buildSession(p, S.active); save(); }
   const s = S.draft;
   // Under en økt ligger «Se planen» og «Logg fri økt» i tekstraden nederst, så toppen bare viser økta
@@ -1946,7 +2470,7 @@ function vToday(){
     const u = ui.summary;
     h += `<section class="done" aria-live="polite">
       <p class="eyebrow">${u.day} fullført</p>
-      <div class="big">${fmt(Math.round(u.vol))} kg <span class="muted small">løftet totalt</span></div>
+      ${u.vol > 0 ? `<div class="big">${fmt(Math.round(u.vol))} kg <span class="muted small">løftet totalt</span></div>` : ''}
       <ul class="notes">${u.notes.map(n => `<li><b>${n.name}</b><span class="${n.kind}">${n.text}</span></li>`).join('')}</ul>
       <button class="link" data-a="dismiss">Lukk</button>
     </section>`;
@@ -1972,7 +2496,8 @@ function vToday(){
       <div class="prog" aria-label="${cur < 0 ? 'Alle øvelser er gjort' : 'Øvelse ' + (cur+1) + ' av ' + s.ex.length}">${s.ex.map(e => {
         const d = e.sets.filter(x => x.d != null).length;
         return `<i class="${d === e.sets.length ? 'full' : ''}"><b style="width:${Math.round(d / e.sets.length * 100)}%"></b></i>`; }).join('')}</div>
-      ${S.active.e1rm ? `<p class="muted small">${p.prog === 'sp12' ? 'Estimert 1RM' : '1RM'} ${liftName(s.ex[0].lift).toLowerCase()}: ${fmt(Math.round(S.active.e1rm[s.ex[0].lift]*2)/2)} kg</p>` : ''}
+      ${p.prog === 'athx' ? axStatus(S.active, s)
+        : S.active.e1rm && s.ex[0] && S.active.e1rm[s.ex[0].lift] ? `<p class="muted small">${p.prog === 'sp12' ? 'Estimert 1RM' : '1RM'} ${liftName(s.ex[0].lift).toLowerCase()}: ${fmt(Math.round(S.active.e1rm[s.ex[0].lift]*2)/2)} kg</p>` : ''}
     </header>`;
   if (p.prog === 'sp12') {
     const c = mcRecentConflict(s.ex[0].slot);
@@ -2026,12 +2551,13 @@ function vToday(){
       ${e.sp ? spExtras(e, ei) : ''}
     </section>`;
   });
+  if (s.cond) h += axCondBox(s);
   // Etter styrken: kondisjon, metcon og notat ligger bak én rad. En del med innhold står alltid åpen.
-  const af = ui.after && ui.after.k === s.started ? ui.after : (ui.after = {k: s.started});
+  const af =ui.after && ui.after.k === s.started ? ui.after : (ui.after = {k: s.started});
   const has = {cond: !!s.pete, mc: !!(s.wod || s.metcon), note: !!(s.note || '').trim()};
   const show = k => !!(af[k] || has[k]);
   const parts = [peteOn() || s.pete ? ['cond', 'Kondisjon'] : null, ['mc', 'Metcon'], ['note', 'Notat']].filter(Boolean);
-  h += `<section class="box after"><span class="lbl">Etter styrken</span>
+  h += `<section class="box after"><span class="lbl">${s.ex.length ? 'Etter styrken' : 'Mer i økta'}</span>
       <div class="after-add">${parts.map(([k, n]) => `<button class="tog" data-a="after:${k}" aria-pressed="${show(k)}">${show(k) ? n : '+ ' + n}</button>`).join('')}</div></section>`;
   if (show('cond')) h += peteBox('session', s.pete);
   if (show('mc')) {
@@ -2057,13 +2583,13 @@ function vToday(){
     h += `<section class="box skipbox" aria-live="polite"><p><b>Fullføre med ${setsLeft} sett som ikke er logget?</b></p>
       <p class="small">Ikke logget: ${esc(listNo(missing))}. ${esc(why)}</p>
       <div class="row"><button class="btn sm" data-a="finish">Fullfør likevel</button><button class="btn ghost sm" data-a="cancel">Fortsett økta</button></div></section>`;
-  } else h += `<button class="btn" data-a="${setsLeft ? 'confirm:finish' : 'finish'}" ${anyTouched ? '' : 'disabled'}>Fullfør økt</button>`;
+  } else h += `<button class="btn" data-a="${setsLeft ? 'confirm:finish' : 'finish'}" ${anyTouched || s.cond ? '' : 'disabled'}>Fullfør økt</button>`;
   if (ui.confirm === 'skipday') {
     const a1 = JSON.parse(JSON.stringify(S.active)); a1.idx++;
-    const next = p.total && a1.idx >= p.total ? null : buildSession(p, a1);
+    const next = tot && a1.idx >= tot ? null : buildSession(p, a1);
     const lifts = [...new Set(s.ex.map(e => liftName(e.lift)))].map((n, i) => i ? n.toLowerCase() : n);
     h += `<section class="box skipbox" aria-live="polite"><p><b>Hoppe over ${esc(s.day)}?</b></p>
-      <p class="small">${listNo(lifts)} får ingen økning denne gangen, og vektene står som de er.${anyTouched ? ' Settene du har tatt i dag, lagres ikke.' : ''}${s.wod || s.pete ? ' Metconen du har valgt, lagres heller ikke.' : ''}
+      <p class="small">${lifts.length ? listNo(lifts) + ' får ingen økning denne gangen, og vektene står som de er.' : 'Økta lagres som hoppet over.'}${anyTouched ? ' Settene du har tatt i dag, lagres ikke.' : ''}${s.wod || s.pete ? ' Metconen du har valgt, lagres heller ikke.' : ''}
         ${next ? 'Neste økt blir ' + esc(next.day) + (next.sub && next.sub !== s.sub ? ' (' + esc(next.sub) + ')' : '') + '.' : 'Dette var siste økt i programmet.'}</p>
       <div class="row"><button class="btn danger sm" data-a="skipday">Ja, hopp over</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div></section>`;
   }
@@ -2092,6 +2618,7 @@ function vDeloadChoice(ph){
 }
 
 function dayLines(p, d){
+  if (p.prog === 'athx') return d.lines.map(([n, v]) => `<div>${n}<span>${v}</span></div>`);
   if (p.prog === 'cube') {
     const di = p.days.indexOf(d);
     return [`<div><span style="color:var(--chalk)">${liftName(d.lift)}</span></div>`,
@@ -2156,6 +2683,7 @@ function vGuide(){
       <div class="gk"><span>Litt erfaren</span><p>GZCLP. Mer variasjon og volum, og varer lenger før du står fast.</p></div>
       <div class="gk"><span>Middels</span><p>5/3/1 FSL eller BBB for jevn, langsom progresjon. Juggernaut for 16 uker i bølger. Cube Method for tre dager med ett hovedløft.</p></div>
       <div class="gk"><span>Erfaren + metcons</span><p>Strength & Power. Bygd for benk, knebøy og power clean sammen med CrossFit-inspirerte metcons.</p></div>
+      <div class="gk"><span>Skal konkurrere</span><p>ATHX 2027. Styrke, løp, ski og Metcon X, regnet baklengs fra stevnedatoen.</p></div>
     </div>
     <h3>Slik leser du bokstavene</h3>
     <div class="box"><ul class="claims">${G.levels.map(([l,n,d]) => `<li>${lvl(l)}<span><b>${n}.</b> ${d}</span></li>`).join('')}</ul>
@@ -2174,14 +2702,14 @@ const LEVELS = ['Nybegynner','Middels','Erfaren'];
 const chev = '<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
 function vActiveCard(){
   const a = S.active, p = prog(a.programId); if (!p) return '';
-  const over = p.total && a.idx >= p.total;
+  const tot = totalOf(p, a), over = tot && a.idx >= tot;
   const next = over ? null : (S.draft || buildSession(p, JSON.parse(JSON.stringify(a))));
   const lifts = next ? [...new Map(next.ex.map(e => [e.lift, Math.max(...e.sets.map(x => x.w))])).entries()].slice(0, 3) : [];
   return `<button class="act-card" data-a="open:${p.id}">
       <div class="act-top"><span class="tag">Aktivt program</span>${next ? `<span>${esc(next.sub)}</span>` : ''}</div>
       <h2>${p.name}</h2>
-      ${p.total ? `<div class="meter" aria-hidden="true"><i style="width:${Math.min(100, Math.round(a.idx / p.total * 100))}%"></i></div>` : ''}
-      <div class="act-sub"><span>${p.total ? `${Math.min(a.idx, p.total)} av ${p.total} økter` : `${a.idx} økter fullført`}</span><span>${next ? 'Neste: ' + next.day : 'Fullført'}</span></div>
+      ${tot ? `<div class="meter" aria-hidden="true"><i style="width:${Math.min(100, Math.round(a.idx / tot * 100))}%"></i></div>` : ''}
+      <div class="act-sub"><span>${tot ? `${Math.min(a.idx, tot)} av ${tot} økter` : `${a.idx} økter fullført`}</span><span>${next ? 'Neste: ' + next.day : 'Fullført'}</span></div>
       ${lifts.length ? `<div class="act-facts">${lifts.map(([l, w]) => `<div><b>${fmt(w)}</b><span>${liftName(l)}</span></div>`).join('')}</div>` : ''}
     </button>`;
 }
@@ -2212,7 +2740,7 @@ function vDetail(p){
     ${vProgramGuide(p)}
     <h3>Øktene</h3>
     <div class="days">${p.days.map(d => `<div class="day"><h4>${d.name}</h4>${dayLines(p,d).join('')}</div>`).join('')}</div>
-    ${p.orm ? `<h3>Din 1RM (tyngste løft på én rep)</h3>
+    ${p.prog === 'athx' ? axSetup(other, isActive) : `${p.orm ? `<h3>Din 1RM (tyngste løft på én rep)</h3>
     <div class="box" style="gap:0">${Object.keys(p.orm).map(l => `
       <div class="field"><label for="orm-${l}">${liftName(l)}</label>
         <span class="inp"><input id="orm-${l}" data-orm="${l}" type="text" inputmode="decimal" value="${fmt(myMax(l, p.orm[l]))}">kg</span></div>`).join('')}</div>
@@ -2226,7 +2754,7 @@ function vDetail(p){
         <span class="inp"><input id="in-${i}" data-key="${k}" type="text" inputmode="decimal" value="${fmt(v)}">kg</span></div>`; }).join('')}${p.orm ? '</details>' : '</div>'}
     <p class="muted small">${p.prog === '531' ? 'Appen regner ut treningsmaks som 90 % av dette.' : p.prog === 'jugg' ? 'Appen regner ut arbeidsmaks som 90 % av dette.' : p.prog === 'sp12' ? 'Startvektene regnes ut fra dette. Etter hvert styrer RPE-en din vektene.' : p.prog === 'cube' ? 'Alle vekter regnes ut som prosent av dette.' : 'Start lett. Teknikken skal sitte før vekten blir tung.'}
       ${slotsOf(p).length ? ' Vil du bytte et løft, gjør du det under Mer når programmet er aktivt.' : ''}
-      ${other ? ' Dette erstatter '+other.name+'. Loggen din blir liggende.' : ''}${isActive ? ' Programmet er aktivt. Aktiverer du på nytt, starter det fra økt 1 med vektene over.' : ''}</p>
+      ${other ? ' Dette erstatter '+other.name+'. Loggen din blir liggende.' : ''}${isActive ? ' Programmet er aktivt. Aktiverer du på nytt, starter det fra økt 1 med vektene over.' : ''}</p>`}
     <button class="btn ghost" data-a="planprev:${p.id}">Se hele planen</button>
     <button class="btn" data-a="activate:${p.id}">${isActive ? 'Start på nytt' : 'Aktiver program'}</button>`;
 }
@@ -2241,7 +2769,7 @@ function spark(vals){
 }
 
 // Er økta styrke, kondisjon/metcon, eller begge? Brukes av kalenderen og tellerne i loggen.
-const isStrength = h => !h.free && !h.skipped;
+const isStrength = h => !h.free && !h.skipped && !(h.ex && !h.ex.length);   // ATHX: løp og ski alene er ikke styrke
 const isMetcon = h => !!(h.metcon || h.mc || h.wod || h.pete);
 // Fire uker, mandag først, med i dag markert
 function vCalendar(){
@@ -2273,7 +2801,7 @@ function vLog(){
     </section>`;
   const series = {};
   [...S.history].reverse().forEach(sess => sess.ex.forEach(e => {
-    if (/BBB|FSL|T2|T3|Lett|Backoff|Deload|Sekundær|Taper/.test(e.tag || '')) return;
+    if (/BBB|FSL|T2|T3|Lett|Backoff|Deload|Sekundær|Taper|Teknikk|Manualer|Maks minus|på tid/.test(e.tag || '')) return;
     const done = e.sets.filter(x => x.d > 0); if (!done.length) return;
     (series[e.lift] = series[e.lift] || []).push(Math.max(...done.map(x => x.w)));
   }));
@@ -2292,7 +2820,8 @@ function vLog(){
       <details><summary>Vis økta</summary><pre class="wodtxt">${esc(sess.wod.tekst)}</pre></details></div>` : '';
     const mcH = sess.mc && MC[sess.mc.type] ? `<span class="pill">${MC[sess.mc.type].n} · ${fmt(sess.mc.min)} min${sess.mc.rpe ? ' · RPE ' + sess.mc.rpe : ''}</span>` : '';
     const ppH = sess.pete ? `<div class="sess-wod"><p><b>Pete Plan · ${esc(sess.pete.name)}</b> · ${PETE_MACH[sess.pete.mach] || ''}${sess.pete.split ? ` · <span class="res">${paceTxt(sess.pete.split, sess.pete.bike)}</span>` : ''}</p></div>` : '';
-    const noteH = (sess.metcon || sess.note || sess.wod || sess.pete) ? `<div class="sess-note">${sess.metcon ? '<span class="pill mc">Metcon</span>' : ''}${mcH}${ppH}${wodH}${sess.note ? `<p>${esc(sess.note)}</p>` : ''}</div>` : '';
+    const axH = sess.cond ? `<div class="sess-wod"><p><b>${esc(sess.cond.title)}</b>${axResTxt(sess.cond) ? ` · <span class="res">${esc(axResTxt(sess.cond))}</span>` : ''}</p></div>` : '';
+    const noteH = (sess.metcon || sess.note || sess.wod || sess.pete || sess.cond) ? `<div class="sess-note">${sess.metcon ? '<span class="pill mc">Metcon</span>' : ''}${mcH}${axH}${ppH}${wodH}${sess.note ? `<p>${esc(sess.note)}</p>` : ''}</div>` : '';
     const d = new Date(sess.date), open = !!(ui.logOpen && ui.logOpen[sess.date]);
     const dateBox = `<span class="sess-d"><b>${d.getDate()}</b><small>${d.toLocaleDateString('nb-NO', {month:'short'}).replace('.', '')}</small></span>`;
     if (sess.skipped) { const ps = prog(sess.programId);
@@ -2302,7 +2831,8 @@ function vLog(){
     const title = sess.free ? (sess.pete ? 'Pete Plan' : sess.wod ? 'Metcon' : 'Fri økt') : sess.day;
     // Én linje per økt: løftene med toppvekt, eller hva den frie økta var. Trykk for detaljer.
     const sum = sess.free ? (sess.pete ? esc(sess.pete.name) : sess.wod ? esc(sess.wod.navn) : sess.note ? esc(sess.note.slice(0, 60)) : '')
-      : [...new Map(sess.ex.map(e => [e.lift, Math.max(...e.sets.map(x => x.w))])).entries()].map(([l, w]) => liftName(l) + ' ' + fmt(w)).join(' · ');
+      : sess.ex.length ? [...new Map(sess.ex.map(e => [e.lift, Math.max(...e.sets.map(x => x.w))])).entries()].map(([l, w]) => liftName(l) + ' ' + fmt(w)).join(' · ')
+      : sess.cond ? esc(sess.cond.title) : '';
     const vol = sess.free ? 0 : sess.ex.reduce((s,e) => s + e.sets.reduce((v,x) => v + (x.d||0)*x.w, 0), 0);
     const body = !open ? '' : sess.free ? noteH : `<p class="muted small">${p ? p.name : ''} · ${sess.sub} · ${fmt(Math.round(vol))} kg totalt</p>
       ${sess.ex.map(e => {
@@ -3293,7 +3823,8 @@ document.addEventListener('click', ev => {
     case 'am': { const x = S.draft.ex[+r[0]].sets[+r[1]]; x.d = Math.max(0, Math.min(99, x.d + (+r[2]))); save(); render(); break; }
     case 'rpe': S.draft.ex[+r[0]].rpe = +r[1]; save(); render(); break;
     case 'q': S.draft.ex[+r[0]].q = r[1]; save(); render(); break;
-    case 'w': { const e = S.draft.ex[+r[0]]; e.sets.forEach(x => x.w = Math.max(20, x.w + 2.5*(+r[1]))); save(); render(); break; }
+    case 'w': { const e = S.draft.ex[+r[0]], min = LIFTS[e.lift] && LIFTS[e.lift].bar ? 20 : 2.5;
+      e.sets.forEach(x => x.w = Math.max(min, x.w + 2.5*(+r[1]))); save(); render(); break; }
     case 'wu': {
       const e = S.draft.ex[+r[0]], k = r[1]; e.wuDone = e.wuDone || [];
       const j = e.wuDone.indexOf(k);
@@ -3303,7 +3834,22 @@ document.addEventListener('click', ev => {
     case 'cut': { const e = S.draft.ex[+r[0]]; if (e.sets.length > 1 && e.sets[e.sets.length-1].d == null) { e.sets.pop(); e.cut = (e.cut||0) + 1; } save(); render(); break; }
     case 'doswap': doSwap(r[0]); break;
     case 'plan': ui.plan = {id: S.active.programId, active: true}; render(); toTop(); break;
-    case 'planprev': { const pp = prog(r[0]); ui.plan = {id: pp.id, active: false, inst: newInstance(pp)}; render(); toTop(); break; }
+    case 'planprev': { const pp = prog(r[0]), inst = newInstance(pp); if (!inst) break; ui.plan = {id: pp.id, active: false, inst}; render(); toTop(); break; }
+    case 'ax': {
+      const f = ui.ax || axFormInit(), [key, v] = r;
+      f[key] = v;
+      // LITE og mixed finnes bare for par
+      if (key === 'cls' && v === 'LITE') f.form = 'par';
+      if (key === 'div' && v === 'mixed') f.form = 'par';
+      if (key === 'form' && v === 'ind') { if (f.cls === 'LITE') f.cls = 'ATHX'; if (f.div === 'mixed') f.div = 'M'; }
+      render(); break;
+    }
+    case 'axslow': case 'axfeel': case 'axrpe': {
+      if (!S.draft || !S.draft.cond) break;
+      const res = S.draft.cond.res = S.draft.cond.res || {}, k = a === 'axslow' ? 'slow' : a === 'axfeel' ? 'feel' : 'rpe', v = a === 'axrpe' ? +r[0] : r[0];
+      res[k] = res[k] === v ? null : v;
+      save(); render(); break;
+    }
     case 'planclose': ui.plan = null; render(); toTop(); break;
     case 'metcon': S.draft.metcon = !S.draft.metcon; save(); render(); break;
     case 'after': { const af = ui.after = ui.after || {}; af[r[0]] = !af[r[0]]; render(); if (af[r[0]] && r[0] === 'note') $('#note').focus(); break; }
@@ -3533,6 +4079,10 @@ document.addEventListener('input', ev => {
       const v = p.derive(k, orm); if (v != null) inp.value = fmt(v);
     });
   }
+  else if (ev.target.dataset && ev.target.dataset.ax && ui.ax) ui.ax[ev.target.dataset.ax] = ev.target.value;
+  else if (ev.target.dataset && ev.target.dataset.axres && S.draft && S.draft.cond) {
+    (S.draft.cond.res = S.draft.cond.res || {})[ev.target.dataset.axres] = ev.target.value; save();
+  }
   else if (ev.target.dataset && ev.target.dataset.key) ev.target.dataset.edited = '1';
   else if (ev.target.id === 'wodRes') {
     if (ev.target.dataset.ctx === 'session' && S.draft && S.draft.wod) { S.draft.wod.resultat = ev.target.value; save(); }
@@ -3557,6 +4107,12 @@ document.addEventListener('change', ev => {
     return;
   }
   if (ev.target.dataset && ev.target.dataset.bf) { ui.bf[ev.target.dataset.bf] = ev.target.value; ui.bankN = 30; render(); return; }
+  if (ev.target.dataset && ev.target.dataset.axsel) {
+    const f = ui.ax || axFormInit(), v = ev.target.value;
+    if (ev.target.dataset.axsel === 'ev') { f.ev = v; if (v !== '') f.date = AX_EVENTS[+v][0]; }
+    else f.date = v;
+    render(); return;
+  }
   const s = ev.target.closest('[data-swap]'); if (!s) return;
   ui.swapSel = {slot: s.dataset.swap, lift: s.value}; render();
 });

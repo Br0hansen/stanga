@@ -1,6 +1,6 @@
 # Stanga – treningsapp på hjemskjermen
 
-Styrkeprogrammer (StrongLifts 5×5, Starting Strength, GZCLP, 5/3/1 FSL og BBB, Juggernaut, Cube Method og Strength & Power), øktbank med metcons og treningslogg. Alle data lagres lokalt på telefonen.
+Styrkeprogrammer (StrongLifts 5×5, Starting Strength, GZCLP, 5/3/1 FSL og BBB, Juggernaut, Cube Method og Strength & Power), et konkurranseprogram for ATHX 2027, øktbank med metcons og treningslogg. Alle data lagres lokalt på telefonen.
 
 ## I økta
 
@@ -56,9 +56,23 @@ Under **Programmer → Programguide** står det hva hvert program fokuserer på,
 - Uke 4 og 8 er lette uker. Appen viser RPE og 1RM-trend, og du kan hoppe over uka hvis tallene er gode.
 - Uke 11 er taper med halvert volum. Uke 12 er test.
 
-## ATHX i øktbanken
+## ATHX 2027
 
-17 økter for ATHX Games 2027 ligger først i øktbanken med typen **ATHX**: Strength, Endurance og Metcon X slik de er på stevnet (individuelt og for par, med vektene for PRO og LITE), og treningsøktene fra planen: mini-Metcon X, Metcon X i deler, løp rett på ski, ski-intervaller og generalprøven. Under «Tilfeldig temaøkt» finnes en egen ATHX-knapp. Øktene er laget av oss, ikke hentet fra Sarpsborg, og har derfor ingen dato eller antall kjøringer. Hele planen, med faser og anslag, står i `docs/superpowers/specs/2026-10-26-athx-2027-treningsplan.md`. Den er ennå ikke et program i appen.
+**Program under Programmer.** Planen fra `docs/superpowers/specs/2026-10-26-athx-2027-treningsplan.md` er et eget program:
+
+- **Oppsett:** Brukeren velger stevne fra lista over 2027-stevner, eller en egen dato. Videre velges klasse (LITE, ATHX, PRO), form (individuell eller par), divisjon og 4 (anbefalt) eller 3 økter i uka. I mixed velger hver utøver vektene for sitt kjønn. LITE og mixed finnes bare for par.
+- **Startverdier:** Feltene fylles med det brukeren vet fra før: et tungt sett som vekt × reps i S2OH, knebøy og markløft, en løpstid på en annen distanse og 2K-tid på ski. Alt er valgfritt. Står et løft tomt, gjetter appen og sier fra i økta. Det er ingen testuke.
+- **Faser:** Lengden regnes baklengs fra stevnet. Grunn går i blokker på fire uker, Bygg er åtte uker, Spesifikk seks uker med generalprøve, og Taper to uker. Er tiden kortere, kuttes fasene som beskrevet i planen.
+- **Kalenderen:** Uka følger kalenderen. Henger brukeren etter, hopper planen til første økt i denne uka, så taperen treffer stevnet.
+- **Øktene:** Økt 1 er S2OH og knebøy med ski. Økt 2 er løp rett over på ski. Økt 3 er markløft, DB-benk og Metcon X-trening. Økt 4 er rolig løp og S2OH-teknikk. Med tre økter faller økt 4 bort, og teknikken flyttes til markløftdagen. Kondisjonsdelen står i et eget kort med fart, vekter for klassen og felt for resultatet. Den teller i metcon-budsjettet.
+- **Arbeidsmaks:** RPE på siste sett mot målet justerer arbeidsmaksen: +2,5 %, +1 %, −1 % eller −2,5 %. Bom gir −2,5 %. Tunge sett (RPE 8 eller mer, 5 reps eller færre) kan heve den til medianen av de tre siste anslagene fra seks uker. De senker den aldri, fordi siste sett etter flere sett er preget av tretthet. Én økt flytter arbeidsmaksen høyst +2,5 % eller −5 %. To tunge økter på rad flytter den lette uka fram.
+- **Løp og ski:** Snittfarten fra intervallene, minus et fast tillegg per økttype, gir et anslag på 3 km-farten og skifarten. Appen bruker medianen av de tre siste fra seks uker, slik Pete Plan gjør. Tre rolige turer på rad gjør de rolige turene 5 minutter lengre, opp til 45.
+- **Metcon X:** Den tregeste stasjonen brukeren markerer, får dobbelt så mange reps i mini-Metcon X.
+- **Hele planen:** Visningen viser en anslått stevnescore: kilo i Strength, meter ski etter løpet og siste tid på hele Metcon X.
+
+Prioritering etter plasseringer på leaderboardet er ikke bygd ennå, fordi det ikke finnes resultater for 2027-øktene.
+
+**I øktbanken.** 17 økter ligger først i øktbanken med typen **ATHX**: Strength, Endurance og Metcon X slik de er på stevnet (individuelt og for par, med vektene for PRO og LITE), og treningsøktene fra planen. Under «Tilfeldig temaøkt» finnes en egen ATHX-knapp. Øktene er laget av oss, ikke hentet fra Sarpsborg, og har derfor ingen dato eller antall kjøringer.
 
 ## Metcon-budsjett
 
