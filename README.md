@@ -26,8 +26,27 @@ Appen har fire faner: **Økt**, **Plan**, **Logg** og **Sammen**.
 - **Oppvarming** står først i samme rekke som arbeidssettene. Oppvarmingssettene er mindre og grå, med vekten under hvert sett. Neste oppvarmingssett står som det store tallet i kortet, med skiver per side. Rutene blir stående når oppvarmingen er gjort, så arbeidssettene ikke flytter seg. Hovedløft får full oppvarming, sekundærøvelser to korte sett. Settene kan trykkes som gjort og gir 60 sekunders pause, men teller ikke som arbeidssett og lagres ikke i loggen.
 - **Pauser etter type sett**, slik forskningen anbefaler: tunge sett 3 min, volumsett 2 min og lette hjelpeøvelser 90 s. Strength & Power, Cube og Juggernaut har egne pauser. Oppvarming gir 60 s, og 2 min etter siste oppvarmingssett. Under **Plan → Maksløft, pauser og Pete Plan** kan alle pauser skaleres til Kortere (75 %) eller Lengre (125 %).
 - **Pausen står i arket.** Mens pausen går, er det store tallet tiden som er igjen, med neste vekt ved siden av og en tykk strek under som brukes opp. Skivene for neste sett står rett under, så du kan laste stanga. De siste 10 sekundene blir tiden og streken røde. Ved null blinker skjermen lyst én gang, og tallet blir vekten igjen. Linjen nederst har knappene «+30 s» og «Start nå», og viser tiden når du er på en annen fane. Går du over, teller tiden oppover der (+0:12). Lyd ved slutten kan slås på under **Plan → Innstillinger**.
-- **Skiver per side** regnes ut med 20 kg stang og skivene 20, 15, 10, 5, 2,5 og 1,25 kg. 25 kg er bevisst utelatt.
+- **Skiver per side** regnes ut med 20 kg stang og skivene 20, 15, 10, 5, 2,5 og 1,25 kg. 25 kg er bevisst utelatt. Under **Plan → Innstillinger → Stang** kan du velge 15 kg stang. Da regnes skivene, oppvarmingen og laveste vekt på stangøvelser ut fra 15 kg. Arbeidsvektene i programmet endres ikke.
 - **Hele planen** vises på programsiden før du aktiverer, og rett i **Plan**-fanen for det aktive programmet. Fullførte økter står i blått. Planen viser vektene hvis alt går som planlagt, fullførte økter viser det du faktisk løftet, og resten oppdateres etter hver økt. Programmer uten fast slutt vises 12 uker fram.
+
+## Endre og slette økter i loggen
+
+Trykk på en økt under **Logg** for å åpne den. Nederst står **Endre** og **Slett**.
+
+- **Endre** gir et skjema med dato, kg og reps for hvert sett, resultatet på en metcon og notatet. Tomt felt for reps betyr at settet ikke ble tatt. Endringene gjelder loggen, kurvene og rekordene, men flytter ikke vektene i programmet.
+- **Slett** spør først. Den nyeste programøkta kan angres helt: programmet går tilbake til der det var før økta, med samme vekter og samme neste økt. Det gjelder også en økt som er hoppet over. Eldre økter slettes bare fra loggen, og vektene i programmet står som de er.
+- Teknisk: Den nyeste økta i `S.history` har en kopi av programmet fra før økta (`undo`). Kopien fjernes fra den forrige økta når en ny lagres, så bare én kopi finnes om gangen.
+
+## Skybackup
+
+Valgfritt og gratis for alle med konto. Slå på under **Plan → Innstillinger → Skybackup**.
+
+- Hele appen (det samme som **Lag eksport**) lagres i én rad i tabellen `backups` i Supabase, noen sekunder etter hver endring, og før appen legges i bakgrunnen. Bare eieren kan lese og skrive raden.
+- **Ny telefon:** Logg inn under Sammen. Er telefonen tom, hentes loggen med en gang. Har telefonen en logg fra før, sier appen fra, og du slår på skybackup under Innstillinger.
+- **Flere telefoner:** Når appen åpnes eller vekkes, ser den etter endringer fra andre telefoner. Har denne telefonen ingen nye endringer, hentes skyen. Er begge endret, viser appen et kort med antall økter begge steder, og du velger **Bruk skyen** eller **Bruk denne telefonen**. Ingenting skrives over før du har valgt.
+- **Slik hindres overskriving:** Raden har et versjonsnummer (`rev`) som databasen øker ved hver lagring. Appen lagrer bare hvis `rev` i skyen er det samme som sist den så.
+- **Slå av** beholder kopien i skyen. **Slett kopien i skyen** fjerner den. **Slett alle data** sletter bare telefonen og slår av skybackup, så kopien i skyen ikke blir overskrevet av en tom logg. Sletter du kontoen, slettes backupen også.
+- Hvor appen sist lagret (`rev`, tidspunkt, om noe venter), ligger i `stanga.sync` i telefonen, ikke i selve dataene.
 
 ## Sammen (trene med venner)
 
@@ -40,7 +59,7 @@ En egen fane der du legger ut når du skal trene, og vennene dine kan bli med. K
 - **Nytt:** Fanen viser et tall for nye forslag, påmeldinger, timer og venneforespørsler når appen åpnes.
 - **Chat:** Øverst i Sammen velger du **Timer** eller **Chat**. Under Chat kan du skrive til én venn eller lage en gruppe med venner. Alle i en gruppe kan legge til vennene sine, og de nye ser hele samtalen. Hver time har sin egen chat for eieren og alle som er påmeldt, og den finnes også som knapp på timen. Nye meldinger hentes hvert fjerde sekund mens samtalen er åpen. Bare de som er med i en samtale, kan lese den.
 - **Varsler:** Slå på under **Plan → Innstillinger** eller fra kortet øverst i Sammen. Da får du pushvarsel når noen blir med på eller foreslår tid på timene dine, og når noen skriver i en samtale du er med i. Et trykk på varselet åpner timen eller samtalen. Fra en samtale får du ett varsel til du har lest den, uansett hvor mange meldinger som kommer. Har du samtalen åpen på skjermen, kommer det ikke varsel fra den. Ikonet på Hjem-skjermen viser samme tall som Sammen-fanen. Mens appen er lukket, følger tallet med varselet: samtaler med uleste meldinger og nye påmeldinger og forslag. Merker kan slås av i Innstillinger → Varslinger → Stanga. Hver telefon slår det på selv. På iPhone virker det bare når appen er åpnet fra Hjem-skjermen (iOS 16.4 eller nyere). Samme varsel fra samme person sendes høyst én gang per ti minutter. Når du logger ut, slås varslene av på telefonen.
-- **Bare dette lagres i skyen** (Supabase, EU): e-post, brukernavn, navn, venner, timer, påmeldinger, forslag, chatmeldinger og adressen for varsler hvis du har slått dem på. Treningsloggen blir på telefonen. Under **Plan → Innstillinger** kan du logge ut eller slette kontoen.
+- **Bare dette lagres i skyen** (Supabase, EU): e-post, brukernavn, navn, venner, timer, påmeldinger, forslag, chatmeldinger og adressen for varsler hvis du har slått dem på. Treningsloggen blir på telefonen, med mindre du slår på skybackup (se under). Under **Plan → Innstillinger** kan du logge ut eller slette kontoen.
 - **Tilgang:** Reglene i databasen sørger for at bare venner ser timene dine. SQL-en ligger i `supabase/migrations/`.
 
 **Oppsett i Supabase (gjort):** *Confirm email* er slått av under *Authentication → Sign In / Providers*. E-post sendes gjennom Brevo (*Authentication → Emails → SMTP Settings*, `smtp-relay.brevo.com`, port 587), og malen *Reset password* er på norsk med `{{ .Token }}`. Avsender er foreløpig en gmail-adresse, som Brevo ikke anbefaler. Med eget domene kommer e-postene sikrere fram. *Site URL* er `https://br0hansen.github.io/stanga/`. Gratisprosjekter settes på pause etter en uke uten bruk og må da startes igjen i dashbordet.
@@ -98,7 +117,7 @@ Når du merker «Metcon i dag», velger en økt fra øktbanken eller logger en f
 | `index.html` | Hele appen: utseende, programmer og logikk |
 | `manifest.json` | Navn, ikon og at appen skal åpne i fullskjerm |
 | `sw.js` | Service worker: lagrer filene så appen virker uten nett. Svar fra Supabase lagres aldri. |
-| `supabase/migrations/` | Databasen for Sammen: tabeller, tilgangsregler og funksjoner |
+| `supabase/migrations/` | Databasen for Sammen og skybackup: tabeller, tilgangsregler og funksjoner |
 | `supabase/functions/push/` | Edge-funksjonen som sender pushvarsler fra utboksen i databasen |
 | `okter.json` | Øktbanken: metcons fra Functional Fitness Sarpsborg og ATHX-øktene |
 | `docs/superpowers/specs/` | Designdokumentet for Sammen og treningsplanen for ATHX |
@@ -115,8 +134,9 @@ Når du merker «Metcon i dag», velger en økt fra øktbanken eller logger en f
 
 ## Viktig om dataene
 
-- Dataene ligger i appen på hjemskjermen, ikke i Safari. Sletter du ikonet, forsvinner dataene.
-- Bruk **Plan → Innstillinger → Lag eksport** av og til, og lagre teksten i Notater. Med **Importer** henter du alt tilbake.
+- Dataene ligger i appen på hjemskjermen, ikke i Safari. Sletter du ikonet, forsvinner dataene, med mindre skybackup er på.
+- Med konto kan du slå på **Plan → Innstillinger → Skybackup**. Da hentes alt tilbake når du logger inn på nytt.
+- Uten konto: Bruk **Plan → Innstillinger → Lag eksport** av og til, og lagre teksten i Notater. Med **Importer** henter du alt tilbake.
 
 ## Når du endrer koden
 
@@ -131,7 +151,7 @@ Når du merker «Metcon i dag», velger en økt fra øktbanken eller logger en f
 - **iPhone:** Åpne https://br0hansen.github.io/stanga/ i Safari, trykk Del-knappen og velg **Legg til på Hjem-skjerm**.
 - **Android:** Åpne adressen i Chrome, trykk menyen med tre prikker og velg **Installer app** eller **Legg til på startskjermen**.
 
-Hver person får sine egne data på sin egen telefon. Sletter man ikonet, forsvinner dataene, så bruk **Plan → Innstillinger → Lag eksport** av og til.
+Hver person får sine egne data på sin egen telefon. Sletter man ikonet, forsvinner dataene, så slå på skybackup eller bruk **Plan → Innstillinger → Lag eksport** av og til.
 
 ## Hvordan koden henger sammen
 

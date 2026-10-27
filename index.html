@@ -604,9 +604,31 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 
 /* Hopp over økt: det som hoppes over, strykes i rødt */
 .skipbox{box-shadow:inset 0 0 0 1px var(--red),var(--lift)}
-.sess.skipped .sess-row{cursor:default}
 .sess.skipped .sess-t b{text-decoration:line-through;text-decoration-color:var(--red);text-decoration-thickness:1.5px;color:var(--ink-2)}
 .sess.skipped .sess-t small{color:var(--red)}
+
+/* Endre økt i loggen: én rad per sett med kg og reps */
+.sess.open>.log-acts{margin-top:14px}
+.log-acts .btn{flex:1 1 100px}
+.le-ex{gap:8px}
+.le-ex h2{font-size:18px}
+.le-row,.le-head{display:grid;grid-template-columns:2.5em minmax(0,1fr) minmax(0,1fr);gap:10px;align-items:center}
+.le-head{font:600 12px/1 var(--face);color:var(--chalk-2)}
+.le-head span+span{text-align:right}
+.le-row>span{font:600 14px var(--face);color:var(--chalk-2);font-variant-numeric:tabular-nums}
+.le-row input,.le-txt{width:100%;min-width:0;background:var(--iron);border:1px solid var(--line);border-radius:3px;color:var(--chalk)}
+.le-row input{font:700 21px/1 var(--face);font-stretch:75%;padding:9px 10px;text-align:right;font-variant-numeric:tabular-nums}
+.le-txt{font:500 16px var(--face);padding:11px 12px}
+.le-row input:focus,.le-txt:focus{border-color:var(--accent);outline:none}
+
+/* Skybackup: valget når skyen og telefonen er endret hver for seg */
+.sync-ask{display:grid;gap:10px}
+.sync-ask .row .btn{flex:1 1 140px}
+.sync-cmp{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;border-block:1px solid var(--line)}
+.sync-cmp div{display:grid;gap:2px;padding:8px 10px 8px 0}
+.sync-cmp div+div{border-left:1px solid var(--line);padding-left:10px}
+.sync-cmp b{font:800 24px/1 var(--face);font-stretch:68%;font-variant-numeric:tabular-nums}
+.sync-cmp span{font-size:12px;color:var(--chalk-2)}
 
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -640,7 +662,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 41;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 42;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -664,6 +686,8 @@ const LIFTS = {
 };
 const ALTS = slot => Object.keys(LIFTS).filter(k => LIFTS[k].alt === slot);
 const sw = (a, slot) => (a.swaps && a.swaps[slot]) || slot;   // hvilket løft ligger i plassen nå?
+// Stanga: 20 kg som standard, 15 kg kan velges under Plan → Innstillinger. Laveste vekt på stangøvelser er tom stang.
+const BAR = () => S.settings.bar === 15 ? 15 : 20;
 
 // GZCLP-trinn: [sett, reps]. Bommer du, går du ett trinn ned i reps.
 const T1S = [[5,3],[6,2],[10,1]];
@@ -889,7 +913,7 @@ const axEasy = (a, base) => Math.min(45, base + (a.easyAdd || 0));
 
 function axLift(a, slot, n, reps, pct, o){
   o = o || {};
-  const L = sw(a, slot), f = o.inn ? .95 : 1, w = pc => Math.max(20, r25(a.e1rm[L] * pc * f));
+  const L = sw(a, slot), f = o.inn ? .95 : 1, w = pc => Math.max(BAR(), r25(a.e1rm[L] * pc * f));
   const sets = o.list ? o.list.map(([r, pc]) => ({t:r, w:w(pc), am:false, d:null})) : mk(n, reps, w(pct));
   return {key: L + '.' + (o.k || 'main'), lift:L, slot, part: o.part || 'top', sp:1, athx:1, rpeT: o.rpe == null ? null : o.rpe,
     rest: o.rest || (slot === 's2oh' ? 150 : 180), tag: o.tag || 'Arbeidssett', hint: o.hint || '', sets};
@@ -1022,7 +1046,7 @@ function axDay(a, w, day, inn){
 }
 // Stevnedagen: forsøkene og farten regnet ut fra anslagene
 function axRace(a, S){
-  const e = L => a.e1rm[sw(a, L)], kg = x => fmt(Math.max(20, r25(x))), P = axPace(a, 'run');
+  const e = L => a.e1rm[sw(a, L)], kg = x => fmt(Math.max(BAR(), r25(x))), P = axPace(a, 'run');
   const o = e('s2oh'), q = e('squat') * .95, d = e('deadlift') * .93;
   return axC('ATHX-stevnet', [
     `Strength: S2OH ${kg(o*.92)} → ${kg(o*.97)} → ${kg(o)} kg. Knebøy 2RM ${kg(q*.95)} → ${kg(q)} kg. Markløft 3RM ${kg(d*.97)} og ${kg(d)} kg, ingen sjansespill.`,
@@ -1306,7 +1330,7 @@ function swapRows(p, a){
       h += `<div class="swapbox">
         <label for="swName" class="small">Navn på øvelsen</label>
         <input id="swName" class="txt" type="text" maxlength="40" placeholder="For eksempel hang snatch" autocomplete="off">
-        <label class="chk small"><input id="swBar" type="checkbox" checked> Vanlig stang på 20 kg (viser skiver per side)</label>
+        <label class="chk small"><input id="swBar" type="checkbox" checked> Vanlig stang (viser skiver per side)</label>
         <label for="swW" class="small">${refLabel(p)} i øvelsen</label>
         <span class="inp"><input id="swW" type="text" inputmode="decimal" value="${fmt(refValue(p, a, cur))}">kg</span>
         <button class="btn sm" data-a="doswap:${slot}">Legg til</button>
@@ -1343,10 +1367,10 @@ function spExtraEx(a, slot, ph, opt){
   const list = (SP.extras[slot] || {})[opt && opt.from || ph] || [];
   return list.map(([X, n, r, pct]) => {
     const key = 'x.' + X + '.' + (opt && opt.from || ph);
-    if (!a.lifts[key]) a.lifts[key] = {w: Math.max(20, r25(extraMax(a, X) * pct))};
+    if (!a.lifts[key]) a.lifts[key] = {w: Math.max(BAR(), r25(extraMax(a, X) * pct))};
     let w = a.lifts[key].w, sets = n, reps = r;
-    if (opt && opt.light) { sets = Math.max(1, Math.round(n/2)); w = Math.max(20, r25(w * .9)); }
-    if (ph === 'tap') w = Math.max(20, r25(extraMax(a, X) * pct));
+    if (opt && opt.light) { sets = Math.max(1, Math.round(n/2)); w = Math.max(BAR(), r25(w * .9)); }
+    if (ph === 'tap') w = Math.max(BAR(), r25(extraMax(a, X) * pct));
     return {key, lift:X, slot:X, part: ph === 'tap' || (opt && opt.light) ? 'extra-fixed' : 'extra', sp:1, rest:150,
             rpe:null, tag:'Sekundær', hint: X === 'cleanpull' ? 'Trekk eksplosivt til full strekk. Ingen catch.' : '', sets: mk(sets, reps, w)};
   });
@@ -1368,7 +1392,7 @@ function buildSP(p, a){
   } else if (ph[0] === 'd') {
     const D = SP.deload[ph], src = a.lifts[L + '.' + D.from + '.back'];
     const base = src ? (src.last != null ? src.last : src.w) : r25(a.e1rm[L] * SP.scheme[slot][D.from].back[2]);
-    ex.push({key:L+'.deload', lift:L, slot, part:'deload', sp:1, rest, tag:'Lett uke', sets: mk(D[slot][0], D[slot][1], Math.max(20, r25(base * .87)))});
+    ex.push({key:L+'.deload', lift:L, slot, part:'deload', sp:1, rest, tag:'Lett uke', sets: mk(D[slot][0], D[slot][1], Math.max(BAR(), r25(base * .87)))});
     ex.push(...spExtraEx(a, slot, ph, {from: D.from, light: true}));
   } else if (ph === 'tap') {
     const T = SP.taper[slot];
@@ -1415,7 +1439,7 @@ function progressSP(p, a, s){
       else if (r <= 6) { next = used + 2.5; kind = 'up'; why = 'RPE ' + fmt(r); }
       else if (r <= 7.5) why = 'RPE ' + fmt(r) + ', på mål';
       else { next = used - 2.5; kind = 'down'; why = 'RPE ' + fmt(r) + ', for tungt for en sekundærøvelse'; }
-      st.last = used; st.w = next = Math.max(20, next);
+      st.last = used; st.w = next = Math.max(BAR(), next);
       notes.push({name, text: why + ': ' + (next === used ? 'samme vekt, ' + fmt(used) + ' kg' : fmt(used) + ' → ' + fmt(next) + ' kg'), kind});
       return;
     }
@@ -1450,7 +1474,7 @@ function progressSP(p, a, s){
       else { next = used - 2.5; kind = 'down'; why = 'RPE ' + fmt(r); }
       if (e.part === 'top' && allHit && r != null) a.e1rm[e.lift] = Math.round(est1(used, e.sets[0].d, r)*10)/10;
     }
-    st.w = next = Math.max(20, next);
+    st.w = next = Math.max(BAR(), next);
     notes.push({name, text: why + ': ' + (next === used ? 'samme vekt, ' + fmt(used) + ' kg' : fmt(used) + ' → ' + fmt(next) + ' kg'), kind});
     // Logg estimert 1RM etter hvert toppsett, så appen kan se trenden før en lett uke
     if (e.part === 'top') {
@@ -1474,7 +1498,7 @@ function warmups(slot, W, reps, kind){
     : [[0,10],[.45,6],[.65,4],[.8,2]].concat(single);
   const out = [];
   steps.forEach(([f,r]) => {
-    const w = Math.max(20, f ? r25(W*f) : 20);
+    const w = Math.max(BAR(), f ? r25(W*f) : BAR());
     if (w >= W || (out.length && out[out.length-1][0] >= w)) return;
     out.push([w, r]);
   });
@@ -1544,7 +1568,7 @@ const PROGRAMS = [
       {name:'Økt A', ex:[{lift:'squat',sets:5,reps:5},{lift:'bench',sets:5,reps:5},{lift:'row',sets:5,reps:5}]},
       {name:'Økt B', ex:[{lift:'squat',sets:5,reps:5},{lift:'ohp',sets:5,reps:5},{lift:'deadlift',sets:1,reps:5}]}],
     inputs:{squat:40,bench:30,row:30,ohp:20,deadlift:50}, inputLabel:'Startvekt', inc:{deadlift:5},
-    orm:{squat:135, bench:110, row:80, ohp:70, deadlift:160}, derive:(key, orm) => Math.max(20, r25(orm * .55)), ormNote:'Appen regner ut startvekten som ca. 55 % av 1RM. Da får du noen uker med jevn økning før det blir tungt.' },
+    orm:{squat:135, bench:110, row:80, ohp:70, deadlift:160}, derive:(key, orm) => Math.max(BAR(), r25(orm * .55)), ormNote:'Appen regner ut startvekten som ca. 55 % av 1RM. Da får du noen uker med jevn økning før det blir tungt.' },
 
   { id:'ss', name:'Starting Strength', origin:'Mark Rippetoe', level:'Nybegynner', perWeek:'3', prog:'linear',
     summary:'Tre sett à fem på de store stangløftene. Mindre volum enn 5×5, så det er lettere å øke vekten hver gang.',
@@ -1553,7 +1577,7 @@ const PROGRAMS = [
       {name:'Økt A', ex:[{lift:'squat',sets:3,reps:5},{lift:'bench',sets:3,reps:5},{lift:'deadlift',sets:1,reps:5}]},
       {name:'Økt B', ex:[{lift:'squat',sets:3,reps:5},{lift:'ohp',sets:3,reps:5},{lift:'deadlift',sets:1,reps:5}]}],
     inputs:{squat:40,bench:30,ohp:20,deadlift:50}, inputLabel:'Startvekt', inc:{deadlift:5},
-    orm:{squat:135, bench:110, ohp:70, deadlift:160}, derive:(key, orm) => Math.max(20, r25(orm * .55)),
+    orm:{squat:135, bench:110, ohp:70, deadlift:160}, derive:(key, orm) => Math.max(BAR(), r25(orm * .55)),
     ormNote:'Appen regner ut startvekten som ca. 55 % av 1RM. Da får du noen uker med jevn økning før det blir tungt.' },
 
   { id:'gzclp', name:'GZCLP', origin:'Cody Lefever', level:'Nybegynner til middels', perWeek:'3–4', prog:'gzclp',
@@ -1566,7 +1590,7 @@ const PROGRAMS = [
       {name:'Dag 4', ex:[{lift:'deadlift',tier:'T1'},{lift:'ohp',tier:'T2'},{lift:'dbrow',tier:'T3'}]}],
     inputs:{'squat.T1':60,'bench.T1':40,'ohp.T1':30,'deadlift.T1':70,'squat.T2':40,'bench.T2':27.5,'ohp.T2':20,'deadlift.T2':50,'pulldown.T3':30,'dbrow.T3':14},
     orm:{squat:135, bench:110, deadlift:160, ohp:70},   // 1RM: startvektene regnes ut fra disse
-    derive:(key, orm) => { const t = key.split('.')[1]; return t === 'T1' ? Math.max(20, r25(orm * .73)) : t === 'T2' ? Math.max(20, r25(orm * .55)) : null; },
+    derive:(key, orm) => { const t = key.split('.')[1]; return t === 'T1' ? Math.max(BAR(), r25(orm * .73)) : t === 'T2' ? Math.max(BAR(), r25(orm * .55)) : null; },
     ormNote:'Appen regner ut startvektene: T1 (5×3) er ca. 73 % og T2 (3×10) ca. 55 % av 1RM. T3 starter lett og justerer seg selv.',
     inputLabel:'Startvekt', inc:{squat:5,deadlift:5} },
 
@@ -1880,6 +1904,7 @@ function load(){
 function save(){
   try { localStorage.setItem(KEY, JSON.stringify(S)); ui.storageOK = true; }
   catch(e) { ui.storageOK = false; }
+  syncMark();   // skybackup, hvis den er slått på (se Skybackup)
 }
 
 let S = load();
@@ -1998,13 +2023,15 @@ function finish(){
   // ATHX: kondisjonsdelen teller i metcon-budsjettet, med mindre du har lagt inn en egen metcon
   if (s.cond && s.cond.min > 0 && !(s.mc && s.mc.min)) { s.metcon = true; s.mc = {type:s.cond.type, min:s.cond.min, rpe:(s.cond.res || {}).rpe || (s.mc && s.mc.rpe) || null}; }
   const prs = findRecords(s);   // før økta legges i loggen, så den ikke sammenlignes med seg selv
+  const undo = undoPoint(!!s.pete);
   const notes = progress(p, S.active, s);
   const vol = s.ex.reduce((sum,e) => sum + e.sets.reduce((v,x) => v + (x.d||0)*x.w, 0), 0);
   S.history.unshift({date:Date.now(), programId:p.id, day:s.day, sub:s.sub, note:(s.note||'').trim(), metcon:!!(s.metcon || s.wod), mc: (s.metcon || s.wod) ? mcSaved(s.mc) : undefined,
     wod: s.wod ? {id:s.wod.id, navn:s.wod.navn, tekst:s.wod.tekst, resultat:(s.wod.resultat||'').trim()} : undefined,
     pete: s.pete ? peteDone(s.pete) : undefined, idx: S.active.idx,
     cond: s.cond ? {title:s.cond.title, lines:s.cond.lines, res:s.cond.res || {}} : undefined,
-    ex: s.ex.map(e => ({lift:e.lift, tag:e.tag, rpe:e.rpe, q:e.q, sets:e.sets.map(x => ({t:x.t, w:x.w, d:x.d}))}))});
+    ex: s.ex.map(e => ({lift:e.lift, tag:e.tag, rpe:e.rpe, q:e.q, sets:e.sets.map(x => ({t:x.t, w:x.w, d:x.d}))})), undo});
+  keepOneUndo();
   S.active.idx++;
   S.draft = null;
   ui.summary = {day:s.day, notes, vol, prs};
@@ -2017,11 +2044,93 @@ function finish(){
 function skipSession(){
   const p = prog(S.active.programId), s = S.draft;
   S.history.unshift({date:Date.now(), programId:p.id, day:s.day, sub:s.sub, skipped:true, idx:S.active.idx,
-    ex: s.ex.map(e => ({lift:e.lift, tag:e.tag, sets:e.sets.map(x => ({t:x.t, w:x.w, d:null}))}))});
+    ex: s.ex.map(e => ({lift:e.lift, tag:e.tag, sets:e.sets.map(x => ({t:x.t, w:x.w, d:null}))})), undo: undoPoint(false)});
+  keepOneUndo();
   S.active.idx++;
   S.draft = null; ui.confirm = null; ui.summary = null;
   ui.rest = null; updateRest();
   save(); render(); toTop(); toast(s.day + ' er hoppet over');
+}
+
+/* ---------- Endre og slette økter i loggen ----------
+   Den siste programøkta har en kopi av programmet slik det var før økta (undo). Slettes den,
+   går programmet tilbake dit: samme vekter og samme neste økt. Bare den nyeste økta har kopien. */
+const clone = o => o == null ? o : JSON.parse(JSON.stringify(o));
+const undoPoint = pete => ({active: clone(S.active), pete: pete ? clone(S.pete) : undefined});
+function keepOneUndo(){ S.history.forEach((h, k) => { if (k && h.undo) delete h.undo; }); }
+// Kan økta angres? Bare hvis programmet fortsatt står der økta forlot det.
+const canUndo = h => !!(h && h.undo && S.active && S.active.programId === h.programId && S.active.idx === h.idx + 1);
+const draftTouched = () => !!(S.draft && S.draft.ex.some(e => e.sets.some(x => x.d != null)));
+
+function logDelete(date){
+  const i = S.history.findIndex(h => h.date === date); if (i < 0) return;
+  const h = S.history[i], undo = canUndo(h);
+  if (undo) {
+    S.active = h.undo.active;
+    // Pete Plan går bare tilbake hvis ingen nyere økt har en Pete Plan-økt
+    if (h.undo.pete && !S.history.slice(0, i).some(x => x.pete)) S.pete = h.undo.pete;
+    S.draft = null; ui.summary = null; ui.rest = null; updateRest();
+  }
+  S.history.splice(i, 1);
+  ui.confirm = null; if (ui.logOpen) delete ui.logOpen[date];
+  save(); render(); toast(undo ? 'Økta er slettet, og programmet er tilbake der det var' : 'Økta er slettet');
+}
+function logEditOpen(date){
+  const h = S.history.find(x => x.date === date); if (!h) return;
+  ui.logEdit = {date, h: clone(h)}; ui.confirm = null; render(); toTop();
+}
+const ymd = t => { const d = new Date(t); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); };
+const numIn = v => parseFloat(String(v).replace(',', '.').trim());
+// Leser skjemaet, sjekker tallene og lagrer. Tidspunktet på dagen beholdes når datoen endres.
+function logEditSave(){
+  const E = ui.logEdit, h = S.history.find(x => x.date === E.date); if (!h) { ui.logEdit = null; render(); return; }
+  const ex = clone(h.ex);
+  for (const inp of document.querySelectorAll('[data-le]')) {
+    const [ei, si, f] = inp.dataset.le.split(':'), x = ex[+ei] && ex[+ei].sets[+si]; if (!x) continue;
+    const raw = inp.value.trim(), v = numIn(raw);
+    if (f === 'w') {
+      if (!(v >= 0 && v <= 999)) { toast('Skriv vekten som et tall, for eksempel 82,5'); inp.focus(); return; }
+      x.w = Math.round(v * 100) / 100;
+    } else {
+      if (raw === '' || raw === '–') { x.d = null; continue; }
+      if (!(Number.isInteger(v) && v >= 0 && v <= 99)) { toast('Reps må være et helt tall, eller tomt hvis settet ikke ble tatt'); inp.focus(); return; }
+      x.d = v;
+    }
+  }
+  let date = h.date;
+  const dv = ($('#leDate') || {}).value;
+  if (dv && dv !== ymd(h.date)) {
+    const [y, m, d] = dv.split('-').map(Number), nd = new Date(h.date); nd.setFullYear(y, m - 1, d);
+    if (isNaN(nd) || nd.getTime() > Date.now() + DAY) { toast('Velg en dato som ikke er fram i tid'); return; }
+    date = nd.getTime();
+    while (S.history.some(x => x !== h && x.date === date)) date++;   // datoen er nøkkelen til økta
+  }
+  h.ex = ex; h.date = date;
+  const note = $('#leNote'); if (note) h.note = note.value.trim();
+  const res = $('#leRes'); if (res && h.wod) h.wod.resultat = res.value.trim();
+  S.history.sort((a, b) => b.date - a.date);
+  if (ui.logOpen && ui.logOpen[E.date]) { delete ui.logOpen[E.date]; ui.logOpen[date] = true; }
+  ui.logEdit = null; save(); render(); toTop(); toast('Endringene er lagret');
+}
+function vLogEdit(){
+  const h = ui.logEdit.h, title = h.free ? (h.pete ? 'Pete Plan' : h.wod ? 'Metcon' : 'Fri økt') : h.day;
+  return `<button class="link" data-a="logeditx">‹ Avbryt</button>
+    <header class="head"><p class="eyebrow">Endre økt</p><h1>${esc(title)}</h1></header>
+    <div class="box" style="gap:0"><div class="field"><label for="leDate">Dato</label>
+      <span class="inp"><input id="leDate" type="date" value="${ymd(h.date)}" max="${ymd(Date.now())}"></span></div></div>
+    ${h.ex.map((e, ei) => `<section class="box le-ex">
+      <h2>${esc(liftName(e.lift))}${e.tag ? ` <span class="tag" style="display:inline">${esc(e.tag)}</span>` : ''}</h2>
+      <div class="le-head" aria-hidden="true"><span>Sett</span><span>kg</span><span>Reps</span></div>
+      ${e.sets.map((x, si) => `<div class="le-row"><span>${si + 1}</span>
+        <input data-le="${ei}:${si}:w" type="text" inputmode="decimal" value="${fmt(x.w)}" aria-label="${esc(liftName(e.lift))}, sett ${si + 1}: kg">
+        <input data-le="${ei}:${si}:d" type="text" inputmode="numeric" value="${x.d == null ? '' : x.d}" placeholder="–" aria-label="${esc(liftName(e.lift))}, sett ${si + 1}: reps (tomt = ikke tatt)">
+      </div>`).join('')}
+    </section>`).join('')}
+    ${h.wod ? `<div class="box"><label for="leRes" class="lbl">Resultat · ${esc(h.wod.navn)}</label>
+      <input id="leRes" class="le-txt" type="text" maxlength="80" value="${esc(h.wod.resultat || '')}"></div>` : ''}
+    <div class="box notebox"><label for="leNote" class="lbl">Notat</label><textarea id="leNote">${esc(h.note || '')}</textarea></div>
+    ${h.ex.length ? `<p class="muted small">Tomt felt for reps betyr at settet ikke ble tatt. Endringene gjelder loggen, kurvene og rekordene. Vektene i programmet flyttes ikke.</p>` : ''}
+    <button class="btn" data-a="logsave">Lagre endringene</button>`;
 }
 // «knebøy, benkpress og stangroing»
 const listNo = a => a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' og ' + a[a.length - 1];
@@ -2054,21 +2163,21 @@ function activate(id){
   save(); render(); toTop(); toast(p.name+' er aktivert');
 }
 
-/* ---------- Skiver per side (20 kg stang) ---------- */
+/* ---------- Skiver per side (20 eller 15 kg stang, se BAR) ---------- */
 // Skivene på gymmet. 25 kg er bevisst utelatt: 20 kg er største skive.
 const PL = [[20,'p20'],[15,'p15'],[10,'p10'],[5,'p5'],[2.5,'p2'],[1.25,'p1']];
 function platesOf(w){
-  let side = (w - 20) / 2; const out = [];
+  let side = (w - BAR()) / 2; const out = [];
   for (const [kg,c] of PL) while (side >= kg - 1e-6) { out.push([kg,c]); side -= kg; }
   return out;
 }
-const plateTxt = w => w <= 20 ? 'bare stanga' : platesOf(w).map(x => fmt(x[0])).join(' + ') + ' per side';
+const plateTxt = w => w <= BAR() ? 'bare stanga' : platesOf(w).map(x => fmt(x[0])).join(' + ') + ' per side';
 // big: stor variant i kortet som er «nå», med skivene som tall og «per side» under
 function plateHTML(w, big){
-  if (w <= 20) return '<span class="pl-txt">Bare stanga (20 kg)</span>';
+  if (w <= BAR()) return `<span class="pl-txt">Bare stanga (${BAR()} kg)</span>`;
   const out = platesOf(w), txt = out.map(x => fmt(x[0])).join(' + ');
   return '<span class="plates" aria-hidden="true">' + out.map(([kg,c]) => '<i class="pl '+c+'"></i>').join('') +
-         '</span><span class="pl-txt">' + txt + (big ? '<small>per side · 20 kg stang</small>' : ' per side') + '</span>';
+         '</span><span class="pl-txt">' + txt + (big ? `<small>per side · ${BAR()} kg stang</small>` : ' per side') + '</span>';
 }
 
 /* ---------- Øktbank: metcons fra SugarWOD (egen fil, okter.json) ----------
@@ -2870,7 +2979,8 @@ function vCalendar(){
     <div class="cal-key"><span><i class="st"></i>Styrke</span><span><i class="mc"></i>Metcon</span><span><i class="sk"></i>Hoppet over</span></div>`;
 }
 function vLog(){
-  let h = `<header class="head h-row"><div><p class="eyebrow">Siste 4 uker</p><h1>Logg</h1></div><button class="quick" data-a="free">+ Fri økt</button></header>`;
+  if (ui.logEdit) return vLogEdit();
+  let h =`<header class="head h-row"><div><p class="eyebrow">Siste 4 uker</p><h1>Logg</h1></div><button class="quick" data-a="free">+ Fri økt</button></header>`;
   if (!S.history.length) return h + `<p class="muted">Øktene du fullfører havner her, med vekt, reps og notater.</p>`;
   const now = Date.now(), last28 = S.history.filter(x => x.date > now - 28*864e5);
   const nSt = last28.filter(isStrength).length, nMc = last28.filter(isMetcon).length;
@@ -2908,8 +3018,9 @@ function vLog(){
     const d = new Date(sess.date), open = !!(ui.logOpen && ui.logOpen[sess.date]);
     const dateBox = `<span class="sess-d"><b>${d.getDate()}</b><small>${d.toLocaleDateString('nb-NO', {month:'short'}).replace('.', '')}</small></span>`;
     if (sess.skipped) { const ps = prog(sess.programId);
-      return `<article class="sess skipped"><div class="sess-row">${dateBox}
-        <span class="sess-t"><b>${esc(sess.day)}</b><small>Hoppet over${ps ? ' · ' + ps.name : ''}</small></span></div></article>`; }
+      return `<article class="sess skipped ${open ? 'open' : ''}"><button class="sess-row" data-a="logopen:${sess.date}" aria-expanded="${open}" aria-label="${dateFmt(sess.date)}: ${esc(sess.day)}, hoppet over">${dateBox}
+        <span class="sess-t"><b>${esc(sess.day)}</b><small>Hoppet over${ps ? ' · ' + ps.name : ''}</small></span>${chev}</button>
+        ${open ? logActs(sess) : ''}</article>`; }
     const p = sess.free ? null : prog(sess.programId);
     const title = sess.free ? (sess.pete ? 'Pete Plan' : sess.wod ? 'Metcon' : 'Fri økt') : sess.day;
     // Én linje per økt: løftene med toppvekt, eller hva den frie økta var. Trykk for detaljer.
@@ -2931,10 +3042,22 @@ function vLog(){
         <span class="sess-t"><b>${title}</b>${sum ? `<small>${sum}</small>` : ''}</span>
         ${isMetcon(sess) && !sess.free ? '<span class="pill mc">Metcon</span>' : ''}${chev}
       </button>
-      ${body}
+      ${body}${open ? logActs(sess) : ''}
     </article>`;
   }).join('');
   return h;
+}
+// Under en åpen økt i loggen: Endre og Slett. Slett spør først og sier hva som skjer med programmet.
+function logActs(sess){
+  const k = 'logdel:' + sess.date;
+  if (ui.confirm !== k) return `<div class="row log-acts">${sess.skipped ? '' : `<button class="btn ghost sm" data-a="logedit:${sess.date}">Endre</button>`}
+    <button class="btn ghost sm" data-a="confirm:${k}">Slett</button></div>`;
+  const undo = canUndo(sess), p = prog(sess.programId);
+  const txt = undo && sess.skipped ? `«Hoppet over» slettes, og ${esc(sess.day)} står som neste økt igjen.`
+    : undo ? `Økta slettes, og ${p ? p.name : 'programmet'} går tilbake til der det var før økta: samme vekter og samme neste økt.`
+    : 'Økta slettes fra loggen.' + (sess.free ? '' : ' Vektene i programmet endres ikke.');
+  return `<div class="log-acts" style="display:grid;gap:10px"><p class="small">${txt}${undo && draftTouched() ? ' Settene du har ført i neste økt, forsvinner.' : ''} Dette kan ikke angres.</p>
+    <div class="row"><button class="btn danger sm" data-a="logdel:${sess.date}">Slett økta</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div></div>`;
 }
 
 // Måling til feilsøking: hva rapporterer telefonen om skjerm og trygge soner?
@@ -3026,10 +3149,19 @@ function vSettings(){
       <button class="tog" data-a="sound" aria-pressed="${!!S.settings.sound}">Lyd når pausen er over</button>
       <p class="muted small">Linjalen nederst viser pausen og blinker når den er over. På iPhone kan nettapper ikke vibrere, og lyd spilles ikke når skjermen er låst.</p>
     </div>
+    <h3>Stang</h3>
+    <div class="box">
+      <div class="seg" role="group" aria-label="Vekt på stanga">
+        <button data-a="bar:20" aria-pressed="${BAR() === 20}">20 kg</button>
+        <button data-a="bar:15" aria-pressed="${BAR() === 15}">15 kg</button></div>
+      <p class="muted small">Brukes til skiver per side, oppvarmingen og laveste vekt på stangøvelser. Arbeidsvektene i programmet endres ikke.</p>
+    </div>
+    <h3>Skybackup</h3>
+    <div class="box">${vSync()}</div>
     ${vSxAccount()}
     <h3>Sikkerhetskopi</h3>
     <div class="box">
-      <p class="small muted">Dataene ligger bare på denne telefonen. Kopier teksten under og lagre den i Notater eller iCloud Drive av og til.</p>
+      <p class="small muted">${syncOn() ? 'Skybackup er på. Vil du i tillegg ha en egen kopi, kan du kopiere teksten under og lagre den i Notater eller iCloud Drive.' : 'Uten skybackup ligger dataene bare på denne telefonen. Kopier teksten under og lagre den i Notater eller iCloud Drive av og til.'}</p>
       ${ui.exportText ? `<textarea id="exportBox" readonly aria-label="Eksportert data">${ui.exportText.replace(/</g,'&lt;')}</textarea>
         <button class="btn ghost sm" data-a="copy">Kopier</button>` : `<button class="btn ghost sm" data-a="export">Lag eksport</button>`}
       <label for="importBox" class="small" style="margin-top:6px">Gjenopprett fra kopi</label>
@@ -3038,13 +3170,14 @@ function vSettings(){
     </div>
     <h3>Alle data</h3>
     <div class="box">${ui.confirm === 'reset'
-      ? `<p class="small">Logg, program og innstillinger slettes fra telefonen. Dette kan ikke angres.</p><div class="row"><button class="btn danger sm" data-a="reset">Slett alt</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div>`
+      ? `<p class="small">Logg, program og innstillinger slettes fra telefonen. Dette kan ikke angres.${syncOn() ? ' Kopien i skyen beholdes, og skybackup slås av på denne telefonen.' : ''}</p><div class="row"><button class="btn danger sm" data-a="reset">Slett alt</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div>`
       : `<button class="btn danger sm" data-a="confirm:reset">Slett alle data</button>`}</div>
     <p class="muted small" style="text-align:center">Stanga versjon ${APP_VERSION}<br>${diag()}</p>`;
 }
 
 function render(){
   let h = ui.storageOK ? '' : `<div class="warn">Lagring er ikke tilgjengelig her. Endringer forsvinner når siden lukkes.</div>`;
+  h += vSyncAsk();   // skybackup: skyen og telefonen er endret hver for seg, brukeren må velge
   if (ui.plan) { const v = vPlan(); if (ui.plan) { $('#view').innerHTML = h + v; return; } }
   if (ui.tab === 'today') h += vToday();
   else if (ui.tab === 'together') h += vTogether();
@@ -3130,7 +3263,8 @@ let toastT;
 function toast(msg){ const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 2200); }
 
 /* ---------- Trene sammen: konto, venner og timer i Supabase ----------
-   Bare dette ligger i skyen: brukernavn, venner, timer, påmeldinger og tidsforslag. Treningsloggen blir på telefonen.
+   Bare dette ligger i skyen: brukernavn, venner, timer, påmeldinger og tidsforslag. Treningsloggen blir på telefonen,
+   med mindre brukeren slår på skybackup (se Skybackup).
    Konto er valgfritt. Innlogging skjer med e-post og passord rett i appen, uten e-postbekreftelse.
    «Glemt passord» sender en kode på e-post (via Brevo). Koden og nytt passord skrives inn rett i appen.
    Tilgangen styres av reglene i databasen: du ser bare timene til venner. Nøkkelen under er den offentlige. */
@@ -3168,6 +3302,144 @@ const db = (table, q, opt) => sbFetch('/rest/v1/' + table + (q ? '?' + q : ''), 
 const rpc = (fn, body) => sbFetch('/rest/v1/rpc/' + fn, {method:'POST', body});
 const inList = ids => 'in.(' + [...new Set(ids)].join(',') + ')';
 const uid = () => auth && auth.user.id;
+
+/* ---------- Skybackup ----------
+   Valgfritt og gratis for dem med konto. Hele S (det samme som «Lag eksport») ligger i én rad i tabellen backups,
+   og bare eieren kan lese den. Appen lagrer i skyen noen sekunder etter siste endring.
+   rev øker for hver lagring. Appen lagrer bare hvis rev i skyen er den samme som sist den så.
+   Er den endret, har en annen telefon lagret: uten nye endringer her hentes skyen, ellers velger brukeren.
+   SY ligger utenfor S, så eksporten og selve backupen ikke tar med seg hvor den sist ble lagret. */
+const SYNC_KEY = 'stanga.sync';
+let SY = (() => { try { return JSON.parse(localStorage.getItem(SYNC_KEY)) || {}; } catch(e) { return {}; } })();   // {on, uid, rev, dirty, at, err}
+const syncStore = () => { try { localStorage.setItem(SYNC_KEY, JSON.stringify(SY)); } catch(e) {} };
+const syncOn = () => !!(SY.on && auth && SY.uid === uid());
+let syncT = null, syncBusy = false, syncGen = 0;
+const SYNC = {ask:null, pulled:0};   // ask: skyen og telefonen er endret hver for seg, eller det finnes en backup fra før
+// Kalles fra save(): merk at noe er endret, og lagre i skyen når det har vært stille en stund
+function syncMark(){
+  if (!syncOn()) return;
+  syncGen++; if (!SY.dirty) { SY.dirty = true; syncStore(); }
+  clearTimeout(syncT); syncT = setTimeout(syncPush, 5000);
+}
+const syncSum = o => { const h = (o && o.history) || []; return {n: h.length, last: h.length ? Math.max(...h.map(x => x.date || 0)) : 0}; };
+const syncEmpty = o => !o || (!(o.history || []).length && !o.active);
+// Ta i bruk en backup: samme regler som når appen leser fra telefonen
+function syncAdopt(row){
+  const o = row.data || {};
+  S = Object.assign(fresh(), o, {settings: Object.assign(fresh().settings, o.settings || {})});
+  S.maxes = S.maxes || {};
+  mergeCustom();
+  Object.assign(ui, {summary:null, confirm:null, free:false, bank:false, wod:null, logEdit:null, plan:null, detail: ui.detail === 'settings' ? 'settings' : null, stack: ui.detail === 'settings' ? ui.stack : []});
+  ui.rest = null; updateRest();
+  save(); clearTimeout(syncT);
+  Object.assign(SY, {rev: row.rev, dirty: false, at: Date.parse(row.updated_at) || Date.now(), err: ''}); syncStore();
+  SYNC.ask = null;
+}
+async function syncPush(){
+  clearTimeout(syncT);
+  if (!syncOn() || !SY.dirty || SYNC.ask) return;
+  if (syncBusy) { syncT = setTimeout(syncPush, 2000); return; }
+  syncBusy = true; const gen = syncGen; let changed = false;
+  try {
+    const body = {data: S, app_version: APP_VERSION}, pref = {Prefer: 'return=representation'};
+    const rows = SY.rev
+      ? await db('backups', 'select=rev,updated_at&user_id=eq.' + uid() + '&rev=eq.' + SY.rev, {method:'PATCH', body, headers: pref})
+      : await db('backups', 'select=rev,updated_at', {method:'POST', body, headers: pref});
+    if (!rows || !rows.length) changed = true;   // en annen telefon har lagret i mellomtiden
+    else {
+      Object.assign(SY, {rev: rows[0].rev, at: Date.parse(rows[0].updated_at), err: ''});
+      if (gen === syncGen) SY.dirty = false;
+    }
+  } catch(e) {
+    if (e.code === '23505') changed = true;   // en annen telefon laget backupen først
+    else SY.err = sxErr(e);
+  } finally {
+    syncBusy = false; syncStore();
+    if (ui.detail === 'settings' && !isTyping()) render();
+  }
+  if (changed) return syncPull();
+}
+// Se om skyen er endret siden sist. Ingen nye endringer her: hent den. Endringer begge steder: spør.
+async function syncPull(){
+  if (!syncOn() || syncBusy) return;
+  syncBusy = true; SYNC.pulled = Date.now(); let row = null;
+  try {
+    const rows = await db('backups', 'select=rev,updated_at,data&user_id=eq.' + uid() + (SY.rev ? '&rev=neq.' + SY.rev : ''));
+    SY.err = '';
+    if (rows.length) row = rows[0];
+    else if (SY.rev) {   // ingen nyere versjon i skyen. Er backupen slettet, lages den på nytt.
+      const still = await db('backups', 'select=rev&user_id=eq.' + uid());
+      if (!still.length) { SY.rev = 0; SY.dirty = true; }
+    } else SY.dirty = true;
+  } catch(e) { SY.err = sxErr(e); }
+  finally { syncBusy = false; syncStore(); }
+  if (row && !SY.dirty) { syncAdopt(row); render(); toast('Loggen er hentet fra skyen'); }
+  else if (row) { SYNC.ask = {row, kind: SY.rev ? 'conflict' : 'exists'}; render(); }
+  else if (SY.dirty && !SY.err) syncPush();
+}
+// Slå på: finnes det ingen backup, lagres telefonen. Er telefonen tom, hentes backupen. Ellers velger brukeren.
+async function syncEnable(){
+  SY = {on: true, uid: uid(), rev: 0, dirty: !syncEmpty(S), at: 0, err: ''}; syncStore();
+  syncBusy = true;
+  try {
+    const rows = await db('backups', 'select=rev,updated_at,data&user_id=eq.' + uid());
+    syncBusy = false;
+    if (!rows.length) { SY.dirty = true; syncStore(); await syncPush(); toast(SY.err ? SY.err : 'Skybackup er på'); return; }
+    if (syncEmpty(S)) { syncAdopt(rows[0]); toast('Skybackup er på. Loggen er hentet fra skyen.'); return; }
+    SYNC.ask = {row: rows[0], kind: 'exists'};
+  } catch(e) { syncBusy = false; SY = {}; syncStore(); toast(sxErr(e)); }
+}
+// Brukeren har valgt: skyen eller denne telefonen
+function syncChoose(which){
+  const A = SYNC.ask; if (!A) return;
+  SYNC.ask = null;
+  if (which === 'cloud') { syncAdopt(A.row); toast('Loggen er hentet fra skyen'); }
+  else { SY.rev = A.row.rev; SY.dirty = true; syncStore(); syncPush(); toast('Denne telefonen lagres i skyen'); }
+  render();
+}
+function syncOff(){ SY = {}; syncStore(); clearTimeout(syncT); SYNC.ask = null; }
+// Etter innlogging: er telefonen tom og det finnes en backup, hentes den med en gang
+async function syncAfterLogin(){
+  if (syncOn()) return syncPull();   // samme konto som før på denne telefonen: fortsett der den slapp
+  try {
+    const rows = await db('backups', 'select=rev,updated_at,data&user_id=eq.' + uid());
+    if (!rows.length) return;
+    if (syncEmpty(S)) { SY = {on: true, uid: uid()}; syncAdopt(rows[0]); render(); toast('Loggen din er hentet fra skyen'); }
+    else { ui.syncHint = Date.parse(rows[0].updated_at); toast('Du har en backup i skyen. Se Plan → Innstillinger.'); }
+  } catch(e) {}
+}
+function vSyncAsk(){
+  const A = SYNC.ask; if (!A) return '';
+  const c = syncSum(A.row.data), l = syncSum(S), d = t => t ? dateFmt(t) + ' kl. ' + hm(t) : 'ingen økter';
+  return `<section class="box sync-ask" role="alert">
+    <h2>${A.kind === 'conflict' ? 'Loggen er endret på en annen telefon' : 'Du har en backup i skyen fra før'}</h2>
+    <p class="small">${A.kind === 'conflict' ? 'Både skyen og denne telefonen har endringer som den andre ikke har.' : 'Både skyen og denne telefonen har en logg.'} Velg hvilken som skal gjelde. Den andre blir borte.</p>
+    <div class="sync-cmp">
+      <div><b>${c.n}</b><span>økter i skyen</span><span>Siste: ${d(c.last)}</span></div>
+      <div><b>${l.n}</b><span>økter på telefonen</span><span>Siste: ${d(l.last)}</span></div></div>
+    <div class="row"><button class="btn ghost sm" data-a="sync:cloud">Bruk skyen</button><button class="btn ghost sm" data-a="sync:local">Bruk denne telefonen</button></div>
+    ${A.kind === 'exists' ? '<button class="link" data-a="sync:off">Avbryt, ikke slå på</button>' : ''}
+  </section>`;
+}
+function vSync(){
+  if (!auth) return `<p class="small">Med konto kan treningsloggen lagres i skyen, så den ikke forsvinner hvis du mister telefonen eller sletter appen. Det er valgfritt og gratis.</p>
+    <button class="btn ghost sm" data-a="tab:together">Lag konto eller logg inn</button>`;
+  if (!syncOn()) return `<p class="small">Lagre treningsloggen, programmet og innstillingene i skyen, så de ikke forsvinner hvis du mister telefonen eller sletter appen. Valgfritt og gratis.</p>
+    ${ui.syncHint ? `<p class="small muted">Du har en backup i skyen fra ${dateFmt(ui.syncHint)}.</p>` : ''}
+    <button class="btn ghost sm" data-a="sync:on">Slå på skybackup</button>
+    ${vSyncDel()}`;
+  const st = SY.err ? `<span class="warn-t">${esc(SY.err)}</span>` : SY.dirty ? (navigator.onLine ? 'Lagrer snart …' : 'Venter på nett')
+    : SY.at ? 'Sist lagret ' + dateFmt(SY.at) + ' kl. ' + hm(SY.at) : 'Lagrer …';
+  return `<p><b>Skybackup er på</b></p>
+    <p class="small muted">${st}</p>
+    <p class="small muted">Loggen lagres i skyen noen sekunder etter hver endring. Bruker du samme konto på en annen telefon, hentes den derfra.</p>
+    <div class="row"><button class="btn ghost sm" data-a="sync:now">Lagre nå</button><button class="btn ghost sm" data-a="sync:off">Slå av</button></div>
+    ${vSyncDel()}`;
+}
+const vSyncDel = () => ui.confirm === 'syncdel'
+  ? `<p class="small">Kopien i skyen slettes, og skybackup slås av. Loggen på telefonen beholdes.</p>
+     <div class="row"><button class="btn danger sm" data-a="sync:del">Slett kopien</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div>`
+  : `<button class="link" data-a="confirm:syncdel">Slett kopien i skyen</button>`;
 
 const SX = {loaded:false, loading:null, at:0, me:null, fr:[], ppl:{}, sess:[], part:[], prop:[], chats:[], seenAt:0, prev:0, err:''};
 const jwtBody = t => { try { const b = t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'); return JSON.parse(atob(b + '='.repeat((4 - b.length % 4) % 4))); } catch(e) { return {}; } };
@@ -3423,7 +3695,7 @@ function vSxSignup(){
   return `<header class="head"><p class="eyebrow">Valgfritt</p><h1>Sammen</h1>
       <p class="muted">Legg ut når du skal trene, og la vennene dine bli med. Det krever en konto. Resten av appen virker som før uten.</p></header>
     <section class="box sx-form">${box}</section>
-    <p class="muted small">Bare brukernavn, venner og timer lagres, hos Supabase i EU. Treningsloggen din blir på telefonen. Kontoen kan slettes under Plan → Innstillinger.</p>`;
+    <p class="muted small">Bare brukernavn, venner og timer lagres, hos Supabase i EU. Treningsloggen din blir på telefonen, med mindre du slår på skybackup under Plan → Innstillinger. Der kan kontoen også slettes.</p>`;
 }
 
 function vSxNewPw(){
@@ -3814,11 +4086,11 @@ function vSxAccount(){
     <div class="box">${auth
       ? `<p>${SX.me ? `Innlogget som <b>@${esc(SX.me.username)}</b>` : 'Innlogget'} <span class="muted">· ${esc(auth.user.email || '')}</span></p>
         <button class="btn ghost sm" data-a="sxlogout">Logg ut</button>
-        ${ui.confirm === 'sxdelacc' ? `<p class="small">Brukernavn, venner, timer, påmeldinger, forslag og meldingene dine slettes for godt. Treningsloggen på telefonen beholdes.</p>
+        ${ui.confirm === 'sxdelacc' ? `<p class="small">Brukernavn, venner, timer, påmeldinger, forslag, meldingene dine og skybackupen slettes for godt. Treningsloggen på telefonen beholdes.</p>
           <div class="row"><button class="btn danger sm" data-a="sxdelacc">Slett kontoen</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div>`
           : `<button class="btn danger sm" data-a="confirm:sxdelacc">Slett konto</button>`}`
-      : `<p class="muted small">Ingen konto. Konto trengs bare for Sammen, der du kan trene sammen med venner.</p>`}
-      <p class="muted small">Personvern: Med konto lagres e-post, brukernavn, navn hvis du har skrevet det, venner, timer, påmeldinger, tidsforslag og chatmeldinger hos Supabase i EU (Irland). Slår du på varsler, lagres også en adresse for varsler til telefonen. Bare vennene dine ser timene dine, og bare de som er med i en samtale, kan lese den. Treningslogg, programmer og vekter sendes aldri. Sletter du kontoen, slettes alt dette.</p>
+      : `<p class="muted small">Ingen konto. Konto trengs bare for Sammen, der du kan trene sammen med venner, og for skybackup.</p>`}
+      <p class="muted small">Personvern: Med konto lagres e-post, brukernavn, navn hvis du har skrevet det, venner, timer, påmeldinger, tidsforslag og chatmeldinger hos Supabase i EU (Irland). Slår du på varsler, lagres også en adresse for varsler til telefonen. Bare vennene dine ser timene dine, og bare de som er med i en samtale, kan lese den. Treningslogg, programmer og vekter sendes bare hvis du slår på skybackup, og bare du kan lese dem. Sletter du kontoen, slettes alt dette.</p>
     </div>
     ${auth && SX.me ? `<h3>Varsler</h3><div class="box">${vPush()}</div>` : ''}`;
 }
@@ -3856,6 +4128,7 @@ async function sxAuth(kind){
     if (!d || !d.access_token) throw new Error('Kontoen er laget, men kan ikke brukes ennå. Prøv å logge inn.');
     setSession(d); ui.sxMode = 'login'; ui.sxBusy = false;
     toast(kind === 'signup' ? 'Kontoen er laget' : 'Du er logget inn');
+    if (kind === 'login') syncAfterLogin();
     await sxOpen();
   } catch(e) {
     ui.sxMsg = e.code === 'user_already_exists' || /already registered/i.test(e.message) ? 'Det finnes allerede en konto med denne e-posten. Logg inn i stedet.'
@@ -3918,7 +4191,7 @@ document.addEventListener('click', ev => {
   const b = ev.target.closest('[data-a]'); if (!b || b.disabled) return;
   const [a, ...r] = b.dataset.a.split(':');
   switch (a) {
-    case 'tab': ui.tab = r[0]; ui.detail = null; ui.stack = []; ui.plan = null; ui.confirm = null; ui.free = false; ui.bank = false; ui.wod = null;
+    case 'tab': ui.tab = r[0]; ui.detail = null; ui.stack = []; ui.plan = null; ui.confirm = null; ui.free = false; ui.bank = false; ui.wod = null; ui.logEdit = null;
       if (r[0] === 'together') { ui.sxView = 'list'; sxOpen(); }
       render(); toTop(); break;
     // Undersider i Plan: Tilbake går dit du kom fra (planen, biblioteket eller guiden)
@@ -3953,7 +4226,7 @@ document.addEventListener('click', ev => {
     case 'am': { const x = S.draft.ex[+r[0]].sets[+r[1]]; x.d = Math.max(0, Math.min(99, x.d + (+r[2]))); save(); render(); break; }
     case 'rpe': S.draft.ex[+r[0]].rpe = +r[1]; save(); render(); break;
     case 'q': S.draft.ex[+r[0]].q = r[1]; save(); render(); break;
-    case 'w': { const e = S.draft.ex[+r[0]], min = LIFTS[e.lift] && LIFTS[e.lift].bar ? 20 : 2.5;
+    case 'w': { const e = S.draft.ex[+r[0]], min = LIFTS[e.lift] && LIFTS[e.lift].bar ? BAR() : 2.5;
       e.sets.forEach(x => x.w = Math.max(min, x.w + 2.5*(+r[1]))); save(); render(); break; }
     case 'wu': {
       const e = S.draft.ex[+r[0]], k = r[1]; e.wuDone = e.wuDone || [];
@@ -4005,7 +4278,22 @@ document.addEventListener('click', ev => {
       break;
     }
     case 'logf': ui.logF = r[0]; render(); break;
-    case 'logopen': { const o = ui.logOpen = ui.logOpen || {}; o[r[0]] = !o[r[0]]; render(); break; }
+    case 'logopen': { const o = ui.logOpen = ui.logOpen || {}; o[r[0]] = !o[r[0]]; if (ui.confirm && ui.confirm.startsWith('logdel:')) ui.confirm = null; render(); break; }
+    case 'logedit': logEditOpen(+r[0]); break;
+    case 'logeditx': ui.logEdit = null; render(); toTop(); break;
+    case 'logsave': logEditSave(); break;
+    case 'logdel': logDelete(+r[0]); break;
+    case 'bar': S.settings.bar = +r[0] === 15 ? 15 : 20; save(); render(); toast(BAR() + ' kg stang'); break;
+    case 'sync': {
+      const c = r[0];
+      if (c === 'on') { if (!auth) break; b.disabled = true; syncEnable().finally(() => render()); }
+      else if (c === 'now') { if (syncOn()) { SY.dirty = true; syncStore(); syncPush().then(() => { if (!SY.err && !SY.dirty) toast('Lagret i skyen'); else if (SY.err) toast(SY.err); }); } }
+      else if (c === 'off') { syncOff(); render(); toast('Skybackup er slått av. Kopien i skyen beholdes.'); }
+      else if (c === 'cloud' || c === 'local') syncChoose(c);
+      else if (c === 'del') { const was = auth; ui.confirm = null; syncOff();
+        if (was) sxDo(() => db('backups', 'user_id=eq.' + uid(), {method:'DELETE'}).then(() => { ui.syncHint = null; }), 'Kopien i skyen er slettet'); }
+      break;
+    }
     case 'progf': ui.progF = r[0] || ''; render(); break;
     case 'bank': openBank(r[0]); break;
     case 'bankclose': ui.bank = false; ui.wod = null; render(); toTop(); break;
@@ -4101,9 +4389,9 @@ document.addEventListener('click', ev => {
     case 'sxlogout': pushOff().finally(() => {   // en annen som logger inn på telefonen, skal ikke få varslene dine
       const tok = auth && auth.access_token;
       if (tok) fetch(SB_URL + '/auth/v1/logout', {method:'POST', headers:{apikey: SB_KEY, Authorization: 'Bearer ' + tok}}).catch(() => {});
-      saveAuth(null); sxReset(); ui.confirm = null; render(); toast('Du er logget ut');
+      saveAuth(null); syncOff(); sxReset(); ui.confirm = null; render(); toast('Du er logget ut');
     }); break;
-    case 'sxdelacc': sxDo(async () => { await pushOff(); await rpc('delete_account'); saveAuth(null); sxReset(); }, 'Kontoen er slettet'); break;
+    case 'sxdelacc': sxDo(async () => { await pushOff(); await rpc('delete_account'); saveAuth(null); syncOff(); sxReset(); }, 'Kontoen er slettet'); break;
     case 'pushon': sxDo(pushOn, 'Varsler er på'); break;
     case 'pushoff': sxDo(pushOff, 'Varsler er slått av'); break;
     case 'pushtest': sxDo(() => rpc('push_test'), 'Testvarselet er sendt'); break;
@@ -4131,7 +4419,7 @@ document.addEventListener('click', ev => {
     case 'confirm': ui.confirm = r.join(':'); render(); break;
     case 'cancel': ui.confirm = null; render(); break;
     case 'quit': S.active = null; S.draft = null; ui.summary = null; ui.confirm = null; save(); render(); toast('Programmet er avsluttet'); break;
-    case 'reset': S = fresh(); mergeCustom(); ui.summary = null; ui.confirm = null; ui.exportText = ''; save(); ui.tab = 'plan'; ui.detail = null; ui.stack = []; render(); toast('Alle data er slettet'); break;
+    case 'reset': syncOff(); S = fresh(); mergeCustom();   // kopien i skyen skal ikke overskrives av en tom logg ui.summary = null; ui.confirm = null; ui.exportText = ''; save(); ui.tab = 'plan'; ui.detail = null; ui.stack = []; render(); toast('Alle data er slettet'); break;
     case 'export': ui.exportText = JSON.stringify(S); render(); break;
     case 'copy': {
       const ta = $('#exportBox');
@@ -4286,6 +4574,14 @@ if (auth) setTimeout(() => {
   if (/^c:/.test(ui.sxView || '')) chatOpen(ui.sxView.slice(2));
 }, 400);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && auth && Date.now() - SX.at > 60000) { if (ui.tab === 'together') sxOpen(); else sxLoad(); } });
+// Skybackup: se etter endringer fra andre telefoner når appen åpnes og våkner, og lagre før den legges bort
+const syncWake = () => { if (!syncOn()) return; if (SY.dirty) syncPush(); else if (Date.now() - SYNC.pulled > 30000) syncPull(); };
+if (syncOn()) setTimeout(syncWake, 600);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') syncWake();
+  else if (syncOn() && SY.dirty) syncPush();
+});
+addEventListener('online', syncWake);
 addEventListener('pageshow', e => { if (e.persisted) checkUpdate(); });
 addEventListener('online', checkUpdate);
 document.addEventListener('focusout', () => setTimeout(reloadWhenIdle, 400));
