@@ -1,6 +1,6 @@
 # Trendanalyse: treningslogger og helseapper på mobil
 
-Dato: 2026-10-27 · Status: analyse, grunnlag for redesign. Ingen kode er endret. Neste steg er et utkast til redesign som bygger på punktene under «Hva vi tar med inn i redesignet».
+Dato: 2026-10-27 · Status: analyse, grunnlag for redesign. Ingen kode er endret. Farger, elementer, sider og menyer står i [UX-analysen](2026-10-27-ux-trender-treningsapper.md). Neste steg er et utkast til redesign som bygger på punktene under «Hva vi tar med inn i redesignet».
 
 ## Hvorfor og hvordan
 
@@ -33,7 +33,7 @@ Stanga har vokst fra en StrongLifts-logg til et verktøy med ni styrkeprogrammer
 | Første møte | Økt-fanen sier «Ingen program ennå» med to knapper. Plan-fanen er en liste med ni programnavn. | En ny bruker må vite hva StrongLifts eller GZCLP er for å velge. Programguiden finnes, men ligger som ett kort blant mange. |
 | Plan-fanen | Rommer aktivt program, hele planen, bytte av program, maksløft, pauser, Pete Plan og alle innstillinger (tannhjulet). | Én fane gjør fem jobber. Innstillinger som skybackup og varsler ligger langt fra der de brukes. |
 | Logg-fanen | Bra innhold (oppsummering, kalender, sparklines, liste), men tom og mørk før første økt. | Fremgangen er hovedbelønningen i en treningslogg. Den bør synes allerede fra første økt. |
-| Lesbarhet | Lyse ark oppå et mørkt bilde av treningsrommet. Tekst rett på bildet (ingresser, overskrifter) får lav kontrast. | Treningsrommet er lyst og fullt av gjenskinn. Telefonen holdes på armlengdes avstand. |
+| Lesbarhet | Bildet er tonet godt ned, så tekst på bildet har stort sett god kontrast. Men den lyseste grå teksten på arket og kanten på settrutene er for svake (se [UX-analysen](2026-10-27-ux-trender-treningsapper.md#3-farger)). | Treningsrommet er lyst og fullt av gjenskinn. Telefonen holdes på armlengdes avstand. |
 | Økt-skjermen | Aktiv økt er en fane blant fire. Pauselinja nederst ligger over innholdet. | Under en økt trenger du bare økta. Fanelinja tar plass og kan trykkes på ved et uhell. |
 | Rød penn | «Hoppet over» og bom står i rødt. | Rødt leses som feil. En hoppet økt er ofte et riktig valg (syk, sliten). Se trend 7. |
 
@@ -117,7 +117,7 @@ Hver trend har en vurdering:
 **For redesignet:**
 
 - Gi Logg et nytt navn, for eksempel **Fremgang**, og løft fram det som viser utvikling: anslått 1RM per hovedløft over tid, rekorder, ukevolum.
-- En **oppsummering etter økta**: tid, sett, totalvekt, rekorder og coach-setningen fra trend 2. Det er øyeblikket der motivasjonen er størst.
+- **Oppsummeringen etter økta** finnes allerede (totalvekt, rekord og de nye vektene), men legger seg som et kort over neste økt. Gjør den til en egen skjerm og legg til coach-setningen fra trend 2. Det er øyeblikket der motivasjonen er størst.
 - Et **ukeskort**: «3 av 3 økter · 42 min kondisjon · 2 rekorder».
 - Muskelkart er populært, men krever at hver øvelse er merket med muskler. Det kan komme senere.
 
@@ -154,7 +154,7 @@ Hver trend har en vurdering:
 **For redesignet:**
 
 - **Behold:** treningsboka, fargespråket (blyant, blå penn, rød penn) og Archivo.
-- **Rydd:** bakgrunnsbildet bør tones mer ned eller bare brukes i tomme flater, slik at all tekst står på papir eller på en rolig flate. Det gir bedre kontrast i et lyst treningsrom.
+- **Rydd:** bakgrunnsbildet er tonet godt ned, men konkurrerer med innholdet på sider med lite innhold. Vurder å bruke det bare på tomme flater. Detaljene om farger og kontrast står i [UX-analysen](2026-10-27-ux-trender-treningsapper.md).
 - **Ikke kopier** Liquid Glass. Det passer ikke med papir, og gjennomsiktighet gir dårligere lesbarhet, som er det vi vil bort fra.
 
 ### 11. Personvern og eierskap til egne data — *Behold, gjør det til et salgsargument*
@@ -206,7 +206,7 @@ Appen foreslår ett program med en setning om hvorfor, og lenke til hele Program
 3. **Forklar tallene.** Hver endring i vekt eller plan får én setning om hvorfor.
 4. **Én uke, ett bilde.** Styrke og kondisjon vises sammen, med samme mål for belastning.
 5. **Snill, men ærlig.** Hvile er ikke feil. Rødt brukes bare når noe trenger handling.
-6. **Lesbart på armlengdes avstand.** Tekst står aldri rett på bildet.
+6. **Lesbart på armlengdes avstand.** All tekst har minst 4,5:1 i kontrast, og ingen tekst er under 13 px.
 7. **Lokalt først.** Alt virker uten nett og uten konto, som i dag.
 
 ### Foreslått struktur (utkast, til diskusjon)
@@ -225,10 +225,10 @@ Appen foreslår ett program med en setning om hvorfor, og lenke til hele Program
 **Nå (største effekt, lite ny logikk):**
 
 - Aktiv økt som egen fullskjermmodus.
-- Oppsummering etter økta med coach-setning (bygger på reglene som finnes).
+- Oppsummeringen etter økta som egen skjerm, med coach-setning (bygger på reglene som finnes).
 - Logg → Fremgang, med ukeskort øverst.
 - Innstillinger ut av Plan.
-- Bedre kontrast: ingen tekst direkte på bildet.
+- Bedre kontrast på grå tekst og kanten på settrutene.
 
 **Neste:**
 
