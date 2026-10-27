@@ -709,7 +709,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 48;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 49;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -3809,8 +3809,9 @@ function vSxUsername(){
     </section>`;
 }
 
-// Neste økt i programmet ditt, på den første timen du skal på (din egen eller en du er med på).
-// Bare du ser den. Vennene ser ikke vektene dine, slik Sammen er laget.
+// Økta fra programmet på timene du skal på (dine egne og de du er med på), én økt per time i rekkefølge.
+// Den første timen får neste økt med alt som er lagt til på den. Timene etter får øktene etter det,
+// med vektene planen viser hvis alt går som planlagt. Bare du ser dette. Vennene ser ikke vektene dine.
 function myNextSess(){
   const p = S.active && prog(S.active.programId);
   if (!p) return null;
@@ -3829,28 +3830,35 @@ function myExtras(x){
   if ((x.note || '').trim()) out.push({k:'Notat', t:x.note.trim(), body:''});
   return out;
 }
-function myNextId(){
+function myUpcoming(){
   const me = uid(), now = Date.now();
-  const mine = SX.sess.filter(s => !s.cancelled_at && sxEnd(s) > now &&
+  return SX.sess.filter(s => !s.cancelled_at && sxEnd(s) > now &&
     (s.owner === me || SX.part.some(p => p.session_id === s.id && p.user_id === me)))
-    .sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at));
-  return mine.length ? mine[0].id : null;
+    .sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at)).map(s => s.id);
+}
+function mySessFor(s){
+  const p = S.active && prog(S.active.programId), i = myUpcoming().indexOf(s.id);
+  if (!p || i < 0) return null;
+  if (i === 0) return myNextSess();
+  const f = simulate(p, S.active, i + 1)[i];
+  return f && f.s.ex && f.s.ex.length ? Object.assign(f.s, {later: i}) : null;
 }
 const exTop = e => Math.max(0, ...e.sets.map(x => x.w || 0));
 function myLine(s){
-  const x = s.id === myNextId() && myNextSess();
+  const x = mySessFor(s);
   if (!x) return '';
   const parts = x.ex.map(e => liftName(e.lift) + (exTop(e) ? ' ' + fmt(exTop(e)) : ''))
     .concat(myExtras(x).filter(m => m.k !== 'Notat').map(m => '+ ' + m.k + ': ' + m.t));
   return `<span class="sx-mine"><b>Din økt: ${esc(x.day)}</b>${parts.length ? ' · ' + esc(parts.join(' · ')) : ''}</span>`;
 }
 function myBox(s){
-  const x = s.id === myNextId() && myNextSess();
+  const x = mySessFor(s);
   if (!x) return '';
   const row = e => { const t = new Set(e.sets.map(y => y.t)), w = exTop(e);
     return `<div class="ln"><span>${esc(liftName(e.lift))}</span><span>${t.size === 1 ? e.sets.length + '×' + [...t][0] : e.sets.length + ' sett'}${w ? ' · ' + fmt(w) + ' kg' : ''}</span></div>`; };
   return `<section class="box sx-mybox"><span class="lbl">Din økt · bare du ser denne</span>
     <p><b>${esc(x.day)}</b> <span class="muted small">${esc(prog(S.active.programId).name)}</span></p>${x.ex.map(row).join('')}
+    ${x.later ? `<p class="muted small">Du har ${x.later === 1 ? 'en time' : x.later + ' timer'} før denne. Vektene gjelder hvis du klarer øktene før, slik planen viser.</p>` : ''}
     ${myExtras(x).map(m => `<div class="sx-extra"><span class="lbl">${m.k}</span><p><b>${esc(m.t)}</b></p>${m.body ? `<pre class="wodtxt">${esc(m.body)}</pre>` : ''}</div>`).join('')}</section>`;
 }
 
