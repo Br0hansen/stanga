@@ -709,7 +709,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 49;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 50;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -3529,10 +3529,11 @@ const SX = {loaded:false, loading:null, at:0, me:null, fr:[], ppl:{}, sess:[], p
 const jwtBody = t => { try { const b = t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'); return JSON.parse(atob(b + '='.repeat((4 - b.length % 4) % 4))); } catch(e) { return {}; } };
 (function sxFromLink(){
   const h = new URLSearchParams(location.hash.slice(1));
-  if (h.has('sammen') || h.has('chat')) {   // åpnet fra et pushvarsel
+  if (h.has('sammen') || h.has('chat') || h.has('venner')) {   // åpnet fra et pushvarsel
     history.replaceState(null, '', location.pathname + location.search);
     ui.tab = 'together';
-    if (h.get('chat')) { ui.sxTab = 'chat'; ui.sxView = 'c:' + h.get('chat'); }   // samtalen hentes ved oppstart, se nederst
+    if (h.has('venner')) ui.sxView = 'friends';
+    else if (h.get('chat')) { ui.sxTab = 'chat'; ui.sxView = 'c:' + h.get('chat'); }   // samtalen hentes ved oppstart, se nederst
     else ui.sxView = h.get('sammen') ? 's:' + h.get('sammen') : 'list';
     return;
   }
@@ -3552,11 +3553,13 @@ const jwtBody = t => { try { const b = t.split('.')[1].replace(/-/g, '+').replac
 
 function sxReset(){ Object.assign(SX, {loaded:false, at:0, me:null, fr:[], ppl:{}, sess:[], part:[], prop:[], chats:[], seenAt:0, prev:0, err:''}); ui.sxView = 'list'; ui.sxTab = ''; sxBadge(); }
 
-// Hent alt Sammen-fanen trenger: profilen din, venner, kommende timer, påmeldinger, forslag og navnene på de involverte
-function sxLoad(){
+// Hent alt Sammen-fanen trenger: profilen din, venner, kommende timer, påmeldinger, forslag og navnene på de involverte.
+// quiet: hentingen i bakgrunnen. Da tegnes skjermen bare på nytt hvis noe er endret.
+function sxLoad(quiet){
   if (!auth) return Promise.resolve();
   if (SX.loading) return SX.loading;
   SX.loading = (async () => {
+    let same = false;
     try {
       const me = uid();
       const [prof, fr, seen] = await Promise.all([
@@ -3579,14 +3582,16 @@ function sxLoad(){
           ...part.map(p => p.user_id), ...prop.map(p => p.user_id), ...chats.flatMap(c => c.members)].filter(x => x !== me);
         const ppl = people.length ? await db('profiles', 'select=id,username,display_name&id=' + inList(people)) : [];
         SX.ppl = Object.fromEntries(ppl.map(p => [p.id, p])); SX.ppl[me] = SX.me;
-        Object.assign(SX, {fr, sess, part, prop, chats});
+        const sig = JSON.stringify([fr, sess, part, prop, chats, ppl]);
+        same = quiet && sig === SX.sig && SX.loaded && !SX.err;
+        Object.assign(SX, {fr, sess, part, prop, chats, sig});
       }
       SX.loaded = true; SX.err = ''; SX.at = Date.now();
     } catch(e) {
       SX.err = sxErr(e);
     } finally {
       SX.loading = null; sxBadge();
-      if (ui.tab === 'together' && !isTyping()) render();
+      if (ui.tab === 'together' && !isTyping() && !same) render();
     }
   })();
   return SX.loading;
@@ -3613,7 +3618,7 @@ function sxErr(e){
 }
 
 /* ---------- Sammen: pushvarsler ----------
-   Varsel når noen blir med på eller foreslår tid på timen din. Hver telefon slår det på selv.
+   Varsel når noen blir med på eller foreslår tid på timen din, skriver, eller vil bli venn. Hver telefon slår det på selv.
    På iPhone virker det bare fra hjemskjermen (iOS 16.4 eller nyere), og spørsmålet om lov må komme rett fra et trykk.
    Sendingen skjer i Supabase: en trigger legger varselet i en utboks, og edge-funksjonen «push» sender det. */
 const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
@@ -3655,14 +3660,14 @@ async function pushOff(){
   if (ui.push === 'on') ui.push = 'off';
 }
 // Trykk på et varsel mens appen er åpen: service workeren sier fra, og vi går til timen
-function sxGoto(sid, cid){
+function sxGoto(sid, cid, view){
   Object.assign(ui, {tab:'together', detail:null, plan:null, confirm:null, free:false, bank:false, wod:null});
-  ui.sxView = typeof sid === 'string' ? 's:' + sid : 'list';
+  ui.sxView = view === 'friends' ? 'friends' : typeof sid === 'string' ? 's:' + sid : 'list';
   sxOpen();
   if (cid) chatOpen(cid); else { render(); toTop(); }
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', e => {
-  if (e.data && (e.data.sx || e.data.chat)) sxGoto(e.data.sx, e.data.chat);
+  if (e.data && (e.data.sx || e.data.chat)) sxGoto(e.data.sx, e.data.chat, e.data.view);
   // Et varsel kom mens appen er åpen: hent nytt med en gang, så tallene og samtalen stemmer
   else if (e.data && e.data.refresh && auth) { sxLoad(); if (/^c:/.test(ui.sxView || '')) chatFetch(); }
 });
@@ -4192,11 +4197,16 @@ async function chatListRefresh(){
     if (ui.tab === 'together' && ui.sxTab === 'chat' && (ui.sxView || 'list') === 'list' && !isTyping()) render();
   } catch(e) {}
 }
+// Mens Sammen står åpen: samtalen hvert fjerde sekund, samtalelisten hvert 16. Oversikten og Venner hentes hvert
+// 32. sekund, så forespørsler, svar og nye timer kommer uten at appen må startes på nytt. Ikke i skjemaer, der
+// en ny tegning ville tatt med seg det du holder på med.
 let chatTick = 0;
 setInterval(() => {
   if (!auth || document.visibilityState !== 'visible' || ui.tab !== 'together') return;
   chatTick++;
-  if (/^c:/.test(ui.sxView || '')) chatFetch();
+  const v = ui.sxView || 'list';
+  if (/^c:/.test(v)) chatFetch();
+  else if ((v === 'list' || v === 'friends') && chatTick % 8 === 0) sxLoad(true);
   else if (ui.sxTab === 'chat' && chatTick % 4 === 0) chatListRefresh();
 }, 4000);
 
@@ -4237,9 +4247,9 @@ function vSxAccount(){
 function vPush(){
   switch (ui.push) {
     case 'on': return `<p><b>Varsler er på</b> <span class="muted">på denne telefonen</span></p>
-      <p class="small muted">Du får varsel når noen blir med på timene dine, foreslår tid eller skriver til deg.</p>
+      <p class="small muted">Du får varsel når noen blir med på timene dine, foreslår tid, skriver til deg eller vil bli venn med deg.</p>
       <div class="row"><button class="btn ghost sm" data-a="pushtest">Send testvarsel</button><button class="btn ghost sm" data-a="pushoff">Slå av</button></div>`;
-    case 'off': return `<p class="small">Få varsel når noen blir med på timene dine, foreslår tid eller skriver til deg.</p>
+    case 'off': return `<p class="small">Få varsel når noen blir med på timene dine, foreslår tid, skriver til deg eller vil bli venn med deg.</p>
       <button class="btn sm" data-a="pushon">Slå på varsler</button>`;
     case 'denied': return `<p class="small muted">Varsler er avslått for Stanga. Slå dem på i Innstillinger → Varslinger → Stanga, og åpne appen på nytt.</p>`;
     case 'ios': return `<p class="small muted">Varsler virker når Stanga er lagt til på Hjem-skjermen og åpnes derfra (iOS 16.4 eller nyere).</p>`;
@@ -4496,7 +4506,9 @@ document.addEventListener('click', ev => {
     case 'sxnewpw': sxNewPw(); break;
     case 'sxuser': sxUser(); break;
     case 'sxretry': sxOpen(); render(); break;
-    case 'sxview': ui.sxView = r.join(':'); ui.confirm = null; ui.sxRes = null; ui.sxQ = ''; render(); toTop(); break;
+    case 'sxview': ui.sxView = r.join(':'); ui.confirm = null; ui.sxRes = null; ui.sxQ = ''; render(); toTop();
+      if (ui.sxView === 'friends') sxLoad(true);   // forespørsler og svar kan ha kommet siden sist
+      break;
     case 'sxopen': ui.sxView = 's:' + r[0]; ui.confirm = null; render(); toTop(); break;
     case 'sxnew': sxFormInit(); ui.sxView = 'form'; render(); toTop(); break;
     case 'sxedit': { const s0 = SX.sess.find(x => x.id === r[0]); if (s0) { sxFormInit(s0); ui.sxView = 'form'; render(); toTop(); } break; }

@@ -3,7 +3,7 @@
 // Selve appen (index.html) hentes fra nettet hver gang den åpnes. Derfor trenger du IKKE endre noe
 // her når du oppdaterer appen. Det holder å øke APP_VERSION i index.html.
 // Øk SHELL under bare hvis du endrer logikken i denne filen eller listen over filer.
-const SHELL = 'stanga-shell-8';
+const SHELL = 'stanga-shell-9';
 const FILES = ['./', './index.html', './manifest.json', './okter.json', './bg.webp', './icon-180.png', './icon-192.png', './icon-512.png'];
 
 // 1) Installasjon: legg alle filene i mellomlageret. cache:'reload' hopper over nettleserens
@@ -69,13 +69,13 @@ self.addEventListener('fetch', e => {
   );
 });
 
-// 4) Pushvarsler fra Sammen: noen ble med på eller foreslo tid på timen din, eller skrev i en samtale.
+// 4) Pushvarsler fra Sammen: noen ble med på eller foreslo tid på timen din, skrev i en samtale, eller vil bli venn.
 //    iPhone krever at hvert varsel vises, ellers stopper varslene.
 self.addEventListener('push', e => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; } catch (err) { d = {body: e.data && e.data.text()}; }
   e.waitUntil(Promise.all([self.registration.showNotification(d.title || 'Stanga', {
-    body: d.body || '', tag: d.tag, icon: 'icon-192.png', badge: 'icon-192.png', data: {sid: d.sid || null, cid: d.cid || null}
+    body: d.body || '', tag: d.tag, icon: 'icon-192.png', badge: 'icon-192.png', data: {sid: d.sid || null, cid: d.cid || null, view: d.view || null}
   }), setBadge(d.badge), tellOpen()]));
 });
 
@@ -91,13 +91,13 @@ async function tellOpen(){
   try { (await self.clients.matchAll({type: 'window'})).forEach(w => w.postMessage({refresh: true})); } catch (err) {}
 }
 
-// Trykk på varselet: åpne appen på timen eller samtalen. Er appen allerede åpen, bytter den bare skjerm.
+// Trykk på varselet: åpne appen på timen, samtalen eller Venner. Er appen allerede åpen, bytter den bare skjerm.
 self.addEventListener('notificationclick', e => {
   e.notification.close();
-  const d = e.notification.data || {}, sid = d.sid, cid = d.cid;
+  const d = e.notification.data || {}, sid = d.sid, cid = d.cid, view = d.view;
   e.waitUntil(self.clients.matchAll({type: 'window', includeUncontrolled: true}).then(list => {
     const c = list.find(w => new URL(w.url).pathname.startsWith(new URL(self.registration.scope).pathname));
-    if (c) { c.postMessage({sx: sid || true, chat: cid || null}); return c.focus(); }
-    return self.clients.openWindow('./#' + (cid ? 'chat=' + cid : 'sammen' + (sid ? '=' + sid : '')));
+    if (c) { c.postMessage({sx: sid || true, chat: cid || null, view: view || null}); return c.focus(); }
+    return self.clients.openWindow('./#' + (cid ? 'chat=' + cid : view === 'friends' ? 'venner' : 'sammen' + (sid ? '=' + sid : '')));
   }));
 });
