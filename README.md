@@ -120,7 +120,7 @@ Når du merker «Metcon i dag», velger en økt fra øktbanken eller logger en f
 | `supabase/migrations/` | Databasen for Sammen og skybackup: tabeller, tilgangsregler og funksjoner |
 | `supabase/functions/push/` | Edge-funksjonen som sender pushvarsler fra utboksen i databasen |
 | `okter.json` | Øktbanken: metcons fra Functional Fitness Sarpsborg og ATHX-øktene |
-| `docs/superpowers/specs/` | Designdokumentet for Sammen og treningsplanen for ATHX |
+| `docs/superpowers/specs/` | Designdokumentet for Sammen, treningsplanen for ATHX og trendanalysen som grunnlag for redesign |
 | `icon-*.png` | Ikoner til hjemskjermen |
 
 ## Slik får du den på iPhone (GitHub Pages, gratis)
