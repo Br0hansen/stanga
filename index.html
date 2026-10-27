@@ -31,6 +31,7 @@
   --chalk:#ECEBE6; --chalk-2:#B3B7BE; --chalk-3:#80858E;
   --accent:#9AACFF; --accent-ink:#0E0F12;
   --ok:var(--accent); --ok-ink:var(--accent-ink); --miss:#FF6A55; --amrap:var(--chalk-2);
+  --live:#2FB463;   /* grønn prikk: vennen har Sammen åpen nå. Samme i alle temaer */
   /* Arket: Kveldsark, blå penn på mørkt papir */
   --paper:#22252B; --ink:#ECEBE6; --ink-2:#B3B7BE; --ink-3:#959AA3; --rule:#393D45; --edge:#6E737B;
   --pen:#9AACFF; --red:#FF6A55; --field:#1B1E23; --press:#2E3138; --kond:#5CCFBE; --rekord:var(--pen);
@@ -553,6 +554,8 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .sx-h{display:flex;align-items:center;gap:8px}
 .av{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font:700 14px/1 var(--face)}
 .av.sm{width:24px;height:24px;font-size:10px}
+.av.live{position:relative}
+.av.live::after{content:'';position:absolute;right:-1px;bottom:-1px;width:32%;height:32%;min-width:9px;min-height:9px;border-radius:50%;background:var(--live);box-shadow:0 0 0 2px var(--paper)}
 .sx-news{appearance:none;width:100%;text-align:left;font:inherit;display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer}
 .sx-news:active,.sx-card.own:active,.sx-hit:active{background:var(--press)}
 .sx-news>span:not(.av){flex:1;display:grid;gap:2px;min-width:0}
@@ -709,7 +712,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 50;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 51;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -3363,7 +3366,7 @@ const setSession = d => saveAuth({access_token:d.access_token, refresh_token:d.r
 async function sbFetch(path, opt = {}){
   const h = Object.assign({apikey: SB_KEY, 'Content-Type': 'application/json'}, opt.headers);
   if (opt.auth !== false && auth) { await freshToken(); if (auth) h.Authorization = 'Bearer ' + auth.access_token; }
-  const res = await fetch(SB_URL + path, {method: opt.method || 'GET', headers: h, cache: 'no-store',
+  const res = await fetch(SB_URL + path, {method: opt.method || 'GET', headers: h, cache: 'no-store', keepalive: !!opt.keepalive,
     body: opt.body === undefined ? undefined : JSON.stringify(opt.body)});
   const txt = await res.text(); let data = null;
   try { data = txt ? JSON.parse(txt) : null; } catch(e) {}
@@ -3383,7 +3386,7 @@ function freshToken(){
   return refreshing;
 }
 const db = (table, q, opt) => sbFetch('/rest/v1/' + table + (q ? '?' + q : ''), opt);
-const rpc = (fn, body) => sbFetch('/rest/v1/rpc/' + fn, {method:'POST', body});
+const rpc = (fn, body, opt) => sbFetch('/rest/v1/rpc/' + fn, Object.assign({method:'POST', body}, opt));
 const inList = ids => 'in.(' + [...new Set(ids)].join(',') + ')';
 const uid = () => auth && auth.user.id;
 
@@ -3525,7 +3528,7 @@ const vSyncDel = () => ui.confirm === 'syncdel'
      <div class="row"><button class="btn danger sm" data-a="sync:del">Slett kopien</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div>`
   : `<button class="link" data-a="confirm:syncdel">Slett kopien i skyen</button>`;
 
-const SX = {loaded:false, loading:null, at:0, me:null, fr:[], ppl:{}, sess:[], part:[], prop:[], chats:[], seenAt:0, prev:0, err:''};
+const SX = {loaded:false, loading:null, at:0, me:null, fr:[], ppl:{}, sess:[], part:[], prop:[], chats:[], live:new Set(), hidden:false, seenAt:0, prev:0, err:''};
 const jwtBody = t => { try { const b = t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'); return JSON.parse(atob(b + '='.repeat((4 - b.length % 4) % 4))); } catch(e) { return {}; } };
 (function sxFromLink(){
   const h = new URLSearchParams(location.hash.slice(1));
@@ -3551,7 +3554,7 @@ const jwtBody = t => { try { const b = t.split('.')[1].replace(/-/g, '+').replac
   }
 })();
 
-function sxReset(){ Object.assign(SX, {loaded:false, at:0, me:null, fr:[], ppl:{}, sess:[], part:[], prop:[], chats:[], seenAt:0, prev:0, err:''}); ui.sxView = 'list'; ui.sxTab = ''; sxBadge(); }
+function sxReset(){ Object.assign(SX, {loaded:false, at:0, me:null, fr:[], ppl:{}, sess:[], part:[], prop:[], chats:[], live:new Set(), hidden:false, seenAt:0, prev:0, err:''}); ui.sxView = 'list'; ui.sxTab = ''; sxBadge(); }
 
 // Hent alt Sammen-fanen trenger: profilen din, venner, kommende timer, påmeldinger, forslag og navnene på de involverte.
 // quiet: hentingen i bakgrunnen. Da tegnes skjermen bare på nytt hvis noe er endret.
@@ -3574,17 +3577,19 @@ function sxLoad(quiet){
         const sess = await db('sessions', 'select=*&order=starts_at&or=' +
           encodeURIComponent(`(ends_at.gte.${iso(now)},and(ends_at.is.null,starts_at.gte.${iso(now - FIXED_LEN)}))`));
         const ids = sess.map(s => s.id);
-        const [part, prop, chats] = await Promise.all([
+        const [part, prop, chats, live, pres] = await Promise.all([
           ids.length ? db('participants', 'select=*&session_id=' + inList(ids)) : [],
           ids.length ? db('proposals', 'select=*&order=proposed_at&session_id=' + inList(ids)) : [],
-          rpc('chat_list').catch(() => [])]);
+          rpc('chat_list').catch(() => []),
+          rpc('presence_now').catch(() => []),
+          db('presence', 'select=hidden').catch(() => [])]);
         const people = [...fr.map(f => f.requester), ...fr.map(f => f.addressee), ...sess.map(s => s.owner),
           ...part.map(p => p.user_id), ...prop.map(p => p.user_id), ...chats.flatMap(c => c.members)].filter(x => x !== me);
         const ppl = people.length ? await db('profiles', 'select=id,username,display_name&id=' + inList(people)) : [];
         SX.ppl = Object.fromEntries(ppl.map(p => [p.id, p])); SX.ppl[me] = SX.me;
-        const sig = JSON.stringify([fr, sess, part, prop, chats, ppl]);
+        const sig = JSON.stringify([fr, sess, part, prop, chats, ppl, live]);
         same = quiet && sig === SX.sig && SX.loaded && !SX.err;
-        Object.assign(SX, {fr, sess, part, prop, chats, sig});
+        Object.assign(SX, {fr, sess, part, prop, chats, sig, live: new Set(live), hidden: !!(pres[0] && pres[0].hidden)});
       }
       SX.loaded = true; SX.err = ''; SX.at = Date.now();
     } catch(e) {
@@ -3602,13 +3607,19 @@ async function sxOpen(){
   if (!BANK) loadBank();
   await sxLoad();
   if (!SX.me || SX.err) return;
-  SX.prev = SX.seenAt; sxSeen();
+  SX.prev = SX.seenAt; sxSeen(); sxPing(true);
   if (ui.tab === 'together' && !isTyping()) render();
 }
 // Merk alt fram til nå som sett, både her og på kontoen, så tallet i fanen nullstilles
 function sxSeen(){
   SX.seenAt = Date.now(); sxBadge();
   db('seen', 'user_id=eq.' + uid(), {method:'PATCH', body:{last_seen_at: new Date().toISOString()}}).catch(() => {});
+}
+// Aktiv nå: si fra at Sammen er åpen (true) eller lukket (false). Vennene ser en grønn prikk. Ikke når bryteren er av.
+// keepalive: kallet kommer fram selv om appen legges bort i samme øyeblikk.
+function sxPing(active){
+  if (!auth || !SX.me || SX.hidden) return;
+  rpc('presence_ping', {active}, {keepalive: true}).catch(() => {});
 }
 function sxErr(e){
   if (!navigator.onLine || /fetch|network|load failed/i.test(e.message || '')) return 'Ingen kontakt med serveren. Sjekk nettet og prøv igjen.';
@@ -3689,13 +3700,13 @@ const uname = id => SX.ppl[id] ? '@' + SX.ppl[id].username : 'en venn';
 const AV = [['#2E9E5B','#06150C'],['#E3B42B','#2A2005'],['#2F6FDB','#FFFFFF'],['#D93A2F','#FFFFFF'],['#A9AEB6','#111317'],['#B8413A','#FFFFFF']];
 function av(id, sm){
   const p = SX.ppl[id] || {};
-  return avTxt(p.display_name || p.username || '?', p.username || '', sm);
+  return avTxt(p.display_name || p.username || '?', p.username || '', sm, id !== uid() && SX.live.has(id));
 }
-function avTxt(name, key, sm){
+function avTxt(name, key, sm, live){
   const ini = name.split(/[\s._]+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?';
   let h = 0; for (const c of key) h = (h * 31 + c.charCodeAt(0)) >>> 0;
   const [bg, ink] = AV[h % AV.length];
-  return `<span class="av${sm ? ' sm' : ''}" style="background:${bg};color:${ink}" aria-hidden="true">${esc(ini)}</span>`;
+  return `<span class="av${sm ? ' sm' : ''}${live ? ' live' : ''}" style="background:${bg};color:${ink}" aria-hidden="true">${esc(ini)}</span>`;
 }
 function sxWorkout(s){
   if (s.workout_kind === 'bank') {
@@ -4055,9 +4066,10 @@ function vSxFriends(){
     ${out.length ? `<h3>Sendt</h3><div class="sx-list">${out.map(f => `<div class="sx-row">${av(f.addressee)}<span><b>${uname(f.addressee)}</b><small>Venter på svar</small></span>
         <button class="btn ghost sm" data-a="sxdecline:${f.addressee}">Angre</button></div>`).join('')}</div>` : ''}
     <h3>Vennene dine · ${acc.length}</h3>
-    ${acc.length ? `<div class="sx-list">${acc.map(id => `<div class="sx-row">${av(id, 1)}<span><b>${uname(id)}</b>${nextOf(id) ? `<small>${nextOf(id)}</small>` : ''}</span>
+    ${acc.length ? `<div class="sx-list">${acc.map(id => { const sub = [SX.live.has(id) ? 'Aktiv nå' : '', nextOf(id)].filter(Boolean).join(' · ');
+        return `<div class="sx-row">${av(id, 1)}<span><b>${uname(id)}</b>${sub ? `<small>${sub}</small>` : ''}</span>
         ${ui.confirm === 'unf:' + id ? `<button class="btn danger sm" data-a="sxdecline:${id}">Fjern</button><button class="btn ghost sm" data-a="cancel">Nei</button>`
-          : `<button class="x" data-a="confirm:unf:${id}" aria-label="Fjern ${uname(id)} som venn">×</button>`}</div>`).join('')}</div>`
+          : `<button class="x" data-a="confirm:unf:${id}" aria-label="Fjern ${uname(id)} som venn">×</button>`}</div>`; }).join('')}</div>`
       : '<p class="muted small">Ingen venner ennå. Søk etter brukernavnet til noen du kjenner.</p>'}`;
 }
 
@@ -4197,7 +4209,7 @@ async function chatListRefresh(){
     if (ui.tab === 'together' && ui.sxTab === 'chat' && (ui.sxView || 'list') === 'list' && !isTyping()) render();
   } catch(e) {}
 }
-// Mens Sammen står åpen: samtalen hvert fjerde sekund, samtalelisten hvert 16. Oversikten og Venner hentes hvert
+// Mens Sammen står åpen: samtalen hvert fjerde sekund, samtalelisten hvert 16., og at du er aktiv hvert minutt. Oversikten og Venner hentes hvert
 // 32. sekund, så forespørsler, svar og nye timer kommer uten at appen må startes på nytt. Ikke i skjemaer, der
 // en ny tegning ville tatt med seg det du holder på med.
 let chatTick = 0;
@@ -4205,6 +4217,7 @@ setInterval(() => {
   if (!auth || document.visibilityState !== 'visible' || ui.tab !== 'together') return;
   chatTick++;
   const v = ui.sxView || 'list';
+  if (chatTick % 15 === 0) sxPing(true);   // aktiv nå: omtrent hvert minutt
   if (/^c:/.test(v)) chatFetch();
   else if ((v === 'list' || v === 'friends') && chatTick % 8 === 0) sxLoad(true);
   else if (ui.sxTab === 'chat' && chatTick % 4 === 0) chatListRefresh();
@@ -4240,9 +4253,12 @@ function vSxAccount(){
           <div class="row"><button class="btn danger sm" data-a="sxdelacc">Slett kontoen</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div>`
           : `<button class="btn danger sm" data-a="confirm:sxdelacc">Slett konto</button>`}`
       : `<p class="muted small">Ingen konto. Konto trengs bare for Sammen, der du kan trene sammen med venner, og for skybackup.</p>`}
-      <p class="muted small">Personvern: Med konto lagres e-post, brukernavn, navn hvis du har skrevet det, venner, timer, påmeldinger, tidsforslag og chatmeldinger hos Supabase i EU (Irland). Slår du på varsler, lagres også en adresse for varsler til telefonen. Bare vennene dine ser timene dine, og bare de som er med i en samtale, kan lese den. Treningslogg, programmer og vekter sendes bare hvis du slår på skybackup, og bare du kan lese dem. Sletter du kontoen, slettes alt dette.</p>
+      <p class="muted small">Personvern: Med konto lagres e-post, brukernavn, navn hvis du har skrevet det, venner, timer, påmeldinger, tidsforslag og chatmeldinger hos Supabase i EU (Irland). Slår du på varsler, lagres også en adresse for varsler til telefonen. Mens du har Sammen åpen, lagres når du sist var der, så vennene kan se at du er aktiv nå. Det kan slås av under Aktiv nå. Bare vennene dine ser timene dine, og bare de som er med i en samtale, kan lese den. Treningslogg, programmer og vekter sendes bare hvis du slår på skybackup, og bare du kan lese dem. Sletter du kontoen, slettes alt dette.</p>
     </div>
-    ${auth && SX.me ? `<h3>Varsler</h3><div class="box">${vPush()}</div>` : ''}`;
+    ${auth && SX.me ? `<h3>Aktiv nå</h3><div class="box">
+      <label class="chk"><input type="checkbox" data-a="sxlive" ${SX.hidden ? '' : 'checked'} ${ui.sxBusy ? 'disabled' : ''}> Vis vennene når jeg er i Sammen</label>
+      <p class="muted small">Mens du har Sammen åpen, ser vennene dine en grønn prikk på deg. De ser ikke når du var der sist. Gjelder alle telefonene dine.</p></div>
+      <h3>Varsler</h3><div class="box">${vPush()}</div>` : ''}`;
 }
 function vPush(){
   switch (ui.push) {
@@ -4341,7 +4357,8 @@ document.addEventListener('click', ev => {
   const b = ev.target.closest('[data-a]'); if (!b || b.disabled) return;
   const [a, ...r] = b.dataset.a.split(':');
   switch (a) {
-    case 'tab': ui.tab = r[0]; ui.detail = null; ui.stack = []; ui.plan = null; ui.confirm = null; ui.free = false; ui.bank = false; ui.wod = null; ui.logEdit = null;
+    case 'tab': if (ui.tab === 'together' && r[0] !== 'together') sxPing(false);
+      ui.tab = r[0]; ui.detail = null; ui.stack = []; ui.plan = null; ui.confirm = null; ui.free = false; ui.bank = false; ui.wod = null; ui.logEdit = null;
       if (r[0] === 'together') { ui.sxView = 'list'; sxOpen(); }
       render(); toTop(); break;
     // Undersider i Plan: Tilbake går dit du kom fra (planen, biblioteket eller guiden)
@@ -4539,7 +4556,10 @@ document.addEventListener('click', ev => {
     case 'sxdecline': { const me = uid();
       sxDo(() => db('friendships', 'or=' + encodeURIComponent(`(and(requester.eq.${me},addressee.eq.${r[0]}),and(requester.eq.${r[0]},addressee.eq.${me}))`), {method:'DELETE'}));
       break; }
-    case 'sxlogout': pushOff().finally(() => {   // en annen som logger inn på telefonen, skal ikke få varslene dine
+    case 'sxlive': { const show = ev.target.checked;
+      sxDo(async () => { await rpc('presence_show', {show}); SX.hidden = !show; if (show && ui.tab === 'together') sxPing(true); },
+        show ? 'Vennene ser når du er i Sammen' : 'Vennene ser ikke lenger når du er i Sammen'); break; }
+    case 'sxlogout': sxPing(false); pushOff().finally(() => {   // en annen som logger inn på telefonen, skal ikke få varslene dine
       const tok = auth && auth.access_token;
       if (tok) fetch(SB_URL + '/auth/v1/logout', {method:'POST', headers:{apikey: SB_KEY, Authorization: 'Bearer ' + tok}}).catch(() => {});
       saveAuth(null); syncOff(); sxReset(); ui.confirm = null; render(); toast('Du er logget ut');
@@ -4727,6 +4747,8 @@ if (auth) setTimeout(() => {
   if (/^c:/.test(ui.sxView || '')) chatOpen(ui.sxView.slice(2));
 }, 400);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && auth && Date.now() - SX.at > 60000) { if (ui.tab === 'together') sxOpen(); else sxLoad(); } });
+// Aktiv nå: borte når appen legges bort, tilbake når den kommer fram igjen på Sammen
+document.addEventListener('visibilitychange', () => { if (ui.tab === 'together') sxPing(document.visibilityState === 'visible'); });
 // Skybackup: se etter endringer fra andre telefoner når appen åpnes og våkner, og lagre før den legges bort
 const syncWake = () => { if (!syncOn()) return; if (SY.dirty) syncPush(); else if (Date.now() - SYNC.pulled > 30000) syncPull(); };
 if (syncOn()) setTimeout(syncWake, 600);
