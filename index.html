@@ -721,7 +721,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 54;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 55;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -741,7 +741,18 @@ const LIFTS = {
   // Trekk uten catch. Ingen alt, så det dukker ikke opp som erstatning for power clean.
   cleanpull:{n:'Clean pull',bar:1},
   // ATHX: konkurranseløftet (press, push press, push jerk eller split jerk) og manualbenk med klassens vekt
-  s2oh:{n:'Shoulder to overhead',bar:1}, dbbench:{n:'DB-benk'}
+  s2oh:{n:'Shoulder to overhead',bar:1}, dbbench:{n:'DB-benk'},
+  // Burgener 12 uker: vektløftingsøvelsene. Ingen alt, så de dukker ikke opp som erstatninger.
+  // cx = kompleks (flere bevegelser i ett sett). De gir ikke rekorder, fordi repsene ikke er av samme løft.
+  snatch:{n:'Snatch',bar:1}, cj:{n:'Clean & jerk',bar:1}, snbal:{n:'Snatch balance',bar:1}, snpull:{n:'Snatch pull',bar:1},
+  snshrug:{n:'Snatch shrug',bar:1}, snpp:{n:'Snatch push press',bar:1}, sn3pos:{n:'Snatch fra tre posisjoner',bar:1},
+  cleanshrug:{n:'Clean shrug',bar:1}, clean3pos:{n:'Clean fra tre posisjoner',bar:1}, clean2pos:{n:'Clean fra to posisjoner',bar:1},
+  rackjerk:{n:'Jerk fra stativ',bar:1},
+  cx_pshsssn:{n:'Power snatch + hang snatch + snatch',bar:1,cx:1}, cx_pchsccl:{n:'Power clean + hang clean + clean',bar:1,cx:1},
+  cx_3sn2pull:{n:'3 snatch + 2 snatch pull',bar:1,cx:1}, cx_2pull2sn:{n:'2 snatch pull + 2 snatch',bar:1,cx:1},
+  cx_2pull1sn:{n:'2 snatch pull + 1 snatch',bar:1,cx:1}, cx_2cp2cl:{n:'2 clean pull + 2 clean',bar:1,cx:1},
+  cx_pjj:{n:'Push jerk + jerk',bar:1,cx:1}, cx_clhsc:{n:'Clean + hang clean',bar:1,cx:1},
+  cx_psohs:{n:'Power snatch + overhead squat',bar:1,cx:1}, cx_fsj:{n:'Frontbøy + jerk',bar:1,cx:1}, cx_pcj:{n:'Power clean + jerk',bar:1,cx:1}
 };
 const ALTS = slot => Object.keys(LIFTS).filter(k => LIFTS[k].alt === slot);
 const sw = (a, slot) => (a.swaps && a.swaps[slot]) || slot;   // hvilket løft ligger i plassen nå?
@@ -855,6 +866,118 @@ function progressCube(p, a, s){
   const am = e.sets.find(x => x.am && x.d != null);
   if (am) notes.push({name, text: am.d + ' reps på ' + fmt(am.w) + ' kg i siste sett', kind: am.d >= am.t ? 'up' : 'same'});
   else if (e.sets.some(x => x.d != null)) notes.push({name, text:'Vektene følger prosentplanen', kind:'same'});
+  return notes;
+}
+
+/* ---------- Burgener 12 uker (Mike Burgener) ----------
+   Fire økter i uka. Prosentene er hentet fra formlene i LiftVault-arket og er prosent av 1RM i
+   løftet i andre kolonne. Hvert sett er «prosent x reps». «1+3» er et kompleks: 1 av første bevegelse, 3 av andre.
+   Push press (pp) har bare reps i arket, så vektene er et forslag ut fra clean & jerk.
+   r20 = 20 minutters hvile før øvelsen. acc = kroppsvektøvelsene, som står som en tekstlinje. */
+const BURG = [
+  // Uke 1
+  [
+    {ex:[['cx_pshsssn','snatch','65x3,65x3,70x3,70x3,70x3'], ['snbal','snatch','70x3,70x3,75x3,75x3,75x3'], ['squat','squat','75x8,75x8,75x6,75x6,75x5'], ['cleanshrug','cj','115x5,115x5,115x5,115x5,115x5']], acc:'Rygghev 3×10 · Sit-ups 2×25 · Chin-ups 1×10'},
+    {ex:[['clean3pos','cj','70x3,70x3,75x3,75x3,75x3,75x3'], ['rackjerk','cj','70x3,70x3,75x3,75x3,75x3'], ['cleanpull','cj','90x5,90x5,95x5,95x5,95x5'], ['rdl','cj','85x8,85x8,85x8,85x8,85x8']], acc:'Sit-ups 2×25 · Bokshopp 3×5'},
+    {ex:[['snatch','snatch','70x3,70x3,75x3,75x3,75x3,75x3'], ['cx_pchsccl','cj','65x3,65x3,70x3,70x3,70x3'], ['squat','squat','70x8,70x8,70x6,70x6,70x5'], ['snpull','snatch','90x6,90x6,90x6,90x6,90x6']], acc:'Bokshopp 3×5 · Chin-ups 2×10'},
+    {ex:[['snatch','snatch','70x2,75x2,80x1,80x1,85x1,85x1'], ['cj','cj','70x2,75x2,80x1,80x1,85x1,85x1'], ['frontsquat','frontsquat','70x8,70x8,75x7,75x7,75x6'], ['snshrug','snatch','115x8,115x8,115x8,115x8,115x8']], acc:'Rygghev 15-12-10 · Hengende beinløft 3×10'}],
+  // Uke 2
+  [
+    {ex:[['cx_pshsssn','snatch','70x3,70x3,75x3,75x3,75x3'], ['snbal','snatch','75x3,75x3,80x3,80x3,80x3'], ['squat','squat','80x5,80x5,80x5,80x5,80x5'], ['cleanshrug','cj','120x5,120x5,120x5,120x5,120x5']], acc:'Rygghev 15-12-10 · Hengende beinløft 3×10 · Chin-ups 3×10'},
+    {ex:[['clean3pos','cj','75x3,75x3,80x3,80x3,80x3'], ['rackjerk','cj','75x3,75x3,80x3,80x3,80x3'], ['cleanpull','cj','95x3,95x3,100x3,100x3,100x3'], ['rdl','cj','90x7,90x7,90x7,90x7,90x7']]},
+    {ex:[['cx_3sn2pull','snatch','75x5,75x5,80x5,80x5,80x5'], ['cx_pchsccl','cj','70x3,70x3,75x3,75x3,75x3'], ['squat','squat','75x6,75x6,75x6,75x6,75x6']], acc:'Bokshopp 3×5 · Chin-ups 3×10'},
+    {ex:[['snatch','snatch','75x2,80x2,85x1,85x1,85x1,87.5x1'], ['cj','cj','75x2,80x2,85x1,85x1,85x1,87.5x1'], ['frontsquat','frontsquat','75x5,75x5,80x5,80x5,80x5'], ['snshrug','snatch','115x6,115x6,115x6,115x6,115x6']], acc:'Rygghev 3×12 · Hengende beinløft 3×10'}],
+  // Uke 3
+  [
+    {ex:[['cx_2pull2sn','snatch','72.5x4,72.5x4,77.5x4,77.5x4,77.5x4'], ['snbal','snatch','80x3,80x3,85x3,85x3,85x3'], ['squat','squat','85x4,85x4,85x4,85x4,85x4'], ['cleanshrug','cj','125x5,125x5,125x5,125x5,125x5']], acc:'Rygghev 15-12-10 · Hengende beinløft 3×10 · Chin-ups 3×12'},
+    {ex:[['clean2pos','cj','80x2,80x2,85x2,85x2,85x2'], ['rackjerk','cj','80x2,80x2,85x2,85x2,85x2'], ['cleanpull','cj','100x3,100x3,105x3,105x3,105x3'], ['rdl','cj','95x5,95x5,95x5,95x5,95x5']]},
+    {ex:[['snatch','snatch','80x3,80x3,85x3,85x3,85x2'], ['cx_2cp2cl','cj','75x4,75x4,80x4,80x4,80x4'], ['squat','squat','80x5,80x5,80x5,80x5,80x5']], acc:'Bokshopp 3×5 · Chin-ups 2×10'},
+    {ex:[['snatch','snatch','75x2,80x2,85x1,85x1,90x1,90x1,90x1'], ['cj','cj','75x2,80x2,85x1,85x1,90x1,90x1,90x1'], ['frontsquat','frontsquat','80x5,80x5,85x5,85x5,85x5'], ['snshrug','snatch','120x5,120x5,120x5,120x5,120x5']], acc:'Rygghev 15-12-10 · Hengende beinløft 3×10'}],
+  // Uke 4
+  [
+    {ex:[['cx_pshsssn','snatch','60x3,60x3,65x3,65x3'], ['snbal','snatch','80x3,80x3,85x3'], ['squat','squat','85x5,85x4,85x3,85x3'], ['cleanshrug','cj','125x5,125x5,125x5']], acc:'Rygghev 2×10 · Hengende beinløft 1×10 · Chin-ups 2×10'},
+    {ex:[['squatclean','cj','80x3,80x3,85x2,85x2,85x2'], ['rackjerk','cj','80x3,80x3,85x3,85x3,85x3'], ['cleanpull','cj','100x5,100x5,105x5,105x5'], ['rdl','cj','95x5,95x5,95x5']], acc:'Sit-ups 2×25'},
+    {ex:[['snatch','snatch','80x2,85x2,85x2,85x1'], ['cx_pchsccl','cj','75x3,80x3,80x3,80x3'], ['squat','squat','80x5,80x5,80x5,80x5']], acc:'Bokshopp 2×5 · Chin-ups 1×10'},
+    {ex:[['snatch','snatch','75x2,80x2,85x1,85x1,90x1,90x1'], ['cj','cj','75x2,80x2,85x1,90x1'], ['frontsquat','frontsquat','80x5,85x5,85x5,85x4'], ['snshrug','snatch','120x5,120x5,120x5']], acc:'Rygghev 3×12 · Hengende beinløft 2×10'}],
+  // Uke 5
+  [
+    {ex:[['sn3pos','snatch','65x3,65x3,70x3,70x3,70x3'], ['snpp','snatch','85x3,85x3,90x3,90x3,90x3'], ['squat','squat','85x3,85x3,85x3,85x3,85x3'], ['cleanshrug','cj','125x5,125x5,125x5,125x5,125x5']], acc:'Rygghev 3×10 · Hengende beinløft 2×10 · Chin-ups 2×10'},
+    {ex:[['squatclean','cj','80x3,80x3,85x3,85x3,85x3'], ['cx_pjj','cj','80x2,80x2,85x2,85x2,85x2'], ['cleanpull','cj','100x5,100x5,105x4,105x4,105x4'], ['rdl','cj','95x5,95x5,95x5,95x5,95x5']], acc:'Bokshopp 4×5'},
+    {ex:[['snatch','snatch','80x3,80x3,85x3,85x3,85x3'], ['clean3pos','cj','70x3,70x3,75x3,75x3,75x3'], ['squat','squat','80x3,80x3,80x3,80x3,80x3'], ['snpull','snatch','100x5,100x5,105x4,105x4,105x4']], acc:'Bokshopp 2×5 · Chin-ups 3×12'},
+    {ex:[['snatch','snatch','75x1,80x1,85x1,92.5x1,92.5x1'], ['cj','cj','75x2,80x2,85x1,92.5x1,92.5x1'], ['frontsquat','frontsquat','80x4,80x4,85x3,85x3'], ['snshrug','snatch','120x5,120x5,120x5,120x5']], acc:'Rygghev 3×10 · Sit-ups 2×25'}],
+  // Uke 6
+  [
+    {ex:[['sn3pos','snatch','70x3,70x3,75x3,75x3,75x3'], ['snpp','snatch','90x3,90x3,95x3,95x3,95x3'], ['squat','squat','90x3,90x3,90x3,90x3,90x3,90x3'], ['cleanshrug','cj','130x5,130x5,130x5,130x5,130x5']], acc:'Rygghev 3×10 · Hengende beinløft 2×10 · Chin-ups 2×10'},
+    {ex:[['squatclean','cj','85x3,85x3,90x3,90x3,90x3'], ['cx_pjj','cj','80x2,80x2,85x2,85x2,85x2'], ['cleanpull','cj','100x5,100x5,110x4,110x4,110x4'], ['rdl','cj','100x5,100x5,100x5,100x5,100x5']]},
+    {ex:[['snatch','snatch','80x3,80x3,85x3,85x3,85x3'], ['clean3pos','cj','75x3,75x3,80x3,80x3,80x3'], ['squat','squat','85x3,85x3,85x3,85x3,85x3'], ['snpull','snatch','100x5,100x5,110x4,110x4,110x4']], acc:'Bokshopp 2×5 · Chin-ups 3×12'},
+    {ex:[['snatch','snatch','80x1,85x1,90x1,95x1,95x1'], ['cj','cj','80x2,85x2,90x1,95x1,95x1'], ['frontsquat','frontsquat','85x4,85x4,90x2,90x2,90x2'], ['snshrug','snatch','125x5,125x5,125x5,125x5']], acc:'Rygghev 3×10 · Sit-ups 2×25'}],
+  // Uke 7
+  [
+    {ex:[['sn3pos','snatch','75x3,75x3,80x3,80x3'], ['snpp','snatch','90x3,90x3,95x3,95x3'], ['squat','squat','90x3,90x3,90x3'], ['cleanshrug','cj','130x5,130x5,130x5,130x5']], acc:'Rygghev 3×10 · Hengende beinløft 2×10 · Chin-ups 1×10'},
+    {ex:[['squatclean','cj','85x3,85x3,90x2'], ['cx_pjj','cj','80x2,80x2,85x2,85x2'], ['cleanpull','cj','100x5,100x5,110x4,110x4,110x4'], ['rdl','cj','100x5,100x5,100x5,100x5,100x5']]},
+    {ex:[['snatch','snatch','80x3,80x3,85x3,85x3'], ['clean3pos','cj','75x3,75x3,80x3,80x3'], ['squat','squat','85x3,85x3,85x3,85x3'], ['snpull','snatch','100x5,100x5,110x4,110x4,110x4']], acc:'Bokshopp 2×5 · Chin-ups 3×12'},
+    {ex:[['snatch','snatch','80x1,85x1,90x1,95x1'], ['cj','cj','80x2,85x2,90x1,95x1'], ['frontsquat','frontsquat','85x4,85x4,90x2,90x2'], ['snshrug','snatch','125x5,125x5,125x5,125x5']], acc:'Rygghev 3×10 · Sit-ups 2×25'}],
+  // Uke 8
+  [
+    {ex:[['cx_2pull1sn','snatch','80x3,80x3,85x3,85x3,85x3'], ['snpp','snatch','95x3,95x3,100x3,100x3,100x2'], ['squat','squat','95x2,95x2,95x2,95x2,95x2'], ['cleanshrug','cj','135x5,135x5,135x5,135x5,135x5']], acc:'Rygghev 3×10 · Hengende beinløft 2×10 · Chin-ups 1×10'},
+    {ex:[['squatclean','cj','85x3,85x3,95x2,95x1,95x1'], ['rackjerk','cj','85x2,85x2,90x2,90x1,90x1,90x1'], ['cleanpull','cj','100x5,100x5,110x4,110x4,110x4'], ['rdl','cj','105x5,105x5,105x5,105x5,105x5']]},
+    {ex:[['snatch','snatch','85x3,85x3,90x2,90x2'], ['cx_clhsc','cj','80x2,80x2,85x2,85x2,85x2'], ['squat','squat','85x3,85x3,85x3,85x3,85x3,85x3'], ['snpull','snatch','100x5,100x5,110x4,110x4,110x4']], acc:'Bokshopp 2×5 · Chin-ups 3×12'},
+    {ex:[['snatch','snatch','80x1,85x1,85x1,90x1,90x1,95x1'], ['cj','cj','80x2,85x2,85x1,90x1,90x1,95x1,95x1'], ['frontsquat','frontsquat','80x4,80x4,85x4,85x4,85x4'], ['snshrug','snatch','125x5,125x5,125x5,125x5,125x5']], acc:'Rygghev 3×10 · Sit-ups 2×25'}],
+  // Uke 9
+  [
+    {ex:[['snatch','snatch','50x3,60x2,70x1,80x1,80x1,80x1,85x1,85x1,85x1'], ['snpull','snatch','100x2,100x2,105x2'], ['frontsquat','frontsquat','80x2,85x2,90x2']]},
+    {ex:[['cj','cj','50x2,50x2,60x1,70x1,80x1,80x1,80x1,85x1,85x1'], ['cleanpull','cj','100x2,100x2,105x2'], ['pushpress','cj','50x5,55x4,60x3,65x2,70x1','pp']], acc:'Bokshopp 3×5'},
+    {ex:[['cx_psohs','snatch','50x3+3,50x2+2,75x1+3,80x1+2,80x1+2,80x1+2'], ['cx_fsj','cj','50x2+2,70x3+1,80x3+1,80x3+1,85x2+1']], acc:'Bokshopp 2×5 · Chin-ups 3×12'},
+    {ex:[['snatch','snatch','80x1,80x1,85x1,85x1,85x1'], ['cj','cj','80x1,80x1,80x1,85x1,85x1,85x1'], ['frontsquat','frontsquat','80x2,80x2,80x3,85x1,85x1,85x1,85x2,90x1']]}],
+  // Uke 10
+  [
+    {ex:[['snatch','snatch','80x2,80x2,85x1,85x1,90x1,90x1'], ['snpull','snatch','100x2,105x2'], ['frontsquat','frontsquat','80x2,85x2,90x1,95x1']]},
+    {ex:[['cj','cj','80x1,80x1,85x1,85x1,90x1,90x1'], ['cleanpull','cj','100x2,105x2'], ['pushpress','cj','50x5,55x4,60x3,65x2,70x1','pp']], acc:'Bokshopp 3×5'},
+    {ex:[['cx_psohs','snatch','55x3+3,55x2+2,80x1+3,82x1+2,82x1+2,82x1+2'], ['cx_fsj','cj','55x2+2,75x3+1,80x3+1,80x3+1,85x2+1']], acc:'Bokshopp 2×5 · Chin-ups 3×12'},
+    {ex:[['snatch','snatch','80x1,80x1,85x1,85x1,85x1,90x1'], ['cj','cj','80x1,80x1,80x1,85x1,85x1,85x1,90x1'], ['frontsquat','frontsquat','82x2,82x2,82x3,87x1,87x1,87x1,87x2,92x1']]}],
+  // Uke 11
+  [
+    {ex:[['snatch','snatch','70x2,70x2,75x1,75x1,80x1,80x1'], ['snpull','snatch','90x2,90x2'], ['frontsquat','frontsquat','80x1,85x1,90x1,95x1']]},
+    {ex:[['cj','cj','70x1,70x1,75x1,75x1,80x1,80x1'], ['cleanpull','cj','90x2,90x2'], ['frontsquat','frontsquat','80x3,80x3,80x3']]},
+    {ex:[['powersnatch','snatch','55x3,80x2,82x1,82x1,82x1'], ['cx_pcj','cj','55x2,75x1,80x1,80x1,80x1'], ['frontsquat','frontsquat','80x2,80x2,85x1,85x1']]},
+    {ex:[['snatch','snatch','82x1,82x1,82x1,87x1,87x1,87x1,92x1,92x1,92x1'], ['cj','cj','82x1,82x1,82x1,87x1,87x1,87x1,92x1,92x1,92x1','r20'], ['frontsquat','frontsquat','85x2,90x1,95x1,98x1']]}],
+  // Uke 12
+  [
+    {ex:[['snatch','snatch','75x2,80x1,85x1,85x1'], ['cj','cj','70x1,75x1,80x1,80x1'], ['frontsquat','frontsquat','80x1,85x1,90x1,95x1']]},
+    {ex:[['cj','cj','75x1,75x1,80x1,80x1,85x1,85x1'], ['snatch','snatch','70x2,70x2,75x2,75x2'], ['frontsquat','frontsquat','85x3,85x3,85x3']]},
+    {ex:[['snatch','snatch','55x3,80x2,82x1,82x1,82x1'], ['cj','cj','55x2,75x1,80x1,80x1,80x1'], ['frontsquat','frontsquat','80x2,80x2,85x1,85x1']]},
+    {ex:[['snatch','snatch','85x1,90x1,95x1'], ['cj','cj','85x1,90x1,95x1','r20'], ['frontsquat','frontsquat','85x2,90x1,95x1,98x1']]}]
+];
+// Metcon-budsjett i minutter per uke: mest i volumukene, lite før max out
+const burgBudget = wk => wk <= 4 ? 40 : wk <= 8 ? 30 : wk <= 11 ? 20 : 10;
+const burgMaxOut = s => /Max out/.test(s.sub || '');
+function buildBurg(p, a){
+  const i = a.idx, wk = Math.floor(i/4) + 1, di = i % 4, d = BURG[wk-1][di], last = wk === 12 && di === 3;
+  const ex = d.ex.map(([L, mx, list, flag], ei) => {
+    const top = last && (L === 'snatch' || L === 'cj');
+    const sets = list.split(',').map(x => { const [pc, r] = x.split('x'), t = r.split('+').reduce((n, v) => n + +v, 0);
+      return Object.assign({t, w:r25(a.e1rm[mx]*pc/100), d:null}, r.includes('+') ? {c:r} : {}); });
+    const hint = flag === 'pp' ? 'Arket har bare reps. Vektene er et forslag ut fra clean & jerk, så juster etter dagsform.'
+      : flag === 'r20' ? 'Hvil 20 minutter etter snatch før du starter.'
+      : last && ei === 0 ? 'Tre forsøk: 85, 90 og 95 %. Juster neste forsøk med − og + etter hvordan det forrige gikk. Beste rene løft i snatch og clean & jerk blir ny 1RM.' : '';
+    return {key:L, lift:L, slot:mx, part:'burg', rest: mx === 'squat' || mx === 'frontsquat' ? 180 : 120,
+      tag: top ? 'Max out' : '', wu: ei ? 'short' : null, adj: flag === 'pp' || top, hint, sets};
+  });
+  return {programId:p.id, day:p.days[di].name, sub:'Uke ' + wk + ' av 12' + (last ? ' · Max out' : ''), ex, acc:d.acc || '', mcBud:burgBudget(wk), started:Date.now()};
+}
+function progressBurg(p, a, s){
+  const notes = [];
+  if (burgMaxOut(s)) {
+    ['snatch','cj'].forEach(l => {
+      const ok = s.ex.filter(e => e.lift === l).flatMap(e => e.sets).filter(x => x.d >= 1);
+      if (!ok.length) return;
+      const best = Math.max(...ok.map(x => x.w)), old = a.e1rm[l];
+      a.e1rm[l] = Math.max(best, old);
+      notes.push({name:liftName(l), text: best > old ? 'Ny 1RM: ' + fmt(old) + ' → ' + fmt(best) + ' kg' : 'Beste løft ' + fmt(best) + ' kg, 1RM står på ' + fmt(old) + ' kg', kind: best > old ? 'up' : 'same'});
+    });
+    return notes;
+  }
+  if (s.ex.some(e => e.sets.some(x => x.d != null))) notes.push({name:s.day, text:'Vektene følger prosentplanen', kind:'same'});
   return notes;
 }
 
@@ -1570,7 +1693,7 @@ function progressSP(p, a, s){
 function warmups(slot, W, reps, kind){
   const single = reps <= 2 && W >= 60 ? [[.9,1]] : [];
   const steps = kind === 'short' ? [[.5,5],[.75,3]]
-    : slot === 'clean' ? [[0,5],[.4,3],[.55,2],[.7,1],[.8,1]]
+    : ['clean','snatch','cj'].includes(slot) ? [[0,5],[.4,3],[.55,2],[.7,1],[.8,1]]
     : slot === 'deadlift' ? [[.5,5],[.65,3],[.8,2]].concat(single)
     : [[0,10],[.45,6],[.65,4],[.8,2]].concat(single);
   const out = [];
@@ -1588,6 +1711,7 @@ function wuKind(s, ei){
   const e = s.ex[ei];
   if (!LIFTS[e.lift] || !LIFTS[e.lift].bar) return null;
   if (s.ex.slice(0, ei).some(x => x.lift === e.lift)) return null;
+  if (e.wu) return e.wu;   // Burgener: kort oppvarming etter første løft, kroppen er varm
   if (ei === 0) return 'full';
   return /Sekundær|T2|T3/.test(e.tag || '') ? 'short' : 'full';
 }
@@ -1606,7 +1730,7 @@ function bestE1(ex){
 }
 function findRecords(s){
   const out = [];
-  [...new Set(s.ex.map(e => e.lift))].forEach(l => {
+  [...new Set(s.ex.map(e => e.lift))].filter(l => !(LIFTS[l] && LIFTS[l].cx)).forEach(l => {
     const sets = s.ex.filter(e => e.lift === l).flatMap(e => e.sets), now = bestE1(sets);
     const before = S.history.filter(h => !h.skipped && h.ex).reduce((m, h) => Math.max(m, bestE1(h.ex.filter(e => e.lift === l).flatMap(e => e.sets))), 0);
     if (!before || now <= before + 0.01) return;
@@ -1707,7 +1831,16 @@ const PROGRAMS = [
     days:[{name:'Økt 1', lines:[['Shoulder to overhead','tung'],['Knebøy','tung'],['SkiErg','15–25 min']]},
           {name:'Økt 2', lines:[['Løpeintervaller','hard'],['Rett på SkiErg','30–45 min totalt']]},
           {name:'Økt 3', lines:[['Markløft','tung'],['DB-benk','klassens vekt'],['ATHX-metcon','20–35 min']]},
-          {name:'Økt 4 (anbefalt)', lines:[['Rolig løp','25–45 min'],['S2OH-teknikk','lett'],['Bevegelighet','10 min']]}] }
+          {name:'Økt 4 (anbefalt)', lines:[['Rolig løp','25–45 min'],['S2OH-teknikk','lett'],['Bevegelighet','10 min']]}] },
+
+  { id:'burg12', name:'Burgener 12 uker', origin:'Mike Burgener', level:'Middels til erfaren', perWeek:'4', prog:'burg', total:48,
+    summary:'Tolv uker olympisk vektløfting med fire økter i uka. Snatch og clean & jerk i mange varianter, med knebøy, frontbøy, trekk og shrugs. Repsene går ned og prosentene opp, og uke 12 ender med max out eller stevne.',
+    rule:'Alle vekter er prosent av 1RM i snatch, clean & jerk, knebøy eller frontbøy, og de endres ikke underveis. Trekk og shrugs ligger over 100 %. Uke 1–8 bygger med 2–8 reps, uke 9–11 går mot singler på 80–92 %, og uke 12 er lett fram til max out på dag 4: 85, 90 og 95 %. Beste rene snatch og clean & jerk den dagen blir ny 1RM.',
+    days:[{name:'Dag 1', lines:[['Snatch-variant','3–4 reps'],['Knebøy','2–8 reps'],['Clean shrug','over 100 %']]},
+          {name:'Dag 2', lines:[['Clean-variant','2–3 reps'],['Jerk','2–3 reps'],['Clean pull og RDL','3–8 reps']]},
+          {name:'Dag 3', lines:[['Snatch','2–3 reps'],['Clean-variant','2–4 reps'],['Knebøy og snatch pull','3–8 reps']]},
+          {name:'Dag 4', lines:[['Snatch','opp til tung single'],['Clean & jerk','opp til tung single'],['Frontbøy','1–8 reps']]}],
+    inputs:{snatch:70, cj:100, squat:140, frontsquat:115}, inputLabel:'1RM' }
 ];
 
 /* ---------- Programguide ----------
@@ -1954,6 +2087,28 @@ const GUIDE = {
     metcon:'Kondisjonen ligger i hver økt og teller i metcon-budsjettet med minutter og RPE. Du trenger ikke legge til egne metcons.',
     metconRefs:['eddens','petre'],
     watch:'Marker RPE på siste sett hver gang. Uten RPE står arbeidsmaksen stille. Er startvektene gjettet, juster med − og + de første ukene.'
+  },
+  burg12: {
+    focus:'Teknikk og styrke i snatch og clean & jerk, med knebøy, frontbøy og tunge trekk som støtte.',
+    fits:'Deg som kan de olympiske løftene, vil bli bedre i dem og kan trene fire ganger i uka.',
+    notFor:'Nybegynnere i vektløfting. Løftene krever god teknikk eller en trener, og prosentene forutsetter at 1RM-ene dine er ekte og ferske.',
+    how:'Hver økt starter med en snatch- eller clean-variant, ofte fra heng, fra flere posisjoner eller som kompleks, og går videre til jerk, knebøy, trekk og shrugs. Vektene følger faste prosenter. Uke 1–8 bygger volum, uke 9–11 går mot singler, og uke 12 er lett før max out. Kroppsvektøvelsene står som en linje nederst i økta.',
+    science:[
+      ['Periodisert trening gir mer 1RM enn trening uten plan.','B',['williams']],
+      ['Tung last gir mest maksimal styrke.','A',['currier','lopez']],
+      ['Tunge trekk uten catch bygger styrke til clean.','C',['suchomel']],
+      ['RPE-styrt og prosentstyrt last gir lik styrkeøkning.','B',['hickmott']],
+      ['Før test: kutt volumet 40–60 % og hold intensiteten. Uke 12 gjør nettopp det.','A',['bosquet']],
+      ['Komplekser og løft fra flere posisjoner for teknikk bygger på trenererfaring. De er ikke testet i studier.','H',[]]
+    ],
+    expect:[
+      ['Olympiske løft gir høyere hopp enn vanlig styrketrening.','B',['hackett']],
+      ['Folk responderer svært ulikt på samme trening. Sammenlign deg med deg selv.','B',['hubal']],
+      ['Hvor mye snatch og clean & jerk øker, avhenger mye av teknikken. Programmet er ikke testet i kontrollerte studier.','H',[]]
+    ],
+    metcon:'Programmet har et ukebudsjett for metcons: 40 minutter i uke 1–4, 30 i uke 5–8, 20 i uke 9–11 og 10 i uke 12. Legg inn type, minutter og RPE når du logger en metcon. Appen varsler når belastningen øker mer enn 15 % fra uka før, og sier fra hvis en metcon kolliderer med neste økt.',
+    metconRefs:['schumann','petre','eddens'],
+    watch:'Ta aldri metcon før løftene samme dag. Snatch og clean trenger fart, og den forsvinner først når du er sliten. Beintunge og olympiske metcons hører ikke hjemme dagen før en økt.'
   }
 };
 
@@ -2031,6 +2186,7 @@ function buildSession(p, a){
   if (p.prog === 'cube') return buildCube(p, a);
   if (p.prog === 'jugg') return buildJug(p, a);
   if (p.prog === 'athx') return buildAthx(p, a);
+  if (p.prog === 'burg') return buildBurg(p, a);
   const i = a.idx, n = p.days.length, day = p.days[i % n];
   // Økta heter det programmet kaller den (Økt A, Dag 1). Linjen over viser uka, ikke et eget øktnummer.
   let ex = [], sub = 'Uke ' + (Math.floor(i / (parseInt(p.perWeek) || 3)) + 1);
@@ -2064,6 +2220,7 @@ function progress(p, a, s){
   if (p.prog === 'cube') return progressCube(p, a, s);
   if (p.prog === 'jugg') return progressJug(p, a, s);
   if (p.prog === 'athx') return progressAthx(p, a, s);
+  if (p.prog === 'burg') return progressBurg(p, a, s);
   const notes = [];
   const hit = x => x.d != null && x.d >= x.t;
   const touched = e => e.sets.some(x => x.d != null);
@@ -2120,7 +2277,7 @@ function finish(){
     wod: s.wod ? {id:s.wod.id, navn:s.wod.navn, tekst:s.wod.tekst, resultat:(s.wod.resultat||'').trim()} : undefined,
     pete: s.pete ? peteDone(s.pete) : undefined, idx: S.active.idx,
     cond: s.cond ? {title:s.cond.title, lines:s.cond.lines, res:s.cond.res || {}} : undefined,
-    ex: s.ex.map(e => ({lift:e.lift, tag:e.tag, rpe:e.rpe, q:e.q, sets:e.sets.map(x => ({t:x.t, w:x.w, d:x.d}))})), undo});
+    ex: s.ex.map(e => ({lift:e.lift, tag:e.tag, rpe:e.rpe, q:e.q, sets:e.sets.map(x => Object.assign({t:x.t, w:x.w, d:x.d}, x.c ? {c:x.c} : {}))})), undo});
   keepOneUndo();
   S.active.idx++;
   S.draft = null;
@@ -2241,7 +2398,7 @@ const listNo = a => a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' og
 function newInstance(p){
   if (p.prog === 'athx') return axInstance(p);
   const a = {programId:p.id, startedAt:Date.now(), idx:0, lifts:{}, tm:{}};
-  if (p.prog === 'sp12' || p.prog === 'cube') { a.e1rm = {}; a.base = {}; }
+  if (p.prog === 'sp12' || p.prog === 'cube' || p.prog === 'burg') { a.e1rm = {}; a.base = {}; }
   Object.keys(p.inputs).forEach((k,i) => {
     const el = $('#in-'+i); let v = parseFloat(String(el && el.value || '').replace(',', '.'));
     if (!isFinite(v) || v < 0) v = p.inputs[k];
@@ -2455,11 +2612,13 @@ function mcWindow(from, to){
           unknown: S.history.filter(h => h.metcon && !h.mc && inWin(h)).length};
 }
 // Hvilke metcon-typer bør ikke ligge dagen før dette løftet?
-const mcAvoid = slot => slot === 'squat' ? ['L'] : slot === 'clean' ? ['L','O'] : slot === 'bench' ? ['G'] : [];
+const mcAvoid = slot => slot === 'squat' ? ['L'] : ['clean','snatch','cj'].includes(slot) ? ['L','O'] : slot === 'bench' ? ['G'] : [];
 const mcAdvice = {
   squat:'Neste styrkeøkt er knebøy. Unngå beintunge metcons dagen før.',
   clean:'Neste styrkeøkt er power clean. Unngå beintunge metcons og olympiske løft dagen før, og ta aldri metcon før clean samme dag.',
-  bench:'Neste styrkeøkt er benk. Unngå mye push-ups og HSPU dagen før.'
+  bench:'Neste styrkeøkt er benk. Unngå mye push-ups og HSPU dagen før.',
+  snatch:'Neste økt starter med snatch. Unngå beintunge metcons og olympiske løft dagen før, og ta aldri metcon før løftene samme dag.',
+  cj:'Neste økt starter med clean & jerk. Unngå beintunge metcons og olympiske løft dagen før, og ta aldri metcon før løftene samme dag.'
 };
 const mcRecentConflict = slot => S.history.find(h => h.mc && Date.now() - h.date < 30*3600e3 && mcAvoid(slot).includes(h.mc.type));
 
@@ -2478,7 +2637,8 @@ function mcFields(ctx, mc){
 
 function vMetconBudget(p, s){
   const now = Date.now(), cur = mcWindow(now - 7*DAY, now), prev = mcWindow(now - 14*DAY, now - 7*DAY);
-  const ph = p.prog === 'sp12' && s ? s.ph : null, bud = ph ? SP.budget[ph] : null;
+  // Strength & Power har budsjett per fase, Burgener per uke (s.mcBud)
+  const ph = p.prog === 'sp12' && s ? s.ph : null, bud = ph ? SP.budget[ph] : s && s.mcBud || null;
   if (!bud && !cur.n) return '';
   const slot = s && s.ex[0] && s.ex[0].slot;
   const grow = prev.load > 0 && cur.load > 0 ? Math.round((cur.load / prev.load - 1) * 100) : null;
@@ -2487,10 +2647,10 @@ function vMetconBudget(p, s){
     <div class="mc-sum"><div><b>${fmt(cur.min)}</b><span>min${bud ? ' av ' + bud + ' i budsjett' : ''}</span></div>
       <div><b>${fmt(cur.load)}</b><span>belastning${grow != null ? ' · ' + (grow > 0 ? '+' : '') + grow + ' % fra uka før' : ''}</span></div></div>`;
   if (bud) h += `<div class="meter" role="img" aria-label="${fmt(cur.min)} av ${bud} minutter"><i style="width:${Math.min(100, cur.min / bud * 100)}%" class="${cur.min > bud ? 'over' : ''}"></i></div>`;
-  if (bud && cur.min > bud) h += `<p class="small warn-t">Over budsjettet for ${SP.phaseName[ph].toLowerCase()}. Kutt metcons før du kutter styrken.</p>`;
+  if (bud && cur.min > bud) h += `<p class="small warn-t">Over budsjettet for ${ph ? SP.phaseName[ph].toLowerCase() : 'denne uka'}. Kutt metcons før du kutter styrken.</p>`;
   else if (grow != null && grow > 15) h += `<p class="small warn-t">Belastningen er ${grow} % høyere enn uka før. Hold den flat en stund når styrken er prioritert.</p>`;
   if (cur.unknown) h += `<p class="small muted">${cur.unknown} ${cur.unknown === 1 ? 'metcon' : 'metcons'} uten minutter teller ikke med.</p>`;
-  if (p.prog === 'sp12' && mcAdvice[slot]) h += `<p class="small muted">${mcAdvice[slot]}</p>`;
+  if ((p.prog === 'sp12' || p.prog === 'burg') && mcAdvice[slot]) h += `<p class="small muted">${mcAdvice[slot]}</p>`;
   return h + `</section>`;
 }
 
@@ -2504,9 +2664,10 @@ const PLAN_NOTE = {
   jugg:'Arbeidsmaksen øker bare med reps over målet i testsettene. Planen viser vektene hvis du akkurat når målet, så de blir høyere hvis du tar flere reps.',
   cube:'Vektene er prosent av 1RM og endres ikke underveis. Uke 10 er test, og beste løft blir ny 1RM.',
   sp12:'Planen viser vektene hvis toppsett og backoff går på RPE 7 og clean er rask og ren. Da øker vekten 2,5 kg fra uke til uke. Ved RPE 7,5–9 står vekten stille. Når en ny fase starter, regnes vektene ut fra estimert 1RM.',
+  burg:'Vektene er prosent av 1RM og endres ikke underveis. Uke 12, dag 4 er max out, og beste snatch og clean & jerk blir ny 1RM.',
   athx:'Vektene er prosent av arbeidsmaksen din i dag, og fartene følger anslaget ditt. Begge oppdateres etter hver økt, så tallene framover endrer seg. Henger du etter kalenderen, hopper planen til første økt i denne uka.'
 };
-const planPer = (p, a) => p.prog === 'athx' ? a.ax.per : ['531','jugg','cube','sp12'].includes(p.prog) ? p.days.length : (parseInt(p.perWeek) || 3);
+const planPer = (p, a) => p.prog === 'athx' ? a.ax.per : ['531','jugg','cube','sp12','burg'].includes(p.prog) ? p.days.length : (parseInt(p.perWeek) || 3);
 function simulate(p, a0, n){
   const a = JSON.parse(JSON.stringify(a0)), out = [], tot = totalOf(p, a0);
   while (out.length < n && !(tot && a.idx >= tot)) {
@@ -2523,10 +2684,10 @@ function simulate(p, a0, n){
 function setsLine(e, done){
   const g = [];
   e.sets.forEach(x => { const l = g[g.length-1];
-    if (l && l.w === x.w && l.t === x.t && !!l.am === !!x.am) { l.n++; l.d.push(x.d); } else g.push({w:x.w, t:x.t, am:x.am, n:1, d:[x.d]}); });
+    if (l && l.w === x.w && l.t === x.t && l.c === x.c && !!l.am === !!x.am) { l.n++; l.d.push(x.d); } else g.push({w:x.w, t:x.t, c:x.c, am:x.am, n:1, d:[x.d]}); });
   return g.map(x => done && x.d.some(d => d !== x.t)
     ? x.d.map(d => d == null ? '–' : d).join(', ') + ' × ' + fmt(x.w) + ' kg'
-    : x.n + '×' + x.t + (x.am ? '+' : '') + ' · ' + fmt(x.w) + ' kg').join(' + ');
+    : x.n + '×' + (x.c ? '(' + x.c + ')' : x.t) + (x.am ? '+' : '') + ' · ' + fmt(x.w) + ' kg').join(' + ');
 }
 function vPlan(){
   const P = ui.plan, p = prog(P.id), a = P.active ? S.active : P.inst;
@@ -2549,7 +2710,8 @@ function planWeeks(P, p, a){
   });
   const weeks = [];
   rows.forEach(r => { const w = Math.floor(r.k / per); (weeks[w] = weeks[w] || []).push(r); });
-  const subOf = (r, w) => ax ? r.sub.replace(/^Uke \d+ av \d+ · /, '') : r.sub !== 'Uke ' + (w + 1) ? r.sub : '';
+  // Uka står i overskriften, så «Uke 9 av 12» trengs ikke på hver økt
+  const subOf = (r, w) => ax ? r.sub.replace(/^Uke \d+ av \d+ · /, '') : p.prog === 'burg' ? r.sub.replace(/^Uke \d+ av \d+( · )?/, '') : r.sub !== 'Uke ' + (w + 1) ? r.sub : '';
   return `${ax ? axScore(a) : ''}
     ${weeks.map((list, w) => list ? `<h3>Uke ${w + 1}${ax && a.ax.weeks[w] ? ' · ' + AX_PH[a.ax.weeks[w].ph] : ''}</h3><div class="list">${list.map(r => {
       const m = r.ex[0], sub = r.sub ? subOf(r, w) : '';
@@ -2791,6 +2953,10 @@ function vToday(){
     if (c && !anyTouched) h += `<div class="warn">Du logget en ${MC[c.mc.type].n.toLowerCase()} metcon for ${Math.max(1, Math.round((Date.now() - c.date)/3600e3))} timer siden. Forvent høyere RPE i dag, og kutt gjerne ett backoff-sett.</div>`;
     if ((s.ph === 'd4' || s.ph === 'd8') && !anyTouched && ui.keepDl !== s.ph) h += vDeloadChoice(s.ph);
   }
+  if (p.prog === 'burg') {
+    const c = mcRecentConflict(s.ex[0].slot);
+    if (c && !anyTouched) h += `<div class="warn">Du logget en ${MC[c.mc.type].n.toLowerCase()} metcon for ${Math.max(1, Math.round((Date.now() - c.date)/3600e3))} timer siden. Forvent tyngre løft i dag, og stopp ved prosentene der teknikken holder.</div>`;
+  }
   s.ex.forEach((e,ei) => {
     const top = Math.max(...e.sets.map(x => x.w));
     const k = s.started + '-' + ei, opened = !!(ui.exOpen && ui.exOpen[k]);
@@ -2818,7 +2984,7 @@ function vToday(){
     const amIdx = e.sets.findIndex(x => x.am && x.d != null);
     // Ett tall om gangen: det store tallet er alltid neste sett. Den markerte ruta viser hvor i rekka du er,
     // så kortet trenger ikke si «Oppvarming 2 av 3» eller «sett 2 av 5» i tillegg.
-    const [bigW, bigR] = warm ? wu[wuNext] : nextSi > -1 ? [e.sets[nextSi].w, e.sets[nextSi].t] : [top, 0];
+    const [bigW, bigR] = warm ? wu[wuNext] : nextSi > -1 ? [e.sets[nextSi].w, e.sets[nextSi].c || e.sets[nextSi].t] : [top, 0];
     const bigAm = !warm && nextSi > -1 && e.sets[nextSi].am;
     const head = `<div class="ex-head"><h2>${liftName(e.lift)}</h2>${e.tag ? `<span class="tag">${e.tag}</span>` : ''}</div>
         ${now ? `<div class="kg"><span id="kgN" data-w="${fmt(bigW)}">${fmt(bigW)}</span><small id="kgU" data-u="kg${bigR ? ' × ' + bigR + (bigAm ? '+' : '') : ''}">kg${bigR ? ' × ' + bigR + (bigAm ? '+' : '') : ''}</small></div>
@@ -2833,8 +2999,8 @@ function vToday(){
       <div class="chips">${wu.length ? `<div class="chip-grp wu-grp">${vWarmup(e, ei, wu, wuNext, warm)}</div>` : ''}<div class="chip-grp">${e.sets.map((x,si) => {
         const st = x.d == null ? (si === nextSi ? 'next' : '') : (x.d >= x.t ? 'ok' : 'miss');
         const fr = x.d != null && ui.fresh === ei + ':' + si ? ' fresh' : '';
-        const lbl = 'Sett '+(si+1)+': '+(x.d == null ? 'ikke gjort, mål '+x.t+' reps' : x.d+' reps')+(x.am ? ', så mange du klarer' : '');
-        return `<div class="cw"><button class="chip ${st} ${x.am?'am':''}${fr}" data-a="set:${ei}:${si}" aria-label="${lbl}">${x.d == null ? x.t : x.d}${x.am ? '<sup>+</sup>' : ''}</button>${varies || wu.length ? `<small>${fmt(x.w)}</small>` : ''}</div>`;
+        const lbl = 'Sett '+(si+1)+': '+(x.d == null ? 'ikke gjort, mål '+(x.c || x.t)+' reps' : x.d+' reps')+(x.am ? ', så mange du klarer' : '');
+        return `<div class="cw"><button class="chip ${st} ${x.am?'am':''}${fr}" data-a="set:${ei}:${si}" aria-label="${lbl}">${x.c && (x.d == null || x.d === x.t) ? x.c : x.d == null ? x.t : x.d}${x.am ? '<sup>+</sup>' : ''}</button>${varies || wu.length ? `<small>${fmt(x.w)}</small>` : ''}</div>`;
       }).join('')}</div></div>
       ${amIdx > -1 ? `<div class="amrap"><span>Siste sett, så mange du klarer</span>
         <button class="step" data-a="am:${ei}:${amIdx}:-1" aria-label="Én rep mindre">−</button>
@@ -2842,8 +3008,13 @@ function vToday(){
         <button class="step" data-a="am:${ei}:${amIdx}:1" aria-label="Én rep mer">+</button></div>` : ''}
       ${canNext && S.history.filter(x => !x.free && !x.skipped).length < 3 ? '<p class="chip-hint">Trykk på tallet = gjort · trykk på et sett igjen = én rep mindre</p>' : ''}
       ${e.sp ? spExtras(e, ei) : ''}
+      ${e.adj ? `<div class="amrap"><span>Juster vekt etter dagsform</span>
+        <button class="step" data-a="w:${ei}:-1" aria-label="2,5 kg lettere">−</button>
+        <button class="step" data-a="w:${ei}:1" aria-label="2,5 kg tyngre">+</button></div>` : ''}
     </section>`;
   });
+  // Burgener: kroppsvektøvelsene står som en påminnelse og logges ikke
+  if (s.acc) h += `<section class="box"><span class="lbl">Til slutt, uten vekt</span><p class="small">${esc(s.acc)}</p></section>`;
   if (s.cond) h += axCondBox(s);
   // Etter styrken: kondisjon, metcon og notat ligger bak én rad. En del med innhold står alltid åpen.
   const af =ui.after && ui.after.k === s.started ? ui.after : (ui.after = {k: s.started});
@@ -2912,7 +3083,7 @@ function vDeloadChoice(ph){
 }
 
 function dayLines(p, d){
-  if (p.prog === 'athx') return d.lines.map(([n, v]) => `<div>${n}<span>${v}</span></div>`);
+  if (d.lines) return d.lines.map(([n, v]) => `<div>${n}<span>${v}</span></div>`);
   if (p.prog === 'cube') {
     const di = p.days.indexOf(d);
     return [`<div><span style="color:var(--chalk)">${liftName(d.lift)}</span></div>`,
@@ -3048,7 +3219,7 @@ function vDetail(p){
       return `
       <div class="field"><label for="in-${i}">${keyLabel(k)}</label>
         <span class="inp"><input id="in-${i}" data-key="${k}" type="text" inputmode="decimal" value="${fmt(v)}">kg</span></div>`; }).join('')}${p.orm ? '</details>' : '</div>'}
-    <p class="muted small">${p.prog === '531' ? 'Appen regner ut treningsmaks som 90 % av dette.' : p.prog === 'jugg' ? 'Appen regner ut arbeidsmaks som 90 % av dette.' : p.prog === 'sp12' ? 'Startvektene regnes ut fra dette. Etter hvert styrer RPE-en din vektene.' : p.prog === 'cube' ? 'Alle vekter regnes ut som prosent av dette.' : 'Start lett. Teknikken skal sitte før vekten blir tung.'}
+    <p class="muted small">${p.prog === '531' ? 'Appen regner ut treningsmaks som 90 % av dette.' : p.prog === 'jugg' ? 'Appen regner ut arbeidsmaks som 90 % av dette.' : p.prog === 'sp12' ? 'Startvektene regnes ut fra dette. Etter hvert styrer RPE-en din vektene.' : p.prog === 'cube' ? 'Alle vekter regnes ut som prosent av dette.' : p.prog === 'burg' ? 'Alle vekter regnes ut som prosent av dette. Trekk og shrugs ligger over 100 %, det er meningen.' : 'Start lett. Teknikken skal sitte før vekten blir tung.'}
       ${slotsOf(p).length ? ' Vil du bytte et løft, gjør du det under Program → Maksløft, pauser og Pete Plan når programmet er aktivt.' : ''}
       ${other ? ' Dette erstatter '+other.name+'. Loggen din blir liggende.' : ''}${isActive ? ' Programmet er aktivt. Aktiverer du på nytt, starter det fra økt 1 med vektene over.' : ''}</p>`}
     <button class="btn ghost" data-a="planprev:${p.id}">Se hele planen</button>
@@ -4419,7 +4590,7 @@ document.addEventListener('click', ev => {
     case 'rpe': S.draft.ex[+r[0]].rpe = +r[1]; save(); render(); break;
     case 'q': S.draft.ex[+r[0]].q = r[1]; save(); render(); break;
     case 'w': { const e = S.draft.ex[+r[0]], min = LIFTS[e.lift] && LIFTS[e.lift].bar ? BAR() : 2.5;
-      e.sets.forEach(x => x.w = Math.max(min, x.w + 2.5*(+r[1]))); save(); render(); break; }
+      e.sets.forEach(x => { if (!(e.adj && x.d != null)) x.w = Math.max(min, x.w + 2.5*(+r[1])); }); save(); render(); break; }
     case 'wu': {
       const e = S.draft.ex[+r[0]], k = r[1]; e.wuDone = e.wuDone || [];
       const j = e.wuDone.indexOf(k);

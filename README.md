@@ -1,6 +1,6 @@
 # Stanga – treningsapp på hjemskjermen
 
-Styrkeprogrammer (StrongLifts 5×5, Starting Strength, GZCLP, 5/3/1 FSL og BBB, Juggernaut, Cube Method og Strength & Power), et konkurranseprogram for ATHX 2027, øktbank med metcons og treningslogg. Alle data lagres lokalt på telefonen.
+Styrkeprogrammer (StrongLifts 5×5, Starting Strength, GZCLP, 5/3/1 FSL og BBB, Juggernaut, Cube Method og Strength & Power), Burgener 12 uker for olympisk vektløfting, et konkurranseprogram for ATHX 2027, øktbank med metcons og treningslogg. Alle data lagres lokalt på telefonen.
 
 ## Utseende: Treningsboka
 
@@ -38,7 +38,7 @@ Appen har fire faner: **I dag** (dagens økt), **Program**, **Fremgang** og **Sa
 - **Under «Fullfør økt»** står bare «Hopp over økta». Planen ligger under Program, og fri økt logges fra Fremgang.
 - **Hopp over økta** Du får en bekreftelse som sier hvilke løft som ikke får økning den gangen. Økta står som «Hoppet over» i loggen og i hele planen, men teller ikke som treningsdag.
 - **Oppvarming** står først i samme rekke som arbeidssettene. Oppvarmingssettene er mindre og grå, med vekten under hvert sett. Neste oppvarmingssett står som det store tallet i kortet, med skiver per side. Rutene blir stående når oppvarmingen er gjort, så arbeidssettene ikke flytter seg. Hovedløft får full oppvarming, sekundærøvelser to korte sett. Settene kan trykkes som gjort og gir 60 sekunders pause, men teller ikke som arbeidssett og lagres ikke i loggen.
-- **Pauser etter type sett**, slik forskningen anbefaler: tunge sett 3 min, volumsett 2 min og lette hjelpeøvelser 90 s. Strength & Power, Cube og Juggernaut har egne pauser. Oppvarming gir 60 s, og 2 min etter siste oppvarmingssett. Under **Program → Maksløft, pauser og Pete Plan** kan alle pauser skaleres til Kortere (75 %) eller Lengre (125 %).
+- **Pauser etter type sett**, slik forskningen anbefaler: tunge sett 3 min, volumsett 2 min og lette hjelpeøvelser 90 s. Strength & Power, Cube, Juggernaut og Burgener har egne pauser. Oppvarming gir 60 s, og 2 min etter siste oppvarmingssett. Under **Program → Maksløft, pauser og Pete Plan** kan alle pauser skaleres til Kortere (75 %) eller Lengre (125 %).
 - **Pausen står i arket.** Mens pausen går, er det store tallet tiden som er igjen, med neste vekt ved siden av og en tykk strek under som brukes opp. Skivene for neste sett står rett under, så du kan laste stanga. De siste 10 sekundene blir tiden og streken røde. Ved null blinker skjermen lyst én gang, og tallet blir vekten igjen. Linjen nederst har knappene «+30 s» og «Start nå», og viser tiden når du er på en annen fane. Går du over, teller tiden oppover der (+0:12). Lyd ved slutten kan slås på under **Innstillinger**.
 - **Skiver per side** regnes ut med 20 kg stang og skivene 20, 15, 10, 5, 2,5 og 1,25 kg. 25 kg er bevisst utelatt. Under **Innstillinger → Stang** kan du velge 15 kg stang. Da regnes skivene, oppvarmingen og laveste vekt på stangøvelser ut fra 15 kg. Arbeidsvektene i programmet endres ikke.
 - **Hele planen** vises på programsiden før du aktiverer, og rett i **Program**-fanen for det aktive programmet. Fullførte økter står i blått. Planen viser vektene hvis alt går som planlagt, fullførte økter viser det du faktisk løftet, og resten oppdateres etter hver økt. Programmer uten fast slutt vises 12 uker fram.
@@ -104,6 +104,16 @@ Under **Program → Bytt program → Programguide** står det hva hvert program 
 - Uke 4 og 8 er lette uker. Appen viser RPE og 1RM-trend, og du kan hoppe over uka hvis tallene er gode.
 - Uke 11 er taper med halvert volum. Uke 12 er test.
 
+## Burgener 12 uker
+
+**Program under Program → Bytt program.** Mike Burgeners 12-ukers program for olympisk vektløfting, hentet fra LiftVault-arket. Prosentene er tatt fra formlene i arket, ikke fra de ferdige kiloene.
+
+- **Oppsett:** 1RM i snatch, clean & jerk, knebøy og frontbøy. Hver øvelse regnes ut fra maksen arket bruker (snatch-familien fra snatch, clean, jerk, trekk, shrugs og RDL fra clean & jerk). Trekk og shrugs ligger over 100 % med vilje.
+- **Fire økter i uka i rekkefølge**, 48 i alt. Hvert sett er en egen rute med vekt og reps. Et kompleks som power snatch + overhead squat står som «1+3» i ruta.
+- **Push press i uke 9–10** har bare reps i arket (5-4-3-2-1). Appen foreslår 50–70 % av clean & jerk, og vekta kan justeres med − og +.
+- **Kroppsvektøvelsene** (rygghev, sit-ups, chin-ups, hengende beinløft, bokshopp) står som en linje nederst i økta og logges ikke.
+- **Uke 12, dag 4 er max out:** 85, 90 og 95 %. Beste rene snatch og clean & jerk blir ny 1RM hvis det er høyere enn før. Komplekser gir ikke rekorder.
+
 ## ATHX 2027
 
 **Program under Program → Bytt program.** Planen fra `docs/superpowers/specs/2026-10-26-athx-2027-treningsplan.md` er et eget program:
@@ -128,7 +138,7 @@ Lista viser hele økta for hver metcon, så du kan lese den uten å åpne den. T
 
 ## Metcon-budsjett
 
-Når du merker «Metcon i dag», velger en økt fra øktbanken eller logger en fri økt, kan du legge inn type, minutter og RPE. Fra øktbanken foreslår appen type og minutter ut fra økta. Appen viser minutter og belastning (minutter × RPE) for de siste sju dagene. I Strength & Power vises også budsjettet for fasen, og appen varsler når en metcon ligger for nær knebøy, clean eller benk.
+Når du merker «Metcon i dag», velger en økt fra øktbanken eller logger en fri økt, kan du legge inn type, minutter og RPE. Fra øktbanken foreslår appen type og minutter ut fra økta. Appen viser minutter og belastning (minutter × RPE) for de siste sju dagene. I Strength & Power vises også budsjettet for fasen, og appen varsler når en metcon ligger for nær knebøy, clean eller benk. I Burgener 12 uker er budsjettet per uke (40, 30, 20 og 10 minutter), og appen varsler når en beintung eller olympisk metcon ligger dagen før snatch eller clean & jerk.
 
 ## Filene
 
