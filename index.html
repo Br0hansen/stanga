@@ -719,7 +719,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 52;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 53;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -2769,9 +2769,10 @@ function vToday(){
   const anyTouched = s.ex.some(e => e.sets.some(x => x.d != null));
   const allDone = e => e.sets.every(x => x.d != null);
   const touched = e => e.sets.some(x => x.d != null) || !!(e.wuDone && e.wuDone.length);
-  // Strength & Power spør om RPE eller kvalitet når settene er gjort. Kortet holdes åpent til det er svart.
+  // Strength & Power spør om RPE eller kvalitet når settene er gjort. Kortet holdes åpent til det er svart,
+  // men neste øvelse blir den du holder på med, så pauseklokka står i den med en gang alle settene er krysset av.
   const asks = e => e.sp && allDone(e) && ((e.part === 'extra' && e.rpe == null) || ((e.part === 'top' || e.part === 'back') && (e.slot === 'clean' ? e.q == null : e.rpe == null)));
-  const cur = s.ex.findIndex(e => !allDone(e) || asks(e));
+  const cur = s.ex.findIndex(e => !allDone(e));
   const setsLeft = s.ex.reduce((n, e) => n + e.sets.filter(x => x.d == null).length, 0);
   const mins = Math.floor((Date.now() - s.started) / 60000);
   h += `<header class="head">
