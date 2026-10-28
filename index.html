@@ -594,6 +594,8 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .sx-mybox .ln{display:flex;justify-content:space-between;gap:12px;font-size:15px;font-variant-numeric:tabular-nums}
 .sx-people{display:flex;flex-wrap:wrap;gap:12px}
 .sx-people>span{display:flex;align-items:center;gap:8px;font-size:15px}
+.sx-people small{display:block;font-size:12px}
+.sx-max{display:grid;gap:4px;padding-top:10px;margin-top:4px;border-top:1px solid var(--rule)}
 .sx-prop{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
 .sx-prop:last-child{border-bottom:0}
 .sx-prop>span:not(.sx-time):not(.av){flex:1;display:grid;gap:1px;min-width:0}
@@ -721,7 +723,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 55;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 56;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -1512,8 +1514,8 @@ function doSwap(slot){
   }
   a.swaps = a.swaps || {};
   if (B === slot) delete a.swaps[slot]; else a.swaps[slot] = B;
-  const started = S.draft && S.draft.ex.some(e => e.sets.some(x => x.d != null));
-  if (!started) S.draft = null;
+  const started = draftTouched();
+  if (!started) dropOwnDraft();
   ui.swapSel = null; save(); render();
   toast(liftName(B) + (started ? ' gjelder fra neste økt' : ' er lagt inn'));
 }
@@ -2266,21 +2268,21 @@ function progress(p, a, s){
 }
 
 function finish(){
-  const p = prog(S.active.programId), s = S.draft;
+  const s = S.draft, g = s.guest, p = g ? null : prog(S.active.programId);
   // ATHX: kondisjonsdelen teller i metcon-budsjettet, med mindre du har lagt inn en egen metcon
   if (s.cond && s.cond.min > 0 && !(s.mc && s.mc.min)) { s.metcon = true; s.mc = {type:s.cond.type, min:s.cond.min, rpe:(s.cond.res || {}).rpe || (s.mc && s.mc.rpe) || null}; }
   const prs = findRecords(s);   // før økta legges i loggen, så den ikke sammenlignes med seg selv
-  const undo = undoPoint(!!s.pete);
-  const notes = progress(p, S.active, s);
+  // Samme økt som en venn er en engangsøkt: ingen progresjon, og programmet står der det står
+  const undo = g ? undefined : undoPoint(!!s.pete);
+  const notes = g ? [{name:'Programmet ditt', text:'Står der det sto. Neste økt er den samme som før.', kind:'same'}] : progress(p, S.active, s);
   const vol = s.ex.reduce((sum,e) => sum + e.sets.reduce((v,x) => v + (x.d||0)*x.w, 0), 0);
-  S.history.unshift({date:Date.now(), programId:p.id, day:s.day, sub:s.sub, note:(s.note||'').trim(), metcon:!!(s.metcon || s.wod), mc: (s.metcon || s.wod) ? mcSaved(s.mc) : undefined,
+  S.history.unshift({date:Date.now(), programId: g ? undefined : p.id, guest: g ? {sid:g.sid, who:g.who} : undefined, day:s.day, sub:s.sub, note:(s.note||'').trim(), metcon:!!(s.metcon || s.wod), mc: (s.metcon || s.wod) ? mcSaved(s.mc) : undefined,
     wod: s.wod ? {id:s.wod.id, navn:s.wod.navn, tekst:s.wod.tekst, resultat:(s.wod.resultat||'').trim()} : undefined,
-    pete: s.pete ? peteDone(s.pete) : undefined, idx: S.active.idx,
+    pete: s.pete ? peteDone(s.pete) : undefined, idx: g ? undefined : S.active.idx,
     cond: s.cond ? {title:s.cond.title, lines:s.cond.lines, res:s.cond.res || {}} : undefined,
     ex: s.ex.map(e => ({lift:e.lift, tag:e.tag, rpe:e.rpe, q:e.q, sets:e.sets.map(x => Object.assign({t:x.t, w:x.w, d:x.d}, x.c ? {c:x.c} : {}))})), undo});
-  keepOneUndo();
-  S.active.idx++;
-  S.draft = null;
+  if (g) { S.draft = S.parked || null; delete S.parked; }   // din egen økt kommer tilbake slik du forlot den
+  else { keepOneUndo(); S.active.idx++; S.draft = null; }
   ui.summary = {day:s.day, notes, vol, prs};
   ui.rest = null; updateRest();
   save(); render(); toTop();
@@ -2307,7 +2309,10 @@ const undoPoint = pete => ({active: clone(S.active), pete: pete ? clone(S.pete) 
 function keepOneUndo(){ S.history.forEach((h, k) => { if (k && h.undo) delete h.undo; }); }
 // Kan økta angres? Bare hvis programmet fortsatt står der økta forlot det.
 const canUndo = h => !!(h && h.undo && S.active && S.active.programId === h.programId && S.active.idx === h.idx + 1);
-const draftTouched = () => !!(S.draft && S.draft.ex.some(e => e.sets.some(x => x.d != null)));
+// Kjører du samme økt som en venn, ligger din egen økt til side i S.parked til engangsøkta er ferdig
+const ownDraft = () => S.draft && S.draft.guest ? S.parked : S.draft;
+function dropOwnDraft(){ if (S.draft && S.draft.guest) S.parked = null; else S.draft = null; }
+const draftTouched = () => { const d = ownDraft(); return !!(d && d.ex.some(e => e.sets.some(x => x.d != null))); };
 
 function logDelete(date){
   const i = S.history.findIndex(h => h.date === date); if (i < 0) return;
@@ -2316,7 +2321,7 @@ function logDelete(date){
     S.active = h.undo.active;
     // Pete Plan går bare tilbake hvis ingen nyere økt har en Pete Plan-økt
     if (h.undo.pete && !S.history.slice(0, i).some(x => x.pete)) S.pete = h.undo.pete;
-    S.draft = null; ui.summary = null; ui.rest = null; updateRest();
+    dropOwnDraft(); ui.summary = null; ui.rest = null; updateRest();
   }
   S.history.splice(i, 1);
   ui.confirm = null; if (ui.logOpen) delete ui.logOpen[date];
@@ -2417,7 +2422,7 @@ function activate(id){
   if (p.prog === 'athx') ['s2oh','squat','deadlift'].forEach(l => { if (!a.guess[l]) S.maxes[l] = a.e1rm[l]; });
   else if (p.orm) Object.keys(p.orm).forEach(l => { const v = num($('#orm-' + l)); if (v) S.maxes[l] = v; });
   else if (p.inputLabel === '1RM') Object.keys(p.inputs).forEach((k, i) => { const v = num($('#in-' + i)); if (v) S.maxes[k] = v; });
-  S.active = a; S.draft = null;
+  S.active = a; dropOwnDraft();
   ui.detail = null; ui.stack = []; ui.summary = null; ui.tab = 'today';
   save(); render(); toTop(); toast(p.name+' er aktivert');
 }
@@ -2705,7 +2710,7 @@ function planWeeks(P, p, a){
   // ATHX kan hoppe fram i kalenderen, så økta husker sin egen plass (idx)
   const rows = doneH.map((h, k) => ({k: ax && h.idx != null ? h.idx : k, done:!h.skipped, skipped:!!h.skipped, day:h.day, sub:h.sub, ex:h.ex, cond:h.cond}));
   simulate(p, a, N - a.idx).forEach(f => {
-    const s = P.active && f.idx === a.idx && S.draft ? S.draft : f.s;
+    const s = P.active && f.idx === a.idx && ownDraft() ? ownDraft() : f.s;
     rows.push({k: f.idx, done:false, next: P.active && f.idx === a.idx, day:s.day, sub:s.sub, ex:s.ex, cond:s.cond});
   });
   const weeks = [];
@@ -2893,8 +2898,9 @@ function vFree(){
 function vToday(){
   if (ui.bank) return vBank();
   if (ui.free) return vFree();
-  if (!S.active) return `
-    <div class="h-row h-end">${gearBtn()}</div>
+  const g = S.draft && S.draft.guest;   // samme økt som en venn, se guestSess
+  if (!S.active && !g) return `
+    <div class="h-row h-end">${gearBtn()}</div>${guestToday()}
     <div class="empty">
       <div class="bar" aria-hidden="true"></div>
       <h1>Ingen program ennå</h1>
@@ -2902,10 +2908,10 @@ function vToday(){
       <button class="btn" data-a="tab:plan">Velg program</button>
       <button class="btn ghost" data-a="free">+ Logg fri økt</button>
     </div>`;
-  const p = prog(S.active.programId);
+  const p = g ? {name: 'Engangsøkt', prog: 'guest'} : prog(S.active.programId);
   // ATHX følger kalenderen. En økt du ikke har begynt på, byttes når uka er over.
   if (p.prog === 'athx' && !(S.draft && S.draft.ex.some(e => e.sets.some(x => x.d != null))) && axSync(S.active)) { S.draft = null; save(); }
-  const tot = totalOf(p, S.active), over = tot && S.active.idx >= tot && !S.draft;
+  const tot = g ? 0 : totalOf(p, S.active), over = tot && S.active.idx >= tot && !S.draft;
   if (!S.draft && !over) { S.draft = buildSession(p, S.active); save(); }
   const s = S.draft;
   // Under en økt ligger «Se planen» og «Logg fri økt» i tekstraden nederst, så toppen bare viser økta
@@ -2939,6 +2945,7 @@ function vToday(){
   const cur = s.ex.findIndex(e => !allDone(e));
   const setsLeft = s.ex.reduce((n, e) => n + e.sets.filter(x => x.d == null).length, 0);
   const mins = Math.floor((Date.now() - s.started) / 60000);
+  if (!g) h += guestToday();
   h += `<header class="head">
       <p class="eyebrow">${p.name} · ${s.sub}</p>
       <div class="h-row"><h1>${s.day}</h1>${anyTouched ? `<span>${mins} min · ${setsLeft ? setsLeft + ' sett igjen' : 'alt gjort'}</span>` : ''}${gearBtn()}</div>
@@ -2946,6 +2953,7 @@ function vToday(){
         const d = e.sets.filter(x => x.d != null).length;
         return `<i class="${d === e.sets.length ? 'full' : ''}"><b style="width:${Math.round(d / e.sets.length * 100)}%"></b></i>`; }).join('')}</div>
       ${p.prog === 'athx' ? axStatus(S.active, s)
+        : g ? `<p class="muted small">Vektene er regnet ut fra dine makser. Programmet ditt står der det står.</p>`
         : S.active.e1rm && s.ex[0] && S.active.e1rm[s.ex[0].lift] ? `<p class="muted small">${p.prog === 'sp12' ? 'Estimert 1RM' : '1RM'} ${liftName(s.ex[0].lift).toLowerCase()}: ${fmt(Math.round(S.active.e1rm[s.ex[0].lift]*2)/2)} kg</p>` : ''}
     </header>`;
   if (p.prog === 'sp12') {
@@ -3057,8 +3065,14 @@ function vToday(){
         ${next ? 'Neste økt blir ' + esc(next.day) + (next.sub && next.sub !== s.sub ? ' (' + esc(next.sub) + ')' : '') + '.' : 'Dette var siste økt i programmet.'}</p>
       <div class="row"><button class="btn danger sm" data-a="skipday">Ja, hopp over</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div></section>`;
   }
+  // Engangsøkta kan avbrytes. Da kommer din egen økt tilbake, med settene du hadde ført.
+  if (g) h += ui.confirm === 'guestquit'
+    ? `<section class="box skipbox" aria-live="polite"><p><b>Avbryte økta med ${esc(g.who)}?</b></p>
+      <p class="small">${anyTouched ? 'Settene du har tatt, lagres ikke. ' : ''}${S.parked ? 'Din egen økt kommer tilbake slik du forlot den.' : 'Neste økt i programmet ditt står klar.'}</p>
+      <div class="row"><button class="btn danger sm" data-a="guestquit">Ja, avbryt</button><button class="btn ghost sm" data-a="cancel">Fortsett økta</button></div></section>`
+    : `<div class="links"><button class="link" data-a="confirm:guestquit">Avbryt økta</button></div>`;
   // Planen ligger under Program og fri økt under Fremgang, så her står bare det som gjelder dagens økt
-  if (ui.confirm !== 'skipday') h += `<div class="links"><button class="link" data-a="confirm:skipday">Hopp over økta</button></div>`;
+  else if (ui.confirm !== 'skipday') h += `<div class="links"><button class="link" data-a="confirm:skipday">Hopp over økta</button></div>`;
   ui.fresh = null;   // blekket tegnes bare én gang, på settet du nettopp førte inn
   return h;
 }
@@ -3168,7 +3182,7 @@ const chev = '<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="
 function vActiveCard(){
   const a = S.active, p = prog(a.programId); if (!p) return '';
   const tot = totalOf(p, a), over = tot && a.idx >= tot;
-  const next = over ? null : (S.draft || buildSession(p, JSON.parse(JSON.stringify(a))));
+  const next = over ? null : (ownDraft() || buildSession(p, JSON.parse(JSON.stringify(a))));
   const lifts = next ? [...new Map(next.ex.map(e => [e.lift, Math.max(...e.sets.map(x => x.w))])).entries()].slice(0, 3) : [];
   return `<button class="act-card" data-a="open:${p.id}">
       <div class="act-top"><span class="tag">Aktivt program</span>${next ? `<span>${esc(next.sub)}</span>` : ''}</div>
@@ -3303,7 +3317,7 @@ function vLog(){
       : sess.ex.length ? Object.entries(sess.ex.reduce((m, e) => (m[e.lift] = Math.max(m[e.lift] || 0, ...e.sets.map(x => x.w)), m), {})).map(([l, w]) => liftName(l) + ' ' + fmt(w)).join(' · ')
       : sess.cond ? esc(sess.cond.title) : '';
     const vol = sess.free ? 0 : sess.ex.reduce((s,e) => s + e.sets.reduce((v,x) => v + (x.d||0)*x.w, 0), 0);
-    const body = !open ? '' : sess.free ? noteH : `<p class="muted small">${p ? p.name : ''} · ${sess.sub} · ${fmt(Math.round(vol))} kg totalt</p>
+    const body = !open ? '' : sess.free ? noteH : `<p class="muted small">${p ? p.name + ' · ' : ''}${sess.sub} · ${fmt(Math.round(vol))} kg totalt</p>
       ${sess.ex.map(e => {
         const ws = [...new Set(e.sets.map(x => x.w))];
         const reps = e.sets.map(x => x.d == null ? '–' : x.d);
@@ -3784,6 +3798,7 @@ function sxLoad(quiet){
         const sig = JSON.stringify([fr, sess, part, prop, chats, ppl, live]);
         same = quiet && sig === SX.sig && SX.loaded && !SX.err;
         Object.assign(SX, {fr, sess, part, prop, chats, sig, live: new Map(live.map(x => [x.user_id, x.state])), hidden: !!(pres[0] && pres[0].hidden)});
+        sxSyncPlans();
       }
       SX.loaded = true; SX.err = ''; SX.at = Date.now();
     } catch(e) {
@@ -4025,12 +4040,80 @@ function vSxUsername(){
 // Den første timen får neste økt med alt som er lagt til på den. Timene etter får øktene etter det,
 // med vektene planen viser hvis alt går som planlagt. Bare du ser dette. Vennene ser ikke vektene dine.
 function myNextSess(){
-  const p = S.active && prog(S.active.programId);
+  const p = S.active && prog(S.active.programId), own = ownDraft();
   if (!p) return null;
   const tot = totalOf(p, S.active);
-  if (!S.draft && tot && S.active.idx >= tot) return null;
-  const x = S.draft || buildSession(p, S.active);
+  if (!own && tot && S.active.idx >= tot) return null;
+  const x = own || buildSession(p, S.active);
   return x && ((x.ex && x.ex.length) || myExtras(x).length) ? x : null;
+}
+// Beste anslag på 1RM i et løft: fra programmet du kjører, ellers fra Maksløft i innstillingene
+function rmOf(L){
+  const a = S.active, p = a && prog(a.programId);
+  if (a && a.e1rm && a.e1rm[L] > 0) return a.e1rm[L];
+  if (p && (p.prog === '531' || p.prog === 'jugg') && a.tm && a.tm[L] > 0) return a.tm[L] / .9;
+  return S.maxes[L] > 0 ? S.maxes[L] : null;
+}
+// Økta du deler på timene dine: øvelser, reps og andel av 1RM. Vennene ser ikke vektene.
+// Den som kjører det samme, får vekter ut fra sine egne makser (se guestSess).
+function sharePlan(x){
+  if (!x || !x.ex || !x.ex.length || x.guest) return null;
+  const p = S.active && prog(S.active.programId);
+  return {prog: p ? p.name : '', day: x.day, sub: x.sub || '', acc: x.acc || '', ex: x.ex.map(e => {
+    const r = rmOf(e.lift) ? e.lift : e.slot && rmOf(e.slot) ? e.slot : null;
+    return {l: e.lift, tag: e.tag || '', rest: e.rest || 120, wu: e.wu || null, r,
+      s: e.sets.map(y => Object.assign({t: y.t, f: !y.w ? 0 : r ? Math.round(y.w / rmOf(r) * 1000) / 1000 : null}, y.am ? {am: 1} : {}, y.c ? {c: y.c} : {}))};
+  })};
+}
+// Hold økta på timene dine oppdatert, så vennene ser den du faktisk skal kjøre. Går i bakgrunnen.
+// jsonb lagrer nøklene i en annen rekkefølge, så de sorteres før sammenligningen.
+const canon = v => JSON.stringify(v, (k, x) => x && typeof x === 'object' && !Array.isArray(x) ? Object.fromEntries(Object.entries(x).sort()) : x);
+function sxSyncPlans(){
+  const me = uid(), now = Date.now();
+  SX.sess.filter(s => s.owner === me && !s.cancelled_at && sxEnd(s) > now).forEach(s => {
+    const plan = sharePlan(mySessFor(s));
+    if (canon(plan) === canon(s.plan || null)) return;
+    s.plan = plan;
+    db('sessions', 'id=eq.' + s.id, {method:'PATCH', body:{plan}}).catch(() => {});
+  });
+}
+// Hva du har valgt på en time du er med på: samme økt som eieren eller din egen
+const myPlan = s => (SX.part.find(p => p.session_id === s.id && p.user_id === uid()) || {}).plan;
+const goesSame = s => s.owner !== uid() && !!s.plan && myPlan(s) === 'same';
+// Løftene der du mangler 1RM for å få vektene i samme økt som eieren
+const guestMissing = s => s.plan ? [...new Set(s.plan.ex.filter(e => e.r && e.s.some(y => y.f)).map(e => e.r))].filter(L => !rmOf(L)) : [];
+// Samme økt som eieren av timen, med vekter fra dine egne makser. Engangsøkt: programmet ditt står der det står.
+function guestSess(s){
+  const P = s.plan, who = uname(s.owner), w = s.workout_kind === 'bank' && BANK && BANK.find(x => x.i === s.workout_ref);
+  const x = {guest: {sid: s.id, who}, day: P.day, sub: 'Med ' + who + (P.prog ? ' · ' + P.prog : ''), acc: P.acc || '', started: Date.now(),
+    ex: P.ex.map(e => {
+      const rm = e.r ? rmOf(e.r) : null, bar = LIFTS[e.l] && LIFTS[e.l].bar ? BAR() : 0;
+      return {key: e.l, lift: e.l, slot: e.l, tag: e.tag, rest: e.rest, wu: e.wu, adj: true,
+        hint: e.s.some(y => y.f == null) ? 'Appen kunne ikke regne ut vekten, så velg den selv med − og +.' : '',
+        sets: e.s.map(y => Object.assign({t: y.t, w: y.f == null ? bar : y.f ? Math.max(bar, r25(y.f * rm)) : 0, am: !!y.am, d: null}, y.c ? {c: y.c} : {}))};
+    })};
+  if (w) { x.wod = {id: w.i, navn: wodTitle(w), tekst: w.x, resultat: ''}; x.metcon = true; }
+  return x;
+}
+// Start samme økt som eieren. Har du begynt på din egen økt, venter den til etterpå.
+function guestStart(id){
+  const s = SX.sess.find(x => x.id === id);
+  if (!s || !s.plan) return;
+  if (guestMissing(s).length) { ui.tab = 'together'; ui.sxView = 's:' + id; render(); toTop(); toast('Legg inn 1RM som mangler først'); return; }
+  if (!(S.draft && S.draft.guest)) S.parked = draftTouched() ? S.draft : null;
+  S.draft = guestSess(s); save();
+  ui.tab = 'today'; ui.summary = null; ui.confirm = null; ui.rest = null; updateRest();
+  render(); toTop(); toast(S.parked ? 'Din egen økt venter til etterpå' : 'Samme økt som ' + uname(s.owner));
+}
+// Skal du kjøre samme økt som en venn i dag, står den øverst på Trening
+function guestToday(){
+  if (!auth || !SX.loaded || trainingNow()) return '';
+  const s = SX.sess.find(x => !x.cancelled_at && goesSame(x) && dayDiff(x.starts_at) === 0 && sxEnd(x) > Date.now());
+  if (!s) return '';
+  const miss = guestMissing(s);
+  return `<section class="box"><span class="lbl">I dag ${hm(s.starts_at)} med ${uname(s.owner)}</span>
+    <p class="small">Du kjører samme økt: <b>${esc(s.plan.day)}</b>${miss.length ? '. Legg inn 1RM i ' + esc(listNo(miss.map(l => liftName(l).toLowerCase()))) + ' først, så regner appen ut vektene.' : ', med vekter ut fra dine makser.'}</p>
+    <button class="btn sm" data-a="${miss.length ? 'sxgo' : 'sxstart'}:${s.id}">${miss.length ? 'Legg inn 1RM' : 'Start samme økt'}</button></section>`;
 }
 // Det som er lagt til på økta: kondisjonsdelen i ATHX, Pete Plan, metcon og notat
 function myExtras(x){
@@ -4044,11 +4127,13 @@ function myExtras(x){
 }
 function myUpcoming(){
   const me = uid(), now = Date.now();
-  return SX.sess.filter(s => !s.cancelled_at && sxEnd(s) > now &&
+  // Timer der du kjører samme økt som eieren, bruker ikke av øktene i programmet ditt
+  return SX.sess.filter(s => !s.cancelled_at && sxEnd(s) > now && !goesSame(s) &&
     (s.owner === me || SX.part.some(p => p.session_id === s.id && p.user_id === me)))
     .sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at)).map(s => s.id);
 }
 function mySessFor(s){
+  if (goesSame(s)) return S.draft && S.draft.guest && S.draft.guest.sid === s.id ? S.draft : guestSess(s);
   const p = S.active && prog(S.active.programId), i = myUpcoming().indexOf(s.id);
   if (!p || i < 0) return null;
   if (i === 0) return myNextSess();
@@ -4061,17 +4146,37 @@ function myLine(s){
   if (!x) return '';
   const parts = x.ex.map(e => liftName(e.lift) + (exTop(e) ? ' ' + fmt(exTop(e)) : ''))
     .concat(myExtras(x).filter(m => m.k !== 'Notat').map(m => '+ ' + m.k + ': ' + m.t));
-  return `<span class="sx-mine"><b>Din økt: ${esc(x.day)}</b>${parts.length ? ' · ' + esc(parts.join(' · ')) : ''}</span>`;
+  const miss = x.guest ? guestMissing(s) : [];
+  return `<span class="sx-mine"><b>Din økt: ${esc(x.day)}${x.guest ? ', samme som ' + esc(uname(s.owner)) : ''}</b>${miss.length ? ' · mangler 1RM i ' + esc(listNo(miss.map(l => liftName(l).toLowerCase())))
+    : parts.length ? ' · ' + esc(parts.join(' · ')) : ''}</span>`;
 }
+const setsTxt = (n, t) => t.size === 1 ? n + '×' + [...t][0] : n + ' sett';
 function myBox(s){
   const x = mySessFor(s);
   if (!x) return '';
-  const row = e => { const t = new Set(e.sets.map(y => y.t)), w = exTop(e);
-    return `<div class="ln"><span>${esc(liftName(e.lift))}</span><span>${t.size === 1 ? e.sets.length + '×' + [...t][0] : e.sets.length + ' sett'}${w ? ' · ' + fmt(w) + ' kg' : ''}</span></div>`; };
-  return `<section class="box sx-mybox"><span class="lbl">Din økt · bare du ser denne</span>
-    <p><b>${esc(x.day)}</b> <span class="muted small">${esc(prog(S.active.programId).name)}</span></p>${x.ex.map(row).join('')}
+  const own = s.owner === uid(), miss = x.guest ? guestMissing(s) : [];
+  const row = e => { const w = exTop(e), gap = x.guest && miss.length && s.plan.ex.some(g => g.l === e.lift && miss.includes(g.r));
+    return `<div class="ln"><span>${esc(liftName(e.lift))}</span><span>${setsTxt(e.sets.length, new Set(e.sets.map(y => y.t)))}${gap ? ' · mangler 1RM' : w ? ' · ' + fmt(w) + ' kg' : ''}</span></div>`; };
+  const today = x.guest && dayDiff(s.starts_at) === 0 && !(S.draft && S.draft.guest && S.draft.guest.sid === s.id);
+  return `<section class="box sx-mybox"><span class="lbl">${x.guest ? 'Din økt · samme som ' + esc(uname(s.owner)) + ', med dine vekter' : own ? 'Din økt · vennene ser øvelsene, ikke vektene' : 'Din økt · bare du ser denne'}</span>
+    <p><b>${esc(x.day)}</b> <span class="muted small">${esc(x.guest ? s.plan.prog : prog(S.active.programId).name)}</span></p>${x.ex.map(row).join('')}
     ${x.later ? `<p class="muted small">Du har ${x.later === 1 ? 'en time' : x.later + ' timer'} før denne. Vektene gjelder hvis du klarer øktene før, slik planen viser.</p>` : ''}
-    ${myExtras(x).map(m => `<div class="sx-extra"><span class="lbl">${m.k}</span><p><b>${esc(m.t)}</b></p>${m.body ? `<pre class="wodtxt">${esc(m.body)}</pre>` : ''}</div>`).join('')}</section>`;
+    ${x.guest ? `<p class="muted small">Dette er en engangsøkt. Programmet ditt står der det står og fortsetter neste gang.</p>` : ''}
+    ${miss.length ? `<div class="sx-max"><p class="small"><b>Appen mangler 1RM i ${esc(listNo(miss.map(l => liftName(l).toLowerCase())))}.</b> Legg den inn, så regnes vektene ut. Den lagres under Maksløft.</p>
+      ${miss.map(l => `<div class="field"><label for="gmax-${l}">${liftName(l)}</label><span class="inp"><input id="gmax-${l}" data-gmax="${l}" type="text" inputmode="decimal" placeholder="1RM">kg</span></div>`).join('')}</div>` : ''}
+    ${myExtras(x).map(m => `<div class="sx-extra"><span class="lbl">${m.k}</span><p><b>${esc(m.t)}</b></p>${m.body ? `<pre class="wodtxt">${esc(m.body)}</pre>` : ''}</div>`).join('')}
+    ${today && !miss.length ? `<button class="btn" data-a="sxstart:${s.id}">Start samme økt</button>` : ''}</section>`;
+}
+// Økta eieren har planlagt, slik vennene ser den: øvelser, sett og prosent av 1RM, ikke vektene
+function ownerBox(s){
+  const P = s.plan;
+  if (!P || s.owner === uid()) return '';
+  const pct = e => { const f = [...new Set(e.s.map(y => y.f).filter(v => v))].map(v => Math.round(v * 100));
+    return !f.length ? '' : ' · ' + (f.length === 1 ? f[0] : Math.min(...f) + '–' + Math.max(...f)) + ' %'; };
+  return `<section class="box sx-mybox"><span class="lbl">${esc(uname(s.owner))} kjører</span>
+    <p><b>${esc(P.day)}</b> <span class="muted small">${esc(P.prog)}${P.sub ? ' · ' + esc(P.sub) : ''}</span></p>
+    ${P.ex.map(e => `<div class="ln"><span>${esc(liftName(e.l))}${e.tag ? ` <span class="muted">${esc(e.tag)}</span>` : ''}</span><span>${setsTxt(e.s.length, new Set(e.s.map(y => y.c || y.t)))}${pct(e)}</span></div>`).join('')}
+    ${P.acc ? `<p class="small muted">${esc(P.acc)}</p>` : ''}</section>`;
 }
 
 function sxCard(s){
@@ -4093,11 +4198,13 @@ function sxCard(s){
         <span class="sx-top"><span class="sx-who">${av(s.owner, 1)}<b>${uname(s.owner)}</b></span><span class="sx-time sm">${sxTime(s)}</span></span>
         <span class="tag${s.workout_kind === 'none' ? '' : ' same'}">${cancelled ? 'Avlyst' : (s.kind === 'window' ? 'Tidsvindu · ' : '') + w.lbl}</span>
         ${s.workout_kind !== 'none' ? `<span class="sx-what">${esc(w.txt)}</span>` : ''}
+        ${s.plan && !joined && !cancelled ? `<span class="sx-sub">Kjører ${esc(s.plan.day)}: ${esc(listNo(s.plan.ex.map((e, i) => i ? liftName(e.l).toLowerCase() : liftName(e.l))))}</span>` : ''}
         ${s.place || who ? `<span class="sx-sub">${[s.place && esc(s.place), who].filter(Boolean).join(' · ')}</span>` : ''}
         ${myLine(s)}
       </button>
       ${cancelled ? '' : s.kind === 'fixed'
-        ? (joined ? `<button class="btn ghost sm" data-a="sxleave:${s.id}">Meld av</button>` : `<button class="btn sm" data-a="sxjoin:${s.id}">Bli med</button>`)
+        // Har eieren en økt på timen, åpnes timen, så du kan velge samme økt eller din egen
+        ? (joined ? `<button class="btn ghost sm" data-a="sxleave:${s.id}">Meld av</button>` : `<button class="btn sm" data-a="${s.plan ? 'sxopen' : 'sxjoin'}:${s.id}">Bli med</button>`)
         : `<button class="btn ghost sm" data-a="sxopen:${s.id}">${myProp ? 'Ditt forslag: ' + hm(myProp.proposed_at) : 'Foreslå tid'}</button>`}
     </article>`;
 }
@@ -4192,8 +4299,14 @@ function vSxSess(id){
     <header class="head"><p class="eyebrow" style="color:var(--accent)">${own ? 'Din time' : 'Time med ' + uname(s.owner)} · ${dayLabel(s.starts_at).toLowerCase()}${s.kind === 'window' ? ' · tidsvindu' : ''}</p>
       <h1 style="text-transform:none">${sxTime(s)}</h1>${s.place ? `<p class="muted">${esc(s.place)}</p>` : ''}</header>`;
   if (cancelled) h += `<div class="warn">Timen er avlyst.</div>`;
-  h += `<section class="box"><span class="lbl">Økt</span><p><b>${esc(w.txt)}</b></p>${w.body ? `<pre class="wodtxt">${esc(w.body)}</pre>` : ''}</section>`;
-  h += myBox(s);
+  if (s.workout_kind !== 'none' || !s.plan || own) h += `<section class="box"><span class="lbl">Økt</span><p><b>${esc(w.txt)}</b></p>${w.body ? `<pre class="wodtxt">${esc(w.body)}</pre>` : ''}</section>`;
+  h += ownerBox(s);
+  // Du velger selv: samme økt som eieren, med dine vekter, eller neste økt i ditt eget program
+  if (!own && s.kind === 'fixed' && !cancelled && s.plan) h += joined
+    ? `<div class="seg" role="group" aria-label="Hvilken økt kjører du?"><button data-a="sxplan:${s.id}:same" aria-pressed="${myPlan(s) === 'same'}">Samme som ${esc(uname(s.owner))}</button><button data-a="sxplan:${s.id}:own" aria-pressed="${myPlan(s) !== 'same'}">Min egen økt</button></div>`
+    : `<section class="box"><span class="lbl">Bli med</span><p class="small">Du velger selv hva du kjører. Samme økt får vekter ut fra dine makser, og programmet ditt står der det står.</p>
+        <div class="row"><button class="btn sm" data-a="sxjoin:${s.id}:same" ${ui.sxBusy ? 'disabled' : ''}>Samme økt</button><button class="btn ghost sm" data-a="sxjoin:${s.id}:own" ${ui.sxBusy ? 'disabled' : ''}>Min egen økt</button></div></section>`;
+  if (own || joined || !s.plan) h += myBox(s);
   if (s.kind === 'window' && !cancelled) {
     const opts = props.map(p => `<div class="sx-prop">${av(p.user_id)}<span><b>${uname(p.user_id)}</b>${p.comment ? `<small>«${esc(p.comment)}»</small>` : ''}</span>
         <span class="sx-time">${hm(p.proposed_at)}</span>
@@ -4208,7 +4321,8 @@ function vSxSess(id){
           <label class="lbl">Kommentar<input id="sxPC" class="txt" type="text" maxlength="120" placeholder="Valgfritt"></label></div>
           <button class="btn" data-a="sxprop:${s.id}" ${ui.sxBusy ? 'disabled' : ''}>Foreslå</button></section>`;
   }
-  h += `<h3>Med på timen</h3><div class="sx-people"><span>${av(s.owner)}${own ? 'Deg' : uname(s.owner)}</span>${ps.map(p => `<span>${av(p.user_id)}${p.user_id === me ? 'Deg' : uname(p.user_id)}</span>`).join('')}</div>`;
+  const pick = p => s.plan ? `<small class="muted">${p.plan === 'same' ? 'samme økt' : 'egen økt'}</small>` : '';
+  h += `<h3>Med på timen</h3><div class="sx-people"><span>${av(s.owner)}${own ? 'Deg' : uname(s.owner)}</span>${ps.map(p => `<span>${av(p.user_id)}<span>${p.user_id === me ? 'Deg' : uname(p.user_id)}${pick(p)}</span></span>`).join('')}</div>`;
   const ch = SX.chats.find(c => c.session_id === s.id);   // bare eieren og de påmeldte er med i chatten
   if (ch) h += `<button class="btn ghost" data-a="chopen:${ch.id}">Chat for timen${ch.unread ? ' · ' + ch.unread + ' nye' : ''}</button>`;
   if (own) {
@@ -4217,7 +4331,7 @@ function vSxSess(id){
       ${ui.confirm === 'sxc:' + s.id ? `<div class="row"><button class="btn danger sm" data-a="sxcancel:${s.id}">Ja, avlys</button><button class="btn ghost sm" data-a="cancel">Nei</button></div>`
         : `<button class="btn danger" data-a="confirm:sxc:${s.id}">Avlys timen</button>`}</div>`;
   } else if (s.kind === 'fixed' && !cancelled) {
-    h += joined ? `<button class="btn ghost" data-a="sxleave:${s.id}">Meld av</button>` : `<button class="btn" data-a="sxjoin:${s.id}">Bli med</button>`;
+    h += joined ? `<button class="btn ghost" data-a="sxleave:${s.id}">Meld av</button>` : s.plan ? '' : `<button class="btn" data-a="sxjoin:${s.id}">Bli med</button>`;
   }
   return h;
 }
@@ -4732,7 +4846,11 @@ document.addEventListener('click', ev => {
         .catch(e => { ui.sxMsg = e.status || e.code ? sxErr(e) : e.message; })
         .finally(() => { ui.sxBusy = false; render(); toTop(); });
       break;
-    case 'sxjoin': sxDo(() => db('participants', '', {method:'POST', body:{session_id: r[0]}}), 'Du er med'); break;
+    case 'sxjoin': sxDo(() => db('participants', '', {method:'POST', body:{session_id: r[0], plan: r[1] === 'same' ? 'same' : 'own'}}), r[1] === 'same' ? 'Du er med og kjører samme økt' : 'Du er med'); break;
+    case 'sxplan': sxDo(() => db('participants', 'session_id=eq.' + r[0] + '&user_id=eq.' + uid(), {method:'PATCH', body:{plan: r[1]}}), r[1] === 'same' ? 'Du kjører samme økt' : 'Du kjører din egen økt'); break;
+    case 'sxstart': guestStart(r[0]); break;
+    case 'sxgo': ui.tab = 'together'; ui.sxView = 's:' + r[0]; ui.confirm = null; sxOpen(); render(); toTop(); break;
+    case 'guestquit': S.draft = S.parked || null; delete S.parked; ui.confirm = null; ui.rest = null; updateRest(); save(); render(); toTop(); toast('Engangsøkta er avbrutt'); break;
     case 'sxleave': sxDo(() => db('participants', 'session_id=eq.' + r[0] + '&user_id=eq.' + uid(), {method:'DELETE'}), 'Du er meldt av'); break;
     case 'sxprop': {
       const s0 = SX.sess.find(x => x.id === r[0]), t = ($('#sxPT') || {}).value, c = (($('#sxPC') || {}).value || '').trim();
@@ -4787,7 +4905,7 @@ document.addEventListener('click', ev => {
     case 'sound': S.settings.sound = !S.settings.sound; save(); unlockAudio(); render(); if (S.settings.sound) { beep(); toast('Lyd er på'); } break;
     case 'confirm': ui.confirm = r.join(':'); render(); break;
     case 'cancel': ui.confirm = null; render(); break;
-    case 'quit': S.active = null; S.draft = null; ui.summary = null; ui.confirm = null; save(); render(); toast('Programmet er avsluttet'); break;
+    case 'quit': S.active = null; dropOwnDraft(); ui.summary = null; ui.confirm = null; save(); render(); toast('Programmet er avsluttet'); break;
     case 'reset': syncOff(); S = fresh(); mergeCustom();   // kopien i skyen skal ikke overskrives av en tom logg ui.summary = null; ui.confirm = null; ui.exportText = ''; save(); ui.tab = 'plan'; ui.detail = null; ui.stack = []; render(); toast('Alle data er slettet'); break;
     case 'export': ui.exportText = JSON.stringify(S); render(); break;
     case 'copy': {
@@ -4887,6 +5005,13 @@ document.addEventListener('change', ev => {
   if (ev.target.dataset && ev.target.dataset.max) {
     const v = parseFloat(String(ev.target.value).replace(',', '.'));
     if (v > 0) { S.maxes[ev.target.dataset.max] = v; save(); toast('Lagret'); } else { ev.target.value = fmt(S.maxes[ev.target.dataset.max]); }
+    return;
+  }
+  // 1RM som mangler for å kjøre samme økt som en venn. Lagres under Maksløft, og vektene regnes ut med en gang.
+  if (ev.target.dataset && ev.target.dataset.gmax) {
+    const v = parseFloat(String(ev.target.value).replace(',', '.'));
+    if (v > 0 && v < 500) { S.maxes[ev.target.dataset.gmax] = v; save(); render(); toast('1RM i ' + liftName(ev.target.dataset.gmax).toLowerCase() + ' er lagret'); }
+    else if (ev.target.value.trim()) toast('Skriv 1RM som et tall, for eksempel 82,5');
     return;
   }
   if (ev.target.dataset && ev.target.dataset.ppref) {
