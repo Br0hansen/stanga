@@ -1,6 +1,6 @@
 # Stanga – treningsapp på hjemskjermen
 
-Styrkeprogrammer (StrongLifts 5×5, Starting Strength, GZCLP, 5/3/1 FSL og BBB, Juggernaut, Cube Method og Strength & Power), Burgener 12 uker for olympisk vektløfting, et konkurranseprogram for ATHX 2027, øktbank med metcons og treningslogg. Alle data lagres lokalt på telefonen.
+Styrkeprogrammer (StrongLifts 5×5, Starting Strength, GZCLP, 5/3/1 FSL og BBB, Juggernaut, Cube Method og Strength & Power), Burgener 12 uker for olympisk vektløfting, et konkurranseprogram for ATHX 2027, øktbank med metcons, metcon-klokke og treningslogg. Alle data lagres lokalt på telefonen.
 
 ## Utseende: Treningsboka
 
@@ -135,6 +135,21 @@ Prioritering etter plasseringer på leaderboardet er ikke bygd ennå, fordi det 
 ## Øktbanken
 
 Lista viser hele økta for hver metcon, så du kan lese den uten å åpne den. Trykk på en økt for å velge den, se tidligere resultater eller merke den som favoritt.
+
+## Metcon-klokke
+
+Én klokke for **For Time**, **AMRAP**, **EMOM** og **Intervaller**.
+
+- **Hvor:** Klokkeikonet ved tannhjulet på I dag åpner klokka, med eller uten økt. I «Dagens metcon» står **Start klokke**, fylt ut fra økta, og **Endre**. I Fri økt og under «+ Metcon» står **Klokke** ved siden av Øktbank.
+- **Fylt ut fra øktbanken:** Appen leser teksten i økta: «20 min AMRAP», «EMOM 15 min» med stasjonene «1:», «2:», «E3MOM x 6», «For tid, 25 min tak», «3–4 runder, 3 min pause» og «2 min hvile mellom». Formatet og minuttene i banken brukes når teksten ikke sier nok. Det appen har forstått, står under knappen før du starter.
+- **Oppsettet** har Sist brukt (de tre siste), hurtigvalg (Tabata, 40/20, 30/30, EMOM 10, AMRAP 12, For Time) og én eller flere blokker. **+ Legg til blokk** setter sammen for eksempel AMRAP 8 → pause 2 → AMRAP 8, og **Gjenta alt** kjører hele rekka flere ganger.
+- **Intervaller** kan ha fast arbeidstid (40/20) eller **åpent arbeid**: du trykker når draget er ferdig, for eksempel 1 km løp, og så starter pausen.
+- **Trykk på den store flaten betyr «neste»:** +1 runde i AMRAP og For Time, og «draget er ferdig» ved åpent arbeid. −1 retter et feiltrykk.
+- **Skjermen:** Store tall, pausen i kondisjonsfargen, rødt de siste 3 sekundene og runder du har gjort i blått. Tre korte pip før hver ny del og ett langt når den starter. Nedtelling før start (av, 5, 10 eller 15 s) og pip kan endres i oppsettet. Skjermen holdes på mens klokka går.
+- **Skjul** legger klokka i linja nederst, der pauseklokka står. Mens metcon-klokka går, starter ikke pauseklokka. **Avslutt** må trykkes to ganger.
+- **Ferdig:** Resultatet fylles ut (tid, runder pluss reps eller snitt per drag) sammen med minuttene. Med et program velger du **Legg inn i dagens økt**: resultatet går til dagens metcon, eller til notatet, og minuttene går til metcon-budsjettet. Uten program, eller fra Fri økt, blir det **Lagre som fri økt**.
+- Klokka lagres i `stanga.v1.clock` og står riktig etter en omstart. Den følger ikke med i skybackup. En ny versjon av appen venter til klokka er lukket.
+- **Begrensning på iPhone:** Med låst skjerm kjører ikke appen, så den piper ikke da.
 
 ## Metcon-budsjett
 

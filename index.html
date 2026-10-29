@@ -691,6 +691,71 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .sync-cmp b{font:800 24px/1 var(--face);font-stretch:68%;font-variant-numeric:tabular-nums}
 .sync-cmp span{font-size:12px;color:var(--chalk-2)}
 
+/* Metcon-klokka: hele skjermen mens den går, med store tall som kan leses fra stanga.
+   Pausen har kondisjonsfargen, rødt er de siste sekundene, blått er runder du har gjort. */
+.hbtns{display:flex;gap:8px;flex:none}
+.gear.ck-live{border-color:var(--accent);color:var(--accent)}
+.quick2 .btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;vertical-align:-3px;margin-right:6px}
+.ck-go{display:grid;grid-template-columns:1fr auto;gap:8px 10px;align-items:center}
+.ck-go .btn{display:flex;align-items:center;justify-content:center;gap:8px}
+.ck-go .btn.ghost{width:auto;padding:16px}
+.ck-go p{grid-column:1/-1}
+.clk{position:fixed;inset:0;z-index:35;background:var(--iron);color:var(--chalk);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+  padding:max(14px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.clk>div{max-width:540px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;gap:12px}
+.clk::after{content:"";position:fixed;inset:0;background:var(--chalk);opacity:0;pointer-events:none}
+.clk.flash::after{animation:restflash .9s ease-out}
+.ck-top{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:40px}
+.ck-top>span{flex:1;min-width:0;text-align:center;font-size:14px;font-weight:600;color:var(--chalk-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ck-face{display:flex;flex-direction:column;align-items:center;gap:8px;padding-top:min(4vh,32px)}
+.ck-ph{font:700 15px/1.2 var(--face);letter-spacing:.1em;text-transform:uppercase;color:var(--chalk-2);text-align:center}
+.ck-t{font:800 min(36vw,180px)/.9 var(--face);font-stretch:62%;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.ck-t.warn{color:var(--miss)}
+.ck-sub{font-size:16px;color:var(--chalk-2);text-align:center;min-height:1.3em}
+.ck-run[data-k="rest"] .ck-face .ck-ph,.ck-run[data-k="rest"] .ck-t:not(.warn){color:var(--kond)}
+.ck-run[data-paused] .ck-t{opacity:.45}
+.ck-lvl{height:10px;background:var(--iron-3);position:relative;flex:none}
+.ck-lvl i{position:absolute;left:0;top:0;bottom:0;background:var(--chalk);transition:width .25s linear}
+.ck-run[data-k="rest"] .ck-lvl i{background:var(--kond)}
+.ck-ticks{display:flex;gap:3px;height:12px;flex:none}
+.ck-ticks i{flex:1;border-radius:2px;box-shadow:inset 0 0 0 1px var(--chalk-3)}
+.ck-ticks i.ok{background:var(--accent);box-shadow:none}
+.ck-ticks i.now{background:var(--chalk);box-shadow:none}
+.ck-blkn{font-size:14px;color:var(--chalk-2);text-align:center}
+.ck-tap{flex:1;min-height:170px;appearance:none;border:0;border-radius:4px;background:var(--sheet,var(--paper));color:var(--ink);font-family:var(--face);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer;touch-action:manipulation;box-shadow:var(--lift);-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+.ck-tap:active{background:var(--press)}
+.ck-tap .ck-ph{color:var(--ink-2)}
+.ck-tap small{font-size:15px;color:var(--ink-2)}
+.ck-n{font:800 88px/.9 var(--face);font-stretch:62%;color:var(--pen);font-variant-numeric:tabular-nums}
+.ck-sq{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;max-width:85%}
+.ck-sq i{width:18px;height:18px;border-radius:3px;background:var(--pen)}
+.ck-sq i.nx{background:none;box-shadow:inset 0 0 0 2px var(--edge)}
+.ck-st{background:var(--sheet,var(--paper));color:var(--ink);border-radius:3px;padding:14px 16px;display:grid;gap:4px;box-shadow:var(--lift)}
+.ck-st .lbl{color:var(--ink-2)}
+.ck-st b{font:700 28px/1.15 var(--face);font-stretch:85%}
+.ck-nx{display:grid;gap:3px;padding:0 4px;font-size:18px;font-weight:600}
+.ck-fill{flex:1}
+.ck-ctl{display:flex;gap:10px;flex:none}
+.ck-ctl .btn{padding:20px 10px;font-size:18px;flex:1}
+.ck-ctl .ck-undo{flex:0 0 22%}
+.ck-set .head{padding-top:0}
+.ck-chips{display:flex;flex-wrap:wrap;gap:8px}
+.ck-chips button{appearance:none;border:1px solid var(--line);background:transparent;color:var(--chalk);border-radius:4px;padding:10px 12px;font:600 14px/1.3 var(--face);cursor:pointer;text-align:left}
+.ck-chips button b{display:block;font-weight:700}
+.ck-blk .top,#ckSum .top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.ck-types button{font-size:14px;flex:1 1 64px}
+.ck-stf{flex-wrap:wrap}
+.ck-stf textarea{width:100%;box-sizing:border-box;background:var(--field);border:1px solid var(--rule);border-radius:3px;color:var(--ink);font:15px/1.4 var(--face);padding:8px 10px;resize:vertical}
+.ck-strip{display:flex;gap:2px;height:20px}
+.ck-strip i{flex-basis:0;min-width:2px;background:var(--ink)}
+.ck-strip i.rest{background:var(--kond)}
+.ck-strip i.open,.ck-strip i.up{background:repeating-linear-gradient(45deg,var(--ink) 0 3px,transparent 3px 6px)}
+.ck-start{display:flex;align-items:center;justify-content:center;gap:10px;font-size:19px;padding:19px 18px}
+.ck-end .ck-face{padding-top:0}
+.ck-end .ck-t{font-size:96px}
+.ck-end .txt{width:100%;box-sizing:border-box;background:var(--iron);border:1px solid var(--line);border-radius:3px;color:var(--chalk);font:500 16px var(--face);padding:11px 12px}
+
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -703,8 +768,10 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
     <div class="rest-r1"><b id="restB" role="timer" aria-label="Pause">1:30</b><span id="restL">av 1:30</span><button data-a="restadd:30" aria-label="30 sekunder lengre pause">+30 s</button><button data-a="skip">Start nå</button></div>
     <div class="ruler" aria-hidden="true"><i></i></div>
   </div></div>
+  <div class="rest ckbar" id="ckBar" hidden></div>
 </div>
 <div class="toast" id="toast" hidden></div>
+<div class="clk" id="clk" hidden></div>
 <nav class="tabs" aria-label="Faner"><div class="tabs-in">
   <button class="tab" data-a="tab:today"><svg viewBox="0 0 24 24"><path d="M2 12h20M5 8v8M8 6v12M16 6v12M19 8v8"/></svg>I dag</button>
   <button class="tab" data-a="tab:plan"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h10"/></svg>Program</button>
@@ -723,7 +790,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 57;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 58;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -2573,6 +2640,9 @@ function wodBox(w, ctx){
       <div class="top"><span class="lbl">Dagens metcon</span><button class="link" data-a="wodrm:${ctx}">Fjern</button></div>
       <h2>${esc(w.navn)}</h2>
       <pre class="wodtxt">${esc(w.tekst)}</pre>
+      ${ckOn() ? `<button class="btn ghost" data-a="ck:show">Klokka går · åpne den</button>`
+        : `<div class="ck-go"><button class="btn" data-a="ck:wod:${ctx}">${playSVG}Start klokke</button><button class="btn ghost" data-a="ck:edit:${ctx}">Endre</button>
+        <p class="small muted">${esc(ckDesc(ckFromWod(w)))}${ckCd() ? ' · ' + ckCd() + ' s nedtelling' : ''}</p></div>`}
       <label for="wodRes" class="lbl">Resultat</label>
       <input id="wodRes" class="txt" type="text" data-ctx="${ctx}" placeholder="For eksempel 12:34, 8 runder + 5 eller 60 kg" value="${esc(w.resultat)}" autocomplete="off">
       ${prevResults(w.id)}
@@ -2581,7 +2651,8 @@ function wodBox(w, ctx){
 function quickPick(ctx){
   return `<div class="row quick2">
       <button class="btn ghost" data-a="qr:${ctx}">Tilfeldig solo-metcon</button>
-      <button class="btn ghost" data-a="bank:${ctx}">Øktbank</button></div>`;
+      <button class="btn ghost" data-a="bank:${ctx}">Øktbank</button>
+      <button class="btn ghost" data-a="ck:open:${ctx}">${clockSVG}Klokke</button></div>`;
 }
 function openBank(forWhat){
   ui.bank = true; ui.bankFor = forWhat; ui.wod = null; ui.wodRand = false; ui.bankN = 30;
@@ -2901,7 +2972,7 @@ function vToday(){
   if (ui.free) return vFree();
   const g = S.draft && S.draft.guest;   // samme økt som en venn, se guestSess
   if (!S.active && !g) return `
-    <div class="h-row h-end">${gearBtn()}</div>${guestToday()}
+    <div class="h-row h-end">${topBtns()}</div>${guestToday()}
     <div class="empty">
       <div class="bar" aria-hidden="true"></div>
       <h1>Hva vil du trene?</h1>
@@ -2935,7 +3006,7 @@ function vToday(){
   }
   if (over) {
     const a = S.active;
-    return h + `<header class="head"><p class="eyebrow">${p.name}</p><div class="h-row"><h1>Programmet er fullført</h1>${gearBtn()}</div></header>
+    return h + `<header class="head"><p class="eyebrow">${p.name}</p><div class="h-row"><h1>Programmet er fullført</h1>${topBtns()}</div></header>
       ${a.e1rm ? `<div class="box trend">${Object.keys(a.e1rm).map(l => `<div class="tr"><b>${liftName(l)}</b><span>${fmt(a.base[l])} → ${fmt(Math.round(a.e1rm[l]*2)/2)} kg</span></div>`).join('')}</div>
       <p class="muted small">Startverdi mot estimert 1RM nå.</p>` : ''}
       <button class="btn" data-a="go:library">Velg neste program</button>`;
@@ -2952,7 +3023,7 @@ function vToday(){
   if (!g) h += guestToday();
   h += `<header class="head">
       <p class="eyebrow">${p.name} · ${s.sub}</p>
-      <div class="h-row"><h1>${s.day}</h1>${anyTouched ? `<span>${mins} min · ${setsLeft ? setsLeft + ' sett igjen' : 'alt gjort'}</span>` : ''}${gearBtn()}</div>
+      <div class="h-row"><h1>${s.day}</h1>${anyTouched ? `<span>${mins} min · ${setsLeft ? setsLeft + ' sett igjen' : 'alt gjort'}</span>` : ''}${topBtns()}</div>
       <div class="prog" aria-label="${cur < 0 ? 'Alle øvelser er gjort' : 'Øvelse ' + (cur+1) + ' av ' + s.ex.length}">${s.ex.map(e => {
         const d = e.sets.filter(x => x.d != null).length;
         return `<i class="${d === e.sets.length ? 'full' : ''}"><b style="width:${Math.round(d / e.sets.length * 100)}%"></b></i>`; }).join('')}</div>
@@ -3387,6 +3458,8 @@ function vPeteSettings(){
 
 const gearSVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>';
 const gearBtn = () => `<button class="gear" data-a="go:settings" aria-label="Innstillinger">${gearSVG}</button>`;
+// Klokka har fast plass ved tannhjulet på I dag, med eller uten økt
+const topBtns = () => `<div class="hbtns"><button class="gear${ckOn() ? ' ck-live' : ''}" data-a="ck:open" aria-label="${ckOn() ? 'Klokka går. Åpne den' : 'Klokke'}">${clockSVG}</button>${gearBtn()}</div>`;
 
 // Program: det aktive programmet, snarveier til innstillingene for treningen og et annet program, og hele planen under.
 // Uten aktivt program er Program biblioteket.
@@ -3495,8 +3568,8 @@ function render(){
 /* ---------- Pausetimer, skjerm-på, toast ---------- */
 // Lyd når pausen er over (innstilling under Innstillinger). Lyden må låses opp i et trykk, derfor skjer det i startRest.
 let audio = null;
-function unlockAudio(){
-  if (!S.settings.sound) return;
+function unlockAudio(force){
+  if (!S.settings.sound && !force) return;   // force: metcon-klokka har sin egen lydinnstilling
   try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); if (audio.state === 'suspended') audio.resume(); } catch(e) {}
 }
 function beep(){
@@ -3511,6 +3584,7 @@ function beep(){
   } catch(e) {}
 }
 function startRest(sec){
+  if (ckOn()) return;   // metcon-klokka styrer tiden, for eksempel i en EMOM med løft
   sec = Math.round((sec || 120) * (S.settings.restScale || 1)); unlockAudio();
   ui.rest = {end: Date.now() + sec*1000, total: sec, done: false};
   updateRest();
@@ -3554,7 +3628,509 @@ let lock = null;
 async function wake(){
   try { if (!lock && navigator.wakeLock) { lock = await navigator.wakeLock.request('screen'); lock.addEventListener('release', () => lock = null); } } catch(e) {}
 }
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && ui.tab === 'today' && S.draft) wake(); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && ((ui.tab === 'today' && S.draft) || ckOn())) wake(); });
+
+/* ---------- Metcon-klokke ----------
+   Én klokke for For Time, AMRAP, EMOM og intervaller. Oppsettet er en liste med blokker,
+   og blokkene blir en liste med biter: {k, sec, bi, rp, r, n, lbl}.
+   k: 'up' = For Time (teller opp), 'am' = AMRAP (teller ned), 'work' og 'rest' = fast tid,
+   'open' = arbeid uten fast tid (du trykker når draget er ferdig). sec = null: biten varer til du trykker.
+   Tiden regnes fra starttidspunktet, ikke ved å telle tikk, så klokka står riktig også når appen har vært
+   i bakgrunnen. Klokka lagres for seg selv og følger ikke med i skybackup.
+   Klokka startes fra ikonet på I dag eller fra metcon-kortet. Resultatet kobles til økta først når du
+   trykker «Ferdig», så du trenger ikke velge økt før du starter. */
+const CK_KEY = KEY + '.clock';
+let CK = (() => { try { const c = JSON.parse(localStorage.getItem(CK_KEY)); return c && c.bits && Date.now() - c.t0 < 6 * 3600e3 ? c : null; } catch(e) { return null; } })();
+const ckStore = () => { try { CK ? localStorage.setItem(CK_KEY, JSON.stringify(CK)) : localStorage.removeItem(CK_KEY); } catch(e) {} };
+const ckOn = () => !!(CK && !CK.done);
+const ckCopy = c => JSON.parse(JSON.stringify(c));
+const CK_T = {ft:'For Time', amrap:'AMRAP', emom:'EMOM', int:'Intervaller', rest:'Pause'};
+const ckNew = t => ({ft:{t:'ft', cap:0}, amrap:{t:'amrap', sec:720}, emom:{t:'emom', every:60, n:10, st:[]}, int:{t:'int', work:40, rest:20, n:10}, rest:{t:'rest', sec:120}})[t];
+const CK_QUICK = [
+  ['Tabata 20/10 × 8', {t:'int', work:20, rest:10, n:8}], ['40/20 × 10', {t:'int', work:40, rest:20, n:10}],
+  ['30/30 × 10', {t:'int', work:30, rest:30, n:10}], ['EMOM 10', {t:'emom', every:60, n:10, st:[]}],
+  ['AMRAP 12', {t:'amrap', sec:720}], ['For Time', {t:'ft', cap:0}]];
+const durTxt = s => s % 60 ? (s < 60 ? s + ' s' : mmss(s)) : s / 60 + ' min';
+const ckCd = () => S.settings.ckCd != null ? S.settings.ckCd : 10;
+const ckSound = () => S.settings.clockSound !== false;
+const playSVG = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg>';
+const clockSVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 2M9.5 2.5h5M12 2.5V6M18.5 6.5L20 5"/></svg>';
+
+function ckDesc1(b){
+  if (b.t === 'ft') return 'For Time' + (b.cap ? ' · tak ' + durTxt(b.cap) : '');
+  if (b.t === 'amrap') return 'AMRAP ' + durTxt(b.sec);
+  if (b.t === 'emom') return b.every % 60 ? `Hvert ${durTxt(b.every)} × ${b.n}` : (b.every === 60 ? 'EMOM ' : `E${b.every / 60}MOM `) + durTxt(b.n * b.every);
+  if (b.t === 'int') return b.work ? durTxt(b.work) + (b.rest ? ' / ' + durTxt(b.rest) : '') + ' × ' + b.n : `${b.n} drag${b.rest ? ' · ' + durTxt(b.rest) + ' pause' : ''}`;
+  return 'Pause ' + durTxt(b.sec);
+}
+const ckDesc = c => { const d = c.b.map(ckDesc1).join(' → '); return c.rep > 1 ? `(${d}) × ${c.rep}` : d; };
+
+// Blokkene blir biter. Pausen etter siste drag og en pause helt til slutt tas bort.
+function ckBits(c){
+  const out = [];
+  for (let rp = 0; rp < (c.rep || 1); rp++) c.b.forEach((b, bi) => {
+    const o = (k, sec, r, n, lbl) => out.push({k, sec, bi, rp, r, n, lbl: lbl || ''});
+    if (b.t === 'ft') o('up', b.cap || null, 0, 1);
+    else if (b.t === 'amrap') o('am', b.sec, 0, 1);
+    else if (b.t === 'emom') for (let i = 0; i < b.n; i++) o('work', b.every, i, b.n, b.st && b.st.length ? b.st[i % b.st.length] : '');
+    else if (b.t === 'int') for (let i = 0; i < b.n; i++) { o(b.work ? 'work' : 'open', b.work || null, i, b.n); if (i < b.n - 1 && b.rest) o('rest', b.rest, i, b.n); }
+    else o('rest', b.sec, 0, 1);
+  });
+  while (out.length > 1 && out[out.length - 1].k === 'rest') out.pop();
+  return out;
+}
+
+// Fylt ut fra øktbanken: blokkene leses fra teksten i rekkefølge. Formatet og minuttene i banken er reserven.
+// Tolkingen kan bomme, så beskrivelsen står alltid ved «Start klokke», og «Endre» åpner oppsettet.
+function ckParse(text, f, m){
+  const lines = String(text || '').split('\n').map(x => x.trim()), b = [], low = String(text || '').toLowerCase();
+  const n = x => parseInt(x, 10) || 0;
+  let em = null, rep = 0;   // em = EMOM-blokka vi samler stasjoner til
+  // «2x 9 min AMRAP» er en oppsummering: blokkene står under (A, B), eller den skal gjentas
+  const sumOf = l => n((l.match(/(?:^|\s|:)(\d)\s*[x×]\s*\d+\s*min/) || [])[1]);
+  // «m/ 2 min hvile mellom» gjelder mellom blokkene
+  const gapM = low.match(/(\d{1,3})\s*(s\b|sek\w*|min\w*)\s*(?:hvile|pause|rest)\s*(?:mellom|between)/);
+  const gap = gapM ? n(gapM[1]) * (/^m/.test(gapM[2]) ? 60 : 1) : 0;
+  const setsM = low.match(/(?:^|\n)\s*(?:for\s*)?(\d{1,2})\s*sett\s*(?:av|med)\b/);   // «For 5 sett av: AMRAP 5 minutter»
+  const capM = low.match(/(\d{1,3})\s*(?:min\w*)?\s*(?:time ?cap|cap|tak)\b|(?:time ?cap|cap|tak)\s*(?:på\s*)?:?\s*(\d{1,3})/);
+  const cap = capM ? (n(capM[1]) || n(capM[2])) * 60 : 0;
+  for (const ln of lines){
+    const l = ln.toLowerCase();
+    let x;
+    if (!l) { if (em) em.body = em.body || em.lines.length > 0 || em.st.length > 0; continue; }
+    if ((x = l.match(/\be(\d{1,2})?mom\b[\s:\-]*(?:(?:x|×)\s*(\d{1,3})|(\d{1,3}))?/))) {
+      const every = (n(x[1]) || 1) * 60, tot = n(x[3]) || n((l.match(/(\d{1,3})\s*min/) || [])[1]);
+      b.push(em = {t:'emom', every, n: n(x[2]) || (tot ? Math.max(1, Math.round(tot * 60 / every)) : 0), st:[], lines:[], sum: sumOf(l)});
+      continue;
+    }
+    if ((x = l.match(/(\d{1,3})\s*(?:min\w*\.?|')\s*amrap|amrap\s*(?:på\s*|i\s*)?(\d{1,3})\b/))) { em = null; b.push({t:'amrap', sec: (n(x[1]) || n(x[2])) * 60, sum: sumOf(l)}); continue; }
+    if (/^for (?:time|tid)\b|^\d+\s*(?:rft|rounds for time|runder for tid)\b/.test(l) && !b.some(y => y.t === 'ft')) { em = null; b.push({t:'ft', cap}); continue; }
+    if ((x = l.match(/^(?:rest|pause|hvile)\s*:?\s*(\d{1,2}(?::\d{2})?)\s*(min\w*|m\b|s\b|sek\w*)?|^(\d{1,2})\s*min\w*\s*(?:rest|pause|hvile)\b/))) {
+      em = null; const v = x[3] ? n(x[3]) * 60 : /:/.test(x[1]) ? n(x[1]) * 60 + n(x[1].split(':')[1]) : /^s/.test(x[2] || '') ? n(x[1]) : n(x[1]) * 60;
+      if (v) b.push({t:'rest', sec: v}); continue;
+    }
+    if ((x = l.match(/^(\d{1,2})\s*(?:runder|rounds|rnds)\.?$/))) { rep = n(x[1]); continue; }
+    if (/^gjenta\b/.test(l)) { rep = rep || 2; continue; }
+    if (em && !em.body) {
+      if ((x = ln.match(/^(\d{1,2})\s*[:.,)]\s*(\S.*)$/) || ln.match(/^\d{1,2}\s*-\s*\d{1,2}\s*[-–:]\s*(\S.*)$/))) em.st.push((x[2] || x[1]).trim());
+      else em.lines.push(ln);
+    }
+  }
+  b.forEach(y => {
+    if (y.t !== 'emom') return;
+    if (!y.st.length && y.lines.length && y.lines.length <= 3) y.st = [y.lines.join(' + ')];
+    if (!y.n) y.n = y.st.length ? y.st.length * (rep || 1) : Math.round((m || 12) * 60 / y.every);
+    delete y.lines; delete y.body;
+  });
+  // Oppsummeringen tas bort når blokkene står under den, ellers blir den N like blokker
+  for (let i = b.length - 1; i >= 0; i--) if (b[i].sum > 1) {
+    const same = b.filter((y, j) => j !== i && y.t === b[i].t).length;
+    const one = Object.assign({}, b[i]); delete one.sum;
+    b.splice(i, 1, ...(same >= 2 ? [] : Array.from({length: b[i].sum}, () => Object.assign({}, one, {st: one.st ? one.st.slice() : undefined}))));
+  }
+  b.forEach(y => delete y.sum);
+  if (b.some(y => y.t === 'ft')) b.splice(0, b.length, b.find(y => y.t === 'ft'));   // For Time går i ett, pausene er en del av tida
+  if (b.every(y => y.t === 'rest')) b.length = 0;
+  if (gap && b.length > 1 && !b.some(y => y.t === 'rest')) for (let i = b.length - 1; i > 0; i--) b.splice(i, 0, {t:'rest', sec: gap});
+  const emomRep = b.length === 1 && b[0].t === 'emom';
+  if (setsM && b.length) rep = n(setsM[1]);
+  const reps = setsM || (!emomRep && b.length > 1) ? rep : 0;
+  while (reps < 2 && b.length > 1 && b[b.length - 1].t === 'rest') b.pop();   // pausen etter siste blokk er ikke en del av klokka   // «3 runder» hørte til stasjonene
+  if (!b.length) {
+    let x;
+    if (/tabata/.test(low)) b.push({t:'int', work:20, rest:10, n:8});
+    else if ((x = low.match(/(\d{1,3})\s*s\w*\s*(?:on|arbeid|jobb)\s*[\/,]?\s*(\d{1,3})\s*s\w*\s*(?:off|pause|hvile)/))) {
+      const r = low.match(/(\d{1,2})\s*(?:runder|rounds|x\b|×)/); b.push({t:'int', work:n(x[1]), rest:n(x[2]), n: r ? n(r[1]) : 8});
+    }
+    else if (f === 'EMOM / intervall' && (x = low.match(/(\d{1,2})(?:\s*[–-]\s*(\d{1,2}))?\s*(?:[x×]\s*\S|runder\b|rounds\b|drag\b)/))) {
+      const p = low.match(/(\d{1,3})\s*(s\b|sek\w*|min\w*)\s*(?:\w+\s+){0,2}(?:pause|hvile|rest|mellom)|(?:pause|hvile|rest)\s*:?\s*(\d{1,2})\s*(s\b|sek\w*|min\w*)?/);
+      const rest = p ? (p[1] ? n(p[1]) * (/^m/.test(p[2]) ? 60 : 1) : n(p[3]) * (/^s/.test(p[4] || 'min') ? 1 : 60)) : 60;
+      b.push({t:'int', work:0, rest, n: n(x[2]) || n(x[1])});
+    }
+    else if (f === 'AMRAP') b.push({t:'amrap', sec: (m || 20) * 60});
+    else if (f === 'EMOM / intervall') b.push({t:'emom', every:60, n: m || 12, st:[]});
+    else b.push({t:'ft', cap});
+  }
+  b.forEach(y => { if (y.n) y.n = Math.min(y.n, 100); if (y.t === 'amrap' && !(y.sec > 0)) y.sec = (m || 20) * 60; });
+  return {b, rep: reps > 1 ? Math.min(reps, 10) : 1};
+}
+function ckWod(ctx){ return ctx === 'session' ? S.draft && S.draft.wod : ctx === 'free' ? ui.freeWod : null; }
+function ckFromWod(w){
+  const bw = BANK && BANK.find(x => x.i === w.id);
+  return Object.assign(ckParse(w.tekst, bw && bw.f, bw && bw.m), {name: w.navn, from: w.id});
+}
+const ckCtxNow = () => ui.free ? 'free' : S.draft ? 'session' : null;
+function ckDefault(ctx){
+  const w = ckWod(ctx), rec = S.settings.ckRecent || [];
+  return w ? ckFromWod(w) : rec[0] ? ckCopy(rec[0]) : {b:[ckNew('amrap')], rep:1};
+}
+
+// Hvor er klokka nå? e = sekunder siden start, uten nedtelling og pauser.
+function ckNow(){
+  const e = CK.done ? CK.endE : ((CK.pausedAt || Date.now()) - CK.t0 - CK.paused) / 1000 - CK.cd;
+  if (e < 0) return {cd: -e, e};
+  let a = 0;
+  for (let i = 0; i < CK.bits.length; i++) {
+    const b = CK.bits[i], end = CK.ends[i] != null ? CK.ends[i] : b.sec != null ? a + b.sec : Infinity;
+    if (e < end) return {i, b, e, a, inn: e - a, left: isFinite(end) && CK.ends[i] == null ? end - e : null};
+    a = end;
+  }
+  return {over: true, e: a};
+}
+const ckBitTxt = b => !b ? '' : b.k === 'rest' ? 'Pause ' + durTxt(b.sec) : b.k === 'open' ? `Drag ${b.r + 1} av ${b.n}`
+  : b.k === 'up' ? 'For Time' : b.k === 'am' ? 'AMRAP ' + durTxt(b.sec) : b.lbl || `Arbeid ${durTxt(b.sec)}`;
+// Det skjermen viser: overskrift, tid, linja under og hvor mye av biten som er igjen
+function ckFace(s){
+  if (s.cd != null) return {k:'cd', ph:'Klar', t: String(Math.ceil(s.cd)), sub: 'Først: ' + ckBitTxt(CK.bits[0]), lvl: CK.cd ? s.cd / CK.cd : 0, warn: s.cd <= 3};
+  const b = s.b, blk = CK.cfg.b[b.bi], nx = CK.bits[s.i + 1];
+  let ph, t, sub = nx ? 'Neste: ' + ckBitTxt(nx) : b.k === 'work' ? 'Siste runde' : '';
+  if (b.k === 'up') { ph = 'Tid brukt'; t = mmss(s.inn); sub = b.sec ? 'Tak om ' + mmss(Math.ceil(s.left)) : 'Trykk «Ferdig» når du er ferdig'; }
+  else if (b.k === 'am') { ph = 'Igjen'; t = mmss(Math.ceil(s.left)); }
+  else if (b.k === 'open') { ph = `Drag ${b.r + 1} av ${b.n}`; t = mmss(s.inn); sub = 'Trykk når draget er ferdig'; }
+  else if (b.k === 'work') { ph = blk.t === 'emom' ? (blk.every === 60 ? 'Minutt ' : 'Runde ') + (b.r + 1) + ' av ' + b.n : `Arbeid · runde ${b.r + 1} av ${b.n}`; t = mmss(Math.ceil(s.left)); }
+  else { ph = 'Pause'; t = mmss(Math.ceil(s.left)); }
+  const lvl = b.sec ? (b.k === 'up' ? s.inn / b.sec : s.left / b.sec) : null;
+  return {k: b.k, ph, t, sub, lvl, warn: s.left != null && s.left <= 3};
+}
+
+/* Lyd: tre korte pip før hver ny bit, ett langt når den starter. Telefonen vibrerer der det går (ikke iPhone).
+   Lyden låses opp når du trykker Start, og igjen når du trykker på klokka. Med låst skjerm kjører ikke appen,
+   derfor holdes skjermen på mens klokka går. */
+function ckBeep(long){
+  if (navigator.vibrate) try { navigator.vibrate(long ? 300 : 60); } catch(e) {}
+  if (!ckSound() || !audio) return;
+  try {
+    const o = audio.createOscillator(), g = audio.createGain(), t = audio.currentTime, d = long ? .5 : .12;
+    o.frequency.value = long ? 1180 : 880;
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.3, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + d);
+    o.connect(g).connect(audio.destination); o.start(t); o.stop(t + d + .02);
+  } catch(e) {}
+}
+function ckSignal(){
+  ckBeep(true);
+  const el = $('#clk'), f = el && !el.hidden ? el : $('#restFlash'), c = f === el ? 'flash' : 'go';
+  if (f) { f.classList.remove(c); void f.offsetWidth; f.classList.add(c); }
+}
+let ckLast = {i: null, s: null};
+function ckTick(){
+  if (!CK || CK.done) { ckBar(); return; }
+  const s = ckNow();
+  if (s.over) { ckFinish(s.e); return; }
+  if (!CK.pausedAt) {
+    const key = s.cd != null ? 'cd' : s.i;
+    if (key !== ckLast.i) {
+      if (ckLast.i != null && s.cd == null) ckSignal();
+      ckLast = {i: key, s: null};
+      if (ui.clockView === 'run') { ckRender(); return; }
+    }
+    const left = s.cd != null ? s.cd : s.left;
+    if (left != null) { const sec = Math.ceil(left); if (sec >= 1 && sec <= 3 && sec !== ckLast.s) { ckLast.s = sec; ckBeep(false); } }
+  }
+  if (ui.clockView === 'run') ckPaint(s);
+  ckBar(s);
+}
+setInterval(ckTick, 250);
+
+function ckStart(cfg, ctx){
+  const c = ckCopy(cfg); c.rep = c.rep || 1;
+  unlockAudio(ckSound());
+  CK = {cfg: c, bits: ckBits(c), t0: Date.now(), cd: ckCd(), paused: 0, pausedAt: 0, ends: {}, laps: [], ctx: ctx || null, done: false};
+  ckLast = {i: 'start', s: null};
+  ui.rest = null; updateRest();   // metcon-klokka tar over plassen til pauseklokka
+  const key = JSON.stringify([c.b, c.rep]);
+  S.settings.ckRecent = [{b: c.b, rep: c.rep, name: c.name || ''}].concat((S.settings.ckRecent || []).filter(x => JSON.stringify([x.b, x.rep]) !== key)).slice(0, 3);
+  save(); ckStore(); ui.clockView = 'run'; ui.ckEnd = null; wake(); ckRender();
+}
+function ckFinish(e){
+  CK.done = true; CK.endE = Math.max(0, e); CK.pausedAt = 0;
+  ui.ckEnd = ckResult(); ckStore(); ckSignal();
+  if (ui.clockView === 'run') ui.clockView = 'end';
+  ckRender();
+}
+function ckClose(){
+  CK = null; ckStore(); ui.clockView = null; ui.ckEnd = null; ckRender(); render();
+  setTimeout(reloadWhenIdle, 400);   // en ny versjon venter til klokka er lukket
+}
+
+// Resultatet: tid på For Time, runder på AMRAP, snitt på åpne drag. Du kan rette det før det lagres.
+function ckResult(){
+  const segs = [], groups = []; let a = 0;
+  for (let i = 0; i < CK.bits.length && a < CK.endE; i++) {
+    const b = CK.bits[i], end = Math.min(CK.ends[i] != null ? CK.ends[i] : b.sec != null ? a + b.sec : CK.endE, CK.endE);
+    segs.push({b, i, a, d: end - a, cut: CK.ends[i] == null && !(b.sec != null && a + b.sec <= CK.endE)}); a = end;
+  }
+  segs.forEach(s => { const k = s.b.rp + ':' + s.b.bi, g = groups[groups.length - 1];
+    if (g && g.k === k) g.segs.push(s); else groups.push({k, t: CK.cfg.b[s.b.bi].t, segs: [s]}); });
+  const parts = [], split = [];
+  groups.forEach(g => {
+    const laps = CK.laps.filter(l => g.segs.some(s => s.i === l.i)).map(l => l.e);
+    const s0 = g.segs[0];
+    if (g.t === 'amrap') parts.push(laps.length + ' runder');
+    else if (g.t === 'ft') parts.push(s0.b.sec && CK.ends[s0.i] == null && !s0.cut ? 'Tak ' + mmss(s0.b.sec) + (laps.length ? ', ' + laps.length + ' runder' : '') : mmss(s0.d));
+    else if (g.t === 'int' && !CK.cfg.b[s0.b.bi].work) {
+      const dr = g.segs.filter(s => s.b.k === 'open' && CK.ends[s.i] != null).map(s => s.d);
+      if (dr.length) parts.push(dr.length + ' drag, snitt ' + mmss(Math.round(dr.reduce((x, y) => x + y, 0) / dr.length)));
+    }
+    if ((g.t === 'amrap' || g.t === 'ft') && laps.length >= 2) {
+      const d = laps.map((t, j) => t - (j ? laps[j - 1] : s0.a));
+      split.push(`Raskeste runde ${mmss(Math.round(Math.min(...d)))} · tregeste ${mmss(Math.round(Math.max(...d)))}`);
+    }
+  });
+  const work = groups.filter(g => g.t !== 'rest');
+  return {res: parts.join(' · '), min: Math.max(1, Math.round(CK.endE / 60)), sec: CK.endE, split: split.join(' · '),
+    am: work.length === 1 && work[0].t === 'amrap' ? parts[0] : null, reps: 0};
+}
+const ckTarget = () => CK.ctx === 'free' || ui.free || !S.draft ? 'free' : 'session';
+function ckSave(where){
+  const res = (($('#ckRes') || {}).value || '').trim(), min = parseInt(($('#ckMin') || {}).value, 10) || ui.ckEnd.min;
+  const line = 'Klokke: ' + ckDesc(CK.cfg) + (res ? ' · ' + res : ''), from = CK.cfg.from;
+  const fits = w => w && (!from || from === w.id);
+  ui.bank = false; ui.detail = null; ui.tab = 'today';
+  if (where === 'session' && S.draft) {
+    const d = S.draft;
+    d.metcon = true; d.mc = Object.assign({type: mcGuess(d.wod ? d.wod.tekst : '')}, d.mc || {}, {min});
+    if (fits(d.wod)) d.wod.resultat = res; else d.note = (d.note ? d.note + '\n' : '') + line;
+    ui.free = false; save(); toast('Lagt inn i dagens økt');
+  } else {
+    // Klokka kom fra en økt i øktbanken: den blir dagens metcon i fri økt, med resultatet
+    const bw = !ui.freeWod && from && BANK ? BANK.find(x => x.i === from) : null;
+    if (bw) ui.freeWod = {id: bw.i, navn: wodTitle(bw), tekst: bw.x, resultat: ''};
+    const w = ui.freeWod;
+    ui.free = true; ui.freeMc = true;
+    if (fits(w)) w.resultat = res; else ui.freeNote = (ui.freeNote ? ui.freeNote + '\n' : '') + line;
+    ui.freeMcData = Object.assign({type: mcGuess(w ? w.tekst : '')}, ui.freeMcData || {}, {min});
+    toast('Se over og trykk «Lagre fri økt»');
+  }
+  ckClose(); toTop();
+}
+
+// «1:30» → 90. Tall uten kolon regnes i unit sekunder (1 = sekunder, 60 = minutter).
+function ckDur(v, unit){
+  const s = String(v || '').trim().replace(',', '.'), m = s.match(/^(\d+):(\d{1,2})$/);
+  if (m) return +m[1] * 60 + +m[2];
+  const x = parseFloat(s); return x > 0 ? Math.round(x * unit) : 0;
+}
+function ckField(el){
+  const [bi, k] = el.dataset.ckf.split(':'), c = ui.ckCfg, b = c && c.b[bi], v = el.value;
+  if (!c) return;
+  if (bi === 'g') c.rep = Math.max(1, Math.min(10, parseInt(v, 10) || 1));
+  else if (!b) return;
+  else if (k === 'st') b.st = v.split('\n').map(x => x.trim()).filter(Boolean);
+  else if (k === 'n') b.n = Math.max(1, Math.min(100, parseInt(v, 10) || 1));
+  else if (k === 'cap') b.cap = ckDur(v, 60);
+  else if (b.t === 'amrap') b.sec = Math.max(30, ckDur(v, 60) || 60);
+  else b[k] = Math.max(k === 'rest' ? 0 : 5, ckDur(v, 1));
+  const sum = $('#ckSum'); if (sum) sum.innerHTML = ckSumHTML(c);
+}
+
+function ckAct(r){
+  const [c, x, y] = r, cfg = ui.ckCfg;
+  switch (c) {
+    case 'open':
+      if (CK) { ui.clockView = CK.done ? 'end' : 'run'; break; }
+      ui.ckCtx = x || ckCtxNow(); ui.ckCfg = ckDefault(ui.ckCtx); ui.clockView = 'setup'; break;
+    case 'show': ui.clockView = CK ? (CK.done ? 'end' : 'run') : null; unlockAudio(ckSound()); break;
+    case 'hide': case 'close': ui.clockView = null; break;
+    case 'wod': { const w = ckWod(x); if (w) { ckStart(ckFromWod(w), x); return; } break; }
+    case 'edit': { const w = ckWod(x); ui.ckCtx = x; ui.ckCfg = w ? ckFromWod(w) : ckDefault(x); ui.clockView = 'setup'; break; }
+    case 'fromwod': { const w = ckWod(ui.ckCtx); if (w) ui.ckCfg = ckFromWod(w); break; }
+    case 'quick': ui.ckCfg = {b: [ckCopy(CK_QUICK[+x][1])], rep: 1}; break;
+    case 'recent': ui.ckCfg = ckCopy((S.settings.ckRecent || [])[+x] || cfg); break;
+    case 'bt': cfg.b[+x] = ckNew(y); break;
+    case 'badd': cfg.b.push(ckCopy(cfg.b[cfg.b.length - 1])); break;
+    case 'brm': cfg.b.splice(+x, 1); if (cfg.b.length < 2) cfg.rep = 1; if (cfg.b.length === 1 && cfg.b[0].t === 'rest') cfg.b[0] = ckNew('amrap'); break;
+    case 'wm': cfg.b[+x].work = y === 'open' ? 0 : 40; break;
+    case 'cd': S.settings.ckCd = +x; save(); break;
+    case 'snd': S.settings.clockSound = !ckSound(); save(); break;
+    case 'start': ckStart(cfg, ui.ckCtx); return;
+    case 'pause':
+      if (!ckOn()) break;
+      if (CK.pausedAt) { CK.paused += Date.now() - CK.pausedAt; CK.pausedAt = 0; unlockAudio(ckSound()); } else CK.pausedAt = Date.now();
+      ckStore(); break;
+    case 'go': if (ckOn()) { CK.cd = Math.max(0, ((CK.pausedAt || Date.now()) - CK.t0 - CK.paused) / 1000); ckStore(); } break;
+    case 'tap': case 'next': {
+      if (!ckOn() || CK.pausedAt) break;
+      unlockAudio(ckSound());
+      const s = ckNow(); if (!s.b) break;
+      if (c === 'tap' && (s.b.k === 'up' || s.b.k === 'am')) { CK.laps.push({i: s.i, e: s.e}); if (navigator.vibrate) try { navigator.vibrate(30); } catch(e) {} }
+      else if (c === 'next' || s.b.k === 'open') CK.ends[s.i] = s.e;
+      ckStore(); ckTick(); break;
+    }
+    case 'undo': { const s = ckNow(), k = CK.laps.map(l => l.i).lastIndexOf(s.i); if (k > -1) { CK.laps.splice(k, 1); ckStore(); } break; }
+    case 'stop': {
+      if (!CK) break;
+      const s = ckNow();
+      if (s.cd != null) { ckClose(); return; }   // før start: bare lukk
+      if (ui.ckArm && Date.now() - ui.ckArm < 3000) { ui.ckArm = 0; ckFinish(s.e); return; }
+      ui.ckArm = Date.now(); const b = $('#ckStop'); if (b) b.textContent = 'Trykk igjen';
+      setTimeout(() => { const b = $('#ckStop'); if (b) b.textContent = 'Avslutt'; }, 3000);
+      return;
+    }
+    case 'reps': {
+      const R = ui.ckEnd; if (!R || !R.am) break;
+      R.reps = Math.max(0, R.reps + +x); const inp = $('#ckRes');
+      if (inp) inp.value = R.am + (R.reps ? ' + ' + R.reps : '');
+      const n = $('#ckReps'); if (n) n.textContent = R.reps; return;
+    }
+    case 'save': ckSave(x); return;
+    case 'drop': ckClose(); return;
+  }
+  ckRender(); if (c === 'open' || c === 'close' || c === 'hide' || c === 'show') render();
+}
+
+/* ---------- Visningene til klokka ---------- */
+function ckRender(){
+  const el = $('#clk'); if (!el) return;
+  if ((ui.clockView === 'run' || ui.clockView === 'end') && !CK) ui.clockView = null;
+  if (ckOn() && !CK.pausedAt) { const s = ckNow(); if (s.over) { CK.done = true; CK.endE = s.e; ui.ckEnd = ckResult(); ckStore(); } }   // ferdig mens appen var lukket
+  if (ui.clockView === 'run' && CK.done) ui.clockView = 'end';
+  if (ui.clockView === 'setup' && !ui.ckCfg) ui.ckCfg = ckDefault(ui.ckCtx);
+  el.hidden = !ui.clockView;
+  el.innerHTML = ui.clockView === 'setup' ? ckSetupHTML() : ui.clockView === 'run' ? ckRunHTML() : ui.clockView === 'end' ? ckEndHTML() : '';
+  ckBar();
+}
+// Bare tiden og streken oppdateres i hvert tikk, så knappene ikke byttes ut under fingeren
+function ckPaint(s){
+  const f = ckFace(s), t = $('#ckT'); if (!t) return;
+  t.textContent = f.t; t.classList.toggle('warn', !!f.warn && !CK.pausedAt);
+  const sub = $('#ckSub'); if (sub) sub.textContent = f.sub;
+  const lv = $('#ckLvl'); if (lv && f.lvl != null) lv.style.width = (Math.max(0, Math.min(1, f.lvl)) * 100).toFixed(1) + '%';
+}
+function ckSumHTML(c){
+  const bits = ckBits(c), known = bits.reduce((a, b) => a + (b.sec || 0), 0), open = bits.some(b => b.sec == null);
+  return `<div class="top"><span class="lbl">Slik blir klokka</span><b>${known ? 'Totalt ' + mmss(known) : 'Åpen tid'}${known && open ? ' + åpne deler' : ''}</b></div>
+    <div class="ck-strip" aria-hidden="true">${bits.slice(0, 240).map(b => `<i class="${b.k}" style="flex-grow:${b.sec || 60}"></i>`).join('')}</div>
+    <p class="small muted">${esc(ckDesc(c))}</p>`;
+}
+function ckBlockForm(b, bi, nb){
+  const sv = s => s >= 60 ? mmss(s) : String(s), mv = s => s % 60 ? mmss(s) : String(s / 60);
+  const f = (k, lbl, val, hint, unit) => `<div class="field"><label for="ckf-${bi}-${k}">${lbl}${hint ? `<small class="muted">${hint}</small>` : ''}</label>
+    <span class="inp"><input id="ckf-${bi}-${k}" data-ckf="${bi}:${k}" type="text" inputmode="decimal" value="${esc(val)}" autocomplete="off">${unit || ''}</span></div>`;
+  let body;
+  if (b.t === 'ft') body = f('cap', 'Tak', b.cap ? mv(b.cap) : '', 'Tomt betyr uten tak', 'min');
+  else if (b.t === 'amrap') body = f('sec', 'Lengde', mv(b.sec), '', 'min');
+  else if (b.t === 'emom') body = f('every', 'Ny runde hver', sv(b.every), 'Sekunder eller m:ss') + f('n', 'Runder', b.n)
+    + `<div class="field ck-stf"><label for="ckf-${bi}-st">Stasjoner<small class="muted">Én per linje. Vises på klokka, valgfritt</small></label>
+      <textarea id="ckf-${bi}-st" data-ckf="${bi}:st" rows="${Math.max(2, Math.min(6, (b.st || []).length))}">${esc((b.st || []).join('\n'))}</textarea></div>`;
+  else if (b.t === 'int') body = `<div class="seg" role="group" aria-label="Arbeid">
+      <button data-a="ck:wm:${bi}:fix" aria-pressed="${!!b.work}">Fast tid</button><button data-a="ck:wm:${bi}:open" aria-pressed="${!b.work}">Åpent</button></div>
+    ${b.work ? f('work', 'Arbeid', sv(b.work), 'Sekunder eller m:ss') : '<p class="small muted">Du trykker når draget er ferdig, for eksempel 500 m ro eller 1 km løp. Så starter pausen.</p>'}
+    ${f('rest', 'Pause', sv(b.rest), 'Sekunder eller m:ss')}${f('n', 'Runder', b.n)}`;
+  else body = f('sec', 'Pause', sv(b.sec), 'Sekunder eller m:ss');
+  return `<section class="box ck-blk">
+    <div class="top"><span class="lbl">${nb > 1 ? 'Blokk ' + (bi + 1) : 'Type'}</span>${nb > 1 ? `<button class="link" data-a="ck:brm:${bi}">Fjern</button>` : ''}</div>
+    <div class="seg ck-types" role="group" aria-label="Type">${Object.entries(CK_T).filter(([k]) => k !== 'rest' || nb > 1)
+      .map(([k, n]) => `<button data-a="ck:bt:${bi}:${k}" aria-pressed="${b.t === k}">${n}</button>`).join('')}</div>
+    ${body}</section>`;
+}
+function ckSetupHTML(){
+  const c = ui.ckCfg, rec = S.settings.ckRecent || [], w = ckWod(ui.ckCtx), cd = ckCd();
+  return `<div class="ck-set">
+    <div class="ck-top"><button class="link" data-a="ck:close">‹ Lukk</button></div>
+    <header class="head"><h1>Klokke</h1><p class="eyebrow">${c.name ? 'Fylt ut fra ' + esc(c.name) : 'Velg et oppsett, eller still inn selv'}</p></header>
+    ${w && c.from !== w.id ? `<button class="btn ghost" data-a="ck:fromwod">Fyll ut fra ${esc(w.navn)}</button>` : ''}
+    ${rec.length ? `<span class="lbl">Sist brukt</span><div class="ck-chips">${rec.map((x, i) => `<button data-a="ck:recent:${i}">${x.name ? '<b>' + esc(x.name) + '</b>' : ''}${esc(ckDesc(x))}</button>`).join('')}</div>` : ''}
+    <span class="lbl">Hurtigvalg</span>
+    <div class="ck-chips">${CK_QUICK.map(([n], i) => `<button data-a="ck:quick:${i}">${n}</button>`).join('')}</div>
+    ${c.b.map((b, bi) => ckBlockForm(b, bi, c.b.length)).join('')}
+    <button class="link" data-a="ck:badd">+ Legg til blokk</button>
+    <section class="box">
+      ${c.b.length > 1 ? `<div class="field"><label for="ckf-g-rep">Gjenta alt<small class="muted">Antall ganger</small></label>
+        <span class="inp"><input id="ckf-g-rep" data-ckf="g:rep" type="text" inputmode="numeric" value="${c.rep || 1}">×</span></div>` : ''}
+      <span class="lbl">Nedtelling før start</span>
+      <div class="seg" role="group" aria-label="Nedtelling">${[0, 5, 10, 15].map(v => `<button data-a="ck:cd:${v}" aria-pressed="${cd === v}">${v ? v + ' s' : 'Ingen'}</button>`).join('')}</div>
+      <button class="tog" data-a="ck:snd" aria-pressed="${ckSound()}">Pip ved start og de siste 3 sekundene</button>
+    </section>
+    <section class="box" id="ckSum">${ckSumHTML(c)}</section>
+    <button class="btn ck-start" data-a="ck:start">${playSVG}Start</button>
+  </div>`;
+}
+function ckRunHTML(){
+  const s = ckNow(), f = ckFace(s), b = s.b, paused = !!CK.pausedAt;
+  const nb = CK.cfg.b.length * (CK.cfg.rep || 1), laps = b ? CK.laps.filter(l => l.i === s.i) : [];
+  const tap = b && (b.k === 'up' || b.k === 'am' || b.k === 'open'), nx = b && CK.bits[s.i + 1];
+  // Rundene i blokka: ferdige i blått, den du er på i kritt
+  const ticks = b && b.n > 1 ? Array.from({length: b.n}, (_, r) => `<i class="${r < b.r || (r === b.r && b.k === 'rest') ? 'ok' : r === b.r ? 'now' : ''}"></i>`).join('') : '';
+  let mid = '<div class="ck-fill"></div>';
+  if (tap && b.k === 'open') {
+    // Tida på forrige drag i samme blokk
+    let j = s.i - 1; while (j >= 0 && CK.bits[j].k !== 'open' && CK.bits[j].bi === b.bi) j--;
+    const at = k => { let a = 0; for (let q = 0; q < k; q++) a = CK.ends[q] != null ? CK.ends[q] : a + (CK.bits[q].sec || 0); return a; };
+    const prev = j >= 0 && CK.bits[j].k === 'open' && CK.bits[j].bi === b.bi && CK.ends[j] != null ? CK.ends[j] - at(j) : null;
+    mid = `<button class="ck-tap" data-a="ck:tap" aria-label="Draget er ferdig, start pausen"><b class="ck-n">Ferdig</b>
+      <small>Trykk her når draget er ferdig. Så starter pausen.</small>${prev != null ? `<small>Forrige drag ${mmss(Math.round(prev))}</small>` : ''}</button>`;
+  } else if (tap) {
+    const last = laps.length ? laps[laps.length - 1].e - (laps.length > 1 ? laps[laps.length - 2].e : s.a) : null;
+    mid = `<button class="ck-tap" data-a="ck:tap" aria-label="Én runde til. ${laps.length} runder nå"><span class="ck-ph">Runder</span>
+      <b class="ck-n">${laps.length}</b>
+      <span class="ck-sq" aria-hidden="true">${'<i></i>'.repeat(Math.min(laps.length, 24))}<i class="nx"></i></span>
+      <small>Trykk hvor som helst her = +1 runde</small>${last != null ? `<small>Siste runde ${mmss(Math.round(last))}</small>` : ''}</button>`;
+  } else if (b && b.k === 'work' && b.lbl) {
+    mid = `<section class="ck-st"><span class="lbl">Nå</span><b>${esc(b.lbl)}</b></section>
+      ${nx && nx.lbl ? `<div class="ck-nx"><span class="lbl">Neste</span><span>${esc(nx.lbl)}</span></div>` : ''}<div class="ck-fill"></div>`;
+  }
+  return `<div class="ck-run" data-k="${f.k}"${paused ? ' data-paused="1"' : ''}>
+    <div class="ck-top"><button class="link" data-a="ck:hide">‹ Skjul</button><span>${esc(ckDesc(CK.cfg))}</span><button class="link" data-a="ck:stop" id="ckStop">Avslutt</button></div>
+    <div class="ck-face">
+      <span class="ck-ph">${paused ? 'Stoppet' : f.ph}</span>
+      <b class="ck-t${f.warn && !paused ? ' warn' : ''}" id="ckT" role="timer">${f.t}</b>
+      <span class="ck-sub" id="ckSub">${esc(f.sub)}</span>
+    </div>
+    ${f.lvl != null ? `<div class="ck-lvl" aria-hidden="true"><i id="ckLvl" style="width:${(Math.max(0, Math.min(1, f.lvl)) * 100).toFixed(1)}%"></i></div>` : ''}
+    ${ticks ? `<div class="ck-ticks" aria-hidden="true">${ticks}</div>` : ''}
+    ${nb > 1 && b ? `<p class="ck-blkn">Blokk ${b.rp * CK.cfg.b.length + b.bi + 1} av ${nb} · ${esc(ckDesc1(CK.cfg.b[b.bi]))}</p>` : ''}
+    ${mid}
+    <div class="ck-ctl">
+      <button class="btn ghost" data-a="ck:pause">${paused ? 'Fortsett' : 'Pause'}</button>
+      ${laps.length ? '<button class="btn ghost ck-undo" data-a="ck:undo" aria-label="Én runde mindre">−1</button>' : ''}
+      ${s.cd != null ? '<button class="btn" data-a="ck:go">Start nå</button>'
+        : b.k === 'up' ? '<button class="btn" data-a="ck:next">Ferdig</button>'
+        : `<button class="btn ghost" data-a="ck:next">${nx ? 'Neste ›' : 'Ferdig'}</button>`}
+    </div>
+  </div>`;
+}
+function ckEndHTML(){
+  const R = ui.ckEnd || (ui.ckEnd = ckResult()), tgt = ckTarget();
+  return `<div class="ck-set ck-end">
+    <div class="ck-top"><span></span><button class="link" data-a="ck:drop">Lukk</button></div>
+    <header class="head"><h1>Klokka er ferdig</h1><p class="eyebrow">${esc(ckDesc(CK.cfg))}</p></header>
+    <div class="ck-face"><span class="ck-ph">Tid</span><b class="ck-t">${mmss(Math.round(R.sec))}</b>${R.split ? `<span class="ck-sub">${R.split}</span>` : ''}</div>
+    <section class="box">
+      <label for="ckRes" class="lbl">Resultat</label>
+      <input id="ckRes" class="txt" type="text" value="${esc(R.am ? R.am + (R.reps ? ' + ' + R.reps : '') : R.res)}" placeholder="For eksempel 12:34 eller 8 runder + 5" autocomplete="off">
+      ${R.am ? `<div class="amrap"><span>Reps i runden du ikke ble ferdig med</span>
+        <button class="step" data-a="ck:reps:-1" aria-label="Én rep mindre">−</button><b id="ckReps">${R.reps}</b>
+        <button class="step" data-a="ck:reps:1" aria-label="Én rep mer">+</button></div>` : ''}
+      <div class="field"><label for="ckMin">Minutter arbeid<small class="muted">Teller i metcon-budsjettet</small></label>
+        <span class="inp"><input id="ckMin" type="text" inputmode="numeric" value="${R.min}">min</span></div>
+    </section>
+    ${tgt === 'session' ? `<button class="btn" data-a="ck:save:session">Legg inn i dagens økt</button>
+      <button class="btn ghost" data-a="ck:save:free">Lagre som fri økt</button>` : `<button class="btn" data-a="ck:save:free">Lagre som fri økt</button>`}
+    <button class="link" data-a="ck:drop">Bare lukk</button>
+  </div>`;
+}
+// Linja nederst når klokka går og du er et annet sted i appen. Den står der pauseklokka står.
+function ckBar(s){
+  const el = $('#ckBar'); if (!el) return;
+  const show = !!CK && !ui.clockView && !(CK.done && ui.rest);
+  el.hidden = !show; if (!show) { el.dataset.key = ''; return; }
+  let t, lbl, btn = '';
+  if (CK.done) { t = mmss(Math.round(CK.endE)); lbl = 'Klokka er ferdig'; }
+  else {
+    s = s || ckNow(); const f = ckFace(s);
+    t = f.t; lbl = (CK.pausedAt ? 'Stoppet' : f.ph) + ' · ' + ckDesc(CK.cfg);
+    if (s.b && (s.b.k === 'up' || s.b.k === 'am')) { lbl = (CK.pausedAt ? 'Stoppet' : f.ph) + ' · ' + CK.laps.filter(l => l.i === s.i).length + ' runder'; btn = '<button data-a="ck:tap" aria-label="Én runde til">+1</button>'; }
+    else if (s.b && s.b.k === 'open') btn = '<button data-a="ck:tap">Drag ferdig</button>';
+  }
+  const key = (CK.done ? 'd' : 'r') + btn;
+  if (el.dataset.key !== key) {
+    el.innerHTML = `<div class="rest-in"><div class="rest-r1"><b id="ckBarT" role="timer"></b><span id="ckBarL"></span>${btn}<button data-a="ck:show">Åpne</button></div></div>`;
+    el.dataset.key = key;
+  }
+  $('#ckBarT').textContent = t; $('#ckBarL').textContent = lbl;
+}
+// Etter en ny versjon eller en omstart midt i klokka: åpne den igjen
+if (ckOn()) ui.clockView = 'run';
 
 function toTop(){ const sc = $('#scroller'); if (sc) sc.scrollTop = 0; }
 
@@ -4825,6 +5401,7 @@ document.addEventListener('click', ev => {
     case 'wodrm':
       if (r[0] === 'session' && S.draft) { delete S.draft.wod; save(); } else ui.freeWod = null;
       render(); break;
+    case 'ck': ckAct(r); break;
     case 'finish': ui.confirm = null; finish(); break;
     case 'skipday': if (S.active && S.draft) skipSession(); break;
     case 'dismiss': ui.summary = null; render(); break;
@@ -5006,6 +5583,7 @@ document.addEventListener('input', ev => {
 });
 
 document.addEventListener('change', ev => {
+  if (ev.target.dataset && ev.target.dataset.ckf) { ckField(ev.target); return; }
   if (ev.target.dataset && ev.target.dataset.max) {
     const v = parseFloat(String(ev.target.value).replace(',', '.'));
     if (v > 0) { S.maxes[ev.target.dataset.max] = v; save(); toast('Lagret'); } else { ev.target.value = fmt(S.maxes[ev.target.dataset.max]); }
@@ -5036,6 +5614,7 @@ document.addEventListener('change', ev => {
 });
 
 render();
+ckRender();
 
 /* ---------- PWA: offline og varig lagring (virker når siden ligger på din egen nettadresse) ---------- */
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
@@ -5060,7 +5639,7 @@ async function checkUpdate(){
   } catch(e) {}
 }
 function reloadWhenIdle(){
-  if (!newVersion || isTyping()) return;   // prøv igjen når tastaturet lukkes
+  if (!newVersion || isTyping() || ckOn()) return;   // prøv igjen når tastaturet lukkes eller klokka er ferdig
   try { sessionStorage.setItem(KEY + '.from', String(APP_VERSION)); } catch(e) {}
   location.reload();
 }
