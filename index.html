@@ -723,7 +723,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 56;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 57;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -2163,7 +2163,8 @@ function mergeCustom(){
   Object.assign(LIFTS, S.custom || {});
 }
 mergeCustom();
-const ui = {tab: S.active ? 'today' : 'plan', stack:[], detail:null, rest:null, summary:null, confirm:null, exportText:'', storageOK:true, keepDl:null};
+// Appen åpner alltid på I dag. Uten program viser den valget mellom styrkeprogram og metcon/fri økt.
+const ui = {tab: 'today', stack:[], detail:null, rest:null, summary:null, confirm:null, exportText:'', storageOK:true, keepDl:null};
 try { localStorage.setItem(KEY+'.t','1'); localStorage.removeItem(KEY+'.t'); } catch(e){ ui.storageOK = false; }
 
 /* ---------- Motor: lag dagens økt fra mal + instans ---------- */
@@ -2903,10 +2904,13 @@ function vToday(){
     <div class="h-row h-end">${gearBtn()}</div>${guestToday()}
     <div class="empty">
       <div class="bar" aria-hidden="true"></div>
-      <h1>Ingen program ennå</h1>
-      <p class="muted">Velg et styrkeprogram, legg inn startvektene dine, så lager appen øktene for deg.</p>
-      <button class="btn" data-a="tab:plan">Velg program</button>
-      <button class="btn ghost" data-a="free">+ Logg fri økt</button>
+      <h1>Hva vil du trene?</h1>
+      <p class="muted">Du trenger ikke program for å bruke appen. Velg det som passer, og bytt når du vil.</p>
+      <div class="plist">
+        <button data-a="tab:plan"><span><b>Følg et styrkeprogram</b><small>Legg inn startvektene, så lager appen øktene for deg</small></span>${chev}</button>
+        <button data-a="free"><span><b>Bare metcon eller fri økt</b><small>Ingen plan. Logg det du gjør, når du gjør det</small></span>${chev}</button>
+      </div>
+      ${quickPick('free')}
     </div>`;
   const p = g ? {name: 'Engangsøkt', prog: 'guest'} : prog(S.active.programId);
   // ATHX følger kalenderen. En økt du ikke har begynt på, byttes når uka er over.
