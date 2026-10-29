@@ -754,6 +754,9 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .ck-start{display:flex;align-items:center;justify-content:center;gap:10px;font-size:19px;padding:19px 18px}
 .ck-end .ck-face{padding-top:0}
 .ck-end .ck-t{font-size:96px}
+.mine-form .txt{width:100%;box-sizing:border-box;background:var(--iron);border:1px solid var(--line);border-radius:3px;color:var(--chalk);font:500 16px var(--face);padding:11px 12px}
+.mine-form textarea{font:16px/1.45 var(--face);min-height:180px}
+.mine-form .seg button{font-size:14px}
 .ck-end .txt{width:100%;box-sizing:border-box;background:var(--iron);border:1px solid var(--line);border-radius:3px;color:var(--chalk);font:500 16px var(--face);padding:11px 12px}
 
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
@@ -790,7 +793,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 58;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 59;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -2553,6 +2556,38 @@ function showRandom(rp){
   render(); toTop();
 }
 const LENGTHS = ['Kort (≤12 min)', 'Middels (13–25 min)', 'Lang (26+ min)', 'Ukjent lengde'];
+/* Egne metcons: lagres i S.mine (følger med i skybackup og eksport) og står først i øktbanken med typen «Egen».
+   De får samme felt som øktene i okter.json, så valg, favoritter, tidligere resultater og klokka virker likt.
+   ck = klokka du har stilt inn selv. Uten den fylles klokka ut fra teksten, som for de andre øktene. */
+const MINE_F = [['AMRAP', 'AMRAP'], ['For time', 'For Time'], ['EMOM / intervall', 'EMOM / intervall'], ['Annet', 'Annet']];
+const mineLen = m => !m ? LENGTHS[3] : m <= 12 ? LENGTHS[0] : m <= 25 ? LENGTHS[1] : LENGTHS[2];
+const mineW = o => ({i:o.i, n:o.n, t:'Egen', f:o.f, m:o.m || null, l:mineLen(o.m), lag:!!o.lag, u:[], x:o.x, c:0, s:null, ck:o.ck || null, mine:true});
+const BK = () => (S.mine || []).map(mineW).concat(BANK || []);
+const bankGet = id => BK().find(w => w.i === id);
+// Formatet ut fra teksten, når du lagrer det du skrev i Fri økt
+const fmtGuess = x => /amrap/i.test(x) ? 'AMRAP' : /\be\d*mom\b|tabata|intervall|\d\s*[x×]\s*\d/i.test(x) ? 'EMOM / intervall' : /for (time|tid)|\brft\b/i.test(x) ? 'For time' : 'Annet';
+const mineCk = e => e.ck || ckParse(e.x, e.f, +e.m || null);
+const mineCkTxt = e => esc(ckDesc(mineCk(e))) + (e.ck ? ' · stilt inn selv' : e.x.trim() ? ' · fylt ut fra teksten' : '');
+function vMineEdit(){
+  const e = ui.mineEdit;
+  return `<button class="link" data-a="minex">‹ ${e.i ? 'Avbryt' : 'Øktbanken'}</button>
+    <header class="head"><p class="eyebrow">Egen metcon</p><h1>${e.i ? 'Endre metcon' : 'Lag egen metcon'}</h1></header>
+    <section class="box mine-form">
+      <label class="lbl" for="mineN">Navn</label>
+      <input id="mineN" class="txt" data-mine="n" type="text" maxlength="60" value="${esc(e.n)}" placeholder="For eksempel Fredagschipper" autocomplete="off">
+      <span class="lbl">Format</span>
+      <div class="seg" role="group" aria-label="Format">${MINE_F.map(([k, n], i) => `<button data-a="minef:${i}" aria-pressed="${e.f === k}">${n}</button>`).join('')}</div>
+      <label class="lbl" for="mineX">Økta</label>
+      <textarea id="mineX" data-mine="x" rows="8" placeholder="20 min AMRAP&#10;10 wall balls 9/6 kg&#10;10 burpees&#10;200 m løp">${esc(e.x)}</textarea>
+      <div class="field"><label for="mineM">Minutter<small class="muted">Valgfritt. Foreslås i metcon-budsjettet</small></label>
+        <span class="inp"><input id="mineM" data-mine="m" type="text" inputmode="numeric" value="${esc(e.m || '')}">min</span></div>
+      <div class="seg" role="group" aria-label="Alene eller lag">
+        <button data-a="minelag:0" aria-pressed="${!e.lag}">Alene</button><button data-a="minelag:1" aria-pressed="${!!e.lag}">Lag</button></div>
+    </section>
+    <section class="box"><span class="lbl">Klokka</span><p id="mineCk">${mineCkTxt(e)}</p>
+      <div class="row"><button class="btn ghost sm" data-a="ck:mine">Still inn klokka selv</button>${e.ck ? '<button class="link" data-a="mineckx">Fyll ut fra teksten i stedet</button>' : ''}</div></section>
+    <button class="btn" data-a="minesave">Lagre metcon</button>`;
+}
 const wodTitle = w => w.n || w.x.split('\n')[0].replace(/^\s*(metcon|wod)\s*[:\-–]\s*/i, '').trim().slice(0, 48) || w.t;
 function doneMap(){
   const m = {};
@@ -2561,8 +2596,8 @@ function doneMap(){
 }
 function bankFilter(){
   const f = ui.bf, q = (f.q || '').trim().toLowerCase(), fav = new Set(S.fav || []), done = doneMap();
-  return BANK.filter(w =>
-    (!f.t || w.t === f.t) && (!f.f || w.f === f.f) && (!f.l || (w.l || 'Ukjent lengde') === f.l) &&
+  return BK().filter(w =>
+    (!f.mine || w.mine) && (!f.t || w.t === f.t) && (!f.f || w.f === f.f) && (!f.l || (w.l || 'Ukjent lengde') === f.l) &&
     (!f.lag || (f.lag === 'lag' ? w.lag : !w.lag)) && (!f.fav || fav.has(w.i)) && (!f.ny || !done[w.i]) &&
     (!q || (w.x + ' ' + (w.n || '')).toLowerCase().includes(q)));
 }
@@ -2591,7 +2626,7 @@ function vWod(w){
   const fav = (S.fav || []).includes(w.i);
   return `<button class="link" data-a="wodback">‹ Øktbanken</button>
     ${ui.wodRand && ui.randPool ? `<p class="randlbl">${esc(poolLabel(ui.randPool))}</p>` : ''}
-    <header class="head"><p class="eyebrow">${esc(w.t)}${w.c > 1 ? ` · kjørt ${w.c} ganger` : ''}${w.s ? ` · sist ${esc(w.s.split('-').reverse().join('.'))}` : ''}</p>
+    <header class="head"><p class="eyebrow">${w.mine ? 'Egen metcon' : esc(w.t)}${w.c > 1 ? ` · kjørt ${w.c} ganger` : ''}${w.s ? ` · sist ${esc(w.s.split('-').reverse().join('.'))}` : ''}</p>
       <h1>${esc(wodTitle(w))}</h1></header>
     <div class="meta">${wodChips(w)}${w.u.map(u => `<span class="pill">${esc(u)}</span>`).join('')}</div>
     <section class="box"><pre class="wodtxt">${esc(w.x)}</pre></section>
@@ -2600,22 +2635,26 @@ function vWod(w){
       <button class="btn" data-a="wodpick:${w.i}">Velg denne økta</button>
       <button class="btn ghost" data-a="fav:${w.i}" aria-pressed="${fav}">${fav ? '★ Favoritt' : '☆ Favoritt'}</button>
     </div>
+    ${w.mine ? `<div class="row"><button class="btn ghost" data-a="mineedit:${w.i}">Endre</button>
+      <button class="btn danger" data-a="minedel:${w.i}">${ui.confirm === 'minedel:' + w.i ? 'Trykk igjen for å slette' : 'Slett'}</button></div>` : ''}
     ${ui.wodRand ? `<button class="link" data-a="wodrand">↻ Gi meg en annen</button>` : ''}`;
 }
 function vBank(){
   const back = `<button class="link" data-a="bankclose">‹ ${ui.bankFor === 'session' ? 'Tilbake til økta' : 'Tilbake'}</button>`;
+  if (ui.mineEdit) return vMineEdit();
   if (!BANK) {
     loadBank();
     return back + `<header class="head"><p class="eyebrow">Metcons</p><h1>Øktbank</h1></header>
       <p class="muted">${bankErr ? 'Øktbanken kunne ikke lastes. Åpne appen med nett én gang, så lagres den for bruk uten nett.' : 'Laster øktbanken …'}</p>
       ${bankErr ? '<button class="btn ghost" data-a="bankretry">Prøv igjen</button>' : ''}`;
   }
-  if (ui.wod) return vWod(BANK.find(w => w.i === ui.wod));
+  if (ui.wod) return vWod(bankGet(ui.wod));
   const f = ui.bf;
   const sel = (k, label, vals) => `<select data-bf="${k}" aria-label="${label}"><option value="">${label}</option>${vals.map(v => `<option${f[k] === v ? ' selected' : ''}>${esc(v)}</option>`).join('')}</select>`;
   const uq = a => [...new Set(a)].sort();
-  const nAthx = BANK.filter(w => w.t === 'ATHX').length;   // ATHX-øktene er våre egne, ikke fra Sarpsborg
-  return back + `<header class="head"><p class="eyebrow">${BANK.length - nAthx} metcons fra Functional Fitness Sarpsborg${nAthx ? ` og ${nAthx} ATHX-økter` : ''}</p><h1>Øktbank</h1></header>
+  const nAthx = BANK.filter(w => w.t === 'ATHX').length, nMine = (S.mine || []).length;   // ATHX-øktene er våre egne, ikke fra Sarpsborg
+  return back + `<header class="head"><p class="eyebrow">${nMine ? nMine + (nMine === 1 ? ' egen, ' : ' egne, ') : ''}${BANK.length - nAthx} metcons fra Functional Fitness Sarpsborg${nAthx ? ` og ${nAthx} ATHX-økter` : ''}</p><h1>Øktbank</h1></header>
+    <button class="btn ghost" data-a="minenew">+ Lag egen metcon</button>
     <div class="row">
       <button class="btn" data-a="rand:solo">Tilfeldig solo-metcon</button>
       <button class="btn ghost" data-a="themes" aria-expanded="${!!ui.showThemes}">Tilfeldig temaøkt</button>
@@ -2624,13 +2663,14 @@ function vBank(){
       <button class="tog" data-a="rand:theme:all">Alle temaer</button></div>` : ''}
     <div class="bankctl">
       <input id="bq" class="txt" type="search" placeholder="Søk, f.eks. wallball eller burpees" value="${esc(f.q || '')}" autocomplete="off">
-      <div class="selrow">${sel('t', 'Type time', uq(BANK.map(w => w.t)))}${sel('f', 'Format', uq(BANK.map(w => w.f)))}${sel('l', 'Lengde', LENGTHS)}</div>
+      <div class="selrow">${sel('t', 'Type time', uq(BK().map(w => w.t)))}${sel('f', 'Format', uq(BK().map(w => w.f)))}${sel('l', 'Lengde', LENGTHS)}</div>
       <div class="seg" role="group" aria-label="Alene eller lag">
         <button data-a="bfl:" aria-pressed="${!f.lag}">Alle</button>
         <button data-a="bfl:alene" aria-pressed="${f.lag === 'alene'}">Alene</button>
         <button data-a="bfl:lag" aria-pressed="${f.lag === 'lag'}">Lag</button></div>
       <div class="row"><button class="tog" data-a="bft:fav" aria-pressed="${!!f.fav}">★ Favoritter</button>
-        <button class="tog" data-a="bft:ny" aria-pressed="${!!f.ny}">Ikke gjort før</button></div>
+        <button class="tog" data-a="bft:ny" aria-pressed="${!!f.ny}">Ikke gjort før</button>
+        ${(S.mine || []).length ? `<button class="tog" data-a="bft:mine" aria-pressed="${!!f.mine}">Egne</button>` : ''}</div>
       <button class="link" data-a="rand:filter">↻ Tilfeldig blant disse filtrene</button>
     </div>
     <div id="bankList" class="list">${bankListHTML()}</div>`;
@@ -2655,7 +2695,7 @@ function quickPick(ctx){
       <button class="btn ghost" data-a="ck:open:${ctx}">${clockSVG}Klokke</button></div>`;
 }
 function openBank(forWhat){
-  ui.bank = true; ui.bankFor = forWhat; ui.wod = null; ui.wodRand = false; ui.bankN = 30;
+  ui.bank = true; ui.bankFor = forWhat; ui.wod = null; ui.wodRand = false; ui.bankN = 30; ui.mineEdit = null;
   ui.bf = ui.bf || {};
   render(); toTop();
 }
@@ -2961,6 +3001,7 @@ function vFree(){
     <div class="box notebox">
       <label for="freeNote" class="lbl">${ui.freeWod || ui.freePete ? 'Notat' : 'Hva gjorde du?'}</label>
       <textarea id="freeNote" placeholder="For eksempel: 20 min AMRAP med 5 pull-ups, 10 push-ups og 15 air squats. 9 runder.">${esc(ui.freeNote)}</textarea>
+      ${ui.freeWod || ui.freePete ? '' : '<button class="link" data-a="minefromfree">+ Lagre som egen metcon i øktbanken</button>'}
       <button class="tog" data-a="freemc" aria-pressed="${ui.freeMc !== false}">Metcon</button>
       ${ui.freeMc !== false || ui.freeWod || ui.freePete ? mcFields('free', ui.freeMcData) : ''}
     </div>
@@ -3756,8 +3797,8 @@ function ckParse(text, f, m){
 }
 function ckWod(ctx){ return ctx === 'session' ? S.draft && S.draft.wod : ctx === 'free' ? ui.freeWod : null; }
 function ckFromWod(w){
-  const bw = BANK && BANK.find(x => x.i === w.id);
-  return Object.assign(ckParse(w.tekst, bw && bw.f, bw && bw.m), {name: w.navn, from: w.id});
+  const bw = bankGet(w.id);
+  return Object.assign(bw && bw.ck ? ckCopy(bw.ck) : ckParse(w.tekst, bw && bw.f, bw && bw.m), {name: w.navn, from: w.id});
 }
 const ckCtxNow = () => ui.free ? 'free' : S.draft ? 'session' : null;
 function ckDefault(ctx){
@@ -3893,7 +3934,7 @@ function ckSave(where){
     ui.free = false; save(); toast('Lagt inn i dagens økt');
   } else {
     // Klokka kom fra en økt i øktbanken: den blir dagens metcon i fri økt, med resultatet
-    const bw = !ui.freeWod && from && BANK ? BANK.find(x => x.i === from) : null;
+    const bw = !ui.freeWod && from ? bankGet(from) : null;
     if (bw) ui.freeWod = {id: bw.i, navn: wodTitle(bw), tekst: bw.x, resultat: ''};
     const w = ui.freeWod;
     ui.free = true; ui.freeMc = true;
@@ -3927,12 +3968,16 @@ function ckAct(r){
   const [c, x, y] = r, cfg = ui.ckCfg;
   switch (c) {
     case 'open':
+      ui.ckFor = null;
       if (CK) { ui.clockView = CK.done ? 'end' : 'run'; break; }
       ui.ckCtx = x || ckCtxNow(); ui.ckCfg = ckDefault(ui.ckCtx); ui.clockView = 'setup'; break;
     case 'show': ui.clockView = CK ? (CK.done ? 'end' : 'run') : null; unlockAudio(ckSound()); break;
-    case 'hide': case 'close': ui.clockView = null; break;
+    case 'hide': case 'close': ui.clockView = null; ui.ckFor = null; break;
+    // Klokka til en egen metcon: oppsettet lagres med metconen i stedet for å starte
+    case 'mine': ui.ckFor = 'mine'; ui.ckCtx = null; ui.ckCfg = ckCopy(mineCk(ui.mineEdit)); ui.clockView = 'setup'; break;
+    case 'keep': { const k = ckCopy(cfg); delete k.name; delete k.from; ui.mineEdit.ck = k; ui.ckFor = null; ui.clockView = null; ckRender(); render(); return; }
     case 'wod': { const w = ckWod(x); if (w) { ckStart(ckFromWod(w), x); return; } break; }
-    case 'edit': { const w = ckWod(x); ui.ckCtx = x; ui.ckCfg = w ? ckFromWod(w) : ckDefault(x); ui.clockView = 'setup'; break; }
+    case 'edit': { const w = ckWod(x); ui.ckCtx = x; ui.ckFor = null; ui.ckCfg = w ? ckFromWod(w) : ckDefault(x); ui.clockView = 'setup'; break; }
     case 'fromwod': { const w = ckWod(ui.ckCtx); if (w) ui.ckCfg = ckFromWod(w); break; }
     case 'quick': ui.ckCfg = {b: [ckCopy(CK_QUICK[+x][1])], rep: 1}; break;
     case 'recent': ui.ckCfg = ckCopy((S.settings.ckRecent || [])[+x] || cfg); break;
@@ -4024,10 +4069,10 @@ function ckBlockForm(b, bi, nb){
     ${body}</section>`;
 }
 function ckSetupHTML(){
-  const c = ui.ckCfg, rec = S.settings.ckRecent || [], w = ckWod(ui.ckCtx), cd = ckCd();
+  const c = ui.ckCfg, rec = S.settings.ckRecent || [], w = ckWod(ui.ckCtx), cd = ckCd(), mine = ui.ckFor === 'mine' && ui.mineEdit;
   return `<div class="ck-set">
     <div class="ck-top"><button class="link" data-a="ck:close">‹ Lukk</button></div>
-    <header class="head"><h1>Klokke</h1><p class="eyebrow">${c.name ? 'Fylt ut fra ' + esc(c.name) : 'Velg et oppsett, eller still inn selv'}</p></header>
+    <header class="head"><h1>Klokke</h1><p class="eyebrow">${mine ? 'Lagres med ' + esc(mine.n.trim() || 'metconen') : c.name ? 'Fylt ut fra ' + esc(c.name) : 'Velg et oppsett, eller still inn selv'}</p></header>
     ${w && c.from !== w.id ? `<button class="btn ghost" data-a="ck:fromwod">Fyll ut fra ${esc(w.navn)}</button>` : ''}
     ${rec.length ? `<span class="lbl">Sist brukt</span><div class="ck-chips">${rec.map((x, i) => `<button data-a="ck:recent:${i}">${x.name ? '<b>' + esc(x.name) + '</b>' : ''}${esc(ckDesc(x))}</button>`).join('')}</div>` : ''}
     <span class="lbl">Hurtigvalg</span>
@@ -4042,7 +4087,7 @@ function ckSetupHTML(){
       <button class="tog" data-a="ck:snd" aria-pressed="${ckSound()}">Pip ved start og de siste 3 sekundene</button>
     </section>
     <section class="box" id="ckSum">${ckSumHTML(c)}</section>
-    <button class="btn ck-start" data-a="ck:start">${playSVG}Start</button>
+    ${mine ? '<button class="btn ck-start" data-a="ck:keep">Bruk dette oppsettet</button>' : `<button class="btn ck-start" data-a="ck:start">${playSVG}Start</button>`}
   </div>`;
 }
 function ckRunHTML(){
@@ -5359,6 +5404,33 @@ document.addEventListener('click', ev => {
     case 'bankmore': ui.bankN = (ui.bankN || 30) + 30; $('#bankList').innerHTML = bankListHTML(); break;
     case 'bfl': ui.bf.lag = r[0] || ''; ui.bankN = 30; render(); break;
     case 'bft': ui.bf[r[0]] = !ui.bf[r[0]]; ui.bankN = 30; render(); break;
+    case 'minenew': ui.mineEdit = {n:'', f:'AMRAP', m:'', x:'', lag:false, ck:null}; render(); toTop(); break;
+    case 'minefromfree': {
+      const x = (ui.freeNote || '').trim();
+      ui.bank = true; ui.bankFor = 'free'; ui.bf = ui.bf || {}; ui.wod = null; ui.wodRand = false; ui.bankN = 30;
+      ui.mineEdit = {n:'', f:fmtGuess(x), m:(ui.freeMcData && ui.freeMcData.min) || '', x, lag:false, ck:null};
+      if (!BANK) loadBank(); render(); toTop(); break;
+    }
+    case 'mineedit': { const o = (S.mine || []).find(x => x.i === r[0]); if (o) { ui.mineEdit = Object.assign({ck:null}, ckCopy(o), {m: o.m || ''}); render(); toTop(); } break; }
+    case 'minex': ui.mineEdit = null; render(); toTop(); break;
+    case 'minef': ui.mineEdit.f = MINE_F[+r[0]][0]; render(); break;
+    case 'minelag': ui.mineEdit.lag = r[0] === '1'; render(); break;
+    case 'mineckx': ui.mineEdit.ck = null; render(); break;
+    case 'minesave': {
+      const e = ui.mineEdit; if (!e) break;
+      if (!e.n.trim() || !e.x.trim()) { toast('Skriv navn og hva økta er'); break; }
+      const o = {i: e.i || 'u' + Date.now().toString(36), n: e.n.trim().slice(0, 60), f: e.f, m: parseInt(e.m, 10) || null, x: e.x.trim(), lag: !!e.lag, ck: e.ck || null};
+      S.mine = S.mine || [];
+      const k = S.mine.findIndex(x => x.i === o.i); if (k > -1) S.mine[k] = o; else S.mine.unshift(o);
+      save(); ui.mineEdit = null; ui.wod = o.i; ui.wodRand = false; render(); toTop(); toast(k > -1 ? 'Endringene er lagret' : 'Metconen er lagret i øktbanken');
+      break;
+    }
+    case 'minedel': {
+      if (ui.confirm !== 'minedel:' + r[0]) { ui.confirm = 'minedel:' + r[0]; render(); break; }
+      // Loggen har sin egen kopi av økta, så tidligere resultater står der fortsatt
+      S.mine = (S.mine || []).filter(x => x.i !== r[0]); S.fav = (S.fav || []).filter(x => x !== r[0]);
+      ui.confirm = null; ui.wod = null; save(); render(); toTop(); toast('Metconen er slettet'); break;
+    }
     case 'wod': ui.wod = r[0]; ui.wodRand = false; render(); toTop(); break;
     case 'wodback': ui.wod = null; ui.wodRand = false; render(); break;
     case 'wodrand': showRandom(ui.randPool || {kind:'filter'}); break;
@@ -5378,10 +5450,11 @@ document.addEventListener('click', ev => {
       save(); render(); break;
     }
     case 'wodpick': {
-      const w = BANK.find(x => x.i === r[0]); if (!w) break;
+      const w = bankGet(r[0]); if (!w) break;
       const pick = {id:w.i, navn:wodTitle(w), tekst:w.x, resultat:''};
       const guess = {type: mcGuess(w.x + ' ' + (w.n || '')), min: w.m || ''};   // forslag, kan endres
-      if (ui.bankFor === 'sx' && ui.sxForm) { ui.sxForm.wk = 'bank'; ui.sxForm.ref = w.i; }
+      // Vennene har ikke dine egne metcons, så de går til timen som tekst
+      if (ui.bankFor === 'sx' && ui.sxForm) { if (w.mine) { ui.sxForm.wk = 'text'; ui.sxForm.text = (wodTitle(w) + '\n' + w.x).slice(0, 300); } else { ui.sxForm.wk = 'bank'; ui.sxForm.ref = w.i; } }
       else if (ui.bankFor === 'session' && S.draft) { S.draft.wod = pick; S.draft.metcon = true; S.draft.mc = Object.assign(guess, S.draft.mc && S.draft.mc.min ? S.draft.mc : {}); save(); }
       else { ui.free = true; ui.freeWod = pick; ui.freeMc = true; ui.freeMcData = Object.assign(guess, ui.freeMcData && ui.freeMcData.min ? ui.freeMcData : {}); }
       ui.bank = false; ui.wod = null; ui.wodRand = false; render(); toTop(); toast(ui.bankFor === 'sx' ? 'Metcon lagt til timen' : 'Metcon valgt');
@@ -5549,7 +5622,11 @@ addEventListener('orientationchange', () => scheduleFit(400));
 document.addEventListener('focusout', () => scheduleFit(350));   // tastaturet lukkes
 
 document.addEventListener('input', ev => {
-  if (ev.target.id === 'note' && S.draft) { S.draft.note = ev.target.value; save(); }
+  if (ev.target.dataset && ev.target.dataset.mine && ui.mineEdit) {
+    ui.mineEdit[ev.target.dataset.mine] = ev.target.value;
+    const c = $('#mineCk'); if (c) c.innerHTML = mineCkTxt(ui.mineEdit);
+  }
+  else if (ev.target.id === 'note' && S.draft) { S.draft.note = ev.target.value; save(); }
   else if (ev.target.dataset && ev.target.dataset.ppsplit) {
     const ctx = ev.target.dataset.ppsplit, pk = ctx === 'session' ? S.draft && S.draft.pete : ui.freePete;
     if (pk) { pk.split = ev.target.value; if (ctx === 'session') save(); }

@@ -1,6 +1,6 @@
 # Stanga – treningsapp på hjemskjermen
 
-Styrkeprogrammer (StrongLifts 5×5, Starting Strength, GZCLP, 5/3/1 FSL og BBB, Juggernaut, Cube Method og Strength & Power), Burgener 12 uker for olympisk vektløfting, et konkurranseprogram for ATHX 2027, øktbank med metcons, metcon-klokke og treningslogg. Alle data lagres lokalt på telefonen.
+Styrkeprogrammer (StrongLifts 5×5, Starting Strength, GZCLP, 5/3/1 FSL og BBB, Juggernaut, Cube Method og Strength & Power), Burgener 12 uker for olympisk vektløfting, et konkurranseprogram for ATHX 2027, øktbank med metcons, egne metcons, metcon-klokke og treningslogg. Alle data lagres lokalt på telefonen.
 
 ## Utseende: Treningsboka
 
@@ -150,6 +150,18 @@ Lista viser hele økta for hver metcon, så du kan lese den uten å åpne den. T
 - **Ferdig:** Resultatet fylles ut (tid, runder pluss reps eller snitt per drag) sammen med minuttene. Med et program velger du **Legg inn i dagens økt**: resultatet går til dagens metcon, eller til notatet, og minuttene går til metcon-budsjettet. Uten program, eller fra Fri økt, blir det **Lagre som fri økt**.
 - Klokka lagres i `stanga.v1.clock` og står riktig etter en omstart. Den følger ikke med i skybackup. En ny versjon av appen venter til klokka er lukket.
 - **Begrensning på iPhone:** Med låst skjerm kjører ikke appen, så den piper ikke da.
+
+## Egne metcons
+
+Du kan lage så mange metcons du vil i tillegg til dem i øktbanken.
+
+- **+ Lag egen metcon** øverst i Øktbank. Skriv navn og økta, og velg format, minutter (valgfritt) og alene eller lag.
+- **Klokka** fylles ut fra teksten mens du skriver, for eksempel «For Time · tak 20 min». Med **Still inn klokka selv** lagrer du et eget oppsett, for eksempel blokker eller intervaller, sammen med metconen.
+- **Fra Fri økt:** «+ Lagre som egen metcon i øktbanken» tar med det du skrev under «Hva gjorde du?» og gjetter formatet.
+- Egne metcons står først i øktbanken med typen **Egen**. Filteret **Egne** viser bare dem. De kan velges, merkes som favoritt og vise tidligere resultater, som de andre øktene.
+- **Endre** og **Slett** står på økta. Slett må trykkes to ganger. Loggen har sin egen kopi, så tidligere resultater står der fortsatt.
+- Velger du en egen metcon til en time i Sammen, sendes den som tekst, fordi vennene dine ikke har den i øktbanken.
+- De lagres i `S.mine` og følger med i skybackup og eksport.
 
 ## Metcon-budsjett
 
