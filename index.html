@@ -817,7 +817,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 69;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 70;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -1200,7 +1200,7 @@ function buildMmc(p, a){
   return {programId:p.id, day:MMC_DAY[di][0], sub:'Uke ' + wk + ' av 12 · ' + MMC_PHASE[wk-1], ex,
     boxes:[['Finisher etter metconen', fin + (rpe ? '\nMål-RPE for økta: ' + rpe : '')]],
     wod:{id: bench ? 'mmc-' + bk : 'mmc-' + wk + '-' + di, navn, tekst: text + (bench && wk > 1 ? '\nSamme øvelser, kalorier og vekter som uke 1.' : ''), resultat:''},
-    metcon:true, mc:{type:mcGuess(text), min, rpe:null}, started:Date.now()};
+    metcon:true, mc:{type:mcGuess(text), min, rpe:null, auto:1}, started:Date.now()};
 }
 // Hovedløftet følger prosentplanen. Sekundærløftet styres av RPE: alle reps og RPE 6 gir +2,5 kg,
 // RPE 7–9 (1–3 i reserve) gir samme vekt, og RPE 9,5–10 eller bom gir −2,5 kg. Vekten du brukte, blir neste startvekt.
@@ -1294,7 +1294,7 @@ function buildEmc(p, a){
   return {programId:p.id, day, sub:'Uke ' + wk + ' av 12 · ' + EMC_PHASE[wk-1], ex,
     boxes:[['Finisher · EMOM ' + fmin, fin + '\nMål-RPE for EMOM-en: ' + fmt(EMC_RPE.mc[wk-1])]],
     wod:{id: same ? 'emcap-' + bk.toLowerCase() + '1' : 'emc-' + wk + '-' + di, navn: (wk === 1 ? 'Baseline ' : wk === 12 ? 'Retest ' : '') + 'EMOM Capacity ' + bk + ' · ' + day, tekst:text, resultat:''},
-    metcon:true, mc:{type:mcGuess(text), min, rpe:null}, started:Date.now()};
+    metcon:true, mc:{type:mcGuess(text), min, rpe:null, auto:1}, started:Date.now()};
 }
 
 /* ---------- Circuit EMOM 12 uker (Jonas sitt Google-ark, eget program) ----------
@@ -1340,7 +1340,7 @@ function buildCir(p, a){
   return {programId:p.id, day, sub:'Uke ' + wk + ' av 12 · ' + CIR_PHASE[wk-1], ex,
     boxes:[['Til slutt', fin + '\nMål-RPE for økta: ' + fmt(CIR_RPE[wk-1])]],
     wod:{id: same ? 'circ-' + bk.toLowerCase() : 'cir-' + wk + '-' + di, navn: (wk === 1 ? 'Baseline ' : wk === 12 ? 'Retest ' : '') + 'Circuit EMOM ' + bk + ' · ' + day, tekst:text, resultat:''},
-    metcon:true, mc:{type:mcGuess(text), min, rpe:null}, started:Date.now()};
+    metcon:true, mc:{type:mcGuess(text), min, rpe:null, auto:1}, started:Date.now()};
 }
 
 /* ---------- Cube EMOM 12 uker (Jonas sitt Google-ark, eget program) ----------
@@ -1392,7 +1392,7 @@ function buildCbe(p, a){
     boxes:[['E4MOM ' + (rounds * 4) + ' min', 'Minutt 1: ' + liftName(ex[0].lift) + ' · minutt 2: ' + liftName(ex[1].lift) + ' · minutt 3: ' + liftName(ex[2].lift) + ' · minutt 4: hvile. ' + rounds + ' runder.\nDenne uka: ' + listNo(cbeLifts(wk).map(l => liftName(sw(a, l)).toLowerCase())) + '. ' + liftName(sw(a, CBE_OUT[wk-1])) + ' står over.\nVarm opp alle tre løftene til arbeidsvekt før klokka starter. Appen tar løftene i samme rekkefølge som minuttene.'],
            ['Tilbehør', CBE_ACC[di] + '\nMål-RPE for økta: ' + fmt(CBE_RPE[wk-1])]],
     wod:{id:'cbe-' + bk.toLowerCase(), navn:(wk === 1 ? 'Baseline ' : wk === 12 ? 'Retest ' : '') + 'Cube EMOM ' + bk, tekst:text, resultat:''},
-    metcon:true, mc:{type:mcGuess(text), min:25, rpe:null}, started:Date.now()};
+    metcon:true, mc:{type:mcGuess(text), min:25, rpe:null, auto:1}, started:Date.now()};
 }
 
 /* ---------- Juggernaut Method (16 uker, Chad Wesley Smith) ----------
@@ -6068,7 +6068,8 @@ document.addEventListener('click', ev => {
       save(); render(); break;
     }
     case 'wodrm':
-      if (r[0] === 'session' && S.draft) { delete S.draft.wod; save(); } else ui.freeWod = null;
+      // Metconen fra programmet kan byttes: da nullstilles også minuttene og typen planen fylte inn, så en ny metcon får sine egne
+      if (r[0] === 'session' && S.draft) { delete S.draft.wod; if (S.draft.mc && S.draft.mc.auto) { S.draft.mc = {}; S.draft.metcon = false; } save(); } else ui.freeWod = null;
       render(); break;
     case 'ck': ckAct(r); break;
     case 'finish': ui.confirm = null; finish(); break;
