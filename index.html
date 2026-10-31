@@ -817,7 +817,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 63;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 64;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -1162,6 +1162,9 @@ const MMC_SEC = [
 ];
 const mmcSecOf = id => MMC_SEC.find(x => x[1] === id);
 const mmcSecDefault = (id, orm) => { const [, , ref, k] = mmcSecOf(id); return Math.max(2.5, r25((orm[ref] || 0) * k)); };
+// Treningsmaks: starter på 90 % av 1RM og flyttes av RPE (benk, knebøy) eller kvalitet (clean) etter hver vanlig uke
+const mmcTm = (a, L) => (a.tm && a.tm[L]) || a.e1rm[L] * .9;
+const mmcStep = L => L === 'squat' || (LIFTS[L] || {}).alt === 'squat' ? 5 : 2.5;
 // Startvekt for et sekundærløft: det du løftet sist i programmet, ellers forslaget ut fra 1RM
 const mmcSecW = (a, id) => (a.lifts[id] && a.lifts[id].w) || mmcSecDefault(id, a.e1rm);
 function mmcSec(a, text){
@@ -1178,7 +1181,7 @@ function mmcSec(a, text){
 }
 function buildMmc(p, a){
   const i = a.idx, wk = Math.floor(i/3) + 1, di = i % 3, [sec, mc, fin, rpe] = MMC[wk-1][di];
-  const [, slot, bk] = MMC_DAY[di], L = sw(a, slot), [pc, n, r] = MMC_MAIN[wk-1][di], tm = a.e1rm[L] * .9;
+  const [, slot, bk] = MMC_DAY[di], L = sw(a, slot), [pc, n, r] = MMC_MAIN[wk-1][di], tm = mmcTm(a, L), ask = wk !== 4 && wk !== 10 && wk !== 12;
   let sets = mk(n, r, r25(tm * pc / 100)), hint = '', tag = pc + ' % av TM';
   if (wk === 12 && slot !== 'clean') {
     // Retest: ett sett på 5–8 reps til RPE 8, så to sett à fem på 65 %
@@ -1186,12 +1189,13 @@ function buildMmc(p, a){
     tag = 'Retest'; hint = 'Første sett: 5–8 reps, stopp på RPE 8. Så 2×5 på 65 % av TM. Test repkvaliteten, ikke 1RM til failure.';
   } else if (wk === 12) { tag = 'Teknisk'; hint = 'Teknisk, ingen maks. Hvert løft skal være raskt og rent.'; }
   else if (wk === 4 || wk === 10) hint = 'Lett uke. Kontrollert restitusjon, ikke jakt vekt.';
-  else hint = 'Følg RPE. Skru ned hvis teknikk eller fart faller.';
+  else hint = slot === 'clean' ? 'Raske og rene løft gir høyere treningsmaks neste uke. Skru ned hvis teknikken svikter.'
+    : 'RPE 7 eller lavere på siste sett gir høyere treningsmaks neste uke. Skru ned hvis teknikk eller fart faller.';
   const bench = mc.charAt(0) === '@', label = wk === 1 || wk === 6 ? 'Benchmark' : 'Retest';
   const text = bench ? MMC_BENCH[bk] : mc;
   const navn = bench ? label + ' ' + bk + ' · ' + MMC_DAY[di][0] : 'Muscle MetCon · ' + MMC_DAY[di][0];
   const min = +((text.match(/(\d+) min/) || [])[1]) || null;
-  const ex = [{key:L, lift:L, slot, part:'mmc', rest: slot === 'clean' ? 90 : 150, tag, hint, sets}], e2 = mmcSec(a, sec);
+  const ex = [{key:L, lift:L, slot, part:'mmc', sp:1, ask, rpeLbl: 'mål ' + (rpe ? rpe + '–' + (rpe + 1) : '7–8'), rest: slot === 'clean' ? 90 : 150, tag, hint, sets}], e2 = mmcSec(a, sec);
   if (e2) ex.push(e2);
   return {programId:p.id, day:MMC_DAY[di][0], sub:'Uke ' + wk + ' av 12 · ' + MMC_PHASE[wk-1], ex,
     boxes:[['Finisher etter metconen', fin + (rpe ? '\nMål-RPE for økta: ' + rpe : '')]],
@@ -1219,8 +1223,19 @@ function progressMmc(p, a, s){
       return;
     }
     const am = e.sets.find(x => x.am && x.d != null);
-    if (am) notes.push({name, text: am.d + ' reps på ' + fmt(am.w) + ' kg · anslått 1RM ' + fmt(r25(est1(am.w, am.d, 8))) + ' kg', kind: am.d >= am.t ? 'up' : 'same'});
-    else notes.push({name, text:'Vektene følger prosentplanen', kind:'same'});
+    if (am) { notes.push({name, text: am.d + ' reps på ' + fmt(am.w) + ' kg · anslått 1RM ' + fmt(r25(est1(am.w, am.d, 8))) + ' kg', kind: am.d >= am.t ? 'up' : 'same'}); return; }
+    if (!e.ask) { notes.push({name, text:'Lett eller teknisk økt, treningsmaksen står', kind:'same'}); return; }
+    // RPE 7 eller lavere (eller raske og rene clean) gir +2,5 kg på TM, knebøy +5 kg. RPE 7,5–9 og «tregere» holder.
+    // RPE 9,5–10, «teknikk sviktet» eller bom gir like mye ned.
+    const old = mmcTm(a, e.lift), st = mmcStep(e.lift), hit = e.sets.every(x => x.d != null && x.d >= x.t), cl = e.slot === 'clean';
+    let tm = old, why;
+    if (!hit) { tm = old - st; why = 'bom'; }
+    else if (cl ? e.q == null : e.rpe == null) why = cl ? 'ingen vurdering' : 'ingen RPE';
+    else if (cl ? e.q === 'god' : e.rpe <= 7) { tm = old + st; why = cl ? 'raske og rene' : 'RPE ' + fmt(e.rpe); }
+    else if (cl ? e.q === 'teknisk' : e.rpe >= 9.5) { tm = old - st; why = cl ? 'teknikken sviktet' : 'RPE ' + fmt(e.rpe); }
+    else why = cl ? 'tregere' : 'RPE ' + fmt(e.rpe);
+    a.tm = a.tm || {}; a.tm[e.lift] = Math.max(BAR(), tm);
+    notes.push({name, text:'Treningsmaks ' + (tm === old ? 'står på ' + fmt(old) : fmt(old) + ' → ' + fmt(tm)) + ' kg (' + why + ')', kind: tm > old ? 'up' : tm < old ? 'down' : 'same'});
   });
   return notes;
 }
@@ -1992,10 +2007,10 @@ function spExtras(e, ei){
     h += `<div class="rpe"><span>RPE for ${liftName(e.lift).toLowerCase()} (${e.rpeLbl || 'mål 6–7,5'})</span><div class="seg num">${
       [6,7,7.5,8,8.5,9,9.5,10].map(v => `<button data-a="rpe:${ei}:${v}" aria-pressed="${e.rpe === v}">${fmt(v)}</button>`).join('')}</div></div>`;
   }
-  if ((e.part === 'top' || e.part === 'back') && all) {
+  if ((e.part === 'top' || e.part === 'back' || e.ask) && all) {
     if (e.slot === 'clean') h +=`<div class="rpe"><span>Hvordan gikk løftene?</span><div class="seg">${
       [['god','Raske og rene'],['treg','Tregere'],['teknisk','Teknikk sviktet']].map(([v,l]) => `<button data-a="q:${ei}:${v}" aria-pressed="${e.q === v}">${l}</button>`).join('')}</div></div>`;
-    else h += `<div class="rpe"><span>${e.athx ? 'RPE på siste sett' + (e.rpeT != null ? ' (mål ' + fmt(e.rpeT) + ')' : '')
+    else h += `<div class="rpe"><span>${e.athx || e.ask ? 'RPE på siste sett' + (e.rpeT != null ? ' (mål ' + fmt(e.rpeT) + ')' : e.rpeLbl ? ' (' + e.rpeLbl + ')' : '')
       : 'RPE for ' + (e.part === 'top' ? 'toppsettet' : 'backoff-settene')}</span><div class="seg num">${
       [6,7,7.5,8,8.5,9,9.5,10].map(v => `<button data-a="rpe:${ei}:${v}" aria-pressed="${e.rpe === v}">${fmt(v)}</button>`).join('')}</div></div>`;
   }
@@ -2087,7 +2102,7 @@ const PROGRAMS = [
 
   { id:'mmc12', name:'Muscle MetCon 12 uker', origin:'Eget program, inspirert av Coach Boski', level:'Middels', perWeek:'3', prog:'mmc', total:36,
     summary:'Tre økter i uka på 60–75 minutter: Push med benk, Legs med knebøy og Pull & Power med power clean. Hver økt er styrke, så en metcon på 25–30 minutter og en kort finisher. Uke 1, 6 og 12 har de samme tre benchmark-metconene, så du ser fremgangen.',
-    rule:'Hovedløftet er prosent av treningsmaks, som er 90 % av 1RM. Prosentene stiger fra 60–67,5 % i uke 1 til 85 % i uke 11, og RPE styrer alltid. Uke 4 og 10 er lette uker. Uke 12 er retest: ett sett på 5–8 reps til RPE 8 i benk og knebøy, teknisk clean og samme benchmark som uke 1. Sekundærløftene tas med 1–3 reps i reserve, og metconene på RPE 7–8 med god bevegelseskvalitet.',
+    rule:'Hovedløftet er prosent av treningsmaks, som starter på 90 % av 1RM. Prosentene stiger fra 60–67,5 % i uke 1 til 85 % i uke 11. I tillegg flytter RPE treningsmaksen: RPE 7 eller lavere på siste sett gir +2,5 kg i benk og +5 kg i knebøy neste uke, RPE 7,5–9 holder den, og RPE 9,5–10 eller bom gir like mye ned. Clean øker 2,5 kg når løftene er raske og rene, og går ned ved teknisk svikt. Lette uker og retesten endrer ikke treningsmaksen. Uke 4 og 10 er lette uker. Uke 12 er retest: ett sett på 5–8 reps til RPE 8 i benk og knebøy, teknisk clean og samme benchmark som uke 1. Sekundærløftene tas med 1–3 reps i reserve, og metconene på RPE 7–8 med god bevegelseskvalitet.',
     days:[{name:'Push', lift:'bench', lines:[['Benkpress','% av TM'],['Skrå DB-benk','1–3 RIR'],['Metcon','22–28 min'],['Finisher','6–8 min']]},
           {name:'Legs', lift:'squat', lines:[['Knebøy','% av TM'],['RDL eller bulgarsk','1–3 RIR'],['Metcon','22–28 min'],['Finisher','6–8 min']]},
           {name:'Pull & Power', lift:'clean', lines:[['Power clean','% av TM'],['Roing eller strict press','1–3 RIR'],['Metcon','24–28 min'],['Finisher','6–8 min']]}],
@@ -2997,7 +3012,7 @@ const PLAN_NOTE = {
   cube:'Vektene er prosent av 1RM og endres ikke underveis. Uke 10 er test, og beste løft blir ny 1RM.',
   sp12:'Planen viser vektene hvis toppsett og backoff går på RPE 7 og clean er rask og ren. Da øker vekten 2,5 kg fra uke til uke. Ved RPE 7,5–9 står vekten stille. Når en ny fase starter, regnes vektene ut fra estimert 1RM.',
   burg:'Vektene er prosent av 1RM og endres ikke underveis. Uke 12, dag 4 er max out, og beste snatch og clean & jerk blir ny 1RM.',
-  mmc:'Hovedløftet er prosent av treningsmaks (90 % av 1RM) og endres ikke underveis. Metconene står i hver økt. Uke 1, 6 og 12 er de samme tre benchmark-metconene.',
+  mmc:'Planen viser vektene hvis siste sett går på RPE 7 og clean er rask og ren hver uke. Da øker treningsmaksen 2,5 kg i benk og clean og 5 kg i knebøy per uke. Ved RPE 7,5–9 står den stille, så tallene framover er et tak, ikke et løfte. Metconene står i hver økt, og uke 1, 6 og 12 har de samme tre benchmark-metconene.',
   athx:'Vektene er prosent av arbeidsmaksen din i dag, og fartene følger anslaget ditt. Begge oppdateres etter hver økt, så tallene framover endrer seg. Henger du etter kalenderen, hopper planen til første økt i denne uka.'
 };
 const planPer = (p, a) => p.prog === 'athx' ? a.ax.per : ['531','jugg','cube','sp12','burg','mmc'].includes(p.prog) ? p.days.length : (parseInt(p.perWeek) || 3);
@@ -3277,7 +3292,7 @@ function vToday(){
   const touched = e => e.sets.some(x => x.d != null) || !!(e.wuDone && e.wuDone.length);
   // Strength & Power spør om RPE eller kvalitet når settene er gjort. Kortet holdes åpent til det er svart,
   // men neste øvelse blir den du holder på med, så pauseklokka står i den med en gang alle settene er krysset av.
-  const asks = e => e.sp && allDone(e) && ((e.part === 'extra' && e.rpe == null) || ((e.part === 'top' || e.part === 'back') && (e.slot === 'clean' ? e.q == null : e.rpe == null)));
+  const asks = e => e.sp && allDone(e) && ((e.part === 'extra' && e.rpe == null) || ((e.part === 'top' || e.part === 'back' || e.ask) && (e.slot === 'clean' ? e.q == null : e.rpe == null)));
   const cur = s.ex.findIndex(e => !allDone(e));
   const setsLeft = s.ex.reduce((n, e) => n + e.sets.filter(x => x.d == null).length, 0);
   const mins = Math.floor((Date.now() - s.started) / 60000);
@@ -3290,6 +3305,7 @@ function vToday(){
         return `<i class="${d === e.sets.length ? 'full' : ''}"><b style="width:${Math.round(d / e.sets.length * 100)}%"></b></i>`; }).join('')}</div>
       ${p.prog === 'athx' ? axStatus(S.active, s)
         : g ? `<p class="muted small">Vektene er regnet ut fra dine makser. Programmet ditt står der det står.</p>`
+        : p.prog === 'mmc' && s.ex[0] && S.active.e1rm[s.ex[0].lift] ? `<p class="muted small">Treningsmaks ${liftName(s.ex[0].lift).toLowerCase()}: ${fmt(mmcTm(S.active, s.ex[0].lift))} kg</p>`
         : S.active.e1rm && s.ex[0] && S.active.e1rm[s.ex[0].lift] ? `<p class="muted small">${p.prog === 'sp12' ? 'Estimert 1RM' : '1RM'} ${liftName(s.ex[0].lift).toLowerCase()}: ${fmt(Math.round(S.active.e1rm[s.ex[0].lift]*2)/2)} kg</p>` : ''}
     </header>`;
   if (p.prog === 'sp12') {
@@ -3571,7 +3587,7 @@ function vDetail(p){
       return `
       <div class="field"><label for="in-${i}">${keyLabel(k)}</label>
         <span class="inp"><input id="in-${i}" data-key="${k}" type="text" inputmode="decimal" value="${fmt(v)}">kg</span></div>`; }).join('')}${p.orm ? '</details>' : '</div>'}${p.prog === 'mmc' ? mmcSecInputs(p) : ''}
-    <p class="muted small">${p.prog === '531' ? 'Appen regner ut treningsmaks som 90 % av dette.' : p.prog === 'jugg' ? 'Appen regner ut arbeidsmaks som 90 % av dette.' : p.prog === 'sp12' ? 'Startvektene regnes ut fra dette. Etter hvert styrer RPE-en din vektene.' : p.prog === 'cube' ? 'Alle vekter regnes ut som prosent av dette.' : p.prog === 'burg' ? 'Alle vekter regnes ut som prosent av dette. Trekk og shrugs ligger over 100 %, det er meningen.' : p.prog === 'mmc' ? 'Appen regner ut treningsmaks som 90 % av dette, og hovedløftet er prosent av treningsmaksen. Bruk dagsaktuelle maksløft.' : 'Start lett. Teknikken skal sitte før vekten blir tung.'}
+    <p class="muted small">${p.prog === '531' ? 'Appen regner ut treningsmaks som 90 % av dette.' : p.prog === 'jugg' ? 'Appen regner ut arbeidsmaks som 90 % av dette.' : p.prog === 'sp12' ? 'Startvektene regnes ut fra dette. Etter hvert styrer RPE-en din vektene.' : p.prog === 'cube' ? 'Alle vekter regnes ut som prosent av dette.' : p.prog === 'burg' ? 'Alle vekter regnes ut som prosent av dette. Trekk og shrugs ligger over 100 %, det er meningen.' : p.prog === 'mmc' ? 'Treningsmaksen starter på 90 % av dette, og RPE-en din flytter den etter hver uke. Bruk dagsaktuelle maksløft.' : 'Start lett. Teknikken skal sitte før vekten blir tung.'}
       ${slotsOf(p).length ? ' Vil du bytte et løft, gjør du det under Program → Maksløft, pauser og Pete Plan når programmet er aktivt.' : ''}
       ${other ? ' Dette erstatter '+other.name+'. Loggen din blir liggende.' : ''}${isActive ? ' Programmet er aktivt. Aktiverer du på nytt, starter det fra økt 1 med vektene over.' : ''}</p>`}
     <button class="btn ghost" data-a="planprev:${p.id}">Se hele planen</button>
