@@ -817,7 +817,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 70;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 71;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -1233,6 +1233,8 @@ function progressMmc(p, a, s){
     let tm = old, why;
     if (!hit) { tm = old - st; why = 'bom'; }
     else if (cl ? e.q == null : e.rpe == null) why = cl ? 'ingen vurdering' : 'ingen RPE';
+    // Tok du av vekt i økta, går treningsmaksen ikke opp, selv om RPE-en var lav
+    else if ((cl ? e.q === 'god' : e.rpe <= (e.tgt || 7.5) - .5) && e.pw != null && e.sets.some(x => x.d != null && x.w < e.pw)) why = 'tok av vekt i dag';
     else if (cl ? e.q === 'god' : e.rpe <= (e.tgt || 7.5) - .5) { tm = old + st; why = cl ? 'raske og rene' : 'RPE ' + fmt(e.rpe); }
     else if (cl ? e.q === 'teknisk' : e.rpe >= (e.tgt || 7.5) + 2) { tm = old - st; why = cl ? 'teknikken sviktet' : 'RPE ' + fmt(e.rpe); }
     else why = cl ? 'tregere' : 'RPE ' + fmt(e.rpe);
@@ -2280,7 +2282,7 @@ const PROGRAMS = [
     inputs:{bench:110, squat:135, clean:100}, inputLabel:'1RM' },
   { id:'cbe12', name:'Cube EMOM 12 uker', origin:'Eget program, inspirert av Brandon Lillys Cube Method', level:'Middels', perWeek:'3', prog:'cbe', total:36,
     summary:'Tre økter i uka på 63–72 minutter. Hver uke brukes tre av fire baseløft, og hvert av dem er tungt, eksplosivt og teknisk én gang i løpet av uka. Uka etter går ett løft ut, og det som sto over, kommer inn. Løftene går som E4MOM, 4–5 runder, så 12 min tilbehør og en AMRAP på 25 minutter. Bare 10 m shuttle runs som løping.',
-    rule:'Vektene er prosent av treningsmaks, som starter på 90 % av 1RM. Tunge løft går fra 80 % til 90 %, tekniske fra 65 % til 72,5 % og eksplosive fra 50 % til 60 %. Det tunge løftet har RPE-tak 8: RPE 7 eller lavere gir +2,5 kg på treningsmaks i benk og press og +5 kg i knebøy og markløft, RPE 9,5–10 eller bom gir like mye ned. Endringen gjelder fra uka etter. Rotasjonen gir hvert løft en uke fri, så det er ingen egne deloaduker. Uke 12 gjentar uke 1 med samme vekter og metcon.',
+    rule:'Vektene er prosent av treningsmaks, som starter på 90 % av 1RM. Tunge løft går fra 80 % til 90 %, tekniske fra 65 % til 72,5 % og eksplosive fra 50 % til 60 %. Det tunge løftet har RPE-tak 8: RPE 7 eller lavere gir +2,5 kg på treningsmaks i benk og press og +5 kg i knebøy og markløft, RPE 9,5–10 eller bom gir like mye ned. Tar du av vekt i økta, går treningsmaksen ikke opp. Endringen gjelder fra uka etter. Rotasjonen gir hvert løft en uke fri, så det er ingen egne deloaduker. Uke 12 gjentar uke 1 med samme vekter og metcon.',
     days:[{name:'Økt 1', lines:[['Tre løft','E4MOM 16–20 min'],['Tilbehør','12 min'],['AMRAP','25 min']]},
           {name:'Økt 2', lines:[['Tre løft','E4MOM 16–20 min'],['Tilbehør','12 min'],['AMRAP','25 min']]},
           {name:'Økt 3', lines:[['Tre løft','E4MOM 16–20 min'],['Tilbehør','12 min'],['AMRAP','25 min']]}],
@@ -2702,16 +2704,18 @@ const REST_SCALE = [[.75,'Kortere'],[1,'Standard'],[1.25,'Lengre']];
 function mk(n, reps, w, lastAm){
   return Array.from({length:n}, (_,j) => ({t:reps, w, am: !!(lastAm && j === n-1), d:null}));
 }
+// Husker planlagt vekt på hovedløftene, så progresjonen ser om du tok av vekt i økta
+const withPw = s => (s.ex.forEach(e => { if (e.part === 'mmc' && e.pw == null) e.pw = e.sets[0].w; }), s);
 function buildSession(p, a){
   if (p.prog === 'sp12') return buildSP(p, a);
   if (p.prog === 'cube') return buildCube(p, a);
   if (p.prog === 'jugg') return buildJug(p, a);
   if (p.prog === 'athx') return buildAthx(p, a);
   if (p.prog === 'burg') return buildBurg(p, a);
-  if (p.prog === 'mmc') return buildMmc(p, a);
-  if (p.prog === 'emc') return buildEmc(p, a);
-  if (p.prog === 'cir') return buildCir(p, a);
-  if (p.prog === 'cbe') return buildCbe(p, a);
+  if (p.prog === 'mmc') return withPw(buildMmc(p, a));
+  if (p.prog === 'emc') return withPw(buildEmc(p, a));
+  if (p.prog === 'cir') return withPw(buildCir(p, a));
+  if (p.prog === 'cbe') return withPw(buildCbe(p, a));
   const i = a.idx, n = p.days.length, day = p.days[i % n];
   // Økta heter det programmet kaller den (Økt A, Dag 1). Linjen over viser uka, ikke et eget øktnummer.
   let ex = [], sub = 'Uke ' + (Math.floor(i / (parseInt(p.perWeek) || 3)) + 1);
