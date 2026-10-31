@@ -815,7 +815,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 61;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 62;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -1072,6 +1072,106 @@ function progressBurg(p, a, s){
     return notes;
   }
   if (s.ex.some(e => e.sets.some(x => x.d != null))) notes.push({name:s.day, text:'Vektene følger prosentplanen', kind:'same'});
+  return notes;
+}
+
+/* ---------- Muscle MetCon 12 uker (Jonas sitt Google-ark, inspirert av Coach Boski) ----------
+   Tre økter i uka: Push (benk), Legs (knebøy), Pull & Power (power clean). Hver økt er
+   styrke (ca. 24 min) → metcon (25–30 min) → finisher (6–8 min).
+   Hovedløftet er prosent av treningsmaks (TM = 90 % av 1RM) og endres ikke underveis.
+   Sekundærløftet tas med 1–3 reps i reserve og står som tekst. Metconen legges inn som dagens metcon,
+   og benchmark A/B/C i uke 1, 6 og 12 har samme id, så tidligere resultater vises ved retest.
+   MMC_MAIN: per uke [benk, knebøy, clean] som [prosent av TM, sett, reps].
+   MMC: per økt [sekundærløft, metcon, finisher, mål-RPE]. Uke 1–12, Push, Legs, Pull. */
+const MMC_MAIN = [
+  [[67.5,4,8],[65,4,8],[60,5,3]],   [[70,4,8],[67.5,4,8],[65,5,3]],   [[72.5,5,7],[70,5,7],[70,6,2]],
+  [[60,3,6],[60,3,6],[55,4,2]],     [[75,5,6],[72.5,5,6],[72.5,6,2]], [[77.5,4,6],[75,4,6],[75,6,2]],
+  [[80,5,5],[77.5,5,5],[77.5,6,2]], [[82.5,5,5],[80,5,5],[80,5,2]],   [[84,4,4],[82.5,4,4],[82.5,6,1]],
+  [[60,3,5],[60,3,5],[55,4,2]],     [[85,4,4],[85,4,3],[80,5,2]],     [[82.5,1,5],[80,1,5],[82.5,5,2]]
+];
+const MMC_PHASE = ['Grunnlag','Grunnlag','Bygg','Deload','Styrke + volum','Kontrollpunkt','Intensivering','Intensivering','Tung kontrollert','Deload','Toppuke','Retest'];
+const MMC_BENCH = {
+  A:'AMRAP 26 min:\n12/10 kcal SkiErg\n10 DB floor press (kontrollert)\n12 wall balls\n10 hanging knee raises',
+  B:'AMRAP 26 min:\n12/10 kcal BikeErg\n12 KB deadlifts\n10 box step-overs\n8 burpees',
+  C:'AMRAP 26 min:\n12/10 kcal RowErg\n8 pull-ups / 12 ring rows\n12 alternerende DB hang clean (lett)\n12 sit-ups'
+};
+const MMC = [
+  // Uke 1 · Benchmark
+  [['Skrå DB-benk 3×10–12', '@A', 'EMOM 8: oddetall 12 skrå DB-press, partall 15 triceps pushdowns', 7],
+   ['Rumensk markløft 3×10', '@B', 'EMOM 8: oddetall 15 glute bridges, partall 12 DB reverse lunges totalt', 7],
+   ['Chest-supported DB row 3×10', '@C', 'EMOM 8: oddetall 12 hammer curls, partall 15 band pull-aparts', 7]],
+  // Uke 2
+  [['Skrå DB-benk 3×10', 'EMOM 28 min (7 runder):\n1: 12/10 kcal roing\n2: 12–15 push-ups\n3: 14 KB swings\n4: 12 DB shoulder press (lett)', '8 min 40/20: cable fly / triceps pushdown (annenhver)'],
+   ['Bulgarske splittknebøy 3×8/side', '5 runder for time, cap 28 min:\n400 m løp\n14 goblet squats\n12 hanging knee raises\n10 box step-overs', '8 min 40/20: step-ups / stående tåhev (annenhver)'],
+   ['Strict press 3×8 @RPE 7', 'E4MOM ×7 (28 min):\n12/10 kcal SkiErg\n8–10 pull-ups / ring rows\n12 DB bent-over rows\nResten av intervallet rolig', '8 min 40/20: rear-delt fly / hammer curls (annenhver)']],
+  // Uke 3
+  [['Skrå DB-benk 3×8–10', 'AMRAP 28 min:\n12/10 kcal RowErg\n12 DB bench press\n16 wall balls\n30 double-unders / 60 singles', 'EMOM 8: 10–12 smale push-ups / 12 DB fly (lett)', 8],
+   ['Rumensk markløft 3×8', 'EMOM 28 min (7 runder):\n1: 12/10 kcal BikeErg\n2: 12 DB front-rack lunges totalt\n3: 14 KB swings\n4: 14 sit-ups', 'EMOM 8: 12 hip thrust / 12 goblet squat (moderat)', 8],
+   ['Chest-supported row 4×8', 'AMRAP 28 min:\n400 m roing\n10 pull-ups / ring rows\n12 DB push press (lett)\n16 sit-ups', 'EMOM 8: 12 curls / 15 band face pulls', 8]],
+  // Uke 4 · Deload
+  [['Skrå DB-benk 2×10 lett', 'AMRAP 22 min, rolig RPE 6:\n10/8 kcal SkiErg\n10 incline push-ups\n12 lette wall balls\n12 dead bugs totalt', '6 min lett pump: fly + triceps, ingen failure', 6],
+   ['Rumensk markløft 2×8 lett', '24 min kontinuerlig, RPE 6:\n8 min BikeErg\n8 min roing\n8 min rask gange / SkiErg', '6 min lett pump: glute bridge + tåhev', 6],
+   ['DB row 2×10 lett', 'EMOM 24 min, RPE 6:\n1: 10/8 kcal roing\n2: 10 kontrollerte ring rows\n3: 12 air squats + 10 sit-ups', '6 min lett pump: face pulls + curls', 6]],
+  // Uke 5
+  [['Skrå DB-benk 3×8–10', 'AMRAP 28 min:\n12/10 kcal SkiErg\n12 DB bench press\n10 burpees over DB\n14 wall balls', '8 min: 3 runder 12 incline DB fly + 15 triceps pressdowns', 8],
+   ['Bulgarske splittknebøy 3×8/side', 'EMOM 28 min (7 runder):\n1: 12/10 kcal BikeErg\n2: 12 goblet squats\n3: 10–12 ring rows\n4: 40 sek planke', 'EMOM 8: 12 DB reverse lunges / 15 glute bridges', 8],
+   ['Strict press 3×6 @RPE 7–8', 'E4MOM ×7 (28 min):\n300 m roing\n8–10 pull-ups / ring rows\n12 KB deadlifts\nResten pause', 'EMOM 8: 12 curls / 12 rear-delt fly', 8]],
+  // Uke 6 · Benchmark
+  [['Skrå DB-benk 3×8', '@A', 'EMOM 8: incline DB press / pushdowns', 8],
+   ['Rumensk markløft 3×8', '@B', 'EMOM 8: glute bridges / reverse lunges', 8],
+   ['Chest-supported row 3×8–10', '@C', 'EMOM 8: hammer curls / band pull-aparts', 8]],
+  // Uke 7
+  [['Skrå DB-benk 3×8', 'EMOM 28 min (7 runder):\n1: 12/10 kcal RowErg\n2: 10–12 DB bench press\n3: 12 box step-overs\n4: 12–15 push-ups (skaler)', '8 min mekanisk dropsett: push-ups → incline push-ups, 3–4 sett', 8],
+   ['Rumensk markløft 3×8', 'AMRAP 28 min:\n300 m roing\n12 DB reverse lunges totalt\n14 KB swings\n12 sit-ups', '8 min: 3 runder 12 hip thrust + 12 step-ups totalt', 8],
+   ['Strict press 3×6 @RPE 8', 'AMRAP 28 min:\n12/10 kcal SkiErg\n10 pull-ups / ring rows\n12 DB bent-over rows\n8 burpees', '8 min: 3 runder 12 hammer curls + 15 face pulls', 8]],
+  // Uke 8
+  [['Skrå DB-benk 3×8', '5 runder for time, cap 28 min:\n14/12 kcal SkiErg\n12 DB shoulder press (lett)\n12 DB floor press\n14 wall balls', 'EMOM 8: 12 DB incline press / 12 triceps extensions', 8],
+   ['Bulgarske splittknebøy 3×8/side', 'E4MOM ×7 (28 min):\n12/10 kcal BikeErg\n12 front-rack DB lunges totalt\n10 ring rows\nResten pause', 'EMOM 8: 12 KB goblet squat / 15 glute bridges', 8],
+   ['Barbell row 4×8', 'EMOM 28 min (7 runder):\n1: 14/12 kcal RowErg\n2: 10 pull-ups / ring rows\n3: 12 DB hang power cleans (lett)\n4: 14 toes-to-bar / knee raises', 'EMOM 8: 12 hammer curls / 12 reverse fly', 8]],
+  // Uke 9
+  [['Skrå DB-benk 3×6–8', 'AMRAP 28 min:\n400 m løp\n12 DB bench press\n12/10 kcal roing\n10 hanging knee raises', '8 min kontrollert: 3×12 cable fly + 3×12 triceps'],
+   ['Rumensk markløft 3×6–8', 'AMRAP 28 min:\n12/10 kcal BikeErg\n12 KB deadlifts\n12 box step-overs\n10 wall balls', '8 min kontrollert: 3×12 hip thrust + 3×12 tåhev'],
+   ['Chest-supported row 3×8', 'E4MOM ×7 (28 min):\n10/8 kcal SkiErg\n8–10 pull-ups / ring rows\n12 DB push press (lett)\nResten pause', '8 min kontrollert: 3×12 curls + 3×15 face pulls']],
+  // Uke 10 · Deload
+  [['Skrå DB-benk 2×8 lett', 'EMOM 24 min, lett:\n1: 10/8 kcal SkiErg\n2: 10 incline push-ups\n3: 10–12 lette wall balls', '6 min veldig lett pump: triceps og bryst', 6],
+   ['Rumensk markløft 2×8 lett', 'AMRAP 22 min, lett:\n10/8 kcal BikeErg\n10 KB deadlifts (lett)\n10 step-ups\n12 sit-ups', '6 min veldig lett pump: legger og sete', 6],
+   ['DB row 2×10 lett', '24 min jevnt, RPE 6:\n8 min RowErg\n8 min SkiErg\n8 min BikeErg', '6 min veldig lett pump: rygg og biceps', 6]],
+  // Uke 11 · Toppuke
+  [['Skrå DB-benk 3×8 (kontrollert)', 'AMRAP 28 min:\n12/10 kcal SkiErg\n12 DB floor press\n10 burpees\n12 wall balls', 'EMOM 8: 10 incline DB press / 12 pushdowns'],
+   ['Rumensk markløft 3×8 (kontrollert)', 'EMOM 28 min (7 runder):\n1: 12/10 kcal BikeErg\n2: 12 KB swings\n3: 12 reverse lunges totalt\n4: 12 hanging knee raises', 'EMOM 8: 12 glute bridges / 12 goblet squats'],
+   ['Strict press 3×6 @RPE 7–8', 'AMRAP 28 min:\n300 m roing\n10 pull-ups / ring rows\n12 DB bent-over rows\n12 sit-ups', 'EMOM 8: 12 curls / 12 rear-delt fly']],
+  // Uke 12 · Retest
+  [['Skrå DB-benk 2×10 @RPE 7', '@A', 'EMOM 8: incline DB press / triceps, lett til moderat'],
+   ['Rumensk markløft 2×8 @RPE 7', '@B', 'EMOM 8: glute bridges / reverse lunges, lett til moderat'],
+   ['Chest-supported row 2×10 @RPE 7', '@C', 'EMOM 8: hammer curls / pull-aparts, lett til moderat']]
+];
+const MMC_DAY = [['Push','bench','A'],['Legs','squat','B'],['Pull & Power','clean','C']];
+function buildMmc(p, a){
+  const i = a.idx, wk = Math.floor(i/3) + 1, di = i % 3, [sec, mc, fin, rpe] = MMC[wk-1][di];
+  const [, slot, bk] = MMC_DAY[di], L = sw(a, slot), [pc, n, r] = MMC_MAIN[wk-1][di], tm = a.e1rm[L] * .9;
+  let sets = mk(n, r, r25(tm * pc / 100)), hint = '', tag = pc + ' % av TM';
+  if (wk === 12 && slot !== 'clean') {
+    // Retest: ett sett på 5–8 reps til RPE 8, så to sett à fem på 65 %
+    sets = [{t:5, w:r25(tm * pc / 100), am:true, d:null}, ...mk(2, 5, r25(tm * .65))];
+    tag = 'Retest'; hint = 'Første sett: 5–8 reps, stopp på RPE 8. Så 2×5 på 65 % av TM. Test repkvaliteten, ikke 1RM til failure.';
+  } else if (wk === 12) { tag = 'Teknisk'; hint = 'Teknisk, ingen maks. Hvert løft skal være raskt og rent.'; }
+  else if (wk === 4 || wk === 10) hint = 'Lett uke. Kontrollert restitusjon, ikke jakt vekt.';
+  else hint = 'Følg RPE. Skru ned hvis teknikk eller fart faller.';
+  const bench = mc.charAt(0) === '@', label = wk === 1 ? 'Benchmark' : wk === 6 ? 'Benchmark' : 'Retest';
+  const text = bench ? MMC_BENCH[bk] : mc;
+  const navn = bench ? label + ' ' + bk + ' · ' + MMC_DAY[di][0] : 'Muscle MetCon · ' + MMC_DAY[di][0];
+  const min = +((text.match(/(\d+) min/) || [])[1]) || null;
+  return {programId:p.id, day:MMC_DAY[di][0], sub:'Uke ' + wk + ' av 12 · ' + MMC_PHASE[wk-1],
+    ex:[{key:L, lift:L, slot, part:'mmc', rest: slot === 'clean' ? 90 : 150, tag, hint, sets}],
+    boxes:[['Sekundærløft · 1–3 reps i reserve', sec], ['Finisher etter metconen', fin + (rpe ? '\nMål-RPE for økta: ' + rpe : '')]],
+    wod:{id: bench ? 'mmc-' + bk : 'mmc-' + wk + '-' + di, navn, tekst: text + (bench && wk > 1 ? '\nSamme øvelser, kalorier og vekter som uke 1.' : ''), resultat:''},
+    metcon:true, mc:{type:mcGuess(text), min, rpe:null}, started:Date.now()};
+}
+function progressMmc(p, a, s){
+  const e = s.ex[0], notes = [];
+  const am = e.sets.find(x => x.am && x.d != null);
+  if (am) notes.push({name:liftName(e.lift), text: am.d + ' reps på ' + fmt(am.w) + ' kg · anslått 1RM ' + fmt(r25(est1(am.w, am.d, 8))) + ' kg', kind: am.d >= am.t ? 'up' : 'same'});
+  else if (e.sets.some(x => x.d != null)) notes.push({name:liftName(e.lift), text:'Vektene følger prosentplanen', kind:'same'});
   return notes;
 }
 
@@ -1934,7 +2034,15 @@ const PROGRAMS = [
           {name:'Dag 2', lines:[['Clean-variant','2–3 reps'],['Jerk','2–3 reps'],['Clean pull og RDL','3–8 reps']]},
           {name:'Dag 3', lines:[['Snatch','2–3 reps'],['Clean-variant','2–4 reps'],['Knebøy og snatch pull','3–8 reps']]},
           {name:'Dag 4', lines:[['Snatch','opp til tung single'],['Clean & jerk','opp til tung single'],['Frontbøy','1–8 reps']]}],
-    inputs:{snatch:70, cj:100, squat:140, frontsquat:115}, inputLabel:'1RM' }
+    inputs:{snatch:70, cj:100, squat:140, frontsquat:115}, inputLabel:'1RM' },
+
+  { id:'mmc12', name:'Muscle MetCon 12 uker', origin:'Eget program, inspirert av Coach Boski', level:'Middels', perWeek:'3', prog:'mmc', total:36,
+    summary:'Tre økter i uka på 60–75 minutter: Push med benk, Legs med knebøy og Pull & Power med power clean. Hver økt er styrke, så en metcon på 25–30 minutter og en kort finisher. Uke 1, 6 og 12 har de samme tre benchmark-metconene, så du ser fremgangen.',
+    rule:'Hovedløftet er prosent av treningsmaks, som er 90 % av 1RM. Prosentene stiger fra 60–67,5 % i uke 1 til 85 % i uke 11, og RPE styrer alltid. Uke 4 og 10 er lette uker. Uke 12 er retest: ett sett på 5–8 reps til RPE 8 i benk og knebøy, teknisk clean og samme benchmark som uke 1. Sekundærløftene tas med 1–3 reps i reserve, og metconene på RPE 7–8 med god bevegelseskvalitet.',
+    days:[{name:'Push', lift:'bench', lines:[['Benkpress','% av TM'],['Skrå DB-benk','1–3 RIR'],['Metcon','22–28 min'],['Finisher','6–8 min']]},
+          {name:'Legs', lift:'squat', lines:[['Knebøy','% av TM'],['RDL eller bulgarsk','1–3 RIR'],['Metcon','22–28 min'],['Finisher','6–8 min']]},
+          {name:'Pull & Power', lift:'clean', lines:[['Power clean','% av TM'],['Roing eller strict press','1–3 RIR'],['Metcon','24–28 min'],['Finisher','6–8 min']]}],
+    inputs:{bench:110, squat:135, clean:100}, inputLabel:'1RM' }
 ];
 
 /* ---------- Programguide ----------
@@ -2203,6 +2311,26 @@ const GUIDE = {
     metcon:'Programmet har et ukebudsjett for metcons: 40 minutter i uke 1–4, 30 i uke 5–8, 20 i uke 9–11 og 10 i uke 12. Legg inn type, minutter og RPE når du logger en metcon. Appen varsler når belastningen øker mer enn 15 % fra uka før, og sier fra hvis en metcon kolliderer med neste økt.',
     metconRefs:['schumann','petre','eddens'],
     watch:'Ta aldri metcon før løftene samme dag. Snatch og clean trenger fart, og den forsvinner først når du er sliten. Beintunge og olympiske metcons hører ikke hjemme dagen før en økt.'
+  },
+  mmc12: {
+    focus:'Styrke i benk, knebøy og power clean sammen med kondisjon og muskelvolum i samme økt.',
+    fits:'Deg som vil bli sterkere og i bedre form samtidig, har tilgang til ergometre, manualer og kettlebells, og kan trene tre ganger i uka.',
+    notFor:'Deg som bare vil maksimere 1RM. Metconene i hver økt koster noe beinstyrke og eksplosivitet.',
+    how:'Hver økt starter med hovedløftet på faste prosenter av treningsmaks, så et sekundærløft med 1–3 reps i reserve. Deretter kommer en metcon på 22–28 minutter som AMRAP, EMOM eller for time, og til slutt en kort finisher for muskelvolum. Uke 4 og 10 er lette, og uke 1, 6 og 12 har de samme benchmark-metconene.',
+    science:[
+      ['Styrke før kondisjon i samme økt gir mer beinstyrke enn omvendt. Programmet tar alltid løftene først.','B',['eddens']],
+      ['Kondisjon i samme økt hemmer maksimal styrke lite, men eksplosiv styrke noe mer.','B',['schumann','petre']],
+      ['Periodisert trening gir mer 1RM enn trening uten plan.','B',['williams']],
+      ['Du trenger ikke trene til failure. Programmet holder 1–3 reps i reserve.','A',['grgic','moran']],
+      ['En fast lett uke midt i programmet ga litt mindre beinstyrke i én studie. Hopp ikke over deload hvis du er sliten, men den er ikke hellig hvis du er fersk.','C',['coleman']]
+    ],
+    expect:[
+      ['Folk responderer svært ulikt på samme trening. Sammenlign deg med deg selv.','B',['hubal']],
+      ['Selve programmet er ikke testet i studier.','H',[]]
+    ],
+    metcon:'Metconen ligger i hver økt som dagens metcon, med klokke og resultatfelt. Før inn minutter og RPE, så teller den i metcon-belastningen. Benchmark A, B og C i uke 1, 6 og 12 viser forrige resultat, så du kan sammenligne.',
+    metconRefs:['eddens','schumann'],
+    watch:'Jobb på RPE 7–8 i metconene. En raskere tid teller bare hvis bevegelsene er gode. Er du uvanlig sliten, fjern finisheren eller kort ned metconen med 5–8 minutter.'
   }
 };
 
@@ -2282,6 +2410,7 @@ function buildSession(p, a){
   if (p.prog === 'jugg') return buildJug(p, a);
   if (p.prog === 'athx') return buildAthx(p, a);
   if (p.prog === 'burg') return buildBurg(p, a);
+  if (p.prog === 'mmc') return buildMmc(p, a);
   const i = a.idx, n = p.days.length, day = p.days[i % n];
   // Økta heter det programmet kaller den (Økt A, Dag 1). Linjen over viser uka, ikke et eget øktnummer.
   let ex = [], sub = 'Uke ' + (Math.floor(i / (parseInt(p.perWeek) || 3)) + 1);
@@ -2316,6 +2445,7 @@ function progress(p, a, s){
   if (p.prog === 'jugg') return progressJug(p, a, s);
   if (p.prog === 'athx') return progressAthx(p, a, s);
   if (p.prog === 'burg') return progressBurg(p, a, s);
+  if (p.prog === 'mmc') return progressMmc(p, a, s);
   const notes = [];
   const hit = x => x.d != null && x.d >= x.t;
   const touched = e => e.sets.some(x => x.d != null);
@@ -2496,7 +2626,7 @@ const listNo = a => a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' og
 function newInstance(p){
   if (p.prog === 'athx') return axInstance(p);
   const a = {programId:p.id, startedAt:Date.now(), idx:0, lifts:{}, tm:{}};
-  if (p.prog === 'sp12' || p.prog === 'cube' || p.prog === 'burg') { a.e1rm = {}; a.base = {}; }
+  if (p.prog === 'sp12' || p.prog === 'cube' || p.prog === 'burg' || p.prog === 'mmc') { a.e1rm = {}; a.base = {}; }
   Object.keys(p.inputs).forEach((k,i) => {
     const el = $('#in-'+i); let v = parseFloat(String(el && el.value || '').replace(',', '.'));
     if (!isFinite(v) || v < 0) v = p.inputs[k];
@@ -2804,9 +2934,10 @@ const PLAN_NOTE = {
   cube:'Vektene er prosent av 1RM og endres ikke underveis. Uke 10 er test, og beste løft blir ny 1RM.',
   sp12:'Planen viser vektene hvis toppsett og backoff går på RPE 7 og clean er rask og ren. Da øker vekten 2,5 kg fra uke til uke. Ved RPE 7,5–9 står vekten stille. Når en ny fase starter, regnes vektene ut fra estimert 1RM.',
   burg:'Vektene er prosent av 1RM og endres ikke underveis. Uke 12, dag 4 er max out, og beste snatch og clean & jerk blir ny 1RM.',
+  mmc:'Hovedløftet er prosent av treningsmaks (90 % av 1RM) og endres ikke underveis. Metconene står i hver økt. Uke 1, 6 og 12 er de samme tre benchmark-metconene.',
   athx:'Vektene er prosent av arbeidsmaksen din i dag, og fartene følger anslaget ditt. Begge oppdateres etter hver økt, så tallene framover endrer seg. Henger du etter kalenderen, hopper planen til første økt i denne uka.'
 };
-const planPer = (p, a) => p.prog === 'athx' ? a.ax.per : ['531','jugg','cube','sp12','burg'].includes(p.prog) ? p.days.length : (parseInt(p.perWeek) || 3);
+const planPer = (p, a) => p.prog === 'athx' ? a.ax.per : ['531','jugg','cube','sp12','burg','mmc'].includes(p.prog) ? p.days.length : (parseInt(p.perWeek) || 3);
 function simulate(p, a0, n){
   const a = JSON.parse(JSON.stringify(a0)), out = [], tot = totalOf(p, a0);
   while (out.length < n && !(tot && a.idx >= tot)) {
@@ -2850,7 +2981,7 @@ function planWeeks(P, p, a){
   const weeks = [];
   rows.forEach(r => { const w = Math.floor(r.k / per); (weeks[w] = weeks[w] || []).push(r); });
   // Uka står i overskriften, så «Uke 9 av 12» trengs ikke på hver økt
-  const subOf = (r, w) => ax ? r.sub.replace(/^Uke \d+ av \d+ · /, '') : p.prog === 'burg' ? r.sub.replace(/^Uke \d+ av \d+( · )?/, '') : r.sub !== 'Uke ' + (w + 1) ? r.sub : '';
+  const subOf = (r, w) => ax ? r.sub.replace(/^Uke \d+ av \d+ · /, '') : p.prog === 'burg' || p.prog === 'mmc' ? r.sub.replace(/^Uke \d+ av \d+( · )?/, '') : r.sub !== 'Uke ' + (w + 1) ? r.sub : '';
   return `${ax ? axScore(a) : ''}
     ${weeks.map((list, w) => list ? `<h3>Uke ${w + 1}${ax && a.ax.weeks[w] ? ' · ' + AX_PH[a.ax.weeks[w].ph] : ''}</h3><div class="list">${list.map(r => {
       const m = r.ex[0], sub = r.sub ? subOf(r, w) : '';
@@ -3161,6 +3292,8 @@ function vToday(){
   });
   // Burgener: kroppsvektøvelsene står som en påminnelse og logges ikke
   if (s.acc) h += `<section class="box"><span class="lbl">Til slutt, uten vekt</span><p class="small">${esc(s.acc)}</p></section>`;
+  // Muscle MetCon: sekundærløft og finisher står som tekst og logges ikke
+  (s.boxes || []).forEach(([l, t]) => { h += `<section class="box"><span class="lbl">${esc(l)}</span><p class="small" style="white-space:pre-line">${esc(t)}</p></section>`; });
   if (s.cond) h += axCondBox(s);
   // Etter styrken: kondisjon, metcon og notat ligger bak én rad. En del med innhold står alltid åpen.
   const af =ui.after && ui.after.k === s.started ? ui.after : (ui.after = {k: s.started});
@@ -3371,7 +3504,7 @@ function vDetail(p){
       return `
       <div class="field"><label for="in-${i}">${keyLabel(k)}</label>
         <span class="inp"><input id="in-${i}" data-key="${k}" type="text" inputmode="decimal" value="${fmt(v)}">kg</span></div>`; }).join('')}${p.orm ? '</details>' : '</div>'}
-    <p class="muted small">${p.prog === '531' ? 'Appen regner ut treningsmaks som 90 % av dette.' : p.prog === 'jugg' ? 'Appen regner ut arbeidsmaks som 90 % av dette.' : p.prog === 'sp12' ? 'Startvektene regnes ut fra dette. Etter hvert styrer RPE-en din vektene.' : p.prog === 'cube' ? 'Alle vekter regnes ut som prosent av dette.' : p.prog === 'burg' ? 'Alle vekter regnes ut som prosent av dette. Trekk og shrugs ligger over 100 %, det er meningen.' : 'Start lett. Teknikken skal sitte før vekten blir tung.'}
+    <p class="muted small">${p.prog === '531' ? 'Appen regner ut treningsmaks som 90 % av dette.' : p.prog === 'jugg' ? 'Appen regner ut arbeidsmaks som 90 % av dette.' : p.prog === 'sp12' ? 'Startvektene regnes ut fra dette. Etter hvert styrer RPE-en din vektene.' : p.prog === 'cube' ? 'Alle vekter regnes ut som prosent av dette.' : p.prog === 'burg' ? 'Alle vekter regnes ut som prosent av dette. Trekk og shrugs ligger over 100 %, det er meningen.' : p.prog === 'mmc' ? 'Appen regner ut treningsmaks som 90 % av dette, og hovedløftet er prosent av treningsmaksen. Bruk dagsaktuelle maksløft.' : 'Start lett. Teknikken skal sitte før vekten blir tung.'}
       ${slotsOf(p).length ? ' Vil du bytte et løft, gjør du det under Program → Maksløft, pauser og Pete Plan når programmet er aktivt.' : ''}
       ${other ? ' Dette erstatter '+other.name+'. Loggen din blir liggende.' : ''}${isActive ? ' Programmet er aktivt. Aktiverer du på nytt, starter det fra økt 1 med vektene over.' : ''}</p>`}
     <button class="btn ghost" data-a="planprev:${p.id}">Se hele planen</button>
