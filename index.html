@@ -817,7 +817,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 66;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 67;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -2903,7 +2903,8 @@ let BANK = null, bankErr = false;
 function loadBank(){
   if (BANK || ui.bankLoading) return;
   ui.bankLoading = true; bankErr = false;
-  fetch('okter.json').then(r => { if (!r.ok) throw 0; return r.json(); })
+  // cache:'no-cache' gjør at service workeren henter fra nettet først, så nye økter i banken kommer med en gang
+  fetch('okter.json', {cache:'no-cache'}).then(r => { if (!r.ok) throw 0; return r.json(); })
     .then(d => { BANK = d.okter; ui.bankLoading = false;
       if (ui.pendingRand) { const rp = ui.pendingRand; ui.pendingRand = null; showRandom(rp); } else render(); })
     .catch(() => { bankErr = true; ui.bankLoading = false; render(); });
@@ -3040,7 +3041,7 @@ function vBank(){
       <button class="btn" data-a="rand:solo">Tilfeldig solo-metcon</button>
       <button class="btn ghost" data-a="themes" aria-expanded="${!!ui.showThemes}">Tilfeldig temaøkt</button>
     </div>
-    ${ui.showThemes ? `<div class="themes">${THEMES.map((t, i) => `<button class="tog" data-a="rand:theme:${i}">${esc(themeLabel(t))}</button>`).join('')}
+    ${ui.showThemes ? `<div class="themes">${THEMES.map((t, i) => !BANK || BANK.some(w => w.t === t) ? `<button class="tog" data-a="rand:theme:${i}">${esc(themeLabel(t))}</button>` : '').join('')}
       <button class="tog" data-a="rand:theme:all">Alle temaer</button></div>` : ''}
     <div class="bankctl">
       <input id="bq" class="txt" type="search" placeholder="Søk, f.eks. wallball eller burpees" value="${esc(f.q || '')}" autocomplete="off">
