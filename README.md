@@ -1,6 +1,6 @@
 # Stanga – treningsapp på hjemskjermen
 
-Styrkeprogrammer (StrongLifts 5×5, Starting Strength, GZCLP, 5/3/1 FSL og BBB, Juggernaut, Cube Method og Strength & Power), Burgener 12 uker for olympisk vektløfting, Muscle MetCon 12 uker (styrke, metcon og finisher i hver økt, sekundærløft styrt av RPE), EMOM Capacity 12 uker (styrke som E2MOM og 4-stasjons EMOM-er), Circuit EMOM 12 uker (kretser med åtte stasjoner), et konkurranseprogram for ATHX 2027, øktbank med metcons, egne metcons, metcon-klokke og treningslogg. Alle data lagres lokalt på telefonen.
+Styrkeprogrammer (StrongLifts 5×5, Starting Strength, GZCLP, 5/3/1 FSL og BBB, Juggernaut, Cube Method og Strength & Power), Burgener 12 uker for olympisk vektløfting, Muscle MetCon 12 uker (styrke, metcon og finisher i hver økt, sekundærløft styrt av RPE), EMOM Capacity 12 uker (styrke som E2MOM og 4-stasjons EMOM-er), Circuit EMOM 12 uker (kretser med åtte stasjoner), Cube EMOM 12 uker (tre baseløft i E4MOM hver økt), et konkurranseprogram for ATHX 2027, øktbank med metcons, egne metcons, metcon-klokke og treningslogg. Alle data lagres lokalt på telefonen.
 
 ## Utseende: Treningsboka
 
