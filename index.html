@@ -817,7 +817,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 65;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 66;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -1288,6 +1288,52 @@ function buildEmc(p, a){
   return {programId:p.id, day, sub:'Uke ' + wk + ' av 12 · ' + EMC_PHASE[wk-1], ex,
     boxes:[['Finisher · EMOM ' + fmin, fin + '\nMål-RPE for EMOM-en: ' + fmt(EMC_RPE.mc[wk-1])]],
     wod:{id: same ? 'emcap-' + bk.toLowerCase() + '1' : 'emc-' + wk + '-' + di, navn: (wk === 1 ? 'Baseline ' : wk === 12 ? 'Retest ' : '') + 'EMOM Capacity ' + bk + ' · ' + day, tekst:text, resultat:''},
+    metcon:true, mc:{type:mcGuess(text), min, rpe:null}, started:Date.now()};
+}
+
+/* ---------- Circuit EMOM 12 uker (Jonas sitt Google-ark, eget program) ----------
+   Tre økter i uka med hver sin krets på åtte stasjoner: A press og full body, B bein og engine,
+   C power og hybrid. Ny øvelse hvert minutt, 3 runder i lette uker, 4 vanlig og 5 i volumukene.
+   Styrken først som E2MOM: benk, knebøy og markløft, power clean og push press. Hovedløftene er
+   prosent av treningsmaks og flyttes av RPE som i Muscle MetCon. Markløft og push press styres av RPE.
+   Uke 1 og 12 er identiske, og kretsene der er de samme som Circuit EMOM A, B og C i øktbanken. */
+const CIR_ROUNDS = [4,4,4,3,5,5,5,3,5,5,5,4];
+const CIR_PHASE = ['Baseline','Teknikk og kontroll','Økt tetthet','Deload','Volumblokk','Volumblokk','Volumblokk','Deload','Konsolidering','Tetthet','Kvalitetsuke','Retest'];
+const CIR_PCT = [60,62.5,65,50,62.5,65,67.5,50,70,72.5,75,60];
+const CIR_RPE = [7,7,7.5,6,7.5,7.5,8,6,7.5,8,8,8];
+// Stasjonene per uke: [A, B, C], åtte hver
+const CIR_ST = [[["12 kcal RowErg", "12 wall balls", "6 × 10 m shuttle run", "8 DB strict press (lett)", "10 kcal SkiErg", "5 pull-ups / 10 ring rows", "8 burpees", "Hollow hold: 25 s"], ["12 kcal BikeErg", "8 box jumps (steg ned)", "10 DB reverse lunges (totalt)", "Farmer carry: 20 m, lett til moderat (gå)", "10 kcal RowErg", "10 push-ups", "6 × 10 m shuttle run", "12 KB swings (lett)"], ["10 kcal SkiErg", "10 box step-overs", "12 wall balls", "10 ring rows", "12 kcal BikeErg", "10 DB snatch, vekslende (totalt)", "8 burpees", "Sideplanke: 30 s totalt, bytt side hver runde"]], [["12 kcal RowErg", "13 wall balls", "6 × 10 m shuttle run", "8 DB strict press (lett)", "10 kcal SkiErg", "6 pull-ups / 11 ring rows", "8 burpees", "Hollow hold: 25 s"], ["12 kcal BikeErg", "9 box jumps (steg ned)", "10 DB reverse lunges (totalt)", "Farmer carry: 20 m, lett til moderat (gå)", "10 kcal RowErg", "11 push-ups", "6 × 10 m shuttle run", "12 KB swings (lett)"], ["10 kcal SkiErg", "11 box step-overs", "12 wall balls", "10 ring rows", "12 kcal BikeErg", "11 DB snatch, vekslende (totalt)", "8 burpees", "Sideplanke: 30 s totalt, bytt side hver runde"]], [["13 kcal RowErg", "13 wall balls", "6 × 10 m shuttle run", "8 DB strict press (lett)", "11 kcal SkiErg", "6 pull-ups / 11 ring rows", "8 burpees", "Hollow hold: 25 s"], ["13 kcal BikeErg", "9 box jumps (steg ned)", "10 DB reverse lunges (totalt)", "Farmer carry: 20 m, lett til moderat (gå)", "11 kcal RowErg", "11 push-ups", "6 × 10 m shuttle run", "12 KB swings (lett)"], ["11 kcal SkiErg", "11 box step-overs", "12 wall balls", "10 ring rows", "13 kcal BikeErg", "11 DB snatch, vekslende (totalt)", "8 burpees", "Sideplanke: 30 s totalt, bytt side hver runde"]], [["10 kcal RowErg", "10 wall balls", "4 × 10 m shuttle run", "6 DB strict press (lett)", "8 kcal SkiErg", "3 pull-ups / 8 ring rows", "6 burpees", "Hollow hold: 20 s"], ["10 kcal BikeErg", "6 box jumps (steg ned)", "8 DB reverse lunges (totalt)", "Farmer carry: 10 m, lett til moderat (gå)", "8 kcal RowErg", "8 push-ups", "4 × 10 m shuttle run", "10 KB swings (lett)"], ["8 kcal SkiErg", "8 box step-overs", "10 wall balls", "8 ring rows", "10 kcal BikeErg", "8 DB snatch, vekslende (totalt)", "6 burpees", "Sideplanke: 20 s totalt, bytt side hver runde"]], [["12 kcal RowErg", "12 wall balls", "6 × 10 m shuttle run", "8 DB strict press (lett)", "10 kcal SkiErg", "5 pull-ups / 10 ring rows", "8 burpees", "Hollow hold: 25 s"], ["12 kcal BikeErg", "8 box jumps (steg ned)", "10 DB reverse lunges (totalt)", "Farmer carry: 20 m, lett til moderat (gå)", "10 kcal RowErg", "10 push-ups", "6 × 10 m shuttle run", "12 KB swings (lett)"], ["10 kcal SkiErg", "10 box step-overs", "12 wall balls", "10 ring rows", "12 kcal BikeErg", "10 DB snatch, vekslende (totalt)", "8 burpees", "Sideplanke: 30 s totalt, bytt side hver runde"]], [["12 kcal RowErg", "13 wall balls", "6 × 10 m shuttle run", "8 DB strict press (lett)", "10 kcal SkiErg", "6 pull-ups / 11 ring rows", "8 burpees", "Hollow hold: 25 s"], ["12 kcal BikeErg", "9 box jumps (steg ned)", "10 DB reverse lunges (totalt)", "Farmer carry: 20 m, lett til moderat (gå)", "10 kcal RowErg", "11 push-ups", "6 × 10 m shuttle run", "12 KB swings (lett)"], ["10 kcal SkiErg", "11 box step-overs", "12 wall balls", "10 ring rows", "12 kcal BikeErg", "11 DB snatch, vekslende (totalt)", "8 burpees", "Sideplanke: 30 s totalt, bytt side hver runde"]], [["13 kcal RowErg", "13 wall balls", "6 × 10 m shuttle run", "8 DB strict press (lett)", "11 kcal SkiErg", "6 pull-ups / 11 ring rows", "8 burpees", "Hollow hold: 25 s"], ["13 kcal BikeErg", "9 box jumps (steg ned)", "10 DB reverse lunges (totalt)", "Farmer carry: 20 m, lett til moderat (gå)", "11 kcal RowErg", "11 push-ups", "6 × 10 m shuttle run", "12 KB swings (lett)"], ["11 kcal SkiErg", "11 box step-overs", "12 wall balls", "10 ring rows", "13 kcal BikeErg", "11 DB snatch, vekslende (totalt)", "8 burpees", "Sideplanke: 30 s totalt, bytt side hver runde"]], [["10 kcal RowErg", "10 wall balls", "4 × 10 m shuttle run", "6 DB strict press (lett)", "8 kcal SkiErg", "3 pull-ups / 8 ring rows", "6 burpees", "Hollow hold: 20 s"], ["10 kcal BikeErg", "6 box jumps (steg ned)", "8 DB reverse lunges (totalt)", "Farmer carry: 10 m, lett til moderat (gå)", "8 kcal RowErg", "8 push-ups", "4 × 10 m shuttle run", "10 KB swings (lett)"], ["8 kcal SkiErg", "8 box step-overs", "10 wall balls", "8 ring rows", "10 kcal BikeErg", "8 DB snatch, vekslende (totalt)", "6 burpees", "Sideplanke: 20 s totalt, bytt side hver runde"]], [["13 kcal RowErg", "13 wall balls", "6 × 10 m shuttle run", "8 DB strict press (lett)", "11 kcal SkiErg", "6 pull-ups / 11 ring rows", "8 burpees", "Hollow hold: 25 s"], ["13 kcal BikeErg", "9 box jumps (steg ned)", "10 DB reverse lunges (totalt)", "Farmer carry: 20 m, lett til moderat (gå)", "11 kcal RowErg", "11 push-ups", "6 × 10 m shuttle run", "12 KB swings (lett)"], ["11 kcal SkiErg", "11 box step-overs", "12 wall balls", "10 ring rows", "13 kcal BikeErg", "11 DB snatch, vekslende (totalt)", "8 burpees", "Sideplanke: 30 s totalt, bytt side hver runde"]], [["13 kcal RowErg", "14 wall balls", "6 × 10 m shuttle run", "8 DB strict press (lett)", "11 kcal SkiErg", "7 pull-ups / 12 ring rows", "8 burpees", "Hollow hold: 25 s"], ["13 kcal BikeErg", "10 box jumps (steg ned)", "10 DB reverse lunges (totalt)", "Farmer carry: 20 m, lett til moderat (gå)", "11 kcal RowErg", "12 push-ups", "6 × 10 m shuttle run", "12 KB swings (lett)"], ["11 kcal SkiErg", "12 box step-overs", "12 wall balls", "10 ring rows", "13 kcal BikeErg", "12 DB snatch, vekslende (totalt)", "8 burpees", "Sideplanke: 30 s totalt, bytt side hver runde"]], [["13 kcal RowErg", "14 wall balls", "6 × 10 m shuttle run", "8 DB strict press (lett)", "11 kcal SkiErg", "7 pull-ups / 12 ring rows", "8 burpees", "Hollow hold: 25 s"], ["13 kcal BikeErg", "10 box jumps (steg ned)", "10 DB reverse lunges (totalt)", "Farmer carry: 20 m, lett til moderat (gå)", "11 kcal RowErg", "12 push-ups", "6 × 10 m shuttle run", "12 KB swings (lett)"], ["11 kcal SkiErg", "12 box step-overs", "12 wall balls", "10 ring rows", "13 kcal BikeErg", "12 DB snatch, vekslende (totalt)", "8 burpees", "Sideplanke: 30 s totalt, bytt side hver runde"]], [["12 kcal RowErg", "12 wall balls", "6 × 10 m shuttle run", "8 DB strict press (lett)", "10 kcal SkiErg", "5 pull-ups / 10 ring rows", "8 burpees", "Hollow hold: 25 s"], ["12 kcal BikeErg", "8 box jumps (steg ned)", "10 DB reverse lunges (totalt)", "Farmer carry: 20 m, lett til moderat (gå)", "10 kcal RowErg", "10 push-ups", "6 × 10 m shuttle run", "12 KB swings (lett)"], ["10 kcal SkiErg", "10 box step-overs", "12 wall balls", "10 ring rows", "12 kcal BikeErg", "10 DB snatch, vekslende (totalt)", "8 burpees", "Sideplanke: 30 s totalt, bytt side hver runde"]]];
+const CIR_DAY = [['Press + full body','bench','A'], ['Bein + engine','squat','B'], ['Power + hybrid','clean','C']];
+const cirText = (wk, di) => {
+  const r = CIR_ROUNDS[wk-1], light = wk === 4 || wk === 8;
+  const how = light ? 'Rolig deload, minst 25 s pause hvert minutt.'
+    : wk === 12 ? 'Retest: samme stasjoner, reps, utstyr og skala som uke 1. Noter hele runder og korteste hvile.'
+    : wk === 1 ? 'Baseline: 20–35 s arbeid, maks 40–45 s. Noter hele runder og korteste hvile.'
+    : 'Bruk 20–35 s arbeid, maks 40–45 s. Gjentatte minutter over 45 s betyr at reps eller vekt skal ned.';
+  return 'EMOM ' + (r * 8) + ' min · 8 stasjoner × ' + r + ' runder\n' + CIR_ST[wk-1][di].map((x, i) => (i + 1) + ': ' + x).join('\n') + '\n\n' + how +
+    (di < 2 ? '\nShuttle run: 10 m per lengde, rør linja og vend.' : '');
+};
+function buildCir(p, a){
+  const i = a.idx, wk = Math.floor(i/3) + 1, di = i % 3, [day, slot, bk] = CIR_DAY[di], L = sw(a, slot);
+  const pc = CIR_PCT[wk-1], light = wk === 4 || wk === 8, ask = !light && wk !== 12;
+  const tm = wk === 12 ? a.e1rm[L] * .9 : mmcTm(a, L);
+  const [n, r] = slot === 'bench' ? [8, light || wk >= 9 && wk <= 11 ? 3 : 4] : slot === 'squat' ? [4, 3] : [4, 2];
+  const hint = wk === 12 ? 'E2MOM: samme vekter som uke 1, så retesten kan sammenlignes.'
+    : light ? 'E2MOM: teknikk og flyt.'
+    : 'E2MOM: nytt sett hvert 2. minutt. ' + (slot === 'clean' ? 'Raske og rene løft gir høyere treningsmaks neste uke.' : 'Hold 2–3 reps i reserve. RPE 7 eller lavere på siste sett gir høyere treningsmaks neste uke.');
+  const ex = [{key:L, lift:L, slot, part:'mmc', sp:1, ask, tgt:7.5, rpeLbl:'mål 7–8, 2–3 i reserve', rest:105,
+    tag: (wk === 12 ? 'Retest · ' : '') + pc + ' % av TM' + (slot === 'bench' ? ' · E2MOM 16' : ' · E2MOM 8'), hint, sets: mk(n, r, r25(tm * pc / 100))}];
+  if (di) {
+    const id = di === 1 ? 'deadlift' : 'pushpress', w0 = mmcSecW(a, id), w = light ? Math.max(2.5, r25(w0 * .85)) : w0;
+    ex.push({key:id, lift:id, slot:id, part: light ? 'extra-fixed' : 'extra', sp:1, mmc:1, rest:105, up:6, dn:8, rpeLbl: light ? 'mål 5–6' : 'mål 6–7',
+      tag: light ? 'E2MOM 8 · lett' : 'E2MOM 8', hint: light ? 'Lett: RPE 5–6. Vekten endres ikke etter økta.' : di === 1 ? 'RPE 6–7. Stopp hvis fart eller posisjon svikter.' : 'RPE 6–7, rent løft.',
+      sets: mk(4, light && di === 2 ? 3 : di === 1 ? 3 : 4, w)});
+  }
+  const text = cirText(wk, di), same = wk === 1 || wk === 12, min = CIR_ROUNDS[wk-1] * 8;
+  const fin = light ? '8 min rolig mobilitet og kjerne' : wk <= 3 || wk === 12 ? '6 min kjerne og skulderprehab' : 'Ingen ekstra finisher. 6 min overgang og nedtrapping.';
+  return {programId:p.id, day, sub:'Uke ' + wk + ' av 12 · ' + CIR_PHASE[wk-1], ex,
+    boxes:[['Til slutt', fin + '\nMål-RPE for økta: ' + fmt(CIR_RPE[wk-1])]],
+    wod:{id: same ? 'circ-' + bk.toLowerCase() : 'cir-' + wk + '-' + di, navn: (wk === 1 ? 'Baseline ' : wk === 12 ? 'Retest ' : '') + 'Circuit EMOM ' + bk + ' · ' + day, tekst:text, resultat:''},
     metcon:true, mc:{type:mcGuess(text), min, rpe:null}, started:Date.now()};
 }
 
@@ -2165,6 +2211,13 @@ const PROGRAMS = [
     days:[{name:'Benk + kapasitet', lift:'bench', lines:[['Benkpress','E2MOM 18'],['4-stasjons EMOM','16–28 min'],['Finisher','8–10 min']]},
           {name:'Bein + shuttle', lift:'squat', lines:[['Knebøy','E2MOM 10'],['Markløft','E2MOM 8 · RPE'],['4-stasjons EMOM','16–28 min'],['Finisher','8–10 min']]},
           {name:'Clean + push press', lift:'clean', lines:[['Power clean','E2MOM 10'],['Push press','E2MOM 8 · RPE'],['4-stasjons EMOM','16–28 min'],['Finisher','8–10 min']]}],
+    inputs:{bench:110, squat:135, clean:100}, inputLabel:'1RM' },
+  { id:'cir12', name:'Circuit EMOM 12 uker', origin:'Eget program', level:'Middels', perWeek:'3', prog:'cir', total:36,
+    summary:'Tre økter i uka på 60–75 minutter, hver med sin krets på åtte stasjoner: press og full body, bein og engine, og power og hybrid. Ny øvelse hvert minutt, 3 runder i lette uker, 4 vanlig og 5 i volumukene. Styrken først som E2MOM. Bare 10 m shuttle runs som løping.',
+    rule:'Hovedløftene er prosent av treningsmaks, som starter på 90 % av 1RM, fra 60 % i uke 1 til 75 % i uke 11. RPE flytter treningsmaksen: RPE 7 eller lavere på siste sett gir +2,5 kg i benk og +5 kg i knebøy, RPE 9,5–10 eller bom gir like mye ned. Clean øker 2,5 kg når løftene er raske og rene. Markløft og push press går på RPE 6–7. Kretsene øker med én rep eller kcal på stasjon 2 og 6 i uke 2, 6 og 10, og på stasjon 1 og 5 i uke 3, 7 og 9. Uke 4 og 8 er deload, og uke 12 gjentar uke 1 med samme vekter.',
+    days:[{name:'Press + full body', lift:'bench', lines:[['Benkpress','E2MOM 16'],['Krets A','8 stasjoner'],['Kjerne','0–8 min']]},
+          {name:'Bein + engine', lift:'squat', lines:[['Knebøy','E2MOM 8'],['Markløft','E2MOM 8 · RPE'],['Krets B','8 stasjoner'],['Kjerne','0–8 min']]},
+          {name:'Power + hybrid', lift:'clean', lines:[['Power clean','E2MOM 8'],['Push press','E2MOM 8 · RPE'],['Krets C','8 stasjoner'],['Kjerne','0–8 min']]}],
     inputs:{bench:110, squat:135, clean:100}, inputLabel:'1RM' }
 ];
 
@@ -2473,6 +2526,24 @@ const GUIDE = {
     metcon:'EMOM-en ligger i hver økt som dagens metcon, med klokke og resultatfelt. Skriv fulle runder og korteste hvile som resultat. Uke 1 og 12 er de samme øktene som EMOM Capacity A1, B1 og C1 i øktbanken, så du ser forrige resultat.',
     metconRefs:['eddens','schumann'],
     watch:'Tar flere runder over 40–45 sekunder, ikke øk neste uke. Kutt heller 1–2 reps eller kcal. Shuttle runs: rør linja og vend hver 10. meter.'
+  },
+  cir12: {
+    focus:'Arbeidskapasitet med ny øvelse hvert minutt, med benk, knebøy og power clean som styrkebase.',
+    fits:'Deg som liker variasjon i hvert minutt, har ergometre, kasse, wall ball og manualer, og har lite plass til løping.',
+    notFor:'Deg som vil maksimere 1RM. Styrkedelen er moderat, og kretsene tar mye av restitusjonen.',
+    how:'Styrken kommer først, som E2MOM: ett sett hvert andre minutt. Deretter en krets på åtte stasjoner der du bytter øvelse hvert minutt, med 20–35 sekunder arbeid. Rundene øker fra 4 til 5 i volumukene, og repsene øker litt annenhver uke. Uke 1 og 12 er like, så du kan sammenligne hele runder og korteste hvile.',
+    science:[
+      ['Styrke før kondisjon i samme økt gir mer beinstyrke enn omvendt. Programmet tar alltid løftene først.','B',['eddens']],
+      ['Kondisjon i samme økt hemmer maksimal styrke lite, men eksplosiv styrke noe mer.','B',['schumann','petre']],
+      ['Du trenger ikke trene til failure. Programmet holder løftene på RPE 6–8.','A',['grgic','moran']]
+    ],
+    expect:[
+      ['Folk responderer svært ulikt på samme trening. Sammenlign deg med deg selv.','B',['hubal']],
+      ['Selve programmet er ikke testet i studier.','H',[]]
+    ],
+    metcon:'Kretsen ligger i hver økt som dagens metcon, med klokke og resultatfelt. Skriv hele runder og korteste hvile som resultat. Uke 1 og 12 er de samme øktene som Circuit EMOM A, B og C i øktbanken, så du ser forrige resultat.',
+    metconRefs:['eddens','schumann'],
+    watch:'Teknikktap eller gjentatte minutter over 45 sekunder betyr at reps eller vekt skal ned. Box jumps: steg ned.'
   }
 };
 
@@ -2554,6 +2625,7 @@ function buildSession(p, a){
   if (p.prog === 'burg') return buildBurg(p, a);
   if (p.prog === 'mmc') return buildMmc(p, a);
   if (p.prog === 'emc') return buildEmc(p, a);
+  if (p.prog === 'cir') return buildCir(p, a);
   const i = a.idx, n = p.days.length, day = p.days[i % n];
   // Økta heter det programmet kaller den (Økt A, Dag 1). Linjen over viser uka, ikke et eget øktnummer.
   let ex = [], sub = 'Uke ' + (Math.floor(i / (parseInt(p.perWeek) || 3)) + 1);
@@ -2588,7 +2660,7 @@ function progress(p, a, s){
   if (p.prog === 'jugg') return progressJug(p, a, s);
   if (p.prog === 'athx') return progressAthx(p, a, s);
   if (p.prog === 'burg') return progressBurg(p, a, s);
-  if (p.prog === 'mmc' || p.prog === 'emc') return progressMmc(p, a, s);
+  if (p.prog === 'mmc' || p.prog === 'emc' || p.prog === 'cir') return progressMmc(p, a, s);
   const notes = [];
   const hit = x => x.d != null && x.d >= x.t;
   const touched = e => e.sets.some(x => x.d != null);
@@ -2769,7 +2841,7 @@ const listNo = a => a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' og
 function newInstance(p){
   if (p.prog === 'athx') return axInstance(p);
   const a = {programId:p.id, startedAt:Date.now(), idx:0, lifts:{}, tm:{}};
-  if (p.prog === 'sp12' || p.prog === 'cube' || p.prog === 'burg' || p.prog === 'mmc' || p.prog === 'emc') { a.e1rm = {}; a.base = {}; }
+  if (p.prog === 'sp12' || p.prog === 'cube' || p.prog === 'burg' || p.prog === 'mmc' || p.prog === 'emc' || p.prog === 'cir') { a.e1rm = {}; a.base = {}; }
   Object.keys(p.inputs).forEach((k,i) => {
     const el = $('#in-'+i); let v = parseFloat(String(el && el.value || '').replace(',', '.'));
     if (!isFinite(v) || v < 0) v = p.inputs[k];
@@ -2777,7 +2849,7 @@ function newInstance(p){
     else if (a.e1rm) { a.e1rm[k] = v; a.base[k] = v; }
     else a.lifts[k] = {w:v, fails:0, stage:0};
   });
-  if (p.prog === 'mmc' || p.prog === 'emc') (p.prog === 'emc' ? EMC_SEC : MMC_SEC).forEach(([, id]) => {
+  if (['mmc','emc','cir'].includes(p.prog)) (p.prog === 'mmc' ? MMC_SEC : EMC_SEC).forEach(([, id]) => {
     const v = parseFloat(String(($('#sec-' + id) || {}).value || '').replace(',', '.'));
     a.lifts[id] = {w: v > 0 ? v : mmcSecDefault(id, a.e1rm), fails:0, stage:0};
   });
@@ -2788,10 +2860,10 @@ function newInstance(p){
 function mmcSecInputs(p){
   const orm = {bench: myMax('bench', p.inputs.bench), squat: myMax('squat', p.inputs.squat)};
   const a = S.active && S.active.programId === p.id ? S.active : null;
-  return `<h3>Startvekter ${p.prog === 'emc' ? 'markløft og push press' : 'sekundærløft'}</h3><div class="box" style="gap:0">${(p.prog === 'emc' ? EMC_SEC : MMC_SEC).map(([, id]) => `
+  return `<h3>Startvekter ${p.prog === 'mmc' ? 'sekundærløft' : 'markløft og push press'}</h3><div class="box" style="gap:0">${(p.prog === 'mmc' ? MMC_SEC : EMC_SEC).map(([, id]) => `
       <div class="field"><label for="sec-${id}">${liftName(id)}${/manual/.test(mmcSecOf(id)[4]) ? ' <span class="muted">per manual</span>' : ''}</label>
         <span class="inp"><input id="sec-${id}" type="text" inputmode="decimal" value="${fmt(a && a.lifts[id] ? a.lifts[id].w : mmcSecDefault(id, orm))}">kg</span></div>`).join('')}</div>
-    <p class="muted small">${p.prog === 'emc' ? 'Forslag ut fra 1RM i knebøy og benk. Skriv inn vekten du løfter 4×3 med på RPE 6–7. Etter hver økt svarer du på RPE: RPE 6 gir +2,5 kg, RPE 7 står, RPE 8 eller mer gir −2,5 kg.' : 'Forslag ut fra 1RM. Skriv inn vekten du klarer med 1–3 reps i reserve. Etter hver økt svarer du på RPE, og appen justerer vekten: RPE 6 gir +2,5 kg, RPE 7–9 står, RPE 9,5–10 eller bom gir −2,5 kg.'}</p>`;
+    <p class="muted small">${p.prog !== 'mmc' ? 'Forslag ut fra 1RM i knebøy og benk. Skriv inn vekten du løfter 4×3 med på RPE 6–7. Etter hver økt svarer du på RPE: RPE 6 gir +2,5 kg, RPE 7 står, RPE 8 eller mer gir −2,5 kg.' : 'Forslag ut fra 1RM. Skriv inn vekten du klarer med 1–3 reps i reserve. Etter hver økt svarer du på RPE, og appen justerer vekten: RPE 6 gir +2,5 kg, RPE 7–9 står, RPE 9,5–10 eller bom gir −2,5 kg.'}</p>`;
 }
 
 function activate(id){
@@ -2837,7 +2909,7 @@ function loadBank(){
     .catch(() => { bankErr = true; ui.bankLoading = false; render(); });
 }
 /* Tilfeldig: solo-WOD, temaøkt eller blant filtrene. Hopper over økter gjort de siste 60 dagene. */
-const THEMES = ['ATHX', 'HYROX / X-RACE', 'Max Metcon', 'Basic', 'TriErg', 'EMOM Capacity'];
+const THEMES = ['ATHX', 'HYROX / X-RACE', 'Max Metcon', 'Basic', 'TriErg', 'EMOM Capacity', 'Circuit EMOM'];
 const themeLabel = t => t === 'HYROX / X-RACE' ? 'HYROX' : t;
 function poolFor(rp){
   if (rp.kind === 'solo') return BANK.filter(w => w.t === 'WOD' && !w.lag);
@@ -3091,11 +3163,12 @@ const PLAN_NOTE = {
   cube:'Vektene er prosent av 1RM og endres ikke underveis. Uke 10 er test, og beste løft blir ny 1RM.',
   sp12:'Planen viser vektene hvis toppsett og backoff går på RPE 7 og clean er rask og ren. Da øker vekten 2,5 kg fra uke til uke. Ved RPE 7,5–9 står vekten stille. Når en ny fase starter, regnes vektene ut fra estimert 1RM.',
   burg:'Vektene er prosent av 1RM og endres ikke underveis. Uke 12, dag 4 er max out, og beste snatch og clean & jerk blir ny 1RM.',
+  cir:'Planen viser vektene hvis benk og knebøy går på RPE 7 og clean er rask og ren hver uke. Da øker treningsmaksen 2,5 kg i benk og clean og 5 kg i knebøy per uke, så tallene framover er et tak. Uke 12 bruker vektene fra uke 1, så retesten kan sammenlignes. Hver økt viser kretsen med åtte stasjoner.',
   emc:'Planen viser vektene hvis benk og knebøy går en halv RPE under målet og clean er rask og ren hver uke. Da øker treningsmaksen 2,5 kg i benk og clean og 5 kg i knebøy per uke, så tallene framover er et tak. Uke 12 bruker vektene fra uke 1, så retesten kan sammenlignes. Hver økt viser 4-stasjons EMOM-en.',
   mmc:'Planen viser vektene hvis siste sett går på RPE 7 og clean er rask og ren hver uke. Da øker treningsmaksen 2,5 kg i benk og clean og 5 kg i knebøy per uke. Ved RPE 7,5–9 står den stille, så tallene framover er et tak, ikke et løfte. Metconene står i hver økt, og uke 1, 6 og 12 har de samme tre benchmark-metconene.',
   athx:'Vektene er prosent av arbeidsmaksen din i dag, og fartene følger anslaget ditt. Begge oppdateres etter hver økt, så tallene framover endrer seg. Henger du etter kalenderen, hopper planen til første økt i denne uka.'
 };
-const planPer = (p, a) => p.prog === 'athx' ? a.ax.per : ['531','jugg','cube','sp12','burg','mmc','emc'].includes(p.prog) ? p.days.length : (parseInt(p.perWeek) || 3);
+const planPer = (p, a) => p.prog === 'athx' ? a.ax.per : ['531','jugg','cube','sp12','burg','mmc','emc','cir'].includes(p.prog) ? p.days.length : (parseInt(p.perWeek) || 3);
 function simulate(p, a0, n){
   const a = JSON.parse(JSON.stringify(a0)), out = [], tot = totalOf(p, a0);
   while (out.length < n && !(tot && a.idx >= tot)) {
@@ -3139,7 +3212,7 @@ function planWeeks(P, p, a){
   const weeks = [];
   rows.forEach(r => { const w = Math.floor(r.k / per); (weeks[w] = weeks[w] || []).push(r); });
   // Uka står i overskriften, så «Uke 9 av 12» trengs ikke på hver økt
-  const subOf = (r, w) => ax ? r.sub.replace(/^Uke \d+ av \d+ · /, '') : p.prog === 'burg' || p.prog === 'mmc' || p.prog === 'emc' ? r.sub.replace(/^Uke \d+ av \d+( · )?/, '') : r.sub !== 'Uke ' + (w + 1) ? r.sub : '';
+  const subOf = (r, w) => ax ? r.sub.replace(/^Uke \d+ av \d+ · /, '') : ['burg','mmc','emc','cir'].includes(p.prog) ? r.sub.replace(/^Uke \d+ av \d+( · )?/, '') : r.sub !== 'Uke ' + (w + 1) ? r.sub : '';
   return `${ax ? axScore(a) : ''}
     ${weeks.map((list, w) => list ? `<h3>Uke ${w + 1}${ax && a.ax.weeks[w] ? ' · ' + AX_PH[a.ax.weeks[w].ph] : ''}</h3><div class="list">${list.map(r => {
       const m = r.ex[0], sub = r.sub ? subOf(r, w) : '';
@@ -3385,7 +3458,7 @@ function vToday(){
         return `<i class="${d === e.sets.length ? 'full' : ''}"><b style="width:${Math.round(d / e.sets.length * 100)}%"></b></i>`; }).join('')}</div>
       ${p.prog === 'athx' ? axStatus(S.active, s)
         : g ? `<p class="muted small">Vektene er regnet ut fra dine makser. Programmet ditt står der det står.</p>`
-        : (p.prog === 'mmc' || p.prog === 'emc') && s.ex[0] && S.active.e1rm[s.ex[0].lift] ? `<p class="muted small">Treningsmaks ${liftName(s.ex[0].lift).toLowerCase()}: ${fmt(mmcTm(S.active, s.ex[0].lift))} kg</p>`
+        : ['mmc','emc','cir'].includes(p.prog) && s.ex[0] && S.active.e1rm[s.ex[0].lift] ? `<p class="muted small">Treningsmaks ${liftName(s.ex[0].lift).toLowerCase()}: ${fmt(mmcTm(S.active, s.ex[0].lift))} kg</p>`
         : S.active.e1rm && s.ex[0] && S.active.e1rm[s.ex[0].lift] ? `<p class="muted small">${p.prog === 'sp12' ? 'Estimert 1RM' : '1RM'} ${liftName(s.ex[0].lift).toLowerCase()}: ${fmt(Math.round(S.active.e1rm[s.ex[0].lift]*2)/2)} kg</p>` : ''}
     </header>`;
   if (p.prog === 'sp12') {
@@ -3666,8 +3739,8 @@ function vDetail(p){
       const v = om != null && p.derive(k, om) != null ? p.derive(k, om) : p.inputLabel === '1RM' ? myMax(k, p.inputs[k]) : p.inputs[k];
       return `
       <div class="field"><label for="in-${i}">${keyLabel(k)}</label>
-        <span class="inp"><input id="in-${i}" data-key="${k}" type="text" inputmode="decimal" value="${fmt(v)}">kg</span></div>`; }).join('')}${p.orm ? '</details>' : '</div>'}${p.prog === 'mmc' || p.prog === 'emc' ? mmcSecInputs(p) : ''}
-    <p class="muted small">${p.prog === '531' ? 'Appen regner ut treningsmaks som 90 % av dette.' : p.prog === 'jugg' ? 'Appen regner ut arbeidsmaks som 90 % av dette.' : p.prog === 'sp12' ? 'Startvektene regnes ut fra dette. Etter hvert styrer RPE-en din vektene.' : p.prog === 'cube' ? 'Alle vekter regnes ut som prosent av dette.' : p.prog === 'burg' ? 'Alle vekter regnes ut som prosent av dette. Trekk og shrugs ligger over 100 %, det er meningen.' : p.prog === 'mmc' || p.prog === 'emc' ? 'Treningsmaksen starter på 90 % av dette, og RPE-en din flytter den etter hver uke. Bruk dagsaktuelle maksløft.' : 'Start lett. Teknikken skal sitte før vekten blir tung.'}
+        <span class="inp"><input id="in-${i}" data-key="${k}" type="text" inputmode="decimal" value="${fmt(v)}">kg</span></div>`; }).join('')}${p.orm ? '</details>' : '</div>'}${['mmc','emc','cir'].includes(p.prog) ? mmcSecInputs(p) : ''}
+    <p class="muted small">${p.prog === '531' ? 'Appen regner ut treningsmaks som 90 % av dette.' : p.prog === 'jugg' ? 'Appen regner ut arbeidsmaks som 90 % av dette.' : p.prog === 'sp12' ? 'Startvektene regnes ut fra dette. Etter hvert styrer RPE-en din vektene.' : p.prog === 'cube' ? 'Alle vekter regnes ut som prosent av dette.' : p.prog === 'burg' ? 'Alle vekter regnes ut som prosent av dette. Trekk og shrugs ligger over 100 %, det er meningen.' : ['mmc','emc','cir'].includes(p.prog) ? 'Treningsmaksen starter på 90 % av dette, og RPE-en din flytter den etter hver uke. Bruk dagsaktuelle maksløft.' : 'Start lett. Teknikken skal sitte før vekten blir tung.'}
       ${slotsOf(p).length ? ' Vil du bytte et løft, gjør du det under Program → Maksløft, pauser og Pete Plan når programmet er aktivt.' : ''}
       ${other ? ' Dette erstatter '+other.name+'. Loggen din blir liggende.' : ''}${isActive ? ' Programmet er aktivt. Aktiverer du på nytt, starter det fra økt 1 med vektene over.' : ''}</p>`}
     <button class="btn ghost" data-a="planprev:${p.id}">Se hele planen</button>
