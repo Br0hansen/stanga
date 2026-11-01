@@ -86,6 +86,8 @@ En egen fane der du legger ut når du skal trene, og vennene dine kan bli med. K
 
 Et fast kondisjonsvalg ved siden av øktbanken, på romaskin, ski eller sykkel. Kan slås av og på under **Program → Kondisjon: Pete Plan**. Bytte av løft, avslutte programmet og lagrede maksløft ligger under **Program → Løft og vekter**.
 
+**Vekter i programmet** (under Løft og vekter): tallene programmet du kjører regner vektene ut fra, som treningsmaks, 1RM, toppsett, backoff og arbeidsvekter, kan rettes for hånd. Appen prøver hvert tall og viser hvilke som styrer de neste øktene og fra hvilken økt ("Brukes i neste økt", "Brukes fra Dag 1 (uke 5 av 12)"). Tall som ikke brukes de neste 9 øktene, ligger under «Andre tall i programmet». Neste økt bygges på nytt med en gang, med mindre den er påbegynt. Programmet fortsetter med vanlig progresjon fra de nye tallene, og loggen endres ikke.
+
 - Planen er Pete Marstons tre-ukers rotasjon med seks økter per uke, kontrollert mot hans egen tabell. Appen husker hvor du er og går videre én økt om gangen.
 - Målfarten regnes ut fra referansetiden din: 2000 m på romaskin og ski, 4000 m på sykkel.
 - Appen regner også baklengs: snittfarten fra intervalløkter og hard distanse, minus tillegget for økta, gir et anslag på 2K-tiden din nå. Medianen av de tre siste anslagene fra seks uker brukes, så de rolige øktene følger utviklingen din. En ny testet tid går foran til nyere økter gir et nytt anslag.

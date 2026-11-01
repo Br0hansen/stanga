@@ -851,7 +851,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 79;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 80;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -4253,7 +4253,7 @@ function vPlanTab(){
   return `<header class="head"><h1>Program</h1></header>
     ${vActiveCard()}
     <div class="plist">
-      <button data-a="go:training"><span><b>Løft og vekter</b><small>${slotsOf(p).length ? 'Bytt øvelse, lagrede maksløft og avslutt programmet' : 'Lagrede maksløft og avslutt programmet'}</small></span>${chev}</button>
+      <button data-a="go:training"><span><b>Løft og vekter</b><small>${slotsOf(p).length ? 'Vekter i programmet, bytt øvelse og avslutt' : 'Vekter i programmet, lagrede maksløft og avslutt'}</small></span>${chev}</button>
       <button data-a="go:pete"><span><b>Kondisjon: Pete Plan</b><small>${peteOn() ? 'På' : 'Av'} · romaskin, ski eller sykkel ved siden av styrken</small></span>${chev}</button>
       <button data-a="go:library"><span><b>Bytt program</b><small>Bibliotek og programguide</small></span>${chev}</button>
     </div>
@@ -4262,6 +4262,76 @@ function vPlanTab(){
     ${planWeeks(P, p, S.active, !ui.planAll)}`;
 }
 
+/* Vekter i programmet du kjører: tallene programmet regner vektene ut fra, rettet for hånd.
+   Generelt for alle programmer: kandidatene er treningsmaks, 1RM og arbeidsvekter i programmet. Appen prøver hvert tall
+   (+10 kg i en kopi) og ser hvilke av de neste øktene som får andre vekter. Tall som styrer de neste øktene, står øverst. */
+const PW_N = 9;   // så mange økter fram ser appen
+const pwLift = (grp, k) => grp === 'lifts' ? (k.split('.')[0] === 'x' ? k.split('.')[1] : k.split('.')[0]) : k;
+function pwLabel(p, grp, k){
+  if (grp === 'tm') return 'Treningsmaks';
+  if (grp === 'tmNext') return 'Treningsmaks fra neste uke';
+  if (grp === 'e1rm') return p.prog === 'athx' ? 'Arbeidsmaks' : '1RM';
+  const parts = k.split('.'), rest = parts[0] === 'x' ? parts.slice(2) : parts.slice(1);
+  if (!rest.length || parts[0] === 'x') return 'Arbeidsvekt';
+  if (/^T\d$/.test(rest[0])) return rest[0] + '-vekt';
+  const last = rest[rest.length - 1];
+  return last === 'top' ? 'Toppsett' : last === 'back' ? 'Backoff' : 'Arbeidsvekt (' + rest.join(' ') + ')';
+}
+// Programmet slik neste økt ser det: startvekter neste økt lagrer, og treningsmaks som ellers regnes fra 1RM
+function pwBase(p){
+  const a = clone(S.active); buildSession(p, a);
+  if (['mmc','emc','cir','cbe'].includes(p.prog) && a.e1rm) { a.tm = a.tm || {}; Object.keys(a.e1rm).forEach(L => { if (a.tm[L] == null) a.tm[L] = mmcTm(a, L); }); }
+  return a;
+}
+const pwGet = (a, path) => path.reduce((o, k) => o && o[k], a);
+function pwSet(a, path, v){
+  let o = a; path.slice(0, -1).forEach(k => { if (!o[k] || typeof o[k] !== 'object') o[k] = {}; o = o[k]; }); o[path[path.length - 1]] = v;
+}
+const pwPlan = (p, a, k) => { a = clone(a); a.idx = S.active.idx + k; const s = buildSession(p, a);
+  return {s, v: JSON.stringify(s.ex.map(e => [e.lift, e.sets.map(x => x.w)]))}; };
+function pwRows(p){
+  const base = pwBase(p), plans = [...Array(PW_N)].map((_, k) => pwPlan(p, base, k));
+  const cand = [];
+  ['tm','e1rm'].forEach(g => Object.keys(base[g] || {}).forEach(k => cand.push({path: [g, k], g, k})));
+  Object.keys(base.lifts || {}).forEach(k => { if (typeof (base.lifts[k] || {}).w === 'number') cand.push({path: ['lifts', k, 'w'], g: 'lifts', k}); });
+  if (base.tmNext && base.tmNext.tm) Object.keys(base.tmNext.tm).forEach(k => cand.push({path: ['tmNext', 'tm', k], g: 'tmNext', k}));
+  const list = [];
+  for (const {path, g, k} of cand) {
+    const v = pwGet(base, path); if (typeof v !== 'number' || !isFinite(v)) continue;
+    const b = clone(base); pwSet(b, path, v + 10);
+    let first = -1;
+    for (let j = 0; j < PW_N && first < 0; j++) if (pwPlan(p, b, j).v !== plans[j].v) first = j;
+    const L = pwLift(g, k), order = plans.findIndex(x => x.s.ex.some(e => e.lift === L));
+    list.push({path, L, v, label: pwLabel(p, g, k), first, when: first < 0 ? '' : first ? 'Brukes fra ' + plans[first].s.day + (plans[first].s.sub ? ' (' + plans[first].s.sub.split(' · ')[0].toLowerCase() + ')' : '') : 'Brukes i neste økt', order: order < 0 ? 99 : order});
+  }
+  return list.sort((x, y) => (x.first < 0) - (y.first < 0) || x.order - y.order || x.L.localeCompare(y.L));
+}
+function vProgWeights(p){
+  if (!S.active || !p) return '';
+  const rows = pwRows(p), used = rows.filter(r => r.first >= 0), other = rows.filter(r => r.first < 0);
+  if (!rows.length) return '';
+  const field = r => `<div class="field"><label for="pw-${esc(r.path.join('-'))}">${esc(liftName(r.L))} · ${esc(r.label)}${r.when ? `<small class="muted">${esc(r.when)}</small>` : ''}</label>
+      <span class="inp"><input id="pw-${esc(r.path.join('-'))}" data-pw="${esc(r.path.join('|'))}" type="text" inputmode="decimal" value="${fmt(Math.round(r.v * 10) / 10)}">kg</span></div>`;
+  return `<h3>Vekter i programmet</h3>
+    <div class="box" style="gap:0">${used.map(field).join('') || '<p class="muted small">Ingen av tallene styrer de neste øktene.</p>'}</div>
+    ${other.length ? `<details class="box"><summary class="small">Andre tall i programmet (${other.length})</summary><div style="display:grid">${other.map(field).join('')}</div>
+      <p class="muted small">Disse styrer ikke de neste ${PW_N} øktene, men kan brukes senere, for eksempel i en ny fase eller en retest.</p></details>` : ''}
+    <p class="muted small">Rett et tall hvis vektene ikke stemmer, for eksempel etter en økt du har rettet i loggen. Programmet fortsetter herfra med vanlig progresjon. Loggen endres ikke.${draftTouched() ? ' <b>Dagens økt er påbegynt</b>, så den beholder vektene sine. Endringen gjelder fra neste økt.' : ''}</p>`;
+}
+// Lagrer et tall fra Vekter i programmet. Neste økt bygges på nytt hvis den ikke er påbegynt.
+function pwSave(inp){
+  const p = S.active && prog(S.active.programId), path = inp.dataset.pw.split('|'), v = numIn(inp.value);
+  if (!p) return;
+  const base = pwBase(p), old = pwGet(base, path);
+  if (!(v > 0 && v < 1000)) { toast('Skriv vekten som et tall, for eksempel 92,5'); inp.value = fmt(Math.round(old * 10) / 10); return; }
+  const r = Math.round(v * 100) / 100; if (r === Math.round(old * 100) / 100) return;
+  // Mangler tallet i programmet (startvekt neste økt ikke har lagret ennå), kopieres resten av objektet med
+  if (path[0] === 'lifts' && !(S.active.lifts || {})[path[1]]) { S.active.lifts = S.active.lifts || {}; S.active.lifts[path[1]] = clone(base.lifts[path[1]]); }
+  pwSet(S.active, path, r);
+  if (!draftTouched()) dropOwnDraft();
+  save(); render();
+  toast(liftName(pwLift(path[0], path[0] === 'lifts' ? path[1] : path[path.length - 1])) + ': ' + fmt(Math.round(old * 10) / 10) + ' → ' + fmt(r) + ' kg');
+}
 // Løft og vekter for det aktive programmet: bytte øvelse og avslutte først, maksløftene som brukes neste gang nederst.
 // Pete Plan har sin egen side, og pauselengden ligger i Innstillinger sammen med pauselyden.
 function vTraining(){
@@ -4269,6 +4339,7 @@ function vTraining(){
   return `<button class="link" data-a="back">‹ Program</button>
     <header class="head"><h1>Løft og vekter</h1></header>
     ${p ? swapRows(p, S.active) : ''}
+    ${p ? vProgWeights(p) : ''}
     <h3>Aktivt program</h3>
     <div class="box">${p ? `<p><b>${p.name}</b> <span class="muted">· ${oekter(S.active.idx)} fullført siden ${dateFmt(S.active.startedAt)}</span></p>
       ${ui.confirm === 'quit' ? `<div class="row"><button class="btn danger sm" data-a="quit">Ja, avslutt</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div>`
@@ -6544,6 +6615,7 @@ document.addEventListener('input', ev => {
 
 document.addEventListener('change', ev => {
   if (ev.target.dataset && ev.target.dataset.ckf) { ckField(ev.target); return; }
+  if (ev.target.dataset && ev.target.dataset.pw) { pwSave(ev.target); return; }
   if (ev.target.dataset && ev.target.dataset.max) {
     const v = parseFloat(String(ev.target.value).replace(',', '.'));
     if (v > 0) { S.maxes[ev.target.dataset.max] = v; save(); toast('Lagret'); } else { ev.target.value = fmt(S.maxes[ev.target.dataset.max]); }
