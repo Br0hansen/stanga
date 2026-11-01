@@ -851,7 +851,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 77;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 78;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -2948,13 +2948,24 @@ function leMerge(cur, from, to, lifts, used, path, out){
 }
 // Linjene i loggen: hva som ble endret, og hvilke løft som står fordi de er brukt
 const LE_LBL = {tm:'Treningsmaks', e1rm:'1RM-anslag', w:'Vekt'};
-function leNotes(changes, used){
+// Første økt fra nå der løftet L får andre vekter enn før endringen, så du ser hvor de nye tallene dukker opp
+function leWhen(p, L, old){
+  const w = (a, k) => { a = clone(a); a.idx = S.active.idx + k; const s = buildSession(p, a);
+    return {s, v: JSON.stringify(s.ex.filter(e => e.lift === L).map(e => e.sets.map(x => x.w)))}; };
+  for (let k = 0; k < 12; k++) {
+    const n = w(S.active, k), o = w(old, k);
+    if (n.v !== '[]' && n.v !== o.v) return k ? 'Gjelder fra ' + n.s.day + (n.s.sub ? ' (' + n.s.sub.split(' · ')[0].toLowerCase() + ')' : '') : 'Gjelder i dagens økt';
+  }
+  return '';
+}
+function leNotes(changes, used, p, old){
   const by = new Map(), notes = [];
   changes.forEach(c => { if (!c.L || typeof c.t !== 'number' || typeof c.f !== 'number') return;
     const lbl = c.path[0] === 'tmNext' ? 'Treningsmaks fra neste uke' : LE_LBL[c.path[0]] || LE_LBL[c.path[c.path.length - 1]]; if (!lbl) return;
     const k = c.path.find(x => leLiftOf(x, [c.L])), key = /\.T\d$/.test(k) ? k : c.L, n = by.get(key) || {txt: [], dir: 0};
     n.txt.push(lbl + ' ' + fmt(c.f) + ' → ' + fmt(c.t) + ' kg'); n.dir += Math.sign(c.t - c.f); by.set(key, n); });
-  by.forEach((n, k) => notes.push({name: keyLabel(k), text: n.txt.join(' · '), kind: n.dir > 0 ? 'up' : n.dir < 0 ? 'down' : 'same'}));
+  by.forEach((n, k) => { const w = leWhen(p, k.split('.')[0], old);
+    notes.push({name: keyLabel(k), text: n.txt.join(' · ') + (w ? '. ' + w : ''), kind: n.dir > 0 ? 'up' : n.dir < 0 ? 'down' : 'same'}); });
   used.forEach((d, L) => notes.push({name: liftName(L), text: 'Står som før. Brukt igjen ' + dateFmt(d), kind: 'same'}));
   return notes;
 }
@@ -2968,10 +2979,10 @@ function leRedo(h, ex){
     x.ex.forEach((e, i) => { if (was.plans[j][i] !== now.plans[j][i] && !used.has(e.lift)) used.set(e.lift, x.date); }); });
   const lifts = [...new Set([h, ...nw].flatMap(x => (x.ex || []).map(e => e.lift)).concat(ex.map(e => e.lift)))].sort((a, b) => b.length - a.length);
   return {apply(){
-    const changes = [];
+    const changes = [], old = clone(S.active);
     S.active = leMerge(S.active, was.a, now.a, lifts, used, [], changes);
     nw.forEach((x, j) => { if (x.undo) x.undo.active = leMerge(x.undo.active, was.before[j], now.before[j], lifts, used); });
-    this.notes = leNotes(changes, used);
+    this.notes = leNotes(changes, used, p, old);
   }};
 }
 const leKey = ex => JSON.stringify(ex.map(e => [e.rpe == null ? null : e.rpe, e.q || null, e.sets.map(x => [x.w, x.d])]));
