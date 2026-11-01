@@ -851,7 +851,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 78;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 79;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -2929,8 +2929,8 @@ function leChain(p, h, ex, nw){
   }
   return {a, before, plans};
 }
-// Tilhører en nøkkel et løft? «bench», og «bench.T1» i GZCLP
-const leLiftOf = (k, lifts) => lifts.find(L => k === L || k.startsWith(L + '.'));
+// Tilhører en nøkkel et løft? «bench», «bench.T1» i GZCLP og «x.pausebench.p1» for hjelpeøvelser
+const leLiftOf = (k, lifts) => { const parts = String(k).split('.'); return lifts.find(L => parts.includes(L)); };
 // Fletter inn det utregningen endret (fra → til), men ikke i løft som er brukt senere. Endringer som ikke hører
 // til et bestemt løft, tas bare med når ingen løft er brukt. Bytte av øvelse etterpå og lignende blir stående.
 function leMerge(cur, from, to, lifts, used, path, out){
@@ -2946,7 +2946,7 @@ function leMerge(cur, from, to, lifts, used, path, out){
   });
   return cur;
 }
-// Linjene i loggen: hva som ble endret, og hvilke løft som står fordi de er brukt
+// Linjene i Fremgang: hva som ble endret, og hvilke løft som står fordi de er brukt
 const LE_LBL = {tm:'Treningsmaks', e1rm:'1RM-anslag', w:'Vekt'};
 // Første økt fra nå der løftet L får andre vekter enn før endringen, så du ser hvor de nye tallene dukker opp
 function leWhen(p, L, old){
@@ -2977,7 +2977,11 @@ function leRedo(h, ex){
   const used = new Map();
   nw.forEach((x, j) => { if (!was.plans[j]) return;
     x.ex.forEach((e, i) => { if (was.plans[j][i] !== now.plans[j][i] && !used.has(e.lift)) used.set(e.lift, x.date); }); });
-  const lifts = [...new Set([h, ...nw].flatMap(x => (x.ex || []).map(e => e.lift)).concat(ex.map(e => e.lift)))].sort((a, b) => b.length - a.length);
+  // Neste økt på planen er ikke tatt, men å bygge den lagrer startvekter i programmet (for eksempel ny fase eller
+  // en hjelpeøvelse regnet fra 1RM). Den bygges i begge utregningene, så også den får de nye tallene.
+  const pend = [was, now].map(c => { const a = clone(c.a); return {a, s: buildSession(p, a)}; });
+  was.a = pend[0].a; now.a = pend[1].a;
+  const lifts = [...new Set([h, ...nw, pend[0].s, pend[1].s].flatMap(x => (x.ex || []).map(e => e.lift)).concat(ex.map(e => e.lift)))].sort((a, b) => b.length - a.length);
   return {apply(){
     const changes = [], old = clone(S.active);
     S.active = leMerge(S.active, was.a, now.a, lifts, used, [], changes);
