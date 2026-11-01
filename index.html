@@ -851,7 +851,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 75;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 76;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -2868,7 +2868,8 @@ function skipSession(){
    går programmet tilbake dit: samme vekter og samme neste økt. Bare den nyeste økta har kopien. */
 const clone = o => o == null ? o : JSON.parse(JSON.stringify(o));
 const undoPoint = pete => ({active: clone(S.active), pete: pete ? clone(S.pete) : undefined});
-function keepOneUndo(){ S.history.forEach((h, k) => { if (k && h.undo) delete h.undo; }); }
+// Kopien beholdes på siste økt som ble tatt, og på hoppede økter etter den, så RPE kan rettes selv om neste økt er hoppet over
+function keepOneUndo(){ let keep = true; S.history.forEach(h => { if (!h.undo) return; if (!keep) delete h.undo; else if (!h.skipped) keep = false; }); }
 // Kan økta angres? Bare hvis programmet fortsatt står der økta forlot det.
 const canUndo = h => !!(h && h.undo && S.active && S.active.programId === h.programId && S.active.idx === h.idx + 1);
 // Kjører du samme økt som en venn, ligger din egen økt til side i S.parked til engangsøkta er ferdig
@@ -2891,20 +2892,44 @@ function logDelete(date){
 }
 // Siste programøkt endret i loggen: programmet spoles tilbake til før økta, økta bygges på nytt med tallene
 // fra loggen (RPE, vurdering, kg og reps), og progresjonen regnes ut igjen akkurat som da du trykket Fullfør.
-// Gir null når det ikke går: eldre økt, annet program, eller økta ser ikke lenger ut som den programmet bygger.
-function leRedo(h){
-  const p = canUndo(h) && prog(h.programId); if (!p) return null;
+// Hoppede økter etter den er greit, de flytter ingen vekter. Frie økter og venners økter teller ikke.
+const leNewer = h => S.history.slice(0, S.history.indexOf(h)).filter(x => x.programId === h.programId);
+const canRedo = h => { if (!h || !h.undo || h.skipped || !S.active || S.active.programId !== h.programId) return false;
+  const nw = leNewer(h); return nw.every(x => x.skipped) && S.active.idx === h.idx + 1 + nw.length; };
+// Fletter inn bare det utregningen endret (fra → til). Det du har gjort i programmet etterpå, som å bytte øvelse, blir stående.
+function leMerge(cur, from, to){
+  const keys = new Set([...Object.keys(from || {}), ...Object.keys(to || {})]);
+  keys.forEach(k => { const f = from && from[k], t = to && to[k];
+    if (JSON.stringify(f) === JSON.stringify(t)) return;
+    if (f && t && typeof f === 'object' && typeof t === 'object' && !Array.isArray(t) && cur[k] && typeof cur[k] === 'object') leMerge(cur[k], f, t);
+    else if (t === undefined) delete cur[k]; else cur[k] = clone(t); });
+  return cur;
+}
+// Regner økta h med settene ex fra programmet slik det var før økta. Gir null når økta ikke lenger
+// ser ut som den programmet bygger (andre løft eller et annet antall øvelser).
+function leRun(p, h, ex){
   const a = clone(h.undo.active), s = buildSession(p, a);
-  if (s.ex.length !== h.ex.length || s.ex.some((e, i) => e.lift !== h.ex[i].lift)) return null;
-  s.ex.forEach((e, i) => { const x = h.ex[i];
+  if (s.ex.length !== ex.length || s.ex.some((e, i) => e.lift !== ex[i].lift)) return null;
+  s.ex.forEach((e, i) => { const x = ex[i];
     e.sets = x.sets.map((y, k) => Object.assign({}, e.sets[Math.min(k, e.sets.length - 1)], y));
     e.rpe = x.rpe == null ? null : x.rpe; e.q = x.q == null ? null : x.q; });
   if (s.cond && h.cond) s.cond.res = clone(h.cond.res || {});
-  // Progresjonen ble regnet før økta kom i loggen, så den skal ikke se seg selv nå heller
-  const all = S.history; S.history = all.filter(x => x !== h);
+  // Progresjonen ble regnet før økta kom i loggen, så verken den eller nyere økter skal være med nå heller
+  const all = S.history; S.history = all.slice(all.indexOf(h) + 1);
   let notes; try { notes = progress(p, a, s); } finally { S.history = all; }
   a.idx++;
   return {a, notes};
+}
+// Regner økta med de gamle og de nye tallene og fletter inn bare forskjellen, i programmet og i kopiene på
+// hoppede økter etter den (så sletting av en hoppet økt fortsatt angrer riktig). Gir null når det ikke går.
+function leRedo(h, ex){
+  const p = canRedo(h) && prog(h.programId); if (!p) return null;
+  const was = leRun(p, h, h.ex), now = leRun(p, h, ex); if (!was || !now) return null;
+  const nw = leNewer(h);
+  return {notes: now.notes, apply(){
+    S.active = leMerge(S.active, was.a, now.a);
+    nw.forEach(x => { x.undo.active = leMerge(x.undo.active, was.a, now.a); });
+  }};
 }
 const leKey = ex => JSON.stringify(ex.map(e => [e.rpe == null ? null : e.rpe, e.q || null, e.sets.map(x => [x.w, x.d])]));
 // Clean vurderes med ord i stedet for RPE, både i økta og når økta endres i loggen
@@ -2976,12 +3001,12 @@ function logEditSave(){
   }
   // Siste programøkt: nye tall gir ny progresjon. En påbegynt neste økt stopper det, så sett du har tatt ikke forsvinner.
   let redo = null, blocked = false;
-  if (canUndo(h) && leKey(ex) !== leKey(h.ex)) {
+  if (canRedo(h) && leKey(ex) !== leKey(h.ex)) {
     if (draftTouched()) blocked = true;
-    else redo = leRedo(Object.assign({}, h, {ex}));
+    else redo = leRedo(h, ex);
   }
   h.ex = ex; h.date = date;
-  if (redo) { S.active = redo.a; dropOwnDraft(); ui.leNotes = redo.notes; }
+  if (redo) { redo.apply(); dropOwnDraft(); ui.leNotes = redo.notes; }
   if (mn) { h.mc = mc; if (mc) h.metcon = true; }
   const note = $('#leNote'); if (note) h.note = note.value.trim();
   const res = $('#leRes'); if (res && h.wod) h.wod.resultat = res.value.trim();
@@ -3015,8 +3040,8 @@ function vLogEdit(){
       <div class="rpe" style="padding-top:10px"><span>Hvor hard var den? (RPE 1–10)</span><div class="seg num" data-leg="mc">${
         [3,4,5,6,7,8,9,10].map(v => `<button data-a="lemcr:${v}" aria-pressed="${!!h.mc && h.mc.rpe === v}">${v}</button>`).join('')}</div></div></div>` : ''}
     <div class="box notebox"><label for="leNote" class="lbl">Notat</label><textarea id="leNote">${esc(h.note || '')}</textarea></div>
-    ${h.ex.length ? `<p class="muted small">Tomt felt for reps betyr at settet ikke ble tatt. Trykk på valgt RPE en gang til for å fjerne den. ${canUndo(S.history.find(x => x.date === ui.logEdit.date))
-      ? '<b>Dette er siste økt i programmet.</b> Endrer du RPE, kg eller reps, regnes treningsmaks og vekter for neste økt ut på nytt, akkurat som da du trykket Fullfør.'
+    ${h.ex.length ? `<p class="muted small">Tomt felt for reps betyr at settet ikke ble tatt. Trykk på valgt RPE en gang til for å fjerne den. ${canRedo(S.history.find(x => x.date === ui.logEdit.date))
+      ? '<b>Dette er siste økt du tok i programmet.</b> Endrer du RPE, kg eller reps, regnes treningsmaks og vekter for neste økt ut på nytt, akkurat som da du trykket Fullfør.'
       : 'Endringene gjelder loggen, kurvene og rekordene. Bare siste økt i programmet kan flytte vektene, så programmet endres ikke.'}</p>` : ''}
     <button class="btn" data-a="logsave">Lagre endringene</button>`;
 }
