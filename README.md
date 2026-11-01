@@ -8,7 +8,7 @@ Appen ser ut som en treningsbok. Programmet står trykt på et ark over bildet a
 
 - **Blyant (grått og svart):** planen og det som venter. Neste sett og neste økt i planen har en tykk strek i tekstfargen.
 - **Blå penn:** det du har gjort. Det gjelder avkryssede sett, løftet vekt, økning i vekt og egne meldinger. En ny rekord ringes rundt, med ordet «Rekord» og anslått 1RM.
-- **Rød penn:** avvik. Det gjelder bom, hoppede økter (strøket over i loggen og planen), de siste sekundene av pausen og varsler om noe nytt.
+- **Rød penn:** avvik. Det gjelder bom, de siste sekundene av pausen og varsler om noe nytt. Hoppede økter er et valg, ikke et avvik, og strykes over i grå blyant i loggen, planen og kalenderen.
 - **Kondisjon** har en egen farge i kalenderen under Fremgang.
 - **Skivefargene** brukes i skivetegningen.
 
@@ -33,15 +33,17 @@ Appen har fire faner: **I dag** (dagens økt), **Program**, **Fremgang** og **Sa
 
 - **Øktoversikten** har en fremdriftslinje med én bit per øvelse. Øvelsen du holder på med, ligger på et eget ark. Det store tallet er alltid neste sett, med skivene rett under: først oppvarmingssettene, så arbeidsvekten. **Trykk på tallet**, eller hvor som helst øverst på arket, for å føre inn neste sett med målet som reps. Pausen starter med en gang. Rutene under brukes til å rette opp. Ferdige øvelser blir én linje når du begynner på neste. Øvelser du ikke har begynt på, står som én linje med navn og vekt. Trykk på en linje for å åpne den.
 - **Fullfør økt** spør først hvis noen sett ikke er logget, og sier hvilke løft som regnes som bom og hvilke som står på samme vekt.
+- **Oppsummeringen** står i stedet for neste økt etter «Fullfør økt»: hva som skjer med hvert løft, rekorder, volumet som én linje, og neste økt med vekter. **Klar for neste økt** viser neste økt, så ingen sett kan trykkes i en økt du ikke har startet.
 - **Under settene** står «Trykk på tallet = gjort · trykk på et sett igjen = én rep mindre» de tre første øktene.
 - **Etter styrken** er én rad med «+ Kondisjon» (når Pete Plan er på), «+ Metcon» og «+ Notat». Trykk for å åpne en del. En del med innhold, for eksempel en valgt Pete Plan-økt eller et notat, står åpen. Metcon-budsjettet ligger under «+ Metcon».
 - **Under «Fullfør økt»** står bare «Hopp over økta». Planen ligger under Program, og fri økt logges fra Fremgang.
 - **Hopp over økta** Du får en bekreftelse som sier hvilke løft som ikke får økning den gangen. Økta står som «Hoppet over» i loggen og i hele planen, men teller ikke som treningsdag.
 - **Oppvarming** står først i samme rekke som arbeidssettene. Oppvarmingssettene er mindre og grå, med vekten under hvert sett. Neste oppvarmingssett står som det store tallet i kortet, med skiver per side. Rutene blir stående når oppvarmingen er gjort, så arbeidssettene ikke flytter seg. Hovedløft får full oppvarming, sekundærøvelser to korte sett. Settene kan trykkes som gjort og gir 60 sekunders pause, men teller ikke som arbeidssett og lagres ikke i loggen.
-- **Pauser etter type sett**, slik forskningen anbefaler: tunge sett 3 min, volumsett 2 min og lette hjelpeøvelser 90 s. Strength & Power, Cube, Juggernaut og Burgener har egne pauser. Oppvarming gir 60 s, og 2 min etter siste oppvarmingssett. Under **Program → Maksløft, pauser og Pete Plan** kan alle pauser skaleres til Kortere (75 %) eller Lengre (125 %).
+- **Pauser etter type sett**, slik forskningen anbefaler: tunge sett 3 min, volumsett 2 min og lette hjelpeøvelser 90 s. Strength & Power, Cube, Juggernaut og Burgener har egne pauser. Oppvarming gir 60 s, og 2 min etter siste oppvarmingssett. Under **Innstillinger → Pause mellom sett** kan alle pauser skaleres til Kortere (75 %) eller Lengre (125 %), ved siden av pauselyden. Etter siste sett i økta går det ingen pause. Å rette reps på et sett som er gjort, starter ikke pausen på nytt.
 - **Pausen står i arket.** Mens pausen går, er det store tallet tiden som er igjen, med neste vekt ved siden av og en tykk strek under som brukes opp. Skivene for neste sett står rett under, så du kan laste stanga. De siste 10 sekundene blir tiden og streken røde. Ved null blinker skjermen lyst én gang, og tallet blir vekten igjen. Linjen nederst har knappene «+30 s» og «Start nå», og viser tiden når du er på en annen fane. Går du over, teller tiden oppover der (+0:12). Lyd ved slutten kan slås på under **Innstillinger**.
 - **Skiver per side** regnes ut med 20 kg stang og skivene 20, 15, 10, 5, 2,5 og 1,25 kg. 25 kg er bevisst utelatt. Under **Innstillinger → Stang** kan du velge 15 kg stang. Da regnes skivene, oppvarmingen og laveste vekt på stangøvelser ut fra 15 kg. Arbeidsvektene i programmet endres ikke.
-- **Hele planen** vises på programsiden før du aktiverer, og rett i **Program**-fanen for det aktive programmet. Fullførte økter står i blått. Planen viser vektene hvis alt går som planlagt, fullførte økter viser det du faktisk løftet, og resten oppdateres etter hver økt. Programmer uten fast slutt vises 12 uker fram.
+- **Startvektene** velges på programsiden under «Hvor starter du?»: **Tom stang** (nybegynnerprogrammene, markløft med 10 kg per side), **Et sett jeg klarte nylig** (vekt × reps gir et anslag på 1RM, Epley, regnet opp til 12 reps) eller **Jeg vet maksløftene mine**. Feltene er tomme til du har valgt eller skrevet noe, eller fylt med maksløftene du har lagret fra før. «Første økt blir» står åpent rett over **Aktiver program**. Bakgrunnsstoffet om programmet ligger bak raden «Om programmet, forskningen og øktene».
+- **Hele planen** vises på programsiden før du aktiverer. I **Program**-fanen står uka du er i og neste, og **Vis alle uker** viser resten. Hver økt viser alle løftene med vekt. Fullførte økter står i blått. Planen viser vektene hvis alt går som planlagt, fullførte økter viser det du faktisk løftet, og resten oppdateres etter hver økt. Programmer uten fast slutt vises 12 uker fram.
 
 ## Endre og slette økter i loggen
 
@@ -53,7 +55,7 @@ Trykk på en økt under **Fremgang** for å åpne den. Nederst står **Endre** o
 
 ## Skybackup
 
-Valgfritt og gratis for alle med konto. Slå på under **Innstillinger → Skybackup**.
+Valgfritt og gratis for alle med konto. Slå på under **Innstillinger → Konto og kopi**.
 
 - Hele appen (det samme som **Lag eksport**) lagres i én rad i tabellen `backups` i Supabase, noen sekunder etter hver endring, og før appen legges i bakgrunnen. Bare eieren kan lese og skrive raden.
 - **Ny telefon:** Logg inn under Sammen. Er telefonen tom, hentes loggen med en gang. Har telefonen en logg fra før, sier appen fra, og du slår på skybackup under Innstillinger.
@@ -82,7 +84,7 @@ En egen fane der du legger ut når du skal trene, og vennene dine kan bli med. K
 
 ## Pete Plan
 
-Et fast kondisjonsvalg ved siden av øktbanken, på romaskin, ski eller sykkel. Kan slås av og på under **Program → Maksløft, pauser og Pete Plan**.
+Et fast kondisjonsvalg ved siden av øktbanken, på romaskin, ski eller sykkel. Kan slås av og på under **Program → Kondisjon: Pete Plan**. Bytte av løft, avslutte programmet og lagrede maksløft ligger under **Program → Løft og vekter**.
 
 - Planen er Pete Marstons tre-ukers rotasjon med seks økter per uke, kontrollert mot hans egen tabell. Appen husker hvor du er og går videre én økt om gangen.
 - Målfarten regnes ut fra referansetiden din: 2000 m på romaskin og ski, 4000 m på sykkel.
@@ -140,7 +142,7 @@ Lista viser hele økta for hver metcon, så du kan lese den uten å åpne den. T
 
 Én klokke for **For Time**, **AMRAP**, **EMOM** og **Intervaller**.
 
-- **Hvor:** Klokkeikonet ved tannhjulet på I dag åpner klokka, med eller uten økt. I «Dagens metcon» står **Start klokke**, fylt ut fra økta, og **Endre**. I Fri økt og under «+ Metcon» står **Klokke** ved siden av Øktbank.
+- **Hvor:** Klokkeikonet ved tannhjulet på I dag åpner klokka, med eller uten økt. I «Dagens metcon» står **Start klokke**, fylt ut fra økta, og **Endre**. I Fri økt står **Klokke** ved siden av Øktbank. Under «+ Metcon» og på startskjermen brukes klokkeikonet øverst, så klokka ikke har to knapper.
 - **Fylt ut fra øktbanken:** Appen leser teksten i økta: «20 min AMRAP», «EMOM 15 min» med stasjonene «1:», «2:», «E3MOM x 6», «For tid, 25 min tak», «3–4 runder, 3 min pause» og «2 min hvile mellom». Formatet og minuttene i banken brukes når teksten ikke sier nok. Det appen har forstått, står under knappen før du starter.
 - **Oppsettet** har Sist brukt (de tre siste), hurtigvalg (Tabata, 40/20, 30/30, EMOM 10, AMRAP 12, For Time) og én eller flere blokker. **+ Legg til blokk** setter sammen for eksempel AMRAP 8 → pause 2 → AMRAP 8, og **Gjenta alt** kjører hele rekka flere ganger.
 - **Tid og runder stilles med hjul**, som på iPhone: trykk på verdien, så kommer et ark med minutter og sekunder (eller runder) nederst. Hjulene følger fingeren fra første berøring, ruller videre etter et raskt sveip og snapper til nærmeste rad. Et trykk på en rad velger den. Klokka oppdateres mens du drar. «Ferdig» eller et trykk utenfor lukker arket. For kort tid rettes opp: arbeid minst 5 s, ny EMOM-runde minst 10 s, AMRAP minst 30 s. Tak 0:00 betyr uten tak.
@@ -166,7 +168,7 @@ Du kan lage så mange metcons du vil i tillegg til dem i øktbanken.
 
 ## Metcon-budsjett
 
-Når du merker «Metcon i dag», velger en økt fra øktbanken eller logger en fri økt, kan du legge inn type, minutter og RPE. Fra øktbanken foreslår appen type og minutter ut fra økta. Appen viser minutter og belastning (minutter × RPE) for de siste sju dagene. I Strength & Power vises også budsjettet for fasen, og appen varsler når en metcon ligger for nær knebøy, clean eller benk. I Burgener 12 uker er budsjettet per uke (40, 30, 20 og 10 minutter), og appen varsler når en beintung eller olympisk metcon ligger dagen før snatch eller clean & jerk.
+Når du slår på «Logg en metcon jeg tok», velger en økt fra øktbanken eller logger en fri økt, kan du legge inn type, minutter og RPE. Fra øktbanken foreslår appen type og minutter ut fra økta. Appen viser minutter og belastning (minutter × RPE) for de siste sju dagene. I Strength & Power vises også budsjettet for fasen, og appen varsler når en metcon ligger for nær knebøy, clean eller benk. I Burgener 12 uker er budsjettet per uke (40, 30, 20 og 10 minutter), og appen varsler når en beintung eller olympisk metcon ligger dagen før snatch eller clean & jerk.
 
 ## Filene
 
@@ -193,8 +195,8 @@ Når du merker «Metcon i dag», velger en økt fra øktbanken eller logger en f
 ## Viktig om dataene
 
 - Dataene ligger i appen på hjemskjermen, ikke i Safari. Sletter du ikonet, forsvinner dataene, med mindre skybackup er på.
-- Med konto kan du slå på **Innstillinger → Skybackup**. Da hentes alt tilbake når du logger inn på nytt.
-- Uten konto: Bruk **Innstillinger → Lag eksport** av og til, og lagre teksten i Notater. Med **Importer** henter du alt tilbake.
+- Med konto kan du slå på skybackup under **Innstillinger → Konto og kopi**. Da hentes alt tilbake når du logger inn på nytt.
+- Uten konto: Bruk **Lag eksport** under **Innstillinger → Kopi uten konto** av og til, og lagre teksten i Notater. Med **Importer** henter du alt tilbake.
 
 ## Når du endrer koden
 
@@ -209,7 +211,7 @@ Når du merker «Metcon i dag», velger en økt fra øktbanken eller logger en f
 - **iPhone:** Åpne https://br0hansen.github.io/stanga/ i Safari, trykk Del-knappen og velg **Legg til på Hjem-skjerm**.
 - **Android:** Åpne adressen i Chrome, trykk menyen med tre prikker og velg **Installer app** eller **Legg til på startskjermen**.
 
-Hver person får sine egne data på sin egen telefon. Sletter man ikonet, forsvinner dataene, så slå på skybackup eller bruk **Innstillinger → Lag eksport** av og til.
+Hver person får sine egne data på sin egen telefon. Sletter man ikonet, forsvinner dataene, så slå på skybackup eller bruk **Lag eksport** under **Innstillinger → Kopi uten konto** av og til.
 
 ## Hvordan koden henger sammen
 

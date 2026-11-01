@@ -171,6 +171,8 @@ p{margin:0}
 .chip.sm.ok{color:var(--pen)}
 .chip.sm.ok::after{right:3px;top:3px;width:3px;height:7px;border-width:0 1.5px 1.5px 0}
 .chip-hint{font-size:13px;color:var(--chalk-2);margin:-2px 0 0}
+/* Liten telefon: fem arbeidssett får plass på én rad */
+@media (max-width:359px){.chip{width:44px}}
 
 .amrap{display:flex;align-items:center;gap:12px;background:var(--press);border-radius:3px;padding:6px 6px 6px 14px}
 .amrap span{flex:1;font-size:14px;color:var(--chalk-2)}
@@ -186,7 +188,8 @@ p{margin:0}
 .p15{width:7px;height:32px;background:var(--p15)} .p10{width:6px;height:32px;background:var(--p10)}
 .p5{width:5px;height:20px;background:var(--p5);box-shadow:inset 0 0 0 1px #B7B5AE} .p2{width:4px;height:15px;background:var(--p2)} .p1{width:3px;height:12px;background:var(--p1)}
 .pl-txt{font-variant-numeric:tabular-nums}
-.platebox{padding:8px 0 12px;min-height:52px;border-bottom:1px solid var(--rule)}
+/* Samme høyde med og uten skiver, så «Bare stanga» og skivene tar like mye plass */
+.platebox{padding:8px 0 12px;min-height:61px;border-bottom:1px solid var(--rule)}
 .platebox .plates{height:40px;padding-left:20px}
 .platebox .plates::before{width:20px;height:6px;margin-top:-3px}
 .platebox .p25{width:11px;height:40px} .platebox .p20{width:10px;height:40px} .platebox .p15{width:9px;height:40px} .platebox .p10{width:8px;height:40px}
@@ -200,6 +203,9 @@ p{margin:0}
 .notes{list-style:none;margin:0;padding:0;display:grid}
 .notes li{display:flex;gap:12px;align-items:baseline;font-size:15px;padding:9px 0;border-top:1px solid var(--rule)}
 .notes li b{font-weight:600;min-width:7.5em}
+.notes.big li{font-size:17px;padding:11px 0}
+.nextup{gap:4px}
+.nextup b{font-size:19px}
 .notes .up{color:var(--pen)} .notes .down{color:var(--red)} .notes .same,.notes .stage{color:var(--ink-2)}
 .prs{display:grid;gap:6px}
 .pr{display:flex;align-items:baseline;justify-content:space-between;gap:12px;font-size:15px}
@@ -301,9 +307,10 @@ textarea:focus{border-color:var(--accent);outline:none}
 .stage[data-rest="over"] .ruler{display:none}
 .stage[data-rest="over"] .rest-r1>span{color:var(--chalk)}
 /* Klokka i arket: tiden der vekten sto, en tykk strek under som brukes opp. Linjen nederst viser da bare knappene. */
-.rest-bar{display:none;height:8px;background:var(--rule);position:relative;margin:6px 0 2px}
+/* Streken har alltid sin plass, så settrutene under ikke flytter seg når pausen starter og slutter */
+.rest-bar{visibility:hidden;height:8px;background:var(--rule);position:relative;margin:6px 0 2px}
 .rest-bar i{position:absolute;left:0;top:0;bottom:0;width:var(--lvl,0%);background:var(--ink);transition:width .25s linear}
-.stage[data-clock] .rest-bar{display:block}
+.stage[data-clock] .rest-bar{visibility:visible}
 .stage[data-clock] .ex.now .kg small{color:var(--ink)}
 .stage[data-clock][data-rest="warn"] #kgN{color:var(--red)}
 .stage[data-clock][data-rest="warn"] .rest-bar i{background:var(--red)}
@@ -365,6 +372,17 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .notebox{gap:12px}
 .notebox textarea{min-height:88px;font:16px/1.45 var(--face)}
 .lbl{font:600 13px/1.2 var(--face);color:var(--chalk-2)}
+/* Bryter med tilstanden skrevet ut: «På» eller «Av» ved siden av */
+.sw{appearance:none;width:100%;display:flex;align-items:center;gap:12px;min-height:48px;padding:4px 0;background:none;border:0;color:var(--chalk);font:600 15px/1.25 var(--face);text-align:left;cursor:pointer}
+.sw>span{flex:1;min-width:0}
+.sw b{font:600 13px var(--face);color:var(--chalk-2)}
+.sw i{flex:none;width:46px;height:28px;border-radius:14px;border:1.5px solid var(--edge);position:relative}
+.sw i::after{content:"";position:absolute;top:4px;left:4px;width:17px;height:17px;border-radius:50%;background:var(--chalk-2);transition:transform .15s}
+.sw[aria-checked="true"] i{background:var(--chalk);border-color:var(--chalk)}
+.sw[aria-checked="true"] i::after{transform:translateX(18px);background:var(--iron)}
+.sw[aria-checked="true"] b{color:var(--chalk)}
+@media (prefers-reduced-motion:reduce){.sw i::after{transition:none}}
+.kbox{display:grid;gap:10px;padding:10px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .tog{justify-self:start;border:1px solid var(--line);background:transparent;color:var(--chalk);border-radius:4px;padding:10px 14px;font:600 14px var(--face);cursor:pointer}
 .tog[aria-pressed="true"]{background:var(--chalk);border-color:var(--chalk);color:var(--iron)}
 .pill.mc{justify-self:start}
@@ -402,6 +420,21 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .gk{display:grid;gap:3px}
 .gk>span{font:600 13px/1.2 var(--face);color:var(--chalk-2)}
 .gk p{font-size:15px}
+/* Hvor starter du? Tre valg som radioknapper. Valgt har en fylt prikk i blyant, fordi det er planen, ikke noe du har gjort. */
+.start{gap:0;padding:2px 14px}
+.start button{appearance:none;width:100%;text-align:left;font:inherit;color:var(--chalk);background:none;border:0;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:center;min-height:58px;padding:8px 0;cursor:pointer}
+.start button:last-child{border-bottom:0}
+.start button>span{display:grid;gap:2px;min-width:0}
+.start small{color:var(--chalk-2);font-size:13px}
+.start i{flex:none;width:20px;height:20px;border-radius:50%;border:2px solid var(--edge)}
+.start [aria-checked="true"] i{border-color:var(--ink);background:radial-gradient(circle,var(--ink) 0 4px,transparent 5px)}
+/* Bakgrunnsstoffet om et program: én rad som åpnes */
+.about{border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.about>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:52px;font-weight:600}
+.about>summary::-webkit-details-marker{display:none}
+.about>summary::after{content:"+";font:500 22px/1 var(--face);color:var(--chalk-2)}
+.about[open]>summary::after{content:"−"}
+.about-in{display:grid;gap:14px;padding-bottom:16px}
 .acc{gap:12px}
 .acc summary{cursor:pointer;font:700 16px/1.2 var(--face);list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px}
 .acc summary::-webkit-details-marker{display:none}
@@ -428,8 +461,9 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .ps .pill{font:600 12px/1 var(--face)}
 .plan-s.done-s .ps>span:last-child{color:var(--pen)}
 .plan-s.done-s .ps-top .pill{color:var(--pen);box-shadow:none;padding-left:0}
-.plan-s.skip-s .ps-top b{text-decoration:line-through;text-decoration-color:var(--red);text-decoration-thickness:1.5px;color:var(--ink-2)}
-.plan-s.skip-s .ps-top .pill{color:var(--red);box-shadow:none;padding-left:0}
+/* Hoppet over er et valg, ikke et avvik: strøket over i grå blyant. Rødt er bare for bom. */
+.plan-s.skip-s .ps-top b{text-decoration:line-through;text-decoration-color:var(--ink-3);text-decoration-thickness:1.5px;color:var(--ink-2)}
+.plan-s.skip-s .ps-top .pill{color:var(--ink-2);box-shadow:none;padding-left:0}
 .plan-s.next-s{box-shadow:inset 0 -3px 0 var(--ink),var(--lift);background:color-mix(in srgb,var(--ink) 5%,var(--paper))}
 .list>.plan-s.next-s{box-shadow:inset 0 -3px 0 var(--ink)}
 .plan-ex{display:grid;gap:6px}
@@ -524,7 +558,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .cal i.mc{box-shadow:inset 0 0 0 1.5px var(--kond)}
 .cal i.both{box-shadow:inset 0 0 0 1.5px var(--kond)}
 .cal i.both::after{width:9px;height:9px;margin:-4.5px 0 0 -4.5px;background:var(--pen)}
-.cal i.sk::after{width:12px;height:2px;margin:-1px 0 0 -6px;border-radius:1px;background:var(--red)}
+.cal i.sk::after{width:12px;height:2px;margin:-1px 0 0 -6px;border-radius:1px;background:var(--ink-3)}
 .cal i.today{outline:2px solid var(--ink);outline-offset:1px}
 .cal i.fut{opacity:.4}
 .cal-key{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--chalk-2)}
@@ -532,7 +566,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .cal-key i{width:12px;height:12px;border-radius:50%;position:relative}
 .cal-key i.st{background:var(--pen);width:9px;height:9px}
 .cal-key i.mc{box-shadow:inset 0 0 0 1.5px var(--kond)}
-.cal-key i.sk{width:12px;height:2px;border-radius:1px;background:var(--red)}
+.cal-key i.sk{width:12px;height:2px;border-radius:1px;background:var(--ink-3)}
 .tr .tr-kg{font:800 22px/1 var(--face);font-stretch:68%;color:var(--chalk);min-width:3.2ch;text-align:right}
 .tr .tr-d{font-weight:600;font-size:13px;min-width:4ch;text-align:right}
 .miss-t{color:var(--miss)}
@@ -667,8 +701,8 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 
 /* Hopp over økt: det som hoppes over, strykes i rødt */
 .skipbox{box-shadow:inset 0 0 0 1px var(--red),var(--lift)}
-.sess.skipped .sess-t b{text-decoration:line-through;text-decoration-color:var(--red);text-decoration-thickness:1.5px;color:var(--ink-2)}
-.sess.skipped .sess-t small{color:var(--red)}
+.sess.skipped .sess-t b{text-decoration:line-through;text-decoration-color:var(--ink-3);text-decoration-thickness:1.5px;color:var(--ink-2)}
+.sess.skipped .sess-t small{color:var(--ink-2)}
 
 /* Endre økt i loggen: én rad per sett med kg og reps */
 .sess.open>.log-acts{margin-top:14px}
@@ -817,7 +851,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 71;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 72;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -2950,14 +2984,20 @@ function newInstance(p){
 function mmcSecInputs(p){
   const orm = {bench: myMax('bench', p.inputs.bench), squat: myMax('squat', p.inputs.squat)};
   const a = S.active && S.active.programId === p.id ? S.active : null;
+  // Uten lagrede maksløft står feltene tomme, og appen regner dem ut fra 1RM-en du skriver inn over (se newInstance)
+  const known = S.maxes.bench > 0 && S.maxes.squat > 0;
   return `<h3>Startvekter ${p.prog === 'mmc' ? 'sekundærløft' : 'markløft og push press'}</h3><div class="box" style="gap:0">${(p.prog === 'mmc' ? MMC_SEC : EMC_SEC).map(([, id]) => `
       <div class="field"><label for="sec-${id}">${liftName(id)}${/manual/.test(mmcSecOf(id)[4]) ? ' <span class="muted">per manual</span>' : ''}</label>
-        <span class="inp"><input id="sec-${id}" type="text" inputmode="decimal" value="${fmt(a && a.lifts[id] ? a.lifts[id].w : mmcSecDefault(id, orm))}">kg</span></div>`).join('')}</div>
-    <p class="muted small">${p.prog !== 'mmc' ? 'Forslag ut fra 1RM i knebøy og benk. Skriv inn vekten du løfter 4×3 med på RPE 6–7. Etter hver økt svarer du på RPE: RPE 6 gir +2,5 kg, RPE 7 står, RPE 8 eller mer gir −2,5 kg.' : 'Forslag ut fra 1RM. Skriv inn vekten du klarer med 1–3 reps i reserve. Etter hver økt svarer du på RPE, og appen justerer vekten: RPE 6 gir +2,5 kg, RPE 7–9 står, RPE 9,5–10 eller bom gir −2,5 kg.'}</p>`;
+        <span class="inp"><input id="sec-${id}" type="text" inputmode="decimal" placeholder="auto" value="${a && a.lifts[id] ? fmt(a.lifts[id].w) : known ? fmt(mmcSecDefault(id, orm)) : ''}">kg</span></div>`).join('')}</div>
+    <p class="muted small">${known ? '' : 'Står et felt tomt, regner appen ut vekten fra 1RM-en din. '}${p.prog !== 'mmc' ? 'Forslag ut fra 1RM i knebøy og benk. Skriv inn vekten du løfter 4×3 med på RPE 6–7. Etter hver økt svarer du på RPE: RPE 6 gir +2,5 kg, RPE 7 står, RPE 8 eller mer gir −2,5 kg.' : 'Forslag ut fra 1RM. Skriv inn vekten du klarer med 1–3 reps i reserve. Etter hver økt svarer du på RPE, og appen justerer vekten: RPE 6 gir +2,5 kg, RPE 7–9 står, RPE 9,5–10 eller bom gir −2,5 kg.'}</p>`;
 }
 
 function activate(id){
-  const p = prog(id), a = newInstance(p);
+  const p = prog(id);
+  // Tomme felt fylles ikke med standardtall: da ville noen andres maksløft blitt dine startvekter
+  const empty = p.prog === 'athx' ? [] : [...document.querySelectorAll('input[data-key]')].filter(inp => !(parseFloat(String(inp.value).replace(',', '.')) > 0));
+  if (empty.length) { empty[0].focus(); toast(p.orm ? 'Velg hvor du starter, eller skriv inn startvektene' : 'Skriv inn 1RM eller et sett du klarte for alle løftene'); return; }
+  const a = newInstance(p);
   if (!a) return;
   // Husk maksløftene, så neste program fylles ut automatisk
   const num = el => { const v = parseFloat(String(el && el.value || '').replace(',', '.')); return v > 0 ? v : null; };
@@ -2980,7 +3020,8 @@ function platesOf(w){
 const plateTxt = w => w <= BAR() ? 'bare stanga' : platesOf(w).map(x => fmt(x[0])).join(' + ') + ' per side';
 // big: stor variant i kortet som er «nå», med skivene som tall og «per side» under
 function plateHTML(w, big){
-  if (w <= BAR()) return `<span class="pl-txt">Bare stanga (${BAR()} kg)</span>`;
+  // Vekten står allerede som det store tallet, så her holder det å si at det ikke skal på skiver
+  if (w <= BAR()) return `<span class="pl-txt">Bare stanga${big ? '<small>ingen skiver</small>' : ''}</span>`;
   const out = platesOf(w), txt = out.map(x => fmt(x[0])).join(' + ');
   return '<span class="plates" aria-hidden="true">' + out.map(([kg,c]) => '<i class="pl '+c+'"></i>').join('') +
          '</span><span class="pl-txt">' + txt + (big ? `<small>per side · ${BAR()} kg stang</small>` : ' per side') + '</span>';
@@ -3008,7 +3049,7 @@ function poolFor(rp){
   return bankFilter();
 }
 function poolLabel(rp){
-  if (rp.kind === 'solo') return 'Tilfeldig solo-metcon';
+  if (rp.kind === 'solo') return 'Tilfeldig metcon';
   if (rp.kind === 'theme') return 'Tilfeldig temaøkt' + (rp.theme ? ' · ' + themeLabel(rp.theme) : '');
   return 'Tilfeldig blant filtrene';
 }
@@ -3128,7 +3169,7 @@ function vBank(){
   return back + `<header class="head"><p class="eyebrow">${nMine ? nMine + (nMine === 1 ? ' egen, ' : ' egne, ') : ''}${BANK.length - nAthx} metcons fra Functional Fitness Sarpsborg${nAthx ? ` og ${nAthx} ATHX-økter` : ''}</p><h1>Øktbank</h1></header>
     <button class="btn ghost" data-a="minenew">+ Lag egen metcon</button>
     <div class="row">
-      <button class="btn" data-a="rand:solo">Tilfeldig solo-metcon</button>
+      <button class="btn" data-a="rand:solo">Gi meg en metcon</button>
       <button class="btn ghost" data-a="themes" aria-expanded="${!!ui.showThemes}">Tilfeldig temaøkt</button>
     </div>
     ${ui.showThemes ? `<div class="themes">${THEMES.map((t, i) => !BANK || BANK.some(w => w.t === t) ? `<button class="tog" data-a="rand:theme:${i}">${esc(themeLabel(t))}</button>` : '').join('')}
@@ -3160,11 +3201,12 @@ function wodBox(w, ctx){
       ${prevResults(w.id)}
     </section>`;
 }
-function quickPick(ctx){
+// clock: false der klokkeikonet allerede står i toppen av skjermen, så klokka ikke har to knapper
+function quickPick(ctx, clock = true){
   return `<div class="row quick2">
-      <button class="btn ghost" data-a="qr:${ctx}">Tilfeldig solo-metcon</button>
+      <button class="btn ghost" data-a="qr:${ctx}">Gi meg en metcon</button>
       <button class="btn ghost" data-a="bank:${ctx}">Øktbank</button>
-      <button class="btn ghost" data-a="ck:open:${ctx}">${clockSVG}Klokke</button></div>`;
+      ${clock ? `<button class="btn ghost" data-a="ck:open:${ctx}">${clockSVG}Klokke</button>` : ''}</div>`;
 }
 function openBank(forWhat){
   ui.bank = true; ui.bankFor = forWhat; ui.wod = null; ui.wodRand = false; ui.bankN = 30; ui.mineEdit = null;
@@ -3291,7 +3333,8 @@ function vPlan(){
     ${planWeeks(P, p, a)}`;
 }
 // Ukene i planen. Brukes både i Program-fanen og når du ser planen til et program før du aktiverer det.
-function planWeeks(P, p, a){
+// short: bare uka du er i og neste (Program-fanen), med en knapp for resten
+function planWeeks(P, p, a, short){
   const per = planPer(p, a), ax = p.prog === 'athx', tot = totalOf(p, a);
   const N = tot || Math.max(12 * per, a.idx + 4 * per);
   const doneH = P.active ? S.history.filter(h => h.programId === p.id && !h.free && h.date >= a.startedAt).reverse().slice(-a.idx) : [];
@@ -3305,13 +3348,16 @@ function planWeeks(P, p, a){
   rows.forEach(r => { const w = Math.floor(r.k / per); (weeks[w] = weeks[w] || []).push(r); });
   // Uka står i overskriften, så «Uke 9 av 12» trengs ikke på hver økt
   const subOf = (r, w) => ax ? r.sub.replace(/^Uke \d+ av \d+ · /, '') : ['burg','mmc','emc','cir','cbe'].includes(p.prog) ? r.sub.replace(/^Uke \d+ av \d+( · )?/, '') : r.sub !== 'Uke ' + (w + 1) ? r.sub : '';
+  const from = short ? Math.floor(Math.min(a.idx, N - 1) / per) : 0, to = short ? from + 2 : weeks.length;
+  const exLine = r => r.ex.slice(0, 3).map(e => { const t = Math.max(...e.sets.map(x => x.w)); return liftName(e.lift) + (t > 0 ? ' ' + fmt(t) : ''); }).join(' · ') + (r.ex.length > 3 ? ' …' : '');
+  const more = P.active && weeks.length > 2 ? `<button class="btn ghost" data-a="planall">${short ? 'Vis alle ' + weeks.length + ' uker' : 'Vis bare denne og neste uke'}</button>` : '';
   return `${ax ? axScore(a) : ''}
-    ${weeks.map((list, w) => list ? `<h3>Uke ${w + 1}${ax && a.ax.weeks[w] ? ' · ' + AX_PH[a.ax.weeks[w].ph] : ''}</h3><div class="list">${list.map(r => {
+    ${weeks.map((list, w) => list && w >= from && w < to ? `<h3>Uke ${w + 1}${ax && a.ax.weeks[w] ? ' · ' + AX_PH[a.ax.weeks[w].ph] : ''}</h3><div class="list">${list.map(r => {
       const m = r.ex[0], sub = r.sub ? subOf(r, w) : '';
       return `<details class="box acc plan-s${r.done ? ' done-s' : ''}${r.skipped ? ' skip-s' : ''}${r.next ? ' next-s' : ''}"${r.next ? ' open' : ''}>
         <summary><span class="ps"><span class="ps-top"><b>${esc(r.day)}</b>${r.done ? '<span class="pill">Gjort</span>' : r.skipped ? '<span class="pill">Hoppet over</span>' : r.next ? '<span class="pill on">Neste</span>' : ''}</span>
           ${sub ? `<span class="small muted">${esc(sub)}</span>` : ''}
-          <span class="small">${m ? liftName(m.lift) + ' · ' + setsLine(m, r.done) : r.cond ? esc(r.cond.title) : ''}</span>
+          <span class="small">${m ? exLine(r) : r.cond ? esc(r.cond.title) : ''}</span>
           ${r.wod ? `<span class="small muted">Metcon · ${esc(r.wod.tekst.split('\n')[0].replace(/:$/, ''))}${r.done && r.wod.resultat ? ' · ' + esc(r.wod.resultat) : ''}</span>` : ''}</span></summary>
         <div class="plan-ex">${r.ex.map(e => `<div class="ln"><span>${liftName(e.lift)}${e.tag ? ` <span class="muted">${e.tag}</span>` : ''}</span><span>${setsLine(e, r.done)}</span></div>`).join('')}
           ${r.cond ? `<div class="ln"><span><b>${esc(r.cond.title)}</b></span><span>${r.done ? esc(axResTxt(r.cond)) : ''}</span></div>
@@ -3319,7 +3365,8 @@ function planWeeks(P, p, a){
           ${r.wod ? `<div class="plan-mc"><div class="ln"><span><b>${esc(r.wod.navn)}</b></span><span>${r.done ? esc(r.wod.resultat || '') : ''}</span></div>
             <pre class="wodtxt small">${esc(r.wod.tekst)}</pre></div>` : ''}
           ${(r.boxes || []).map(([l, t]) => `<div class="plan-mc"><span class="lbl">${esc(l)}</span><p class="small" style="white-space:pre-line;margin:0">${esc(t)}</p></div>`).join('')}</div>
-      </details>`; }).join('')}</div>` : '').join('')}`;
+      </details>`; }).join('')}</div>` : '').join('')}
+    ${more}`;
 }
 
 /* ---------- Pete Plan (Pete Marston) ----------
@@ -3482,7 +3529,7 @@ function vFree(){
       <label for="freeNote" class="lbl">${ui.freeWod || ui.freePete ? 'Notat' : 'Hva gjorde du?'}</label>
       <textarea id="freeNote" placeholder="For eksempel: 20 min AMRAP med 5 pull-ups, 10 push-ups og 15 air squats. 9 runder.">${esc(ui.freeNote)}</textarea>
       ${ui.freeWod || ui.freePete ? '' : '<button class="link" data-a="minefromfree">+ Lagre som egen metcon i øktbanken</button>'}
-      <button class="tog" data-a="freemc" aria-pressed="${ui.freeMc !== false}">Metcon</button>
+      ${switchRow('freemc', 'Logg som metcon', ui.freeMc !== false)}
       ${ui.freeMc !== false || ui.freeWod || ui.freePete ? mcFields('free', ui.freeMcData) : ''}
     </div>
     <button class="btn" data-a="freesave">Lagre fri økt</button>`;
@@ -3502,7 +3549,7 @@ function vToday(){
         <button data-a="tab:plan"><span><b>Følg et styrkeprogram</b><small>Legg inn startvektene, så lager appen øktene for deg</small></span>${chev}</button>
         <button data-a="free"><span><b>Bare metcon eller fri økt</b><small>Ingen plan. Logg det du gjør, når du gjør det</small></span>${chev}</button>
       </div>
-      ${quickPick('free')}
+      ${quickPick('free', false)}
     </div>`;
   const p = g ? {name: 'Engangsøkt', prog: 'guest'} : prog(S.active.programId);
   // ATHX følger kalenderen. En økt du ikke har begynt på, byttes når uka er over.
@@ -3516,13 +3563,14 @@ function vToday(){
     const u = ui.summary;
     // Rekord: ringet rundt med blå penn, fordi det er noe du har gjort. Rødt er bare for avvik.
     const ring = '<svg viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true"><path d="M8 22C6 8 40 2 70 4c22 2 30 10 26 20-4 11-36 15-62 12C14 34 4 28 10 16"/></svg>';
-    h += `<section class="done" aria-live="polite">
+    // Det du trenger etterpå, er hva som skjer med hvert løft. Volumet er én linje under.
+    h += `${over ? '' : `<div class="h-row h-end">${topBtns()}</div>`}
+    <section class="done" aria-live="polite">
       <h2>${u.day} fullført</h2>
-      ${u.vol > 0 ? `<div class="big">${fmt(Math.round(u.vol))} kg <span class="muted small">løftet totalt</span></div>` : ''}
       ${u.prs && u.prs.length ? `<div class="prs">${u.prs.map(r => `<div class="pr"><b>Rekord i ${r.name.toLowerCase()}</b>
         <span class="ring">${fmt(r.w)} × ${r.d}${ring}</span></div><p class="small muted">Anslått 1RM ${fmt(r.e)} kg</p>`).join('')}</div>` : ''}
-      <ul class="notes">${u.notes.map(n => `<li><b>${n.name}</b><span class="${n.kind}">${n.text}</span></li>`).join('')}</ul>
-      <button class="link" data-a="dismiss">Lukk</button>
+      <ul class="notes big">${u.notes.map(n => `<li><b>${n.name}</b><span class="${n.kind}">${n.text}</span></li>`).join('')}</ul>
+      ${u.vol > 0 ? `<p class="small muted">${fmt(Math.round(u.vol))} kg løftet totalt</p>` : ''}
     </section>`;
   }
   if (over) {
@@ -3532,6 +3580,10 @@ function vToday(){
       <p class="muted small">Startverdi mot estimert 1RM nå.</p>` : ''}
       <button class="btn" data-a="go:library">Velg neste program</button>`;
   }
+  // Oppsummeringen står i stedet for neste økt, så ingen sett i en økt du ikke har startet kan trykkes ved et uhell
+  if (ui.summary) return h + `<section class="box nextup"><span class="lbl">Neste</span><b>${esc(s.day)}</b>
+      <span class="small muted">${s.ex.slice(0, 3).map(e => { const t = Math.max(...e.sets.map(x => x.w)); return liftName(e.lift) + (t > 0 ? ' ' + fmt(t) + ' kg' : ''); }).join(' · ')}</span></section>
+    <button class="btn" data-a="dismiss">Klar for neste økt</button>`;
   const anyTouched = s.ex.some(e => e.sets.some(x => x.d != null));
   const allDone = e => e.sets.every(x => x.d != null);
   const touched = e => e.sets.some(x => x.d != null) || !!(e.wuDone && e.wuDone.length);
@@ -3634,9 +3686,11 @@ function vToday(){
   if (show('cond')) h += peteBox('session', s.pete);
   if (show('mc')) {
     h += vMetconBudget(p, s);
-    h += s.wod ? wodBox(s.wod, 'session') : s.pete ? '' : quickPick('session');
-    h += `<section class="box"><button class="tog" data-a="metcon" aria-pressed="${!!s.metcon}">Metcon i dag</button>
-      ${s.metcon || s.wod ? mcFields('session', s.mc) : ''}</section>`;
+    if (s.wod) h += wodBox(s.wod, 'session') + `<section class="box">${mcFields('session', s.mc)}</section>`;
+    else {
+      h += `<section class="box">${switchRow('metcon', 'Logg en metcon jeg tok', s.metcon)}${s.metcon ? mcFields('session', s.mc) : ''}</section>`;
+      if (!s.pete) h += quickPick('session', false);
+    }
   }
   if (show('note')) h += `<section class="box notebox">
       <label for="note" class="lbl">Notat</label>
@@ -3788,10 +3842,19 @@ function vActiveCard(){
       <div class="act-top"><span class="tag">Aktivt program</span>${next ? `<span>${esc(next.sub)}</span>` : ''}</div>
       <h2>${p.name}</h2>
       ${tot ? `<div class="meter" aria-hidden="true"><i style="width:${Math.min(100, Math.round(a.idx / tot * 100))}%"></i></div>` : ''}
-      <div class="act-sub"><span>${tot ? `${Math.min(a.idx, tot)} av ${tot} økter` : `${a.idx} økter fullført`}</span><span>${next ? 'Neste: ' + next.day : 'Fullført'}</span></div>
+      <div class="act-sub"><span>${tot ? `${Math.min(a.idx, tot)} av ${tot} økter` : `${oekter(a.idx)} fullført`}</span><span>${next ? 'Neste: ' + next.day : 'Fullført'}</span></div>
       ${lifts.length ? `<div class="act-facts">${lifts.map(([l, w]) => `<div><b>${fmt(w)}</b><span>${liftName(l)}</span></div>`).join('')}</div>` : ''}
     </button>`;
 }
+// Hva programmet gjør, med vanlige ord. Står i lista der navnet alene ikke sier det. Forfatteren står på programsiden.
+const PROG_WHAT = {
+  sl5x5:'Fem sett à fem, vekten opp hver økt', ss:'Tre sett à fem, vekten opp hver økt',
+  gzclp:'Et tungt løft, et volumløft og en lett øvelse i hver økt', '531fsl':'Ett hovedløft per økt, vekten opp hver fjerde uke, passer med metcons',
+  jugg:'16 uker i bølger, fra 10 reps ned til 3', '531':'Ett hovedløft per økt, vekten opp hver fjerde uke, mye volum',
+  cube:'Ett løft tungt, ett eksplosivt og ett på reps hver uke', sp12:'Benk, knebøy og power clean, med metcons ved siden av',
+  athx27:'Forberedelse til ATHX-stevnet, regnet baklengs fra datoen', burg12:'Olympisk vektløfting: snatch og clean & jerk',
+  mmc12:'Styrke, metcon og finisher i hver økt', emc12:'Styrke og EMOM-er med fire stasjoner',
+  cir12:'Styrke og kretser med en ny øvelse hvert minutt', cbe12:'Tre av fire baseløft per uke i rotasjon, med kondisjon'};
 // Biblioteket. root: Program-fanen uten aktivt program. Ellers åpnet fra «Bytt program».
 function vPrograms(root){
   const f = ui.progF || '', act = S.active && S.active.programId;
@@ -3806,38 +3869,76 @@ function vPrograms(root){
       <span><b>Programguide</b><small>Hva passer for deg, og hva sier forskningen?</small></span>${chev}
     </button>
     ${list.length ? `<div class="plist">${list.map(p => `
-      <button data-a="open:${p.id}"><span><b>${p.name}</b><small>${p.perWeek} økter/uke · ${p.level} · ${p.origin}</small></span>${chev}</button>`).join('')}</div>`
+      <button data-a="open:${p.id}"><span><b>${p.name}</b><small>${PROG_WHAT[p.id] || p.level}</small><small>${p.perWeek} økter/uke · ${p.level}</small></span>${chev}</button>`).join('')}</div>`
       : '<p class="muted small">Ingen andre programmer på dette nivået.</p>'}`;
+}
+
+// Startvektene: tre veier inn, og ingen tall brukeren ikke har skrevet selv eller lagret fra før.
+// Programmer med 1RM-forslag (p.orm): tom stang, et sett du klarte, eller 1RM. Prosentprogrammene: et sett eller 1RM.
+const e1rmOf = (w, r) => r > 1 ? w * (1 + Math.min(r, 12) / 30) : w;   // Epley, regnet opp til 12 reps
+function startMode(p){
+  if (ui.start && ui.start.id === p.id) return ui.start.mode;
+  const known = Object.keys(p.orm || p.inputs).some(l => S.maxes[l] > 0);
+  return known ? 'orm' : p.orm ? 'bar' : 'set';
+}
+// Tom stang: stanga på alt, og markløft med 10 kg per side så stanga ligger i riktig høyde. Øvelser uten stang beholder forslaget.
+const barStart = (p, k) => { const l = k.split('.')[0]; return !LIFTS[l] || !LIFTS[l].bar ? p.inputs[k] : l === 'deadlift' ? BAR() + 20 : BAR(); };
+function vStart(p){
+  const mode = startMode(p), base = Object.keys(p.orm || p.inputs);
+  const known = l => S.maxes[l] > 0 ? fmt(S.maxes[l]) : '';
+  const modes = (p.orm ? [['bar', 'Tom stang', 'Anbefalt når du er ny med stang']] : []).concat([
+    ['set', 'Et sett jeg klarte nylig', 'Vekt og reps, så regner appen ut resten'],
+    ['orm', 'Jeg vet maksløftene mine', 'Tyngste løft på én rep']]);
+  let h = `<h3>Hvor starter du?</h3>
+    <div class="box start" role="radiogroup" aria-label="Hvor starter du?">${modes.map(([m, n, d]) =>
+      `<button role="radio" aria-checked="${mode === m}" data-a="startmode:${p.id}:${m}"><i aria-hidden="true"></i><span><b>${n}</b><small>${d}</small></span></button>`).join('')}</div>`;
+  if (mode === 'set') h += `<div class="box" style="gap:0">${base.map(l => `
+      <div class="field"><label for="est-${l}">${liftName(l)}</label>
+        <span class="inp"><input id="est-${l}" data-est="${l}" type="text" inputmode="decimal" placeholder="kg" aria-label="${liftName(l)}, kg">×<input id="estr-${l}" class="sm" data-est="${l}" type="text" inputmode="numeric" placeholder="reps" aria-label="${liftName(l)}, reps"></span></div>`).join('')}</div>
+    <p class="muted small">Et sett du klarte de siste ukene, med god teknikk. Appen anslår 1RM ut fra det.</p>`;
+  if (mode === 'orm' && p.orm) h += `<div class="box" style="gap:0">${base.map(l => `
+      <div class="field"><label for="orm-${l}">${liftName(l)}</label>
+        <span class="inp"><input id="orm-${l}" data-orm="${l}" type="text" inputmode="decimal" placeholder="–" value="${known(l)}">kg</span></div>`).join('')}</div>`;
+  // Feltene appen bruker: startvekter, eller 1RM i prosentprogrammene. De står alltid åpent og kan endres.
+  h += `<h3>${p.orm ? 'Første økt blir' : mode === 'set' ? 'Anslått 1RM' : 'Din 1RM (tyngste løft på én rep)'}</h3>
+    <div class="box" style="gap:0">${Object.keys(p.inputs).map((k, i) => {
+      const [l] = k.split('.');
+      const v = !p.orm ? (mode === 'orm' ? known(k) : '')
+        : p.derive(k, 100) == null ? fmt(p.inputs[k])
+        : mode === 'bar' ? fmt(barStart(p, k)) : mode === 'orm' && S.maxes[l] > 0 ? fmt(p.derive(k, S.maxes[l])) : '';
+      return `
+      <div class="field"><label for="in-${i}">${keyLabel(k)}</label>
+        <span class="inp"><input id="in-${i}" data-key="${k}" type="text" inputmode="decimal" placeholder="–" value="${v}">kg</span></div>`; }).join('')}</div>`;
+  return h;
+}
+// Fyller feltene appen bruker fra en 1RM, enten den er skrevet inn eller anslått fra et sett. Felt du har endret selv, står.
+function fillStart(p, l, orm){
+  document.querySelectorAll('input[data-key]').forEach(inp => {
+    const k = inp.dataset.key; if (k.split('.')[0] !== l || inp.dataset.edited) return;
+    const v = p.derive ? p.derive(k, orm) : Math.round(orm * 2) / 2; if (v != null) inp.value = fmt(v);
+  });
 }
 
 function vDetail(p){
   const isActive = S.active && S.active.programId === p.id;
   const other = S.active && !isActive ? prog(S.active.programId) : null;
+  // Det du kom for, står først: hva programmet er, hvor du starter og «Aktiver». Bakgrunnsstoffet ligger bak én rad.
   return `<button class="link" data-a="back">‹ Tilbake</button>
     <header class="head"><p class="eyebrow">${p.origin}</p><h1>${p.name}</h1>
       <div class="meta" style="margin-top:8px"><span class="pill">${p.level}</span><span class="pill">${p.perWeek} økter/uke</span></div></header>
     <p>${p.summary}</p>
     <div class="box"><h3 style="margin:0">Slik øker vekten</h3><p class="small">${p.rule}</p></div>
-    ${vProgramGuide(p)}
-    <h3>Øktene</h3>
-    <div class="days">${p.days.map(d => `<div class="day"><h4>${d.name}</h4>${dayLines(p,d).join('')}</div>`).join('')}</div>
-    ${p.prog === 'athx' ? axSetup(other, isActive) : `${p.orm ? `<h3>Din 1RM (tyngste løft på én rep)</h3>
-    <div class="box" style="gap:0">${Object.keys(p.orm).map(l => `
-      <div class="field"><label for="orm-${l}">${liftName(l)}</label>
-        <span class="inp"><input id="orm-${l}" data-orm="${l}" type="text" inputmode="decimal" value="${fmt(myMax(l, p.orm[l]))}">kg</span></div>`).join('')}</div>
-    <p class="muted small">${p.ormNote}</p>
-    <details class="box adj"><summary>Se og juster startvektene</summary>` : `<h3>${p.inputLabel === '1RM' ? 'Din 1RM (tyngste løft på én rep)' : 'Startvekter'}</h3>
-    <div class="box" style="gap:0">`}${Object.keys(p.inputs).map((k,i) => {
-      const [l] = k.split('.'), om = p.orm && p.orm[l] != null ? myMax(l, p.orm[l]) : null;
-      const v = om != null && p.derive(k, om) != null ? p.derive(k, om) : p.inputLabel === '1RM' ? myMax(k, p.inputs[k]) : p.inputs[k];
-      return `
-      <div class="field"><label for="in-${i}">${keyLabel(k)}</label>
-        <span class="inp"><input id="in-${i}" data-key="${k}" type="text" inputmode="decimal" value="${fmt(v)}">kg</span></div>`; }).join('')}${p.orm ? '</details>' : '</div>'}${['mmc','emc','cir'].includes(p.prog) ? mmcSecInputs(p) : ''}
-    <p class="muted small">${p.prog === '531' ? 'Appen regner ut treningsmaks som 90 % av dette.' : p.prog === 'jugg' ? 'Appen regner ut arbeidsmaks som 90 % av dette.' : p.prog === 'sp12' ? 'Startvektene regnes ut fra dette. Etter hvert styrer RPE-en din vektene.' : p.prog === 'cube' ? 'Alle vekter regnes ut som prosent av dette.' : p.prog === 'burg' ? 'Alle vekter regnes ut som prosent av dette. Trekk og shrugs ligger over 100 %, det er meningen.' : ['mmc','emc','cir','cbe'].includes(p.prog) ? 'Treningsmaksen starter på 90 % av dette, og RPE-en din flytter den etter hver uke. Bruk dagsaktuelle maksløft.' : 'Start lett. Teknikken skal sitte før vekten blir tung.'}
-      ${slotsOf(p).length ? ' Vil du bytte et løft, gjør du det under Program → Maksløft, pauser og Pete Plan når programmet er aktivt.' : ''}
+    ${p.prog === 'athx' ? axSetup(other, isActive) : `${vStart(p)}${['mmc','emc','cir'].includes(p.prog) ? mmcSecInputs(p) : ''}
+    <p class="muted small">${p.orm ? p.ormNote || 'Start lett. Teknikken skal sitte før vekten blir tung.' : p.prog === '531' ? 'Appen regner ut treningsmaks som 90 % av dette.' : p.prog === 'jugg' ? 'Appen regner ut arbeidsmaks som 90 % av dette.' : p.prog === 'sp12' ? 'Startvektene regnes ut fra dette. Etter hvert styrer RPE-en din vektene.' : p.prog === 'cube' ? 'Alle vekter regnes ut som prosent av dette.' : p.prog === 'burg' ? 'Alle vekter regnes ut som prosent av dette. Trekk og shrugs ligger over 100 %, det er meningen.' : ['mmc','emc','cir','cbe'].includes(p.prog) ? 'Treningsmaksen starter på 90 % av dette, og RPE-en din flytter den etter hver uke. Bruk dagsaktuelle maksløft.' : 'Start lett. Teknikken skal sitte før vekten blir tung.'}
+      ${slotsOf(p).length ? ' Vil du bytte et løft, gjør du det under Program → Løft og vekter når programmet er aktivt.' : ''}
       ${other ? ' Dette erstatter '+other.name+'. Loggen din blir liggende.' : ''}${isActive ? ' Programmet er aktivt. Aktiverer du på nytt, starter det fra økt 1 med vektene over.' : ''}</p>`}
+    <button class="btn" data-a="activate:${p.id}">${isActive ? 'Start på nytt' : 'Aktiver program'}</button>
     <button class="btn ghost" data-a="planprev:${p.id}">Se hele planen</button>
-    <button class="btn" data-a="activate:${p.id}">${isActive ? 'Start på nytt' : 'Aktiver program'}</button>`;
+    <details class="about"><summary>Om programmet, forskningen og øktene</summary><div class="about-in">
+      ${vProgramGuide(p)}
+      <h3>Øktene</h3>
+      <div class="days">${p.days.map(d => `<div class="day"><h4>${d.name}</h4>${dayLines(p,d).join('')}</div>`).join('')}</div>
+    </div></details>`;
 }
 
 function spark(vals){
@@ -3877,7 +3978,7 @@ function vLog(){
       <div class="log-sum">
         <div><b>${nSt}</b><span>${nSt === 1 ? 'styrkeøkt' : 'styrkeøkter'}</span></div>
         <div><b>${nMc}</b><span>${nMc === 1 ? 'metcon' : 'metcons'}</span></div>
-        <div><b>${fmt(mcWindow(now - 7*864e5, now).min)}<small>min</small></b><span>kondisjon 7 d</span></div>
+        <div><b>${fmt(mcWindow(now - 28*864e5, now).min)}<small>min</small></b><span>kondisjon</span></div>
       </div>
       ${vCalendar()}
     </section>`;
@@ -3964,9 +4065,8 @@ function diag(){
 
 function vPeteSettings(){
   const set = S.settings.pete, P = S.pete, ss = peteSession(P.idx || 0, set.ver, set.mach);
-  return `<h3>Pete Plan</h3>
-    <div class="box">
-      <button class="tog" data-a="pp:toggle" aria-pressed="${!!set.on}">Vis Pete Plan i økta</button>
+  return `<div class="box">
+      ${switchRow('pp:toggle', 'Pete Plan i økta', set.on)}
       <p class="small muted">Et fast kondisjonsvalg på romaskin, ski eller sykkel ved siden av øktbanken. Planen er Pete Marstons tre-ukers rotasjon. Appen husker hvor du er, og snittet fra intervalløktene blir målet neste gang.</p>
       ${set.on ? `<div class="seg" role="group" aria-label="Versjon">
           <button data-a="pp:ver:str" aria-pressed="${set.ver === 'str'}">Tilpasset styrke</button>
@@ -3991,6 +4091,7 @@ const topBtns = () => `<div class="hbtns"><button class="gear${ckOn() ? ' ck-liv
 function vPlanTab(){
   const d = ui.detail;
   if (d === 'training') return vTraining();
+  if (d === 'pete') return vPete();
   if (d === 'guide') return vGuide();
   if (d === 'library') return vPrograms(false);
   if (d) return vDetail(prog(d));
@@ -3999,36 +4100,43 @@ function vPlanTab(){
   return `<header class="head"><h1>Program</h1></header>
     ${vActiveCard()}
     <div class="plist">
-      <button data-a="go:training"><span><b>Maksløft, pauser og Pete Plan</b><small>Det appen regner vektene og pausene ut fra</small></span>${chev}</button>
+      <button data-a="go:training"><span><b>Løft og vekter</b><small>${slotsOf(p).length ? 'Bytt øvelse, lagrede maksløft og avslutt programmet' : 'Lagrede maksløft og avslutt programmet'}</small></span>${chev}</button>
+      <button data-a="go:pete"><span><b>Kondisjon: Pete Plan</b><small>${peteOn() ? 'På' : 'Av'} · romaskin, ski eller sykkel ved siden av styrken</small></span>${chev}</button>
       <button data-a="go:library"><span><b>Bytt program</b><small>Bibliotek og programguide</small></span>${chev}</button>
     </div>
-    <h2 style="margin-top:12px">Hele planen</h2>
+    <h2 style="margin-top:12px">Planen</h2>
     <p class="muted small">${PLAN_NOTE[p.prog] || ''}${totalOf(p, S.active) ? '' : ' Programmet har ingen fast slutt, så planen viser 12 uker.'}</p>
-    ${planWeeks(P, p, S.active)}`;
+    ${planWeeks(P, p, S.active, !ui.planAll)}`;
 }
 
-// Det som styrer treningen: maksløft, pauser, Pete Plan, løft i programmet og å avslutte programmet
+// Løft og vekter for det aktive programmet: bytte øvelse og avslutte først, maksløftene som brukes neste gang nederst.
+// Pete Plan har sin egen side, og pauselengden ligger i Innstillinger sammen med pauselyden.
 function vTraining(){
   const p = S.active && prog(S.active.programId);
   return `<button class="link" data-a="back">‹ Program</button>
-    <header class="head"><h1>Maksløft og pauser</h1></header>
-    <h3>Mine maksløft (1RM)</h3>
+    <header class="head"><h1>Løft og vekter</h1></header>
+    ${p ? swapRows(p, S.active) : ''}
+    <h3>Aktivt program</h3>
+    <div class="box">${p ? `<p><b>${p.name}</b> <span class="muted">· ${oekter(S.active.idx)} fullført siden ${dateFmt(S.active.startedAt)}</span></p>
+      ${ui.confirm === 'quit' ? `<div class="row"><button class="btn danger sm" data-a="quit">Ja, avslutt</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div>`
+        : `<button class="btn ghost sm" data-a="confirm:quit">Avslutt program</button>`}`
+      : `<p class="muted">Ingen program er aktivt.</p>`}</div>
+    <h3>Lagrede maksløft (1RM)</h3>
     <div class="box" style="gap:0">${Object.keys(S.maxes).length ? Object.keys(S.maxes).map(l => `
       <div class="field"><label for="max-${l}">${liftName(l)}</label>
         <span class="inp"><input id="max-${l}" data-max="${l}" type="text" inputmode="decimal" value="${fmt(S.maxes[l])}">kg</span></div>`).join('')
-      : '<p class="muted small">Fylles ut første gang du aktiverer et program. Alle programmer bruker samme tall.</p>'}</div>
-    ${Object.keys(S.maxes).length ? '<p class="muted small">Endringer her brukes neste gang du aktiverer et program. Det aktive programmet påvirkes ikke.</p>' : ''}
-    ${vPeteSettings()}
-    <h3>Pause mellom sett</h3>
-    <div class="seg">${REST_SCALE.map(([f, l]) => `<button data-a="restscale:${f}" aria-pressed="${(S.settings.restScale || 1) === f}">${l}</button>`).join('')}</div>
-    <p class="muted small">Hvert program har pauser etter hva slags sett det er: tunge sett 3 min eller mer, volumsett 2 min og lette hjelpeøvelser 90 s, slik forskningen anbefaler. Kortere gir 75 % og Lengre 125 % av alle pausene.</p>
-    ${p ? swapRows(p, S.active) : ''}
-    <h3>Aktivt program</h3>
-    <div class="box">${p ? `<p><b>${p.name}</b> <span class="muted">· ${S.active.idx} økter fullført siden ${dateFmt(S.active.startedAt)}</span></p>
-      ${ui.confirm === 'quit' ? `<div class="row"><button class="btn danger sm" data-a="quit">Ja, avslutt</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div>`
-        : `<button class="btn ghost sm" data-a="confirm:quit">Avslutt program</button>`}`
-      : `<p class="muted">Ingen program er aktivt.</p>`}</div>`;
+      : '<p class="muted small">Lagres når du aktiverer et program med maksløftene dine.</p>'}</div>
+    <p class="muted small">Brukes når du aktiverer et nytt program, og når du blir med på økta til en venn. Programmet du følger nå, endres ikke.</p>`;
 }
+function vPete(){
+  return `<button class="link" data-a="back">‹ Program</button>
+    <header class="head"><h1>Pete Plan</h1><p class="muted small">Kondisjon på romaskin, ski eller sykkel ved siden av styrken.</p></header>
+    ${vPeteSettings()}`;
+}
+// «1 økt», «2 økter»
+const oekter = n => n + (n === 1 ? ' økt' : ' økter');
+// Brytere: tilstanden står som tekst ved siden av, så du slipper å huske hva en fylt knapp betyr
+const switchRow = (a, label, on) => `<button class="sw" role="switch" aria-checked="${!!on}" data-a="${a}"><span>${label}</span><b>${on ? 'På' : 'Av'}</b><i aria-hidden="true"></i></button>`;
 
 // Innstillinger for appen: lyd, konto og varsler, sikkerhetskopi og sletting
 function vSettings(){
@@ -4039,10 +4147,12 @@ function vSettings(){
       <div class="looks" role="group" aria-label="Tema">${LOOKS.map(([id, name, desc, sw]) =>
         `<button class="look-opt" data-a="look:${id}" aria-pressed="${look() === id}"><span class="look-sw" aria-hidden="true">${sw.map(c => `<i style="background:${c}"></i>`).join('')}</span>${name}<small>${desc}</small></button>`).join('')}</div>
     </div>
-    <h3>Pause</h3>
+    <h3>Pause mellom sett</h3>
     <div class="box">
-      <button class="tog" data-a="sound" aria-pressed="${!!S.settings.sound}">Lyd når pausen er over</button>
-      <p class="muted small">Linjalen nederst viser pausen og blinker når den er over. På iPhone kan nettapper ikke vibrere, og lyd spilles ikke når skjermen er låst.</p>
+      <div class="seg" role="group" aria-label="Lengde på pausene">${REST_SCALE.map(([f, l]) => `<button data-a="restscale:${f}" aria-pressed="${(S.settings.restScale || 1) === f}">${l}</button>`).join('')}</div>
+      <p class="muted small">Programmene har pauser etter type sett: tunge sett 3 min, volumsett 2 min og lette øvelser 90 s. Kortere gir 75 % og Lengre 125 %.</p>
+      ${switchRow('sound', 'Lyd når pausen er over', S.settings.sound)}
+      <p class="muted small">På iPhone spilles ikke lyd når skjermen er låst, og nettapper kan ikke vibrere.</p>
     </div>
     <h3>Stang</h3>
     <div class="box">
@@ -4051,12 +4161,10 @@ function vSettings(){
         <button data-a="bar:15" aria-pressed="${BAR() === 15}">15 kg</button></div>
       <p class="muted small">Brukes til skiver per side, oppvarmingen og laveste vekt på stangøvelser. Arbeidsvektene i programmet endres ikke.</p>
     </div>
-    <h3>Skybackup</h3>
-    <div class="box">${vSync()}</div>
     ${vSxAccount()}
-    <h3>Sikkerhetskopi</h3>
+    <h3>Kopi uten konto</h3>
     <div class="box">
-      <p class="small muted">${syncOn() ? 'Skybackup er på. Vil du i tillegg ha en egen kopi, kan du kopiere teksten under og lagre den i Notater eller iCloud Drive.' : 'Uten skybackup ligger dataene bare på denne telefonen. Kopier teksten under og lagre den i Notater eller iCloud Drive av og til.'}</p>
+      <p class="small muted">${syncOn() ? 'Skybackup er på. Vil du i tillegg ha en egen kopi, kan du kopiere teksten under og lagre den i Notater eller iCloud Drive.' : 'Uten skybackup ligger dataene bare på denne telefonen. Kopier teksten under og lagre den i Notater eller iCloud Drive av og til.'}${S.settings.exportAt ? ' Siste kopi: ' + dateFmt(S.settings.exportAt) + '.' : ''}</p>
       ${ui.exportText ? `<textarea id="exportBox" readonly aria-label="Eksportert data">${ui.exportText.replace(/</g,'&lt;')}</textarea>
         <button class="btn ghost sm" data-a="copy">Kopier</button>` : `<button class="btn ghost sm" data-a="export">Lag eksport</button>`}
       <label for="importBox" class="small" style="margin-top:6px">Gjenopprett fra kopi</label>
@@ -4114,6 +4222,11 @@ function startRest(sec){
   ui.rest = {end: Date.now() + sec*1000, total: sec, done: false};
   updateRest();
 }
+// Etter siste sett i økta er det ingenting å hvile til, så da går det ingen pause
+function restAfter(sec){
+  if (S.draft.ex.some(e => e.sets.some(x => x.d == null))) startRest(sec);
+  else { ui.rest = null; updateRest(); }
+}
 // Rødt de siste 10 sekundene, eller den siste femdelen hvis pausen er kortere enn 50 sekunder
 const restWarn = total => Math.min(10, total * .2);
 const mmss = s => Math.floor(s/60) + ':' + String(Math.floor(s % 60)).padStart(2,'0');
@@ -4145,7 +4258,7 @@ function updateRest(){
   $('#restB').textContent = left > 0 ? mmss(Math.ceil(left)) : '+' + mmss(-left);
   sheetClock(left > 0 ? mmss(Math.ceil(left)) : null);
   // Står klokka i arket, viser linjen nederst bare knappene, så tiden ikke står to steder
-  $('#restL').textContent = left > 0 ? (stage.dataset.clock ? 'Pause på ' + mmss(ui.rest.total) : 'av ' + mmss(ui.rest.total)) : 'Klar for neste sett';
+  $('#restL').textContent = left > 0 ? (stage.dataset.clock ? 'Pause' : 'av ' + mmss(ui.rest.total)) : 'Klar for neste sett';
 }
 setInterval(updateRest, 250);
 
@@ -4684,7 +4797,7 @@ function ckSetupHTML(){
       ${c.b.length > 1 ? whlBtn('g', 'rep', 'Antall ganger') : ''}
       <span class="lbl">Nedtelling før start</span>
       <div class="seg" role="group" aria-label="Nedtelling">${[0, 5, 10, 15].map(v => `<button data-a="ck:cd:${v}" aria-pressed="${cd === v}">${v ? v + ' s' : 'Ingen'}</button>`).join('')}</div>
-      <button class="tog" data-a="ck:snd" aria-pressed="${ckSound()}">Pip ved start og de siste 3 sekundene</button>
+      ${switchRow('ck:snd', 'Pip ved start og de siste 3 sekundene', ckSound())}
     </section>
     <section class="box" id="ckSum">${ckSumHTML(c)}</section>
     ${mine ? '<button class="btn ck-start" data-a="ck:keep">Bruk dette oppsettet</button>' : `<button class="btn ck-start" data-a="ck:start">${playSVG}Start</button>`}
@@ -4925,7 +5038,7 @@ async function syncAfterLogin(){
     const rows = await db('backups', 'select=rev,updated_at,data&user_id=eq.' + uid());
     if (!rows.length) return;
     if (syncEmpty(S)) { SY = {on: true, uid: uid()}; syncAdopt(rows[0]); render(); toast('Loggen din er hentet fra skyen'); }
-    else { ui.syncHint = Date.parse(rows[0].updated_at); toast('Du har en backup i skyen. Se Innstillinger (tannhjulet på I dag).'); }
+    else { ui.syncHint = Date.parse(rows[0].updated_at); toast('Du har en backup i skyen. Se Innstillinger → Konto og kopi.'); }
   } catch(e) {}
 }
 function vSyncAsk(){
@@ -5219,8 +5332,8 @@ function vSxSignup(){
        <button class="btn" data-a="sxforgot" ${busy}>Send kode</button>
        <button class="link" data-a="sxmode:login">‹ Tilbake til innlogging</button>`;
   else box = `<div class="seg2" role="group" aria-label="Logg inn eller lag konto">
-        <button data-a="sxmode:login" aria-pressed="${m === 'login'}"><b>Logg inn</b></button>
-        <button data-a="sxmode:signup" aria-pressed="${m === 'signup'}"><b>Lag konto</b></button>
+        <button data-a="sxmode:login" aria-pressed="${m === 'login'}"><b>Har konto</b></button>
+        <button data-a="sxmode:signup" aria-pressed="${m === 'signup'}"><b>Ny bruker</b></button>
       </div>
       ${email}
       <label class="lbl" for="sxP">Passord</label>
@@ -5231,7 +5344,7 @@ function vSxSignup(){
   return `<header class="head"><p class="eyebrow">Valgfritt</p><h1>Sammen</h1>
       <p class="muted">Legg ut når du skal trene, og la vennene dine bli med. Det krever en konto. Resten av appen virker som før uten.</p></header>
     <section class="box sx-form">${box}</section>
-    <p class="muted small">Bare brukernavn, venner og timer lagres, hos Supabase i EU. Treningsloggen din blir på telefonen, med mindre du slår på skybackup under Innstillinger (tannhjulet på I dag). Der kan kontoen også slettes.</p>`;
+    <p class="muted small">Bare brukernavn, venner og timer lagres, hos Supabase i EU. Treningsloggen din blir på telefonen, med mindre du slår på skybackup under <button class="link inl" data-a="go:settings">Innstillinger</button>. Der kan kontoen også slettes.</p>`;
 }
 
 function vSxNewPw(){
@@ -5779,16 +5892,22 @@ const chatPicked = () => [...document.querySelectorAll('.ch-ck:checked')].map(x 
 const chatGo = () => { const id = ui.chGo; ui.chGo = null; if (id) chatOpen(id); };
 
 // Konto under Innstillinger
+// Konto og kopi i én gruppe: én statuslinje, så det du kan gjøre. Personvernteksten ligger bak én rad.
 function vSxAccount(){
-  return `<h3>Konto for Sammen</h3>
-    <div class="box">${auth
-      ? `<p>${SX.me ? `Innlogget som <b>@${esc(SX.me.username)}</b>` : 'Innlogget'} <span class="muted">· ${esc(auth.user.email || '')}</span></p>
+  const who = !auth ? 'Ingen konto' : SX.me ? '@' + esc(SX.me.username) : 'Innlogget';
+  const copy = syncOn() ? (SY.at ? 'skybackup lagret ' + dateFmt(SY.at) : 'skybackup på') : S.settings.exportAt ? 'siste kopi ' + dateFmt(S.settings.exportAt) : 'ingen kopi ennå';
+  return `<h3>Konto og kopi</h3>
+    <div class="box">
+      <p><b>${who}</b> <span class="muted">· ${copy}</span></p>${auth
+      ? `<p class="small muted">${esc(auth.user.email || '')}</p>
+        <div class="kbox">${vSync()}</div>
         <button class="btn ghost sm" data-a="sxlogout">Logg ut</button>
         ${ui.confirm === 'sxdelacc' ? `<p class="small">Brukernavn, venner, timer, påmeldinger, forslag, meldingene dine og skybackupen slettes for godt. Treningsloggen på telefonen beholdes.</p>
           <div class="row"><button class="btn danger sm" data-a="sxdelacc">Slett kontoen</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div>`
           : `<button class="btn danger sm" data-a="confirm:sxdelacc">Slett konto</button>`}`
-      : `<p class="muted small">Ingen konto. Konto trengs bare for Sammen, der du kan trene sammen med venner, og for skybackup.</p>`}
-      <p class="muted small">Personvern: Med konto lagres e-post, brukernavn, navn hvis du har skrevet det, venner, timer, påmeldinger, tidsforslag og chatmeldinger hos Supabase i EU (Irland). Slår du på varsler, lagres også en adresse for varsler til telefonen. Mens du har Sammen åpen eller en økt i gang, lagres når du sist var der eller krysset av, så vennene kan se at du er aktiv eller trener nå. Det kan slås av under Aktiv nå. Bare vennene dine ser timene dine, og bare de som er med i en samtale, kan lese den. Treningslogg, programmer og vekter sendes bare hvis du slår på skybackup, og bare du kan lese dem. Sletter du kontoen, slettes alt dette.</p>
+      : `<p class="small muted">Med konto kan du trene med venner i Sammen og lagre loggen i skyen, så den ikke forsvinner hvis du mister telefonen. Valgfritt og gratis.</p>
+        <button class="btn ghost sm" data-a="tab:together">Lag konto eller logg inn</button>`}
+      <details class="acc"><summary>Les om personvern</summary><p class="muted small">Med konto lagres e-post, brukernavn, navn hvis du har skrevet det, venner, timer, påmeldinger, tidsforslag og chatmeldinger hos Supabase i EU (Irland). Slår du på varsler, lagres også en adresse for varsler til telefonen. Mens du har Sammen åpen eller en økt i gang, lagres når du sist var der eller krysset av, så vennene kan se at du er aktiv eller trener nå. Det kan slås av under Aktiv nå. Bare vennene dine ser timene dine, og bare de som er med i en samtale, kan lese den. Treningslogg, programmer og vekter sendes bare hvis du slår på skybackup, og bare du kan lese dem. Sletter du kontoen, slettes alt dette.</p></details>
     </div>
     ${auth && SX.me ? `<h3>Aktiv nå</h3><div class="box">
       <label class="chk"><input type="checkbox" data-a="sxlive" ${SX.hidden ? '' : 'checked'} ${ui.sxBusy ? 'disabled' : ''}> Vis vennene når jeg er i Sammen eller trener</label>
@@ -5900,11 +6019,14 @@ document.addEventListener('click', ev => {
     case 'open': case 'go': if (r[0] !== 'settings') ui.tab = 'plan'; (ui.stack = ui.stack || []).push(ui.detail); ui.detail = r[0]; ui.confirm = null; render(); toTop(); break;
     case 'back': ui.detail = (ui.stack || []).pop() || null; ui.confirm = null; render(); toTop(); break;
     case 'activate': activate(r[0]); break;
+    case 'startmode': ui.start = {id: r[0], mode: r[1]}; render(); break;
+    case 'planall': ui.planAll = !ui.planAll; render(); break;
     case 'set': {
-      const ex = S.draft.ex[+r[0]], x = ex.sets[+r[1]];
+      const ex = S.draft.ex[+r[0]], x = ex.sets[+r[1]], was = x.d;
       if (x.am) x.d = x.d == null ? x.t : null;
       else x.d = x.d == null ? x.t : (x.d > 0 ? x.d - 1 : null);
-      if (x.d != null) startRest(ex.rest);
+      // Å rette reps på et sett som er gjort, starter ikke pausen på nytt
+      if (was == null && x.d != null) restAfter(ex.rest);
       ui.fresh = r[0] + ':' + r[1];
       save(); trainTick(); render(); wake(); break;
     }
@@ -5921,7 +6043,7 @@ document.addEventListener('click', ev => {
       } else {
         const si = e.sets.findIndex(x => x.d == null); if (si < 0) break;
         e.sets[si].d = e.sets[si].t; ui.fresh = ei + ':' + si;
-        startRest(e.rest);
+        restAfter(e.rest);
       }
       save(); trainTick(); render(); wake(); break;
     }
@@ -6162,7 +6284,7 @@ document.addEventListener('click', ev => {
     case 'cancel': ui.confirm = null; render(); break;
     case 'quit': S.active = null; dropOwnDraft(); ui.summary = null; ui.confirm = null; save(); render(); toast('Programmet er avsluttet'); break;
     case 'reset': syncOff(); S = fresh(); mergeCustom();   // kopien i skyen skal ikke overskrives av en tom logg ui.summary = null; ui.confirm = null; ui.exportText = ''; save(); ui.tab = 'plan'; ui.detail = null; ui.stack = []; render(); toast('Alle data er slettet'); break;
-    case 'export': ui.exportText = JSON.stringify(S); render(); break;
+    case 'export': S.settings.exportAt = Date.now(); save(); ui.exportText = JSON.stringify(S); render(); break;
     case 'copy': {
       const ta = $('#exportBox');
       const fallback = () => { ta.focus(); ta.select(); toast('Teksten er merket. Kopier den manuelt.'); };
@@ -6240,10 +6362,13 @@ document.addEventListener('input', ev => {
   else if (ev.target.dataset && ev.target.dataset.orm && ui.detail) {
     const p = prog(ui.detail), l = ev.target.dataset.orm, orm = parseFloat(String(ev.target.value).replace(',', '.'));
     if (!(orm > 0) || !p.derive) return;
-    document.querySelectorAll('[data-key]').forEach(inp => {
-      const k = inp.dataset.key; if (k.split('.')[0] !== l || inp.dataset.edited) return;
-      const v = p.derive(k, orm); if (v != null) inp.value = fmt(v);
-    });
+    fillStart(p, l, orm);
+  }
+  // Et sett du klarte: vekt × reps gir et anslag på 1RM, og startvektene regnes ut fra det
+  else if (ev.target.dataset && ev.target.dataset.est && ui.detail) {
+    const p = prog(ui.detail), l = ev.target.dataset.est;
+    const w = parseFloat(String(($('#est-' + l) || {}).value || '').replace(',', '.')), r = parseInt(($('#estr-' + l) || {}).value, 10) || 1;
+    if (w > 0) fillStart(p, l, e1rmOf(w, r));
   }
   else if (ev.target.dataset && ev.target.dataset.ax && ui.ax) ui.ax[ev.target.dataset.ax] = ev.target.value;
   else if (ev.target.dataset && ev.target.dataset.axres && S.draft && S.draft.cond) {
