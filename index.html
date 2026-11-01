@@ -851,7 +851,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 73;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 74;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -2897,6 +2897,23 @@ function leSet(grp, obj, key, v){
   obj[key] = obj[key] === v ? null : v;
   document.querySelectorAll(`[data-leg="${grp}"] button`).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.a.split(':').pop() === String(v) && obj[key] != null)));
 }
+// Kondisjon, Metcon og Notat under styrken: av skjuler delen. Metcon og Pete Plan tas da ut av økta, så de ikke
+// lagres eller teller i budsjettet, og et nytt trykk henter dem tilbake slik de var. Notatet skjules bare.
+function afterToggle(k){
+  const s = S.draft, af = ui.after && ui.after.k === s.started ? ui.after : (ui.after = {k: s.started}), off = s.off = s.off || {};
+  const has = {cond: !!s.pete, mc: !!(s.wod || s.metcon), note: !!(s.note || '').trim()};
+  const on = !(af[k] != null ? af[k] : has[k]);
+  af[k] = on;
+  if (k === 'mc') {
+    if (!on && (s.wod || s.metcon)) { off.mc = {wod: s.wod, metcon: s.metcon, mc: s.mc}; delete s.wod; if (!s.pete) { s.metcon = false; s.mc = undefined; } }
+    else if (on && off.mc) { if (off.mc.wod) s.wod = off.mc.wod; s.metcon = !!(off.mc.metcon || off.mc.wod); if (!s.pete) s.mc = off.mc.mc; delete off.mc; }
+  }
+  if (k === 'cond') {
+    if (!on && s.pete) { off.cond = {pete: s.pete, mc: s.mc}; delete s.pete; if (!s.wod) { s.metcon = false; s.mc = undefined; } }
+    else if (on && off.cond) { s.pete = off.cond.pete; s.metcon = true; if (!s.wod) s.mc = off.cond.mc; delete off.cond; }
+  }
+  save(); return on;
+}
 function logEditOpen(date){
   const h = S.history.find(x => x.date === date); if (!h) return;
   ui.logEdit = {date, h: clone(h)}; ui.confirm = null; render(); toTop();
@@ -3696,7 +3713,7 @@ function vToday(){
   // Etter styrken: kondisjon, metcon og notat ligger bak én rad. En del med innhold står alltid åpen.
   const af =ui.after && ui.after.k === s.started ? ui.after : (ui.after = {k: s.started});
   const has = {cond: !!s.pete, mc: !!(s.wod || s.metcon), note: !!(s.note || '').trim()};
-  const show = k => !!(af[k] || has[k]);
+  const show = k => af[k] != null ? af[k] : has[k];   // et trykk overstyrer, ellers står en del med innhold åpen
   const parts = [peteOn() || s.pete ? ['cond', 'Kondisjon'] : null, ['mc', 'Metcon'], ['note', 'Notat']].filter(Boolean);
   h += `<section class="box after"><span class="lbl">${s.ex.length ? 'Etter styrken' : 'Mer i økta'}</span>
       <div class="after-add">${parts.map(([k, n]) => `<button class="tog" data-a="after:${k}" aria-pressed="${show(k)}">${show(k) ? n : '+ ' + n}</button>`).join('')}</div></section>`;
@@ -6097,7 +6114,7 @@ document.addEventListener('click', ev => {
     }
     case 'planclose': ui.plan = null; render(); toTop(); break;
     case 'metcon': S.draft.metcon = !S.draft.metcon; save(); render(); break;
-    case 'after': { const af = ui.after = ui.after || {}; af[r[0]] = !af[r[0]]; render(); if (af[r[0]] && r[0] === 'note') $('#note').focus(); break; }
+    case 'after': { const on = afterToggle(r[0]); render(); if (on && r[0] === 'note') $('#note').focus(); break; }
     case 'mct': mcOf(r[0]).type = r[1]; if (r[0] === 'session') save(); render(); break;
     case 'mcr': mcOf(r[0]).rpe = +r[1]; if (r[0] === 'session') save(); render(); break;
     case 'keepdl': ui.keepDl = r[0]; render(); break;
