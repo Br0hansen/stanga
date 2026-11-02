@@ -89,6 +89,9 @@ body{height:100%;overflow:hidden;
   /* iOS oppgir av og til en altfor stor bunnsone i hjemskjerm-apper. 34 px er hjemmelinjen på iPhone. */
   padding-bottom:min(env(safe-area-inset-bottom,0px),34px)}
 .stage{flex:1 1 auto;min-height:0;position:relative}
+/* Tastaturet er oppe i en samtale: skallet følger den synlige delen av skjermen, uten faner og bunnsone */
+.app.kb{padding-bottom:0}
+.app.kb .tabs{display:none}
 .scroller{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain}
 button{font-family:inherit;touch-action:manipulation}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -873,7 +876,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 85;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 86;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -6641,6 +6644,27 @@ fitViewport();
 addEventListener('resize', () => scheduleFit());
 if (window.visualViewport) visualViewport.addEventListener('resize', () => scheduleFit());
 addEventListener('orientationchange', () => scheduleFit(400));
+
+/* Chat med tastaturet oppe: telefonen skyver hele siden opp for å vise feltet, og da forsvinner toppen.
+   I stedet krymper vi app-skallet til den synlige delen over tastaturet, så «‹ Chat» og navnet står
+   øverst og skrivefeltet rett over tastaturet. Fanene skjules så lenge, for å gi plass til meldingene. */
+function kbFit(){
+  const vv = window.visualViewport, app = document.querySelector('.app');
+  if (!vv || !app) return;
+  const on = ui.tab === 'together' && /^c:/.test(ui.sxView || '') && isTyping() && matchMedia('(pointer:coarse)').matches;
+  const was = app.classList.contains('kb');
+  if (on) {
+    app.classList.add('kb');
+    app.style.top = vv.offsetTop + 'px'; app.style.height = vv.height + 'px'; app.style.bottom = 'auto';
+    if (!was) chatBottom();   // de nyeste meldingene står rett over feltet
+  } else if (was) {
+    app.classList.remove('kb');
+    app.style.top = ''; app.style.height = ''; app.style.bottom = ui.gapFix ? (-ui.gapFix) + 'px' : '';
+  }
+}
+if (window.visualViewport) { visualViewport.addEventListener('resize', kbFit); visualViewport.addEventListener('scroll', kbFit); }
+document.addEventListener('focusin', () => { kbFit(); setTimeout(kbFit, 300); });
+document.addEventListener('focusout', () => setTimeout(kbFit, 50));
 document.addEventListener('focusout', () => scheduleFit(350));   // tastaturet lukkes
 
 document.addEventListener('input', ev => {
