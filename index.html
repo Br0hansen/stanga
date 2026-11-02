@@ -320,8 +320,8 @@ textarea:focus{border-color:var(--accent);outline:none}
 .rest-bar i{position:absolute;left:0;top:0;bottom:0;width:var(--lvl,0%);background:var(--ink);transition:width .25s linear}
 .stage[data-clock] .rest-bar{visibility:visible}
 .stage[data-clock] .ex.now .kg small{color:var(--ink)}
-/* Under pausen: neste vekt stort ved siden av klokka, med «Neste» over og kg × reps under */
-.stage[data-clock] #kgU{display:grid;gap:3px;align-self:flex-end;min-width:0}
+/* Under pausen: neste vekt stort helt til høyre i arket, med «Neste» over og kg × reps under */
+.stage[data-clock] #kgU{display:grid;gap:3px;align-self:flex-end;min-width:0;margin-left:auto;justify-items:end;text-align:right}
 .stage[data-clock] #kgU .nx-l{font:600 12px/1 var(--face);letter-spacing:.08em;text-transform:uppercase;color:var(--chalk-2)}
 .stage[data-clock] #kgU b{font:800 48px/.85 var(--face);font-stretch:62%;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 .stage[data-clock] #kgU>span:last-child{font-size:16px}
@@ -873,7 +873,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 83;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 84;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
