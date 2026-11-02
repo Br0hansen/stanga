@@ -873,7 +873,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 84;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 85;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -2163,7 +2163,10 @@ function progressSP(p, a, s){
 // Under 60 kg er hoppene så små at 80 % holder. Kort oppvarming er to sett, det siste på ca. 85 %.
 // Repsene synker mot toppen, så oppvarmingen ikke sliter deg ut før arbeidssettene.
 // Markløft starter ikke med tom stang, fordi stanga ligger for lavt uten skiver.
+// Oppvarmingsvektene rundes til nærmeste 5 kg per side (10 kg på stanga), så du slipper småskiver.
+// Arbeidsvektene rundes ikke.
 // slot er plassen i programmet (f.eks. 'deadlift' også når du har byttet til sumo).
+const wuRound = x => BAR() + Math.round((x - BAR()) / 10) * 10;
 function warmups(slot, W, reps, kind){
   const near = W >= 60 ? [[.9,1]] : [];
   const steps = kind === 'short' ? [[.6,5],[.85,1]]
@@ -2172,7 +2175,7 @@ function warmups(slot, W, reps, kind){
     : [[0,10],[.45,5],[.65,3],[.8,2]].concat(near);
   const out = [];
   steps.forEach(([f,r]) => {
-    const w = Math.max(BAR(), f ? r25(W*f) : BAR());
+    const w = Math.max(BAR(), f ? wuRound(W*f) : BAR());
     if (w >= W || (out.length && out[out.length-1][0] >= w)) return;
     out.push([w, r]);
   });
