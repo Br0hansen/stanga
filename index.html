@@ -876,7 +876,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 86;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 87;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -3668,8 +3668,8 @@ function peteBox(ctx, picked){
       <div><span>Arbeid</span><b>${min != null ? min + ' min' : '–'}</b><span>ca.</span></div>
     </div>
     <p class="small muted">Mål fra ${t.src}${ref.split && !/testet|beregnet/.test(t.src) ? '. ' + refLine(mach) : ref.split ? ': ' + refLine(mach).replace(/^(Beregnet|Testet) [24]K: /, '') : ''}</p>
-    ${!ref.split ? `<div class="field"><label for="ppRef-${ctx}">${PETE_REF[mach]}<small class="muted">Referansetid gir målfart</small></label>
-      <span class="inp"><input id="ppRef-${ctx}" data-ppref="${mach}" type="text" inputmode="decimal" placeholder="${mach === 'bike' ? '6:40' : '7:20'}"></span></div>` : ''}
+    ${!ref.split ? `<div class="field"><span class="whl-l">${PETE_REF[mach]}<small class="muted">Referansetid gir målfart</small></span>
+      <button class="whl-btn" data-a="ppw:${mach}" aria-label="Testet tid, ${PETE_REF[mach]}: ikke satt. Trykk for å velge">–:––</button></div>` : ''}
     <p class="small muted">${peteNote(ss.kind)}</p>
     ${picked ? `${dragMeters(ss) ? `<div class="seg pp-unit" role="group" aria-label="Hva skriver du inn?">
         <button data-a="pp:unit:${ctx}:split" aria-pressed="${unit === 'split'}">Snittfart</button>
@@ -4255,8 +4255,8 @@ function vPeteSettings(){
           <button data-a="pp:ver:str" aria-pressed="${set.ver === 'str'}">Tilpasset styrke</button>
           <button data-a="pp:ver:orig" aria-pressed="${set.ver === 'orig'}">Original</button></div>
         <p class="small muted">${set.ver === 'str' ? 'Tilpasset styrke er vår egen tilpasning: samme intervaller, men rolige økter på 6 km og hard distanse på 5 km, så kondisjonen ikke tar for mye av restitusjonen.' : 'Originalen har 15 km og 8 km rolig og 10 km hardt. Det kan bli rundt en time per økt.'}</p>
-        <div style="display:grid">${Object.keys(PETE_MACH).map(m => `<div class="field"><label for="ppSet-${m}">${PETE_REF[m]}${refLine(m) ? `<small class="muted">Brukes nå: ${refLine(m).charAt(0).toLowerCase() + refLine(m).slice(1)}</small>` : ''}</label>
-          <span class="inp"><input id="ppSet-${m}" data-ppref="${m}" type="text" inputmode="decimal" placeholder="${m === 'bike' ? '6:40' : '7:20'}" value="${set.ref[m] ? splitTxt(set.ref[m]) : ''}"></span></div>`).join('')}</div>
+        <div style="display:grid">${Object.keys(PETE_MACH).map(m => `<div class="field"><span class="whl-l">${PETE_REF[m]}${refLine(m) ? `<small class="muted">Brukes nå: ${refLine(m).charAt(0).toLowerCase() + refLine(m).slice(1)}</small>` : ''}</span>
+          <button class="whl-btn" data-a="ppw:${m}" aria-label="Testet tid, ${PETE_REF[m]}: ${set.ref[m] ? splitTxt(set.ref[m]) : 'ikke satt'}. Trykk for å endre">${set.ref[m] ? splitTxt(set.ref[m]) : '–:––'}</button></div>`).join('')}</div>
         <p class="small muted">Feltene er testet tid. Etter intervalløkter og hard distanse regner appen baklengs og anslår 2K-tiden din (medianen av de tre siste fra seks uker). En ny testet tid går foran til nyere økter gir et nytt anslag.</p>
         <p class="small muted">Neste økt: ${ss.name} (${PETE_KIND[ss.kind].toLowerCase()}), økt ${(P.idx || 0) % PETE.length + 1} av ${PETE.length} i runde ${Math.floor((P.idx || 0) / PETE.length) + 1}.</p>
         ${ui.confirm === 'ppreset' ? `<div class="row"><button class="btn danger sm" data-a="pp:reset">Ja, start på nytt</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div>`
@@ -4455,7 +4455,10 @@ function render(){
   else if (ui.tab === 'together') h += vTogether();
   else if (ui.tab === 'log') h += vLog();
   else h += vPlanTab();
+  // Hjulet for testet tid i Pete Plan legges over siden det ble åpnet fra, og glemmes når du går et annet sted
+  if (ui.whl && ui.whl.bi === 'pp') { if (ui.whl.at === ui.tab + '/' + ui.detail) h += whlHTML(); else ui.whl = null; }
   paint(h);
+  if (ui.whl && ui.whl.bi === 'pp') whlInit();
   const inChat = ui.tab === 'together' && /^c:/.test(ui.sxView || '');
   $('#view').classList.toggle('chat', inChat);
   if (inChat) chatBottom();   // i en samtale står de nyeste meldingene nederst
@@ -4904,7 +4907,7 @@ function ckRender(){
   if (ui.clockView === 'run' && CK.done) ui.clockView = 'end';
   if (ui.clockView === 'setup' && !ui.ckCfg) ui.ckCfg = ckDefault(ui.ckCtx);
   el.hidden = !ui.clockView;
-  if (ui.clockView !== 'setup') ui.whl = null;
+  if (ui.clockView !== 'setup' && ui.whl && ui.whl.bi !== 'pp') ui.whl = null;
   el.innerHTML = ui.clockView === 'setup' ? ckSetupHTML() : ui.clockView === 'run' ? ckRunHTML() : ui.clockView === 'end' ? ckEndHTML() : '';
   whlInit(); ckBar();
 }
@@ -4926,6 +4929,7 @@ function ckSumHTML(c){
 const WHL_H = 44;
 const ckRange = (a, z) => Array.from({length: z - a + 1}, (_, i) => a + i);
 function whlSpec(bi, k){
+  if (bi === 'pp') return ppWhlSpec(k);
   const c = ui.ckCfg, b = bi === 'g' ? null : c.b[bi];
   if (k === 'rep') return {lbl:'Gjenta alt', cols:[{vals: ckRange(1, 10), unit:'ganger'}], get: () => [c.rep || 1], set: v => { c.rep = v[0]; }};
   if (k === 'n') return {lbl:'Runder', cols:[{vals: ckRange(1, 100), unit:'runder'}], get: () => [b.n], set: v => { b.n = v[0]; }};
@@ -4935,7 +4939,19 @@ function whlSpec(bi, k){
     cols: [{vals: ckRange(0, long ? 99 : 59), unit:'min'}, {vals: ckRange(0, 59), unit:'sek', pad: true}],
     get: () => [Math.floor((b[k] || 0) / 60), (b[k] || 0) % 60], set: v => { b[k] = v[0] * 60 + v[1]; }};
 }
+/* Testet tid i Pete Plan (2000 m, sykkel 4000 m) stilles på det samme hjulet: minutter og sekunder.
+   Hjulet starter på tiden som brukes nå. Verdien lagres først når hjulet lukkes, og bare hvis den er endret,
+   så en testet tid med tideler (7:20.4) står som den er hvis du bare ser på den. */
+const ppWhlStart = m => { const set = S.settings.pete, r = peteRef(m);
+  return set.ref[m] || (r.split ? Math.round(refTime(r.split, m)) : m === 'bike' ? 400 : 440); };
+const ppWhlSec = m => ui.whl && ui.whl.bi === 'pp' && ui.whl.k === m && ui.whl.v != null ? ui.whl.v : ppWhlStart(m);
+function ppWhlSpec(m){
+  return {lbl: PETE_REF[m], time: true, cols: [{vals: ckRange(4, 15), unit:'min'}, {vals: ckRange(0, 59), unit:'sek', pad: true}],
+    get: () => { const t = Math.round(ppWhlSec(m)); return [Math.floor(t / 60), t % 60]; },
+    set: v => { ui.whl.v = v[0] * 60 + v[1]; }};
+}
 function whlTxt(bi, k){
+  if (bi === 'pp') return splitTxt(ppWhlSec(k));
   const sp = whlSpec(bi, k), v = sp.get();
   if (!sp.time) return String(v[0]) + (k === 'rep' ? ' ×' : '');
   const sec = v[0] * 60 + v[1];
@@ -4945,10 +4961,10 @@ const whlBtn = (bi, k, hint) => { const sp = whlSpec(bi, k), t = whlTxt(bi, k);
   return `<div class="field"><span class="whl-l">${sp.lbl}${hint ? `<small class="muted">${hint}</small>` : ''}</span>
     <button class="whl-btn" data-a="ck:whl:${bi}:${k}" aria-label="${sp.lbl}: ${t}. Trykk for å endre">${t}</button></div>`; };
 function whlHTML(){
-  const {bi, k} = ui.whl, sp = whlSpec(bi, k);
-  return `<div class="whl-back" data-a="ck:whlok"></div>
+  const {bi, k} = ui.whl, sp = whlSpec(bi, k), ok = bi === 'pp' ? 'ppok' : 'ck:whlok';
+  return `<div class="whl-back" data-a="${ok}"></div>
   <div class="whl-sheet" role="dialog" aria-label="${sp.lbl}">
-    <div class="whl-head"><span class="lbl">${sp.lbl}</span><b id="whlVal">${whlTxt(bi, k)}</b><button class="link" data-a="ck:whlok">Ferdig</button></div>
+    <div class="whl-head"><span class="lbl">${bi === 'pp' ? 'Testet tid' : sp.lbl}</span><b id="whlVal">${whlTxt(bi, k)}</b><button class="link" data-a="${ok}">Ferdig</button></div>
     <div class="whl">${sp.cols.map((c, ci) => `<div class="whl-c"><div class="whl-col" data-ci="${ci}" tabindex="0" role="listbox" aria-label="${c.unit}">
       <div class="whl-list">${c.vals.map(v => `<div class="whl-it" role="option">${c.pad ? String(v).padStart(2, '0') : v}</div>`).join('')}</div>
       </div><span class="whl-u">${c.unit}</span></div>`).join('')}<i class="whl-band" aria-hidden="true"></i></div>
@@ -4977,11 +4993,11 @@ function whlPos(col, pos){
   if (i === st.i) return;
   st.i = i; whlMark(col, i);
   if (navigator.vibrate) try { navigator.vibrate(4); } catch(e) {}
-  if (!ui.whl || !ui.ckCfg) return;
+  if (!ui.whl || (ui.whl.bi !== 'pp' && !ui.ckCfg)) return;
   const sp = whlSpec(ui.whl.bi, ui.whl.k);
   sp.set([...document.querySelectorAll('.whl-col')].map((c, j) => sp.cols[j].vals[WHL.get(c).i]));
   const v = $('#whlVal'); if (v) v.textContent = whlTxt(ui.whl.bi, ui.whl.k);
-  const sum = $('#ckSum'); if (sum) sum.innerHTML = ckSumHTML(ui.ckCfg);
+  const sum = ui.whl.bi !== 'pp' && $('#ckSum'); if (sum) sum.innerHTML = ckSumHTML(ui.ckCfg);
 }
 // Glid til rad i: raskt og mykt på slutten, lengre glid tar litt lengre tid
 function whlGo(col, i, anim){
@@ -5069,7 +5085,7 @@ function ckSetupHTML(){
     </section>
     <section class="box" id="ckSum">${ckSumHTML(c)}</section>
     ${mine ? '<button class="btn ck-start" data-a="ck:keep">Bruk dette oppsettet</button>' : `<button class="btn ck-start" data-a="ck:start">${playSVG}Start</button>`}
-  </div>${ui.whl ? whlHTML() : ''}`;
+  </div>${ui.whl && ui.whl.bi !== 'pp' ? whlHTML() : ''}`;
 }
 function ckRunHTML(){
   const s = ckNow(), f = ckFace(s), b = s.b, paused = !!CK.pausedAt;
@@ -6494,6 +6510,16 @@ document.addEventListener('click', ev => {
       else if (cmd === 'reset') { S.pete = {idx:0, targets:S.pete.targets || {}, pb:S.pete.pb || {}}; ui.confirm = null; toast('Planen starter på økt 1. Målene dine er beholdt.'); }
       save(); render(); break;
     }
+    // Testet tid i Pete Plan: hjulet åpnes, og tiden lagres når det lukkes
+    case 'ppw': ui.whl = {bi:'pp', k:r[0], v:null, at: ui.tab + '/' + ui.detail}; render(); break;
+    case 'ppok': {
+      const w = ui.whl; ui.whl = null;
+      if (w && w.bi === 'pp' && w.v != null && w.v !== S.settings.pete.ref[w.k]) {
+        S.settings.pete.ref[w.k] = w.v; S.settings.pete.refAt = Object.assign({}, S.settings.pete.refAt, {[w.k]: Date.now()}); save();
+        toast('Testet tid lagret. Den brukes til nyere økter gir et nytt anslag.');
+      }
+      render(); break;
+    }
     case 'wodrm':
       // Metconen fra programmet kan byttes: da nullstilles også minuttene og typen planen fylte inn, så en ny metcon får sine egne
       if (r[0] === 'session' && S.draft) { delete S.draft.wod; if (S.draft.mc && S.draft.mc.auto) { S.draft.mc = {}; S.draft.metcon = false; } save(); } else ui.freeWod = null;
@@ -6721,12 +6747,6 @@ document.addEventListener('change', ev => {
     const v = parseFloat(String(ev.target.value).replace(',', '.'));
     if (v > 0 && v < 500) { S.maxes[ev.target.dataset.gmax] = v; save(); render(); toast('1RM i ' + liftName(ev.target.dataset.gmax).toLowerCase() + ' er lagret'); }
     else if (ev.target.value.trim()) fieldErr(ev.target, 'Skriv 1RM som et tall, for eksempel 82,5', true);
-    return;
-  }
-  if (ev.target.dataset && ev.target.dataset.ppref) {
-    const sec = parseSplit(ev.target.value), m = ev.target.dataset.ppref;
-    if (sec && sec > 60) { S.settings.pete.ref[m] = sec; S.settings.pete.refAt = Object.assign({}, S.settings.pete.refAt, {[m]: Date.now()}); save(); render(); toast('Testet tid lagret. Den brukes til nyere økter gir et nytt anslag.'); }
-    else if (ev.target.value.trim()) toast('Skriv tiden som minutter:sekunder, f.eks. 7:20');
     return;
   }
   if (ev.target.dataset && ev.target.dataset.bf) { ui.bf[ev.target.dataset.bf] = ev.target.value; ui.bankN = 30; render(); return; }
