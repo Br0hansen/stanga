@@ -320,6 +320,11 @@ textarea:focus{border-color:var(--accent);outline:none}
 .rest-bar i{position:absolute;left:0;top:0;bottom:0;width:var(--lvl,0%);background:var(--ink);transition:width .25s linear}
 .stage[data-clock] .rest-bar{visibility:visible}
 .stage[data-clock] .ex.now .kg small{color:var(--ink)}
+/* Under pausen: neste vekt stort ved siden av klokka, med «Neste» over og kg × reps under */
+.stage[data-clock] #kgU{display:grid;gap:3px;align-self:flex-end;min-width:0}
+.stage[data-clock] #kgU .nx-l{font:600 12px/1 var(--face);letter-spacing:.08em;text-transform:uppercase;color:var(--chalk-2)}
+.stage[data-clock] #kgU b{font:800 48px/.85 var(--face);font-stretch:62%;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.stage[data-clock] #kgU>span:last-child{font-size:16px}
 .stage[data-clock][data-rest="warn"] #kgN{color:var(--red)}
 .stage[data-clock][data-rest="warn"] .rest-bar i{background:var(--red)}
 .stage[data-clock]:not([data-rest="over"]) .rest-r1>b,.stage[data-clock] .ruler{display:none}
@@ -860,7 +865,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 81;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 82;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -2146,15 +2151,17 @@ function progressSP(p, a, s){
 
 // Oppvarming (teller ikke som arbeidssett): stiger mot dagens første arbeidsvekt.
 // kind 'full' = hovedløft. kind 'short' = sekundærøvelse eller løft senere i økta, når kroppen er varm.
-// Er første arbeidssett 1–2 reps, legges det til en single på ca. 90 %.
+// Siste oppvarmingssett er en single på ca. 90 %, så hoppet til arbeidsvekten er lite.
+// Under 60 kg er hoppene så små at 80 % holder. Kort oppvarming er to sett, det siste på ca. 85 %.
+// Repsene synker mot toppen, så oppvarmingen ikke sliter deg ut før arbeidssettene.
 // Markløft starter ikke med tom stang, fordi stanga ligger for lavt uten skiver.
 // slot er plassen i programmet (f.eks. 'deadlift' også når du har byttet til sumo).
 function warmups(slot, W, reps, kind){
-  const single = reps <= 2 && W >= 60 ? [[.9,1]] : [];
-  const steps = kind === 'short' ? [[.5,5],[.75,3]]
-    : ['clean','snatch','cj'].includes(slot) ? [[0,5],[.4,3],[.55,2],[.7,1],[.8,1]]
-    : slot === 'deadlift' ? [[.5,5],[.65,3],[.8,2]].concat(single)
-    : [[0,10],[.45,6],[.65,4],[.8,2]].concat(single);
+  const near = W >= 60 ? [[.9,1]] : [];
+  const steps = kind === 'short' ? [[.6,5],[.85,1]]
+    : ['clean','snatch','cj'].includes(slot) ? [[0,5],[.4,3],[.55,2],[.7,1],[.8,1],[.9,1]]
+    : slot === 'deadlift' ? [[.5,5],[.65,3],[.8,2]].concat(near)
+    : [[0,10],[.45,5],[.65,3],[.8,2]].concat(near);
   const out = [];
   steps.forEach(([f,r]) => {
     const w = Math.max(BAR(), f ? r25(W*f) : BAR());
@@ -4480,7 +4487,8 @@ const mmss = s => Math.floor(s/60) + ':' + String(Math.floor(s % 60)).padStart(2
 function sheetClock(t){
   const n = $('#kgN'), u = $('#kgU'), stage = document.querySelector('.stage');
   if (!n || !u) { delete stage.dataset.clock; return; }
-  if (t) { stage.dataset.clock = '1'; n.textContent = t; u.textContent = 'neste ' + n.dataset.w + ' ' + u.dataset.u; }
+  // Neste vekt står stort ved siden av klokka, så du ser hva stanga skal ha mens du laster
+  if (t) { stage.dataset.clock = '1'; n.textContent = t; u.innerHTML = `<span class="nx-l">Neste</span><b>${n.dataset.w}</b><span>${u.dataset.u}</span>`; }
   else { delete stage.dataset.clock; n.textContent = n.dataset.w; u.textContent = u.dataset.u; }
 }
 function updateRest(){
