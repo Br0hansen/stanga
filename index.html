@@ -706,6 +706,14 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .ch-msg.me{align-self:flex-end;border-radius:14px 3px 14px 14px;color:var(--pen)}
 .wrap.chat{padding-bottom:0;display:flex;flex-direction:column;min-height:100%}
 .wrap.chat>.link{align-self:flex-start}
+/* Toppen av samtalen står fast mens du ruller, som skrivefeltet nederst */
+.wrap.chat{padding-top:0}
+.wrap.chat>.warn:first-child{margin-top:20px}
+.ch-top{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:6px 14px;flex-wrap:wrap;background:var(--iron);margin:0 -12px;padding:8px 12px 10px;border-bottom:1px solid var(--line)}
+.ch-top>.link{min-height:44px;padding:0 4px 0 0;flex:none}
+.ch-top .ch-head{flex:1 1 180px;min-width:0}
+.ch-top .ch-head h2{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ch-top .ch-head p{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wrap.chat .ch-msgs{flex:1;justify-content:flex-end}
 .ch-compose{position:sticky;bottom:0;display:flex;gap:8px;align-items:center;background:var(--iron);margin:0 -12px;padding:10px 12px 12px;border-top:1px solid var(--line)}
 .ch-compose .txt{flex:1;min-width:0;background:var(--iron-2);border:1px solid var(--line);border-radius:4px;color:var(--chalk);font:16px var(--face);padding:11px 14px}
@@ -865,7 +873,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 82;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 83;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -6045,8 +6053,9 @@ function vSxChat(cid){
     ? `<button class="quick" style="border-color:var(--miss);color:var(--miss)" data-a="chleave:${c.id}">Ja, forlat</button><button class="quick" data-a="cancel">Nei</button>`
     : `<button class="quick" data-a="confirm:chl:${c.id}">Forlat gruppen</button>`);
   if (c.kind === 'session' && SX.sess.some(s => s.id === c.session_id)) acts.push(`<button class="quick" data-a="sxopen:${c.session_id}">Se timen</button>`);
-  return `<button class="link" data-a="sxtab:chat">‹ Chat</button>
-    <header class="ch-head">${chatAv(c)}<div><h2>${esc(chatName(c))}</h2>${sub ? `<p class="muted small">${esc(sub)}</p>` : ''}</div></header>
+  // Tilbakeknappen og navnet står fast øverst, så du kommer tilbake uten å rulle helt opp
+  return `<div class="ch-top"><button class="link" data-a="sxtab:chat">‹ Chat</button>
+    <header class="ch-head">${chatAv(c)}<div><h2>${esc(chatName(c))}</h2>${sub ? `<p class="muted small">${esc(sub)}</p>` : ''}</div></header></div>
     ${acts.length ? `<div class="sx-acts" style="flex-wrap:wrap">${acts.join('')}</div>` : ''}
     <div id="chatMsgs" class="ch-msgs">${chatMsgsHTML()}</div>
     <div class="ch-compose"><input id="chIn" class="txt" type="text" maxlength="1000" enterkeyhint="send" autocomplete="off" placeholder="Skriv en melding" aria-label="Melding" value="${esc(ui.chDraft || '')}">
