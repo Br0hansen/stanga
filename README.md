@@ -27,6 +27,8 @@ Skriften er Archivo, en familie i flere bredder.
 
 All tekst har minst 4,5:1 i kontrast mot arket, og kanten på settrutene minst 3:1. Fargene står som `:root[data-theme="…"]` øverst i CSS-en, og listen over temaer er `LOOKS` i skriptet. Valget lagres i `S.settings.theme` og følger med i skybackup. En kopi i `stanga.theme` leses i `<head>`, så riktig tema vises før resten av appen er lastet.
 
+**Tastatur og skjermleser:** Når en ny side åpnes, får overskriften fokus. Ellers blir fokus stående på knappen eller feltet du brukte, også når skjermen tegnes på nytt. Meldinger nederst på skjermen leses opp. Feil i et felt står rett under feltet og forsvinner når du skriver. Innlogging og nytt passord sendes med Enter eller «Gå» på tastaturet.
+
 Appen har fire faner: **I dag** (dagens økt), **Program**, **Fremgang** og **Sammen**. **Innstillinger** åpnes med tannhjulet øverst til høyre på I dag.
 
 ## I økta

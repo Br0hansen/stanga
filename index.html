@@ -109,7 +109,10 @@ button{font-family:inherit;touch-action:manipulation}
 .eyebrow{font:500 13px/1.3 var(--face);color:var(--chalk-2);margin:0}
 h1{font:700 32px/1 var(--face);font-stretch:85%;letter-spacing:-.01em;margin:0;text-wrap:balance}
 h2{font:700 20px/1.15 var(--face);margin:0;text-wrap:balance}
-h3{font:600 13px/1.3 var(--face);color:var(--chalk-2);margin:10px 0 -4px}
+/* Seksjonsoverskrift: h2 for skjermleseren, liten og grå på skjermen */
+h2.sec{font:600 13px/1.3 var(--face);color:var(--chalk-2);margin:10px 0 -4px}
+/* Overskriften får fokus når en ny side åpnes (se toTop). Den er ikke en knapp, så den trenger ingen ring. */
+h1[tabindex="-1"]:focus{outline:none}
 p{margin:0}
 .muted{color:var(--chalk-2)}
 .small{font-size:14px}
@@ -233,7 +236,7 @@ p{margin:0}
 .box{padding:16px;display:grid;gap:10px}
 .days{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
 .day{padding:12px;display:grid;gap:6px}
-.day h4{margin:0;font:700 16px/1.1 var(--face)}
+.day h3{margin:0;font:700 16px/1.1 var(--face)}
 .day div{font-size:14px;display:flex;justify-content:space-between;gap:8px}
 .day div span{color:var(--chalk-2);font-variant-numeric:tabular-nums;white-space:nowrap}
 .day b{color:var(--ink-2);font-size:12px;margin-right:4px}
@@ -285,6 +288,11 @@ p{margin:0}
 textarea{width:100%;min-height:110px;background:var(--iron);border:1px solid var(--line);border-radius:3px;color:var(--chalk);font:16px/1.4 ui-monospace,Menlo,monospace;padding:10px;resize:vertical}
 textarea:focus{border-color:var(--accent);outline:none}
 .warn{padding:12px 14px;font-size:14px;color:var(--red)}
+/* Feil i et felt: rød kant og teksten rett under feltet (se fieldErr) */
+[aria-invalid="true"]{border-color:var(--miss)!important}
+.ferr{margin:0;font-size:14px;color:var(--miss);flex:1 1 100%}
+/* Bare for skjermleseren */
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 
 .empty{display:grid;gap:14px;padding:28px 0}
 .empty .bar{height:6px;width:120px;background:var(--chalk-3);border-radius:2px;position:relative;margin:8px 0 6px 18px}
@@ -831,7 +839,8 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
   </div></div>
   <div class="rest ckbar" id="ckBar" hidden></div>
 </div>
-<div class="toast" id="toast" hidden></div>
+<div class="toast" id="toast" aria-hidden="true" hidden></div>
+<div class="sr-only" id="live" role="status" aria-live="polite"></div>
 <div class="clk" id="clk" hidden></div>
 <nav class="tabs" aria-label="Faner"><div class="tabs-in">
   <button class="tab" data-a="tab:today"><svg viewBox="0 0 24 24"><path d="M2 12h20M5 8v8M8 6v12M16 6v12M19 8v8"/></svg>I dag</button>
@@ -851,7 +860,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 80;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 81;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -1816,14 +1825,14 @@ function axSetup(other, isActive){
   const lift = (L, n) => `<div class="field"><label for="ax-${L}">${n}</label><span class="ax-two">
       <span class="inp"><input id="ax-${L}" data-ax="${L}Kg" type="text" inputmode="decimal" value="${esc(f[L + 'Kg'])}" placeholder="–">kg</span>
       <span class="inp">×<input class="sm" data-ax="${L}R" type="text" inputmode="numeric" value="${esc(f[L + 'R'])}" aria-label="Reps i ${n.toLowerCase()}"></span></span></div>`;
-  return `<h3>Stevnet</h3>
+  return `<h2 class="sec">Stevnet</h2>
     <div class="box" style="gap:0">
       <div class="field"><label for="ax-ev">Stevne</label><select id="ax-ev" data-axsel="ev">${evs.map(([i, e]) =>
         `<option value="${i}"${f.ev === String(i) ? ' selected' : ''}>${e[1]} · ${axDateTxt(e[0])}</option>`).join('')}<option value=""${f.ev === '' ? ' selected' : ''}>Egen dato</option></select></div>
       ${f.ev === '' ? `<div class="field"><label for="ax-date">Dato</label><span class="inp"><input id="ax-date" type="date" data-axsel="date" value="${esc(f.date)}"></span></div>` : ''}
     </div>
     <p class="muted small">${N >= 1 ? `Planen blir ${N} ${N === 1 ? 'uke' : 'uker'}: ${axCount(W).map(([ph, n]) => AX_PH[ph] + ' ' + n).join(', ')}.${N < 5 ? ' Det er kort tid, så planen er bare spesifikk trening og nedtrapping.' : ''}` : 'Velg en dato fram i tid.'}</p>
-    <h3>Klasse</h3>
+    <h2 class="sec">Klasse</h2>
     <div class="box">
       ${seg('cls', [['LITE','LITE'],['ATHX','ATHX'],['PRO','PRO']])}
       ${seg('form', [['ind','Individuell'],['par','Par']])}
@@ -1833,11 +1842,11 @@ function axSetup(other, isActive){
         f.cls === 'LITE' ? ' LITE finnes bare for par.' : ''}${f.div === 'mixed' ? ' I mixed bruker hver utøver vektene for sitt kjønn.' : ''}${
         f.form === 'par' ? ' Øktene er for én person. Trener dere sammen, deler dere repsene.' : ''}</p>
     </div>
-    <h3>Økter per uke</h3>
+    <h2 class="sec">Økter per uke</h2>
     <div class="box">${seg('per', [['4','4 (anbefalt)'],['3','3 (minimum)']])}
       <p class="small muted">${f.per === '3' ? 'Med tre økter faller den rolige løpeturen bort, og S2OH-teknikken flyttes til markløftdagen. Løpingen får mindre fremgang.'
         : 'Fire økter gir to løpeøkter i uka: én med intervaller og én rolig. Den rolige ligger før markløftdagen.'}</p></div>
-    <h3>Det du vet fra før</h3>
+    <h2 class="sec">Det du vet fra før</h2>
     <div class="box" style="gap:0">
       ${lift('s2oh', 'Shoulder to overhead')}${lift('squat', 'Knebøy')}${lift('deadlift', 'Markløft')}
       <div class="field"><label for="ax-km">Løp, distanse</label><span class="inp"><input id="ax-km" data-ax="runKm" type="text" inputmode="decimal" value="${esc(f.runKm)}">km</span></div>
@@ -1941,8 +1950,8 @@ function doSwap(slot){
   const W = parseFloat(String(($('#swW') || {}).value || '').replace(',', '.'));
   if (B === '__new') {
     const nm = String(($('#swName') || {}).value || '').replace(/[<>&"]/g, '').trim().slice(0, 40);
-    if (!nm) { toast('Skriv inn et navn på øvelsen'); return; }
-    if (!(W > 0)) { toast('Skriv inn en vekt for ' + nm.toLowerCase()); return; }
+    if (!nm) { fieldErr($('#swName'), 'Skriv inn et navn på øvelsen'); return; }
+    if (!(W > 0)) { fieldErr($('#swW'), 'Skriv inn en vekt for ' + nm.toLowerCase()); return; }
     const id = 'c_' + Date.now().toString(36);
     S.custom = S.custom || {};
     S.custom[id] = {n: nm, bar: ($('#swBar') || {}).checked ? 1 : 0, alt: slot};
@@ -1950,7 +1959,7 @@ function doSwap(slot){
     B = ui.swapSel.lift = id;
   }
   if (refValue(p, a, B) == null) {
-    if (!(W > 0)) { toast('Skriv inn en vekt for ' + liftName(B).toLowerCase()); return; }
+    if (!(W > 0)) { fieldErr($('#swW'), 'Skriv inn en vekt for ' + liftName(B).toLowerCase()); return; }
     const k = W / refValue(p, a, A);
     Object.keys(a.lifts).forEach(key => {
       if (key !== A && !key.startsWith(A + '.')) return;
@@ -1971,7 +1980,7 @@ function doSwap(slot){
 function swapRows(p, a){
   const slots = slotsOf(p);
   if (!slots.length) return '';
-  return `<h3>Løft i programmet</h3><div class="box" style="gap:0">${slots.map(slot => {
+  return `<h2 class="sec">Løft i programmet</h2><div class="box" style="gap:0">${slots.map(slot => {
     const cur = sw(a, slot), sel = ui.swapSel && ui.swapSel.slot === slot ? ui.swapSel.lift : cur;
     let h = `<div class="field"><label for="sw-${slot}">${liftName(slot)}</label>
       <select id="sw-${slot}" data-swap="${slot}">${[slot, ...ALTS(slot)].map(l => `<option value="${l}"${l === sel ? ' selected' : ''}>${liftName(l)}</option>`).join('')}
@@ -3032,11 +3041,11 @@ function logEditSave(){
     const [ei, si, f] = inp.dataset.le.split(':'), x = ex[+ei] && ex[+ei].sets[+si]; if (!x) continue;
     const raw = inp.value.trim(), v = numIn(raw);
     if (f === 'w') {
-      if (!(v >= 0 && v <= 999)) { toast('Skriv vekten som et tall, for eksempel 82,5'); inp.focus(); return; }
+      if (!(v >= 0 && v <= 999)) { fieldErr(inp, 'Skriv vekten som et tall, for eksempel 82,5'); return; }
       x.w = Math.round(v * 100) / 100;
     } else {
       if (raw === '' || raw === '–') { x.d = null; continue; }
-      if (!(Number.isInteger(v) && v >= 0 && v <= 99)) { toast('Reps må være et helt tall, eller tomt hvis settet ikke ble tatt'); inp.focus(); return; }
+      if (!(Number.isInteger(v) && v >= 0 && v <= 99)) { fieldErr(inp, 'Reps må være et helt tall, eller tomt hvis settet ikke ble tatt'); return; }
       x.d = v;
     }
   }
@@ -3046,14 +3055,14 @@ function logEditSave(){
   if (mn) {
     const raw = mn.value.trim(), v = numIn(raw);
     if (raw === '') mc = undefined;
-    else if (!(Number.isInteger(v) && v >= 1 && v <= 600)) { toast('Skriv minuttene som et helt tall, for eksempel 18'); mn.focus(); return; }
+    else if (!(Number.isInteger(v) && v >= 1 && v <= 600)) { fieldErr(mn, 'Skriv minuttene som et helt tall, for eksempel 18'); return; }
     else mc = Object.assign({type: h.wod ? mcGuess(h.wod.tekst) : 'M'}, h.mc, {min: v, rpe: E.h.mc && E.h.mc.rpe || null});
   }
   let date = h.date;
   const dv = ($('#leDate') || {}).value;
   if (dv && dv !== ymd(h.date)) {
     const [y, m, d] = dv.split('-').map(Number), nd = new Date(h.date); nd.setFullYear(y, m - 1, d);
-    if (isNaN(nd) || nd.getTime() > Date.now() + DAY) { toast('Velg en dato som ikke er fram i tid'); return; }
+    if (isNaN(nd) || nd.getTime() > Date.now() + DAY) { fieldErr($('#leDate'), 'Velg en dato som ikke er fram i tid'); return; }
     date = nd.getTime();
     while (S.history.some(x => x !== h && x.date === date)) date++;   // datoen er nøkkelen til økta
   }
@@ -3135,7 +3144,7 @@ function mmcSecInputs(p){
   const a = S.active && S.active.programId === p.id ? S.active : null;
   // Uten lagrede maksløft står feltene tomme, og appen regner dem ut fra 1RM-en du skriver inn over (se newInstance)
   const known = S.maxes.bench > 0 && S.maxes.squat > 0;
-  return `<h3>Startvekter ${p.prog === 'mmc' ? 'sekundærløft' : 'markløft og push press'}</h3><div class="box" style="gap:0">${(p.prog === 'mmc' ? MMC_SEC : EMC_SEC).map(([, id]) => `
+  return `<h2 class="sec">Startvekter ${p.prog === 'mmc' ? 'sekundærløft' : 'markløft og push press'}</h2><div class="box" style="gap:0">${(p.prog === 'mmc' ? MMC_SEC : EMC_SEC).map(([, id]) => `
       <div class="field"><label for="sec-${id}">${liftName(id)}${/manual/.test(mmcSecOf(id)[4]) ? ' <span class="muted">per manual</span>' : ''}</label>
         <span class="inp"><input id="sec-${id}" type="text" inputmode="decimal" placeholder="auto" value="${a && a.lifts[id] ? fmt(a.lifts[id].w) : known ? fmt(mmcSecDefault(id, orm)) : ''}">kg</span></div>`).join('')}</div>
     <p class="muted small">${known ? '' : 'Står et felt tomt, regner appen ut vekten fra 1RM-en din. '}${p.prog !== 'mmc' ? 'Forslag ut fra 1RM i knebøy og benk. Skriv inn vekten du løfter 4×3 med på RPE 6–7. Etter hver økt svarer du på RPE: RPE 6 gir +2,5 kg, RPE 7 står, RPE 8 eller mer gir −2,5 kg.' : 'Forslag ut fra 1RM. Skriv inn vekten du klarer med 1–3 reps i reserve. Etter hver økt svarer du på RPE, og appen justerer vekten: RPE 6 gir +2,5 kg, RPE 7–9 står, RPE 9,5–10 eller bom gir −2,5 kg.'}</p>`;
@@ -3145,7 +3154,7 @@ function activate(id){
   const p = prog(id);
   // Tomme felt fylles ikke med standardtall: da ville noen andres maksløft blitt dine startvekter
   const empty = p.prog === 'athx' ? [] : [...document.querySelectorAll('input[data-key]')].filter(inp => !(parseFloat(String(inp.value).replace(',', '.')) > 0));
-  if (empty.length) { empty[0].focus(); toast(p.orm ? 'Velg hvor du starter, eller skriv inn startvektene' : 'Skriv inn 1RM eller et sett du klarte for alle løftene'); return; }
+  if (empty.length) { fieldErr(empty[0], p.orm ? 'Velg hvor du starter, eller skriv inn startvektene' : 'Skriv inn 1RM eller et sett du klarte for alle løftene'); return; }
   const a = newInstance(p);
   if (!a) return;
   // Husk maksløftene, så neste program fylles ut automatisk
@@ -3501,7 +3510,7 @@ function planWeeks(P, p, a, short){
   const exLine = r => r.ex.slice(0, 3).map(e => { const t = Math.max(...e.sets.map(x => x.w)); return liftName(e.lift) + (t > 0 ? ' ' + fmt(t) : ''); }).join(' · ') + (r.ex.length > 3 ? ' …' : '');
   const more = P.active && weeks.length > 2 ? `<button class="btn ghost" data-a="planall">${short ? 'Vis alle ' + weeks.length + ' uker' : 'Vis bare denne og neste uke'}</button>` : '';
   return `${ax ? axScore(a) : ''}
-    ${weeks.map((list, w) => list && w >= from && w < to ? `<h3>Uke ${w + 1}${ax && a.ax.weeks[w] ? ' · ' + AX_PH[a.ax.weeks[w].ph] : ''}</h3><div class="list">${list.map(r => {
+    ${weeks.map((list, w) => list && w >= from && w < to ? `<h2 class="sec">Uke ${w + 1}${ax && a.ax.weeks[w] ? ' · ' + AX_PH[a.ax.weeks[w].ph] : ''}</h2><div class="list">${list.map(r => {
       const m = r.ex[0], sub = r.sub ? subOf(r, w) : '';
       return `<details class="box acc plan-s${r.done ? ' done-s' : ''}${r.skipped ? ' skip-s' : ''}${r.next ? ' next-s' : ''}"${r.next ? ' open' : ''}>
         <summary><span class="ps"><span class="ps-top"><b>${esc(r.day)}</b>${r.done ? '<span class="pill">Gjort</span>' : r.skipped ? '<span class="pill">Hoppet over</span>' : r.next ? '<span class="pill on">Neste</span>' : ''}</span>
@@ -3886,7 +3895,7 @@ function vDeloadChoice(ph){
   const mark = v => v == null ? '<span class="muted">–</span>' : v ? '<span class="ok-t">✓</span>' : '<span class="warn-t">✗</span>';
   const allOk = rows.every(r => r.effOk && r.trendOk);
   return `<section class="box dl">
-    <h3 style="margin:0">Lett uke, eller én uke til?</h3>
+    <h2 class="sec" style="margin:0">Lett uke, eller én uke til?</h2>
     <p class="small">Forskningen tyder på at en fast lett uke ikke alltid trengs. Hopp bare over den hvis alle punktene stemmer.</p>
     <div class="trend">${rows.map(r => `<div class="tr"><b>${r.name}</b><span>${r.eff || 'ingen vurdering'}</span>${mark(r.effOk)}<span class="muted">1RM-trend</span>${mark(r.trendOk)}</div>`).join('')}</div>
     <ul class="small crit">
@@ -3935,7 +3944,7 @@ const refList = keys => { const u = [...new Set(keys)].filter(k => REFS[k]);
 function vProgramGuide(p){
   const g = GUIDE[p.id]; if (!g) return '';
   const keys = [...g.science, ...g.expect].flatMap(c => c[2]).concat(g.metconRefs || []);
-  return `<h3>Om programmet</h3>
+  return `<h2 class="sec">Om programmet</h2>
     <div class="box guide">
       <div class="gk"><span>Fokus</span><p>${g.focus}</p></div>
       <div class="gk"><span>Passer for</span><p>${g.fits}</p></div>
@@ -3959,7 +3968,7 @@ function vGuide(){
   return `<button class="link" data-a="back">‹ Tilbake</button>
     <header class="head"><p class="eyebrow">Programguide</p><h1>Hvilket program passer?</h1>
       <p class="muted small">Hva programmene gjør, hva de fokuserer på og hva du realistisk kan forvente. Basert på forskning slått opp i PubMed i oktober 2026.</p></header>
-    <h3>Kort oppsummert</h3>
+    <h2 class="sec">Kort oppsummert</h2>
     <div class="box guide">
       <div class="gk"><span>Helt ny</span><p>StrongLifts 5×5 eller Starting Strength. Enkle regler og rask økning.</p></div>
       <div class="gk"><span>Litt erfaren</span><p>GZCLP. Mer variasjon og volum, og varer lenger før du står fast.</p></div>
@@ -3967,14 +3976,14 @@ function vGuide(){
       <div class="gk"><span>Erfaren + metcons</span><p>Strength & Power. Bygd for benk, knebøy og power clean sammen med CrossFit-inspirerte metcons.</p></div>
       <div class="gk"><span>Skal konkurrere</span><p>ATHX 2027. Styrke, løp, ski og Metcon X, regnet baklengs fra stevnedatoen.</p></div>
     </div>
-    <h3>Slik leser du bokstavene</h3>
+    <h2 class="sec">Slik leser du bokstavene</h2>
     <div class="box"><ul class="claims">${G.levels.map(([l,n,d]) => `<li>${lvl(l)}<span><b>${n}.</b> ${d}</span></li>`).join('')}</ul>
       <p class="small muted">Ingen av programmene er testet som helhet i kontrollerte studier. Vurderingene gjelder prinsippene de bygger på.</p></div>
-    <h3>Det alle gode programmer har felles</h3>
+    <h2 class="sec">Det alle gode programmer har felles</h2>
     <div class="box"><ul class="claims">${G.common.map(claim).join('')}</ul></div>
-    <h3>Hva kan du forvente?</h3>
+    <h2 class="sec">Hva kan du forvente?</h2>
     <div class="box"><ul class="claims">${G.expect.map(claim).join('')}</ul></div>
-    <h3>Programmene</h3>
+    <h2 class="sec">Programmene</h2>
     <div class="list">${rows}</div>
     <details class="box acc"><summary>Alle kilder</summary>${refList(Object.keys(REFS))}</details>`;
 }
@@ -4038,7 +4047,7 @@ function vStart(p){
   const modes = (p.orm ? [['bar', 'Tom stang', 'Anbefalt når du er ny med stang']] : []).concat([
     ['set', 'Et sett jeg klarte nylig', 'Vekt og reps, så regner appen ut resten'],
     ['orm', 'Jeg vet maksløftene mine', 'Tyngste løft på én rep']]);
-  let h = `<h3>Hvor starter du?</h3>
+  let h = `<h2 class="sec">Hvor starter du?</h2>
     <div class="box start" role="radiogroup" aria-label="Hvor starter du?">${modes.map(([m, n, d]) =>
       `<button role="radio" aria-checked="${mode === m}" data-a="startmode:${p.id}:${m}"><i aria-hidden="true"></i><span><b>${n}</b><small>${d}</small></span></button>`).join('')}</div>`;
   if (mode === 'set') h += `<div class="box" style="gap:0">${base.map(l => `
@@ -4049,7 +4058,7 @@ function vStart(p){
       <div class="field"><label for="orm-${l}">${liftName(l)}</label>
         <span class="inp"><input id="orm-${l}" data-orm="${l}" type="text" inputmode="decimal" placeholder="–" value="${known(l)}">kg</span></div>`).join('')}</div>`;
   // Feltene appen bruker: startvekter, eller 1RM i prosentprogrammene. De står alltid åpent og kan endres.
-  h += `<h3>${p.orm ? 'Første økt blir' : mode === 'set' ? 'Anslått 1RM' : 'Din 1RM (tyngste løft på én rep)'}</h3>
+  h += `<h2 class="sec">${p.orm ? 'Første økt blir' : mode === 'set' ? 'Anslått 1RM' : 'Din 1RM (tyngste løft på én rep)'}</h2>
     <div class="box" style="gap:0">${Object.keys(p.inputs).map((k, i) => {
       const [l] = k.split('.');
       const v = !p.orm ? (mode === 'orm' ? known(k) : '')
@@ -4076,7 +4085,7 @@ function vDetail(p){
     <header class="head"><p class="eyebrow">${p.origin}</p><h1>${p.name}</h1>
       <div class="meta" style="margin-top:8px"><span class="pill">${p.level}</span><span class="pill">${p.perWeek} økter/uke</span></div></header>
     <p>${p.summary}</p>
-    <div class="box"><h3 style="margin:0">Slik øker vekten</h3><p class="small">${p.rule}</p></div>
+    <div class="box"><h2 class="sec" style="margin:0">Slik øker vekten</h2><p class="small">${p.rule}</p></div>
     ${p.prog === 'athx' ? axSetup(other, isActive) : `${vStart(p)}${['mmc','emc','cir'].includes(p.prog) ? mmcSecInputs(p) : ''}
     <p class="muted small">${p.orm ? p.ormNote || 'Start lett. Teknikken skal sitte før vekten blir tung.' : p.prog === '531' ? 'Appen regner ut treningsmaks som 90 % av dette.' : p.prog === 'jugg' ? 'Appen regner ut arbeidsmaks som 90 % av dette.' : p.prog === 'sp12' ? 'Startvektene regnes ut fra dette. Etter hvert styrer RPE-en din vektene.' : p.prog === 'cube' ? 'Alle vekter regnes ut som prosent av dette.' : p.prog === 'burg' ? 'Alle vekter regnes ut som prosent av dette. Trekk og shrugs ligger over 100 %, det er meningen.' : ['mmc','emc','cir','cbe'].includes(p.prog) ? 'Treningsmaksen starter på 90 % av dette, og RPE-en din flytter den etter hver uke. Bruk dagsaktuelle maksløft.' : 'Start lett. Teknikken skal sitte før vekten blir tung.'}
       ${slotsOf(p).length ? ' Vil du bytte et løft, gjør du det under Program → Løft og vekter når programmet er aktivt.' : ''}
@@ -4085,8 +4094,8 @@ function vDetail(p){
     <button class="btn ghost" data-a="planprev:${p.id}">Se hele planen</button>
     <details class="about"><summary>Om programmet, forskningen og øktene</summary><div class="about-in">
       ${vProgramGuide(p)}
-      <h3>Øktene</h3>
-      <div class="days">${p.days.map(d => `<div class="day"><h4>${d.name}</h4>${dayLines(p,d).join('')}</div>`).join('')}</div>
+      <h2 class="sec">Øktene</h2>
+      <div class="days">${p.days.map(d => `<div class="day"><h3>${d.name}</h3>${dayLines(p,d).join('')}</div>`).join('')}</div>
     </div></details>`;
 }
 
@@ -4141,11 +4150,11 @@ function vLog(){
     (series[e.lift] = series[e.lift] || []).push(Math.max(...done.map(x => x.w)));
   }));
   const rows = Object.entries(series).filter(([,v]) => v.length > 1);
-  h += rows.length ? `<section class="box trend"><h3 style="margin:2px 0 0">Toppvekt per økt</h3>${rows.map(([l,v]) => { const d = v[v.length-1] - v[0];
+  h += rows.length ? `<section class="box trend"><h2 class="sec" style="margin:2px 0 0">Toppvekt per økt</h2>${rows.map(([l,v]) => { const d = v[v.length-1] - v[0];
       return `<div class="tr"><b>${liftName(l)}</b>${spark(v)}<span class="tr-kg">${fmt(v[v.length-1])}</span><span class="tr-d ${d > 0 ? 'ok-t' : d < 0 ? 'miss-t' : ''}">${d > 0 ? '+' : ''}${d ? fmt(d) : '±0'}</span></div>`; }).join('')}</section>`
                    : `<p class="muted small">Kurvene dukker opp når du har logget samme løft to ganger.</p>`;
   const mcCount = S.history.filter(x => x.metcon).length;
-  h += `<h3>Siste økter</h3>`;
+  h += `<h2 class="sec">Siste økter</h2>`;
   if (mcCount) h += `<div class="filt" role="group" aria-label="Filter">
       <button data-a="logf:all" aria-pressed="${ui.logF !== 'mc'}">Alle</button>
       <button data-a="logf:mc" aria-pressed="${ui.logF === 'mc'}">Med metcon (${mcCount})</button></div>`;
@@ -4312,7 +4321,7 @@ function vProgWeights(p){
   if (!rows.length) return '';
   const field = r => `<div class="field"><label for="pw-${esc(r.path.join('-'))}">${esc(liftName(r.L))} · ${esc(r.label)}${r.when ? `<small class="muted">${esc(r.when)}</small>` : ''}</label>
       <span class="inp"><input id="pw-${esc(r.path.join('-'))}" data-pw="${esc(r.path.join('|'))}" type="text" inputmode="decimal" value="${fmt(Math.round(r.v * 10) / 10)}">kg</span></div>`;
-  return `<h3>Vekter i programmet</h3>
+  return `<h2 class="sec">Vekter i programmet</h2>
     <div class="box" style="gap:0">${used.map(field).join('') || '<p class="muted small">Ingen av tallene styrer de neste øktene.</p>'}</div>
     ${other.length ? `<details class="box"><summary class="small">Andre tall i programmet (${other.length})</summary><div style="display:grid">${other.map(field).join('')}</div>
       <p class="muted small">Disse styrer ikke de neste ${PW_N} øktene, men kan brukes senere, for eksempel i en ny fase eller en retest.</p></details>` : ''}
@@ -4340,12 +4349,12 @@ function vTraining(){
     <header class="head"><h1>Løft og vekter</h1></header>
     ${p ? swapRows(p, S.active) : ''}
     ${p ? vProgWeights(p) : ''}
-    <h3>Aktivt program</h3>
+    <h2 class="sec">Aktivt program</h2>
     <div class="box">${p ? `<p><b>${p.name}</b> <span class="muted">· ${oekter(S.active.idx)} fullført siden ${dateFmt(S.active.startedAt)}</span></p>
       ${ui.confirm === 'quit' ? `<div class="row"><button class="btn danger sm" data-a="quit">Ja, avslutt</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div>`
         : `<button class="btn ghost sm" data-a="confirm:quit">Avslutt program</button>`}`
       : `<p class="muted">Ingen program er aktivt.</p>`}</div>
-    <h3>Lagrede maksløft (1RM)</h3>
+    <h2 class="sec">Lagrede maksløft (1RM)</h2>
     <div class="box" style="gap:0">${Object.keys(S.maxes).length ? Object.keys(S.maxes).map(l => `
       <div class="field"><label for="max-${l}">${liftName(l)}</label>
         <span class="inp"><input id="max-${l}" data-max="${l}" type="text" inputmode="decimal" value="${fmt(S.maxes[l])}">kg</span></div>`).join('')
@@ -4366,19 +4375,19 @@ const switchRow = (a, label, on) => `<button class="sw" role="switch" aria-check
 function vSettings(){
   return `<button class="link" data-a="back">‹ Tilbake</button>
     <header class="head"><h1>Innstillinger</h1></header>
-    <h3>Utseende</h3>
+    <h2 class="sec">Utseende</h2>
     <div class="box">
       <div class="looks" role="group" aria-label="Tema">${LOOKS.map(([id, name, desc, sw]) =>
         `<button class="look-opt" data-a="look:${id}" aria-pressed="${look() === id}"><span class="look-sw" aria-hidden="true">${sw.map(c => `<i style="background:${c}"></i>`).join('')}</span>${name}<small>${desc}</small></button>`).join('')}</div>
     </div>
-    <h3>Pause mellom sett</h3>
+    <h2 class="sec">Pause mellom sett</h2>
     <div class="box">
       <div class="seg" role="group" aria-label="Lengde på pausene">${REST_SCALE.map(([f, l]) => `<button data-a="restscale:${f}" aria-pressed="${(S.settings.restScale || 1) === f}">${l}</button>`).join('')}</div>
       <p class="muted small">Programmene har pauser etter type sett: tunge sett 3 min, volumsett 2 min og lette øvelser 90 s. Kortere gir 75 % og Lengre 125 %.</p>
       ${switchRow('sound', 'Lyd når pausen er over', S.settings.sound)}
       <p class="muted small">På iPhone spilles ikke lyd når skjermen er låst, og nettapper kan ikke vibrere.</p>
     </div>
-    <h3>Stang</h3>
+    <h2 class="sec">Stang</h2>
     <div class="box">
       <div class="seg" role="group" aria-label="Vekt på stanga">
         <button data-a="bar:20" aria-pressed="${BAR() === 20}">20 kg</button>
@@ -4386,7 +4395,7 @@ function vSettings(){
       <p class="muted small">Brukes til skiver per side, oppvarmingen og laveste vekt på stangøvelser. Arbeidsvektene i programmet endres ikke.</p>
     </div>
     ${vSxAccount()}
-    <h3>Kopi uten konto</h3>
+    <h2 class="sec">Kopi uten konto</h2>
     <div class="box">
       <p class="small muted">${syncOn() ? 'Skybackup er på. Vil du i tillegg ha en egen kopi, kan du kopiere teksten under og lagre den i Notater eller iCloud Drive.' : 'Uten skybackup ligger dataene bare på denne telefonen. Kopier teksten under og lagre den i Notater eller iCloud Drive av og til.'}${S.settings.exportAt ? ' Siste kopi: ' + dateFmt(S.settings.exportAt) + '.' : ''}</p>
       ${ui.exportText ? `<textarea id="exportBox" readonly aria-label="Eksportert data">${ui.exportText.replace(/</g,'&lt;')}</textarea>
@@ -4395,24 +4404,37 @@ function vSettings(){
       <textarea id="importBox" placeholder="Lim inn en eksport her"></textarea>
       <button class="btn ghost sm" data-a="import">Importer</button>
     </div>
-    <h3>Alle data</h3>
+    <h2 class="sec">Alle data</h2>
     <div class="box">${ui.confirm === 'reset'
       ? `<p class="small">Logg, program og innstillinger slettes fra telefonen. Dette kan ikke angres.${syncOn() ? ' Kopien i skyen beholdes, og skybackup slås av på denne telefonen.' : ''}</p><div class="row"><button class="btn danger sm" data-a="reset">Slett alt</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div>`
       : `<button class="btn danger sm" data-a="confirm:reset">Slett alle data</button>`}</div>
     <p class="muted small" style="text-align:center">Stanga versjon ${APP_VERSION}<br>${diag()}</p>`;
 }
 
+// Skjermen tegnes på nytt for hver endring. Fokus settes tilbake på samme knapp eller felt,
+// så tastatur og skjermleser ikke havner øverst på siden etter hvert trykk.
+function paint(html){
+  const view = $('#view'), a = document.activeElement;
+  const key = a && a !== view && view.contains(a)
+    ? (a.id ? '#' + CSS.escape(a.id) : a.dataset.a ? `[data-a="${CSS.escape(a.dataset.a)}"]` : null) : null;
+  const sel = key && /^(INPUT|TEXTAREA)$/.test(a.tagName) && a.selectionStart != null ? [a.selectionStart, a.selectionEnd] : null;
+  view.innerHTML = html;
+  const b = key && view.querySelector(key); if (!b) return;
+  b.focus({preventScroll: true});
+  if (sel) try { b.setSelectionRange(sel[0], sel[1]); } catch(e) {}
+}
+
 function render(){
   applyLook();
   let h = ui.storageOK ? '' : `<div class="warn">Lagring er ikke tilgjengelig her. Endringer forsvinner når siden lukkes.</div>`;
   h += vSyncAsk();   // skybackup: skyen og telefonen er endret hver for seg, brukeren må velge
-  if (ui.plan) { const v = vPlan(); if (ui.plan) { $('#view').innerHTML = h + v; return; } }
+  if (ui.plan) { const v = vPlan(); if (ui.plan) { paint(h + v); return; } }
   if (ui.detail === 'settings') h += vSettings();   // åpnes fra tannhjulet på I dag
   else if (ui.tab === 'today') h += vToday();
   else if (ui.tab === 'together') h += vTogether();
   else if (ui.tab === 'log') h += vLog();
   else h += vPlanTab();
-  $('#view').innerHTML = h;
+  paint(h);
   const inChat = ui.tab === 'together' && /^c:/.test(ui.sxView || '');
   $('#view').classList.toggle('chat', inChat);
   if (inChat) chatBottom();   // i en samtale står de nyeste meldingene nederst
@@ -5114,10 +5136,34 @@ function ckBar(s){
 // Etter en ny versjon eller en omstart midt i klokka: åpne den igjen
 if (ckOn()) ui.clockView = 'run';
 
-function toTop(){ const sc = $('#scroller'); if (sc) sc.scrollTop = 0; }
+// Ny side: til toppen, og fokus på overskriften så skjermleseren begynner der.
+// Står fokus i fanelinja, blir det stående der, slik faner pleier å virke.
+function toTop(){
+  const sc = $('#scroller'); if (sc) sc.scrollTop = 0;
+  const a = document.activeElement; if (a && a.closest && a.closest('.tabs')) return;
+  const h = $('#view h1'); if (h) { h.tabIndex = -1; h.focus({preventScroll: true}); }
+}
 
 let toastT;
-function toast(msg){ const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 2200); }
+// Lange meldinger står lenger. Teksten leses opp fra #live, som alltid finnes, så skjermleseren får den med seg.
+function toast(msg){ const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, Math.max(2200, msg.length * 60)); say(msg); }
+function say(msg){ const l = $('#live'); l.textContent = ''; setTimeout(() => l.textContent = msg, 60); }   // tømmes først, så samme melding to ganger også leses opp
+// Feil i et felt står rett under feltet og leses opp sammen med det. Den forsvinner når du skriver i feltet (se clearErr).
+function fieldErr(inp, msg, keep){
+  if (!inp) { toast(msg); return; }
+  if (!inp.id) inp.id = 'f-' + Math.random().toString(36).slice(2, 8);
+  const id = inp.id + '-err';
+  let p = document.getElementById(id);
+  if (!p) { p = document.createElement('p'); p.id = id; p.className = 'ferr'; (inp.closest('.field, .le-row, .swapbox') || inp).after(p); }
+  p.textContent = msg;
+  inp.setAttribute('aria-invalid', 'true'); inp.setAttribute('aria-describedby', id);
+  if (keep || document.activeElement === inp) say(msg); else inp.focus();
+}
+function clearErr(inp){
+  if (inp.getAttribute('aria-invalid') !== 'true') return;
+  const p = document.getElementById(inp.id + '-err'); if (p) p.remove();
+  inp.removeAttribute('aria-invalid'); inp.removeAttribute('aria-describedby');
+}
 
 /* ---------- Trene sammen: konto, venner og timer i Supabase ----------
    Bare dette ligger i skyen: brukernavn, venner, timer, påmeldinger og tidsforslag. Treningsloggen blir på telefonen,
@@ -5550,36 +5596,36 @@ function vSxSignup(){
        <label class="lbl" for="sxP">Nytt passord</label>
        <input id="sxP" class="txt" type="password" autocomplete="new-password" minlength="8" placeholder="Minst 8 tegn">
        ${msg}
-       <button class="btn" data-a="sxresetpw" ${busy}>Lagre nytt passord</button>
-       <div class="row"><button class="link" data-a="sxforgot">Send ny kode</button><button class="link" data-a="sxmode:login">‹ Tilbake til innlogging</button></div>`
+       <button class="btn" type="submit" data-a="sxresetpw" ${busy}>Lagre nytt passord</button>
+       <div class="row"><button class="link" type="button" data-a="sxforgot">Send ny kode</button><button class="link" type="button" data-a="sxmode:login">‹ Tilbake til innlogging</button></div>`
     : `<p class="small muted">Skriv e-posten din, så sender vi en kode du kan bruke til å velge nytt passord.</p>${email}${msg}
-       <button class="btn" data-a="sxforgot" ${busy}>Send kode</button>
-       <button class="link" data-a="sxmode:login">‹ Tilbake til innlogging</button>`;
+       <button class="btn" type="submit" data-a="sxforgot" ${busy}>Send kode</button>
+       <button class="link" type="button" data-a="sxmode:login">‹ Tilbake til innlogging</button>`;
   else box = `<div class="seg2" role="group" aria-label="Logg inn eller lag konto">
-        <button data-a="sxmode:login" aria-pressed="${m === 'login'}"><b>Har konto</b></button>
-        <button data-a="sxmode:signup" aria-pressed="${m === 'signup'}"><b>Ny bruker</b></button>
+        <button type="button" data-a="sxmode:login" aria-pressed="${m === 'login'}"><b>Har konto</b></button>
+        <button type="button" data-a="sxmode:signup" aria-pressed="${m === 'signup'}"><b>Ny bruker</b></button>
       </div>
       ${email}
       <label class="lbl" for="sxP">Passord</label>
       <input id="sxP" class="txt" type="password" autocomplete="${m === 'signup' ? 'new-password' : 'current-password'}" minlength="8" placeholder="${m === 'signup' ? 'Minst 8 tegn' : ''}">
       ${msg}
-      <button class="btn" data-a="${m === 'signup' ? 'sxsignup' : 'sxlogin'}" ${busy}>${m === 'signup' ? 'Lag konto' : 'Logg inn'}</button>
-      ${m === 'login' ? '<button class="link" data-a="sxmode:forgot">Glemt passord?</button>' : ''}`;
+      <button class="btn" type="submit" data-a="${m === 'signup' ? 'sxsignup' : 'sxlogin'}" ${busy}>${m === 'signup' ? 'Lag konto' : 'Logg inn'}</button>
+      ${m === 'login' ? '<button class="link" type="button" data-a="sxmode:forgot">Glemt passord?</button>' : ''}`;
   return `<header class="head"><p class="eyebrow">Valgfritt</p><h1>Sammen</h1>
       <p class="muted">Legg ut når du skal trene, og la vennene dine bli med. Det krever en konto. Resten av appen virker som før uten.</p></header>
-    <section class="box sx-form">${box}</section>
+    <form class="box sx-form" novalidate>${box}</form>
     <p class="muted small">Bare brukernavn, venner og timer lagres, hos Supabase i EU. Treningsloggen din blir på telefonen, med mindre du slår på skybackup under <button class="link inl" data-a="go:settings">Innstillinger</button>. Der kan kontoen også slettes.</p>`;
 }
 
 function vSxNewPw(){
   return `<header class="head"><p class="eyebrow">Glemt passord</p><h1>Nytt passord</h1>
       <p class="muted">${esc(auth.user.email || '')}</p></header>
-    <section class="box sx-form">
+    <form class="box sx-form" novalidate>
       <label class="lbl" for="sxP">Nytt passord</label>
       <input id="sxP" class="txt" type="password" autocomplete="new-password" minlength="8" placeholder="Minst 8 tegn">
       ${ui.sxMsg ? `<p class="small warn-t" role="alert">${esc(ui.sxMsg)}</p>` : ''}
-      <button class="btn" data-a="sxnewpw" ${ui.sxBusy ? 'disabled' : ''}>Lagre passord</button>
-    </section>
+      <button class="btn" type="submit" data-a="sxnewpw" ${ui.sxBusy ? 'disabled' : ''}>Lagre passord</button>
+    </form>
     <p class="muted small">Bruker du Stanga fra hjemskjermen, logger du inn der med det nye passordet etterpå.</p>`;
 }
 
@@ -5587,15 +5633,15 @@ function vSxUsername(){
   const guess = (auth.user.email || '').split('@')[0].toLowerCase().replace(/[^a-z0-9._]/g, '').slice(0, 20);
   return `<header class="head"><p class="eyebrow">Nesten ferdig</p><h1>Velg brukernavn</h1>
       <p class="muted">Vennene dine finner deg på brukernavnet.</p></header>
-    <section class="box sx-form">
+    <form class="box sx-form" novalidate>
       <label class="lbl" for="sxU">Brukernavn</label>
       <div class="sx-search"><span class="muted">@</span><input id="sxU" type="text" autocapitalize="none" autocomplete="username" maxlength="20" value="${esc(ui.sxU || guess)}"></div>
       <p class="small muted">3–20 tegn: små bokstaver, tall, punktum og understrek.</p>
       <label class="lbl" for="sxN">Navn (valgfritt)</label>
       <input id="sxN" class="txt" type="text" maxlength="40" autocomplete="name" placeholder="Fornavn eller kallenavn" value="${esc(ui.sxN || '')}">
-      <button class="btn" data-a="sxuser" ${ui.sxBusy ? 'disabled' : ''}>Lagre</button>
+      <button class="btn" type="submit" data-a="sxuser" ${ui.sxBusy ? 'disabled' : ''}>Lagre</button>
       ${ui.sxMsg ? `<p class="small warn-t" role="alert">${esc(ui.sxMsg)}</p>` : ''}
-    </section>`;
+    </form>`;
 }
 
 // Økta fra programmet på timene du skal på (dine egne og de du er med på), én økt per time i rekkefølge.
@@ -5786,14 +5832,14 @@ function vSxList(){
   if (chat) return vSxChats(h);
   if (ui.push === 'off' && !S.settings.pushNo) h += `<div class="box"><p class="small"><b>Vil du få varsel</b> når noen blir med på timene dine?</p>
       <div class="row"><button class="btn sm" data-a="pushon">Slå på varsler</button><button class="btn ghost sm" data-a="pushno">Ikke nå</button></div></div>`;
-  if (news.length) h += `<h3 class="sx-h">Nytt <span class="badge">${news.length}</span></h3>
+  if (news.length) h += `<h2 class="sec sx-h">Nytt <span class="badge">${news.length}</span></h2>
     <div class="list">${news.slice(0, 8).map(n => `<button class="sx-news" data-a="${n.sid ? 'sxopen:' + n.sid : 'sxview:friends'}">
       ${av(n.who)}<span><b>${uname(n.who)} ${n.txt}</b><small>${esc(n.sub)}</small></span><i class="dot" aria-hidden="true"></i></button>`).join('')}</div>`;
   if (!list.length) return h + `<div class="empty"><h2>Ingen timer ennå</h2>
       <p class="muted">${friends ? 'Legg ut når du skal trene, så kan vennene dine bli med.' : 'Start med å legge til vennene dine på brukernavn. Så kan dere se hverandres timer.'}</p>
       <button class="btn" data-a="${friends ? 'sxnew' : 'sxview:friends'}">${friends ? 'Legg ut en time' : 'Finn venner'}</button></div>`;
   let day = '';
-  list.forEach(s => { const d = dayLabel(s.starts_at); if (d !== day) { day = d; h += `<h3>${d}</h3>`; } h += sxCard(s); });
+  list.forEach(s => { const d = dayLabel(s.starts_at); if (d !== day) { day = d; h += `<h2 class="sec">${d}</h2>`; } h += sxCard(s); });
   return h;
 }
 
@@ -5873,7 +5919,7 @@ function vSxSess(id){
     const opts = props.map(p => `<div class="sx-prop">${av(p.user_id)}<span><b>${uname(p.user_id)}</b>${p.comment ? `<small>«${esc(p.comment)}»</small>` : ''}</span>
         <span class="sx-time">${hm(p.proposed_at)}</span>
         ${own ? `<button class="btn sm" data-a="sxpick:${p.id}">Velg</button>` : ''}</div>`).join('');
-    h += `<h3>Forslag til tidspunkt</h3>`;
+    h += `<h2 class="sec">Forslag til tidspunkt</h2>`;
     h += props.length ? `<section class="box" style="gap:0;padding-block:4px">${opts}</section>` : `<p class="muted small">${own ? 'Ingen forslag ennå. Vennene dine kan foreslå et tidspunkt innenfor vinduet.' : 'Ingen forslag ennå.'}</p>`;
     if (own && props.length) h += `<p class="muted small">Når du velger et tidspunkt, blir timen fast, og de som foreslo det, står som påmeldt. De kan melde seg av hvis tiden ikke passer.</p>`;
     if (!own) h += myProp
@@ -5884,7 +5930,7 @@ function vSxSess(id){
           <button class="btn" data-a="sxprop:${s.id}" ${ui.sxBusy ? 'disabled' : ''}>Foreslå</button></section>`;
   }
   const pick = p => s.plan ? `<small class="muted">${p.plan === 'same' ? 'samme økt' : 'egen økt'}</small>` : '';
-  h += `<h3>Med på timen</h3><div class="sx-people"><span>${av(s.owner)}${own ? 'Deg' : uname(s.owner)}</span>${ps.map(p => `<span>${av(p.user_id)}<span>${p.user_id === me ? 'Deg' : uname(p.user_id)}${pick(p)}</span></span>`).join('')}</div>`;
+  h += `<h2 class="sec">Med på timen</h2><div class="sx-people"><span>${av(s.owner)}${own ? 'Deg' : uname(s.owner)}</span>${ps.map(p => `<span>${av(p.user_id)}<span>${p.user_id === me ? 'Deg' : uname(p.user_id)}${pick(p)}</span></span>`).join('')}</div>`;
   const ch = SX.chats.find(c => c.session_id === s.id);   // bare eieren og de påmeldte er med i chatten
   if (ch) h += `<button class="btn ghost" data-a="chopen:${ch.id}">Chat for timen${ch.unread ? ' · ' + ch.unread + ' nye' : ''}</button>`;
   if (own) {
@@ -5933,11 +5979,11 @@ function vSxFriends(){
     <label class="lbl" for="sxQ">Legg til med brukernavn</label>
     <div class="sx-search"><span class="muted">@</span><input id="sxQ" type="search" autocapitalize="none" autocomplete="off" spellcheck="false" placeholder="brukernavn" value="${esc(ui.sxQ || '')}"></div>
     <div id="sxRes">${sxResHTML()}</div>
-    ${inc.length ? `<h3 class="sx-h">Forespørsler <span class="badge">${inc.length}</span></h3><div class="sx-list">${inc.map(f => `<div class="sx-row">${av(f.requester)}<span><b>${uname(f.requester)}</b><small>Vil legge deg til</small></span>
+    ${inc.length ? `<h2 class="sec sx-h">Forespørsler <span class="badge">${inc.length}</span></h2><div class="sx-list">${inc.map(f => `<div class="sx-row">${av(f.requester)}<span><b>${uname(f.requester)}</b><small>Vil legge deg til</small></span>
         <button class="btn ghost sm" data-a="sxdecline:${f.requester}">Avslå</button><button class="btn sm" data-a="sxaccept:${f.requester}">Godta</button></div>`).join('')}</div>` : ''}
-    ${out.length ? `<h3>Sendt</h3><div class="sx-list">${out.map(f => `<div class="sx-row">${av(f.addressee)}<span><b>${uname(f.addressee)}</b><small>Venter på svar</small></span>
+    ${out.length ? `<h2 class="sec">Sendt</h2><div class="sx-list">${out.map(f => `<div class="sx-row">${av(f.addressee)}<span><b>${uname(f.addressee)}</b><small>Venter på svar</small></span>
         <button class="btn ghost sm" data-a="sxdecline:${f.addressee}">Angre</button></div>`).join('')}</div>` : ''}
-    <h3>Vennene dine · ${acc.length}</h3>
+    <h2 class="sec">Vennene dine · ${acc.length}</h2>
     ${acc.length ? `<div class="sx-list">${acc.map(id => { const st = SX.live.get(id), sub = [st === 'train' ? 'Trener nå' : st === 'live' ? 'Aktiv nå' : '', nextOf(id)].filter(Boolean).join(' · ');
         return `<div class="sx-row">${av(id, 1)}<span><b>${uname(id)}</b>${sub ? `<small>${sub}</small>` : ''}</span>
         ${ui.confirm === 'unf:' + id ? `<button class="btn danger sm" data-a="sxdecline:${id}">Fjern</button><button class="btn ghost sm" data-a="cancel">Nei</button>`
@@ -6109,7 +6155,7 @@ function vSxPick(mode, cid){
     + list + (fr.length ? `<button class="btn" data-a="chaddgo:${c.id}" ${busy}>Legg til</button>` : '');
   return back + `<header class="head"><h1>Ny gruppe</h1></header>
     <section class="box sx-form"><label class="lbl">Navn<input id="chName" class="txt" type="text" maxlength="40" placeholder="For eksempel Treningsgruppen"></label></section>
-    <h3>Velg venner</h3>${list}${fr.length ? `<button class="btn" data-a="chcreate" ${busy}>Lag gruppe</button>` : ''}
+    <h2 class="sec">Velg venner</h2>${list}${fr.length ? `<button class="btn" data-a="chcreate" ${busy}>Lag gruppe</button>` : ''}
     <p class="muted small">Alle i gruppen kan legge til vennene sine.</p>`;
 }
 const chatPicked = () => [...document.querySelectorAll('.ch-ck:checked')].map(x => x.value);
@@ -6120,7 +6166,7 @@ const chatGo = () => { const id = ui.chGo; ui.chGo = null; if (id) chatOpen(id);
 function vSxAccount(){
   const who = !auth ? 'Ingen konto' : SX.me ? '@' + esc(SX.me.username) : 'Innlogget';
   const copy = syncOn() ? (SY.at ? 'skybackup lagret ' + dateFmt(SY.at) : 'skybackup på') : S.settings.exportAt ? 'siste kopi ' + dateFmt(S.settings.exportAt) : 'ingen kopi ennå';
-  return `<h3>Konto og kopi</h3>
+  return `<h2 class="sec">Konto og kopi</h2>
     <div class="box">
       <p><b>${who}</b> <span class="muted">· ${copy}</span></p>${auth
       ? `<p class="small muted">${esc(auth.user.email || '')}</p>
@@ -6133,10 +6179,10 @@ function vSxAccount(){
         <button class="btn ghost sm" data-a="tab:together">Lag konto eller logg inn</button>`}
       <details class="acc"><summary>Les om personvern</summary><p class="muted small">Med konto lagres e-post, brukernavn, navn hvis du har skrevet det, venner, timer, påmeldinger, tidsforslag og chatmeldinger hos Supabase i EU (Irland). Slår du på varsler, lagres også en adresse for varsler til telefonen. Mens du har Sammen åpen eller en økt i gang, lagres når du sist var der eller krysset av, så vennene kan se at du er aktiv eller trener nå. Det kan slås av under Aktiv nå. Bare vennene dine ser timene dine, og bare de som er med i en samtale, kan lese den. Treningslogg, programmer og vekter sendes bare hvis du slår på skybackup, og bare du kan lese dem. Sletter du kontoen, slettes alt dette.</p></details>
     </div>
-    ${auth && SX.me ? `<h3>Aktiv nå</h3><div class="box">
+    ${auth && SX.me ? `<h2 class="sec">Aktiv nå</h2><div class="box">
       <label class="chk"><input type="checkbox" data-a="sxlive" ${SX.hidden ? '' : 'checked'} ${ui.sxBusy ? 'disabled' : ''}> Vis vennene når jeg er i Sammen eller trener</label>
       <p class="muted small">Mens du har Sammen åpen, ser vennene dine en grønn prikk på deg. Fra du krysser av første sett til økta er ferdig, ser de en manual. De ser ikke når du var der sist, eller hva du trener. Gjelder alle telefonene dine.</p></div>
-      <h3>Varsler</h3><div class="box">${vPush()}</div>` : ''}`;
+      <h2 class="sec">Varsler</h2><div class="box">${vPush()}</div>` : ''}`;
 }
 function vPush(){
   switch (ui.push) {
@@ -6233,6 +6279,9 @@ async function sxUser(){
 /* ---------- Handlinger ---------- */
 document.addEventListener('click', ev => {
   const b = ev.target.closest('[data-a]'); if (!b || b.disabled) return;
+  // Innlogging og passord er ekte skjemaer, så Enter og «Gå» på tastaturet trykker på submit-knappen.
+  // Knappen gjør jobben med sin data-a, og selve skjemaet sendes aldri, så siden ikke lastes på nytt.
+  if (b.type === 'submit') ev.preventDefault();
   const [a, ...r] = b.dataset.a.split(':');
   switch (a) {
     case 'tab': if (ui.tab === 'together' && r[0] !== 'together') sxPing(false);
@@ -6368,7 +6417,8 @@ document.addEventListener('click', ev => {
     case 'mineckx': ui.mineEdit.ck = null; render(); break;
     case 'minesave': {
       const e = ui.mineEdit; if (!e) break;
-      if (!e.n.trim() || !e.x.trim()) { toast('Skriv navn og hva økta er'); break; }
+      if (!e.n.trim()) { fieldErr($('#mineN'), 'Skriv et navn på metconen'); break; }
+      if (!e.x.trim()) { fieldErr($('#mineX'), 'Skriv hva økta er'); break; }
       const o = {i: e.i || 'u' + Date.now().toString(36), n: e.n.trim().slice(0, 60), f: e.f, m: parseInt(e.m, 10) || null, x: e.x.trim(), lag: !!e.lag, ck: e.ck || null};
       S.mine = S.mine || [];
       const k = S.mine.findIndex(x => x.i === o.i); if (k > -1) S.mine[k] = o; else S.mine.unshift(o);
@@ -6533,6 +6583,7 @@ document.addEventListener('click', ev => {
 // Sammen: skjemafeltene for ny time lagres mens du skriver, så de overlever at skjermen tegnes på nytt
 document.addEventListener('input', ev => {
   const t = ev.target;
+  if (t.getAttribute) clearErr(t);
   if (t.dataset && t.dataset.sxf && ui.sxForm && t.type !== 'radio') ui.sxForm[t.dataset.sxf] = t.value;
   if (t.id === 'sxQ') { ui.sxQ = t.value; sxSearch(t.value); }
   if (t.id === 'chIn') ui.chDraft = t.value;
@@ -6625,7 +6676,7 @@ document.addEventListener('change', ev => {
   if (ev.target.dataset && ev.target.dataset.gmax) {
     const v = parseFloat(String(ev.target.value).replace(',', '.'));
     if (v > 0 && v < 500) { S.maxes[ev.target.dataset.gmax] = v; save(); render(); toast('1RM i ' + liftName(ev.target.dataset.gmax).toLowerCase() + ' er lagret'); }
-    else if (ev.target.value.trim()) toast('Skriv 1RM som et tall, for eksempel 82,5');
+    else if (ev.target.value.trim()) fieldErr(ev.target, 'Skriv 1RM som et tall, for eksempel 82,5', true);
     return;
   }
   if (ev.target.dataset && ev.target.dataset.ppref) {
