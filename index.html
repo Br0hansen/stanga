@@ -487,6 +487,10 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .plan-ex .ln>span:last-child{color:var(--chalk-2);text-align:right;font-variant-numeric:tabular-nums}
 .plan-s.done-s .plan-ex .ln>span:last-child{color:var(--pen)}
 
+/* Øvelsesbiblioteket: treff under «+ Egen øvelse» */
+.lib-res{display:grid;gap:4px;align-self:stretch;width:100%}
+.lib-hit{display:grid;gap:2px;text-align:left;width:100%;border:0;border-radius:4px;padding:10px 12px;background:var(--field);color:var(--chalk);font:inherit;cursor:pointer}
+.lib-hit small{color:var(--chalk-2);font-size:13px}
 /* Fjern en øvelse fra dagens økt */
 .ex-rm-l{align-self:flex-start;color:var(--chalk-2);font-size:14px}
 .ex-rm{display:grid;gap:10px;padding:12px;border-radius:4px}
@@ -880,7 +884,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 89;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 90;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -915,6 +919,416 @@ const LIFTS = {
   cx_psohs:{n:'Power snatch + overhead squat',bar:1,cx:1}, cx_fsj:{n:'Frontbøy + jerk',bar:1,cx:1}, cx_pcj:{n:'Power clean + jerk',bar:1,cx:1}
 };
 const ALTS = slot => Object.keys(LIFTS).filter(k => LIFTS[k].alt === slot);
+
+/* ---------- Øvelsesbiblioteket ----------
+   365 øvelser valgt ut fra Free Exercise DB (github.com/yuhonas/free-exercise-db, Unlicense: fri bruk),
+   med norske navn, pluss 28 øvelser databasen mangler (wall balls, burpees, kettlebell swing og flere).
+   Felt: [norsk navn, søkeord (engelsk navn), utstyr, kategori, hovedmuskler, stang (viser skiver), nøkkel i LIFTS, id i databasen].
+   Har appen øvelsen fra før, peker nøkkelen dit, så det blir ett navn og én vekt. Id-en gir bilder og fremgangsmåte senere. */
+const EXLIB = [
+["Air bike","assault bike echo","Maskin","Kondisjon","hele kroppen",0,"",""],
+["Air squats","Bodyweight Squat","Kroppsvekt","Styrke","forside lår",0,"","Bodyweight_Squat"],
+["Amerikansk kettlebell swing","american swing","Kettlebell","Styrke","sete, baksida lår, skuldre",0,"",""],
+["Armheving til sideplanke","Push Up to Side Plank","Kroppsvekt","Styrke","bryst",0,"","Push_Up_to_Side_Plank"],
+["Armhevinger","Pushups","Kroppsvekt","Styrke","bryst",0,"","Pushups"],
+["Armhevinger i slynge","Suspended Push-Up","Annet","Styrke","bryst",0,"","Suspended_Push-Up"],
+["Armhevinger med føttene høyt","Push-Ups With Feet Elevated","Kroppsvekt","Styrke","bryst",0,"","Push-Ups_With_Feet_Elevated"],
+["Armhevinger på skrå","Incline Push-Up","Kroppsvekt","Styrke","bryst",0,"","Incline_Push-Up"],
+["Armhevinger, bredt grep","Push-Up Wide","Kroppsvekt","Styrke","bryst",0,"","Push-Up_Wide"],
+["Arnold press","Arnold Dumbbell Press","Manualer","Styrke","skuldre",0,"","Arnold_Dumbbell_Press"],
+["Arnold press med kettlebell","Kettlebell Arnold Press","Kettlebell","Styrke","skuldre",0,"","Kettlebell_Arnold_Press"],
+["Atlas stones","Atlas Stones","Annet","Strongman","korsrygg",0,"","Atlas_Stones"],
+["Bakoverutfall fra forhøyning","Elevated Back Lunge","Stang","Styrke","forside lår",1,"","Elevated_Back_Lunge"],
+["Bakoverutfall med manualer","Dumbbell Rear Lunge","Manualer","Styrke","forside lår",0,"","Dumbbell_Rear_Lunge"],
+["Bakre skulderflies i kabel","Cable Rear Delt Fly","Kabel","Styrke","skuldre",0,"","Cable_Rear_Delt_Fly"],
+["Band pull-apart","Band Pull Apart","Strikk","Styrke","skuldre",0,"","Band_Pull_Apart"],
+["Battle ropes","Battling Ropes","Annet","Styrke","skuldre",0,"","Battling_Ropes"],
+["Beinpress","Leg Press","Maskin","Styrke","forside lår",0,"","Leg_Press"],
+["Beinpress, smal fotstilling","Narrow Stance Leg Press","Maskin","Styrke","forside lår",0,"","Narrow_Stance_Leg_Press"],
+["Beinspark","Leg Extensions","Maskin","Styrke","forside lår",0,"","Leg_Extensions"],
+["Benkdips","Bench Dips","Kroppsvekt","Styrke","triceps",0,"","Bench_Dips"],
+["Benkdips med vekt","Weighted Bench Dip","Annet","Styrke","triceps",0,"","Weighted_Bench_Dip"],
+["Benkpress","Barbell Bench Press - Medium Grip","Stang","Styrke","bryst",1,"bench","Barbell_Bench_Press_-_Medium_Grip"],
+["Benkpress i smithmaskin","Smith Machine Bench Press","Maskin","Styrke","bryst",0,"","Smith_Machine_Bench_Press"],
+["Benkpress med kjetting","Bench Press with Chains","Stang","Styrkeløft","triceps",1,"","Bench_Press_with_Chains"],
+["Benkpress med strikk ovenfra","Reverse Band Bench Press","Stang","Styrkeløft","triceps",1,"","Reverse_Band_Bench_Press"],
+["Benkpress, styrkeløftstil","Bench Press - Powerlifting","Stang","Styrkeløft","triceps",1,"","Bench_Press_-_Powerlifting"],
+["Bent press","Bent Press","Kettlebell","Styrke","mage",0,"","Bent_Press"],
+["Bicepscurl fra høy trinse","High Cable Curls","Kabel","Styrke","biceps",0,"","High_Cable_Curls"],
+["Bicepscurl i kabel","Standing Biceps Cable Curl","Kabel","Styrke","biceps",0,"","Standing_Biceps_Cable_Curl"],
+["Bicepscurl i maskin","Machine Bicep Curl","Maskin","Styrke","biceps",0,"","Machine_Bicep_Curl"],
+["Bicepscurl med manualer","Dumbbell Bicep Curl","Manualer","Styrke","biceps",0,"","Dumbbell_Bicep_Curl"],
+["Bicepscurl med stang","Barbell Curl","Stang","Styrke","biceps",1,"","Barbell_Curl"],
+["Bicepscurl med stang, bredt grep","Wide-Grip Standing Barbell Curl","Stang","Styrke","biceps",1,"","Wide-Grip_Standing_Barbell_Curl"],
+["Bicepscurl med stang, smalt grep","Close-Grip Standing Barbell Curl","Stang","Styrke","biceps",1,"","Close-Grip_Standing_Barbell_Curl"],
+["Bicepscurl over hodet i kabel","Overhead Cable Curl","Kabel","Styrke","biceps",0,"","Overhead_Cable_Curl"],
+["BikeErg","sykkel bike","Maskin","Kondisjon","forside lår",0,"",""],
+["Board press","Board Press","Stang","Styrkeløft","triceps",1,"","Board_Press"],
+["Bokshopp","box jump","Annet","Plyometri","forside lår, sete",0,"",""],
+["Boksknebøy","Box Squat","Stang","Styrkeløft","forside lår",1,"boxsquat","Box_Squat"],
+["Box step-overs","box step over","Annet","Kondisjon","forside lår, sete",0,"",""],
+["Bred benkpress","Wide-Grip Barbell Bench Press","Stang","Styrke","bryst",1,"","Wide-Grip_Barbell_Bench_Press"],
+["Brystpress i kabel","Cable Chest Press","Kabel","Styrke","bryst",0,"","Cable_Chest_Press"],
+["Brystpress i maskin","Machine Bench Press","Maskin","Styrke","bryst",0,"","Machine_Bench_Press"],
+["Brystpress i vektarmsmaskin","Leverage Chest Press","Maskin","Styrke","bryst",0,"","Leverage_Chest_Press"],
+["Bulgarsk splittknebøy","bulgarian split squat","Manualer","Styrke","forside lår, sete",0,"bulgarian",""],
+["Burpees","burpee","Kroppsvekt","Kondisjon","hele kroppen",0,"",""],
+["Burpees over manual","burpee over dumbbell","Kroppsvekt","Kondisjon","hele kroppen",0,"",""],
+["Butterfly","Butterfly","Maskin","Styrke","bryst",0,"","Butterfly"],
+["Chest-supported row","Dumbbell Incline Row","Manualer","Styrke","midtre rygg",0,"csrow","Dumbbell_Incline_Row"],
+["Chin-ups","Chin-Up","Kroppsvekt","Styrke","latissimus",0,"","Chin-Up"],
+["Clean","Clean","Stang","Vektløfting","baksida lår",1,"squatclean","Clean"],
+["Clean & jerk","Clean and Jerk","Stang","Vektløfting","skuldre",1,"cj","Clean_and_Jerk"],
+["Clean fra blokk","Clean from Blocks","Stang","Vektløfting","forside lår",1,"","Clean_from_Blocks"],
+["Clean med manualer","Dumbbell Clean","Manualer","Styrke","baksida lår",0,"","Dumbbell_Clean"],
+["Clean og press","Clean and Press","Stang","Styrke","skuldre",1,"","Clean_and_Press"],
+["Clean pull","Clean Pull","Stang","Vektløfting","forside lår",1,"cleanpull","Clean_Pull"],
+["Clean shrug","Clean Shrug","Stang","Vektløfting","trapezius",1,"cleanshrug","Clean_Shrug"],
+["Crunch","Crunches","Kroppsvekt","Styrke","mage",0,"","Crunches"],
+["Crunch i maskin","Ab Crunch Machine","Maskin","Styrke","mage",0,"","Ab_Crunch_Machine"],
+["Cuban press","Cuban Press","Manualer","Styrke","skuldre",0,"","Cuban_Press"],
+["Curl med EZ-stang","EZ-Bar Curl","EZ-stang","Styrke","biceps",0,"","EZ-Bar_Curl"],
+["Curl med overgrep","Reverse Barbell Curl","Stang","Styrke","biceps",1,"","Reverse_Barbell_Curl"],
+["Curl med overgrep i kabel","Reverse Cable Curl","Kabel","Styrke","biceps",0,"","Reverse_Cable_Curl"],
+["Curl med overgrep, manualer","Standing Dumbbell Reverse Curl","Manualer","Styrke","biceps",0,"","Standing_Dumbbell_Reverse_Curl"],
+["DB-benk","Dumbbell Bench Press","Manualer","Styrke","bryst",0,"dbbench","Dumbbell_Bench_Press"],
+["Dead bug","Dead Bug","Kroppsvekt","Styrke","mage",0,"","Dead_Bug"],
+["Dead clean med kettlebell","Kettlebell Dead Clean","Kettlebell","Styrke","baksida lår",0,"","Kettlebell_Dead_Clean"],
+["Dekkvending","Tire Flip","Annet","Strongman","forside lår",0,"","Tire_Flip"],
+["Dips","Dips - Triceps Version","Kroppsvekt","Styrke","triceps",0,"","Dips_-_Triceps_Version"],
+["Dips for bryst","Dips - Chest Version","Annet","Styrke","bryst",0,"","Dips_-_Chest_Version"],
+["Dips i maskin","Dip Machine","Maskin","Styrke","triceps",0,"","Dip_Machine"],
+["Double-unders","double under hopprep","Annet","Kondisjon","legger",0,"",""],
+["Drag curl","Drag Curl","Stang","Styrke","biceps",1,"","Drag_Curl"],
+["Enarms armhevinger","Single-Arm Push-Up","Kroppsvekt","Styrke","bryst",0,"","Single-Arm_Push-Up"],
+["Enarms gulvpress med kettlebell","One-Arm Kettlebell Floor Press","Kettlebell","Styrke","bryst",0,"","One-Arm_Kettlebell_Floor_Press"],
+["Enarms kettlebell clean","One-Arm Kettlebell Clean","Kettlebell","Styrke","baksida lår",0,"","One-Arm_Kettlebell_Clean"],
+["Enarms kettlebell clean & jerk","One-Arm Kettlebell Clean and Jerk","Kettlebell","Styrke","skuldre",0,"","One-Arm_Kettlebell_Clean_and_Jerk"],
+["Enarms kettlebell jerk","One-Arm Kettlebell Jerk","Kettlebell","Styrke","skuldre",0,"","One-Arm_Kettlebell_Jerk"],
+["Enarms kettlebell snatch","One-Arm Kettlebell Snatch","Kettlebell","Styrke","skuldre",0,"","One-Arm_Kettlebell_Snatch"],
+["Enarms kettlebell swing","One-Arm Kettlebell Swings","Kettlebell","Styrke","baksida lår",0,"","One-Arm_Kettlebell_Swings"],
+["Enarms landmine-roing","One-Arm Long Bar Row","Stang","Styrke","midtre rygg",1,"","One-Arm_Long_Bar_Row"],
+["Enarms manualbenk","One Arm Dumbbell Bench Press","Manualer","Styrke","bryst",0,"","One_Arm_Dumbbell_Bench_Press"],
+["Enarms nedtrekk","One Arm Lat Pulldown","Kabel","Styrke","latissimus",0,"","One_Arm_Lat_Pulldown"],
+["Enarms overhead squat med kettlebell","One-Arm Overhead Kettlebell Squats","Kettlebell","Styrke","forside lår",0,"","One-Arm_Overhead_Kettlebell_Squats"],
+["Enarms preacher curl","One Arm Dumbbell Preacher Curl","Manualer","Styrke","biceps",0,"","One_Arm_Dumbbell_Preacher_Curl"],
+["Enarms push press med kettlebell","One-Arm Kettlebell Push Press","Kettlebell","Styrke","skuldre",0,"","One-Arm_Kettlebell_Push_Press"],
+["Enarms roing fra høy trinse","Kneeling Single-Arm High Pulley Row","Kabel","Styrke","latissimus",0,"","Kneeling_Single-Arm_High_Pulley_Row"],
+["Enarms roing med kettlebell","One-Arm Kettlebell Row","Kettlebell","Styrke","midtre rygg",0,"","One-Arm_Kettlebell_Row"],
+["Enarms sidehev","One-Arm Side Laterals","Manualer","Styrke","skuldre",0,"","One-Arm_Side_Laterals"],
+["Enarms sittende kabelroing","Seated One-arm Cable Pulley Rows","Kabel","Styrke","midtre rygg",0,"","Seated_One-arm_Cable_Pulley_Rows"],
+["Enarms skulderpress med manual","Dumbbell One-Arm Shoulder Press","Manualer","Styrke","skuldre",0,"","Dumbbell_One-Arm_Shoulder_Press"],
+["Enarms triceps pushdown","Cable One Arm Tricep Extension","Kabel","Styrke","triceps",0,"","Cable_One_Arm_Tricep_Extension"],
+["Enarms tricepspress","Dumbbell One-Arm Triceps Extension","Manualer","Styrke","triceps",0,"","Dumbbell_One-Arm_Triceps_Extension"],
+["Ettbeins beinspark","Single-Leg Leg Extension","Maskin","Styrke","forside lår",0,"","Single-Leg_Leg_Extension"],
+["Ettbeins markløft med kettlebell","Kettlebell One-Legged Deadlift","Kettlebell","Styrke","baksida lår",0,"","Kettlebell_One-Legged_Deadlift"],
+["Ettbeins seteløft","Single Leg Glute Bridge","Kroppsvekt","Styrke","sete",0,"","Single_Leg_Glute_Bridge"],
+["Face pull","Face Pull","Kabel","Styrke","skuldre",0,"","Face_Pull"],
+["Farmer carry","Farmer's Walk","Annet","Strongman","underarmer",0,"","Farmers_Walk"],
+["Fartsknebøy","Speed Squats","Stang","Styrke","forside lår",1,"","Speed_Squats"],
+["Flies i kabel på benk","Flat Bench Cable Flyes","Kabel","Styrke","bryst",0,"","Flat_Bench_Cable_Flyes"],
+["Flies med manualer","Dumbbell Flyes","Manualer","Styrke","bryst",0,"","Dumbbell_Flyes"],
+["Foroverbøyd sidehev i kabel","Bent Over Low-Pulley Side Lateral","Kabel","Styrke","skuldre",0,"","Bent_Over_Low-Pulley_Side_Lateral"],
+["Front rack-utfall med manualer","db front rack lunge","Manualer","Styrke","forside lår, sete",0,"",""],
+["Frontbøy","Front Barbell Squat","Stang","Styrke","forside lår",1,"frontsquat","Front_Barbell_Squat"],
+["Frontbøy med to kettlebells","Front Squats With Two Kettlebells","Kettlebell","Styrke","forside lår",0,"","Front_Squats_With_Two_Kettlebells"],
+["Fronthev i kabel","Front Cable Raise","Kabel","Styrke","skuldre",0,"","Front_Cable_Raise"],
+["Fronthev med manualer","Front Dumbbell Raise","Manualer","Styrke","skuldre",0,"","Front_Dumbbell_Raise"],
+["Fronthev med skive","Front Plate Raise","Annet","Styrke","skuldre",0,"","Front_Plate_Raise"],
+["Fronthev med to manualer","Front Two-Dumbbell Raise","Manualer","Styrke","skuldre",0,"","Front_Two-Dumbbell_Raise"],
+["Glute ham raise","Glute Ham Raise","Maskin","Styrkeløft","baksida lår",0,"","Glute_Ham_Raise"],
+["Goblet squat","Goblet Squat","Kettlebell","Styrke","forside lår",0,"","Goblet_Squat"],
+["Good morning","Good Morning","Stang","Styrkeløft","baksida lår",1,"","Good_Morning"],
+["Good morning med strikk","Band Good Morning","Strikk","Styrkeløft","baksida lår",0,"","Band_Good_Morning"],
+["Gulvpress","Floor Press","Stang","Styrkeløft","triceps",1,"floorpress","Floor_Press"],
+["Gulvpress med manualer","Dumbbell Floor Press","Manualer","Styrkeløft","triceps",0,"","Dumbbell_Floor_Press"],
+["Gående utfall med stang","Barbell Walking Lunge","Stang","Styrke","forside lår",1,"","Barbell_Walking_Lunge"],
+["Hack squat","Hack Squat","Maskin","Styrke","forside lår",0,"","Hack_Squat"],
+["Hack squat med stang","Barbell Hack Squat","Stang","Styrke","forside lår",1,"","Barbell_Hack_Squat"],
+["Halo","Kettlebell Halo","Kettlebell","Styrke","skuldre",0,"","Kettlebell_Halo"],
+["Hammercurl","Hammer Curls","Manualer","Styrke","biceps",0,"","Hammer_Curls"],
+["Hammercurl med tau","Cable Hammer Curls - Rope Attachment","Kabel","Styrke","biceps",0,"","Cable_Hammer_Curls_-_Rope_Attachment"],
+["Hammercurl på tvers","Cross Body Hammer Curl","Manualer","Styrke","biceps",0,"","Cross_Body_Hammer_Curl"],
+["Hang clean","Hang Clean","Stang","Vektløfting","forside lår",1,"hangsquatclean","Hang_Clean"],
+["Hang clean med kettlebell","Kettlebell Hang Clean","Kettlebell","Styrke","baksida lår",0,"","Kettlebell_Hang_Clean"],
+["Hang clean under knærne","Hang Clean - Below the Knees","Stang","Vektløfting","forside lår",1,"","Hang_Clean_-_Below_the_Knees"],
+["Hang power clean med manualer","db hang clean","Manualer","Styrke","sete, skuldre",0,"",""],
+["Hang snatch","Hang Snatch","Stang","Vektløfting","baksida lår",1,"","Hang_Snatch"],
+["Hang snatch under knærne","Hang Snatch - Below Knees","Stang","Vektløfting","baksida lår",1,"","Hang_Snatch_-_Below_Knees"],
+["Hantelroing","One-Arm Dumbbell Row","Manualer","Styrke","midtre rygg",0,"dbrow","One-Arm_Dumbbell_Row"],
+["Heaving snatch balance","Heaving Snatch Balance","Stang","Vektløfting","forside lår",1,"","Heaving_Snatch_Balance"],
+["Hengende beinhev","Hanging Leg Raise","Kroppsvekt","Styrke","mage",0,"","Hanging_Leg_Raise"],
+["Hengende knehev","hanging knee raise","Kroppsvekt","Styrke","mage",0,"",""],
+["Hengende pike","Hanging Pike","Kroppsvekt","Styrke","mage",0,"","Hanging_Pike"],
+["Hip thrust","Barbell Hip Thrust","Stang","Styrkeløft","sete",1,"","Barbell_Hip_Thrust"],
+["Hip thrust i smithmaskin","Smith Machine Hip Raise","Maskin","Styrke","mage",0,"","Smith_Machine_Hip_Raise"],
+["Hofteinnføring i kabel","Cable Hip Adduction","Kabel","Styrke","forside lår",0,"","Cable_Hip_Adduction"],
+["Hollow hold","hollow","Kroppsvekt","Styrke","mage",0,"",""],
+["Hopp tau","jump rope single unders","Annet","Kondisjon","legger",0,"",""],
+["Hoppknebøy","Freehand Jump Squat","Kroppsvekt","Styrke","forside lår",0,"","Freehand_Jump_Squat"],
+["Håndleddscurl","Palms-Up Dumbbell Wrist Curl Over A Bench","Manualer","Styrke","underarmer",0,"","Palms-Up_Dumbbell_Wrist_Curl_Over_A_Bench"],
+["Håndleddsrulle","Wrist Roller","Annet","Styrke","underarmer",0,"","Wrist_Roller"],
+["Håndstående armhevinger","Handstand Push-Ups","Kroppsvekt","Styrke","skuldre",0,"","Handstand_Push-Ups"],
+["Høy roing i vektarmsmaskin","Leverage High Row","Maskin","Styrke","midtre rygg",0,"","Leverage_High_Row"],
+["Innadrotasjon i kabel","Cable Internal Rotation","Kabel","Styrke","skuldre",0,"","Cable_Internal_Rotation"],
+["Innside lår-maskin","Thigh Adductor","Maskin","Styrke","innside lår",0,"","Thigh_Adductor"],
+["Jackknife","Jackknife Sit-Up","Kroppsvekt","Styrke","mage",0,"","Jackknife_Sit-Up"],
+["Jerk balance","Jerk Balance","Stang","Vektløfting","skuldre",1,"","Jerk_Balance"],
+["Jerk dip","Jerk Dip Squat","Stang","Vektløfting","forside lår",1,"","Jerk_Dip_Squat"],
+["Jerk med to kettlebells","Double Kettlebell Jerk","Kettlebell","Styrke","skuldre",0,"","Double_Kettlebell_Jerk"],
+["JM-press","JM Press","Stang","Styrke","triceps",1,"","JM_Press"],
+["Kabelcrossover","Cable Crossover","Kabel","Styrke","bryst",0,"","Cable_Crossover"],
+["Kabelcrossover nedenfra","Low Cable Crossover","Kabel","Styrke","bryst",0,"","Low_Cable_Crossover"],
+["Kabelcrunch","Cable Crunch","Kabel","Styrke","mage",0,"","Cable_Crunch"],
+["Kettlebell clean med to armer","Two-Arm Kettlebell Clean","Kettlebell","Styrke","skuldre",0,"","Two-Arm_Kettlebell_Clean"],
+["Kettlebell markløft","kb deadlift","Kettlebell","Styrke","sete, baksida lår",0,"",""],
+["Kettlebell swing","russian swing two-arm","Kettlebell","Styrke","sete, baksida lår",0,"",""],
+["Kickback i kabel","One-Legged Cable Kickback","Kabel","Styrke","sete",0,"","One-Legged_Cable_Kickback"],
+["Kickback på alle fire","Glute Kickback","Kroppsvekt","Styrke","sete",0,"","Glute_Kickback"],
+["Kipping muscle-up","Kipping Muscle Up","Annet","Styrke","latissimus",0,"","Kipping_Muscle_Up"],
+["Knebøy","Barbell Squat","Stang","Styrke","forside lår",1,"squat","Barbell_Squat"],
+["Knebøy i smithmaskin","Smith Machine Squat","Maskin","Styrke","forside lår",0,"","Smith_Machine_Squat"],
+["Knebøy med kjetting","Squat with Chains","Stang","Styrkeløft","forside lår",1,"","Squat_with_Chains"],
+["Knebøy med manualer","Dumbbell Squat","Manualer","Styrke","forside lår",0,"","Dumbbell_Squat"],
+["Knebøy med strikk","Squat with Bands","Stang","Styrkeløft","forside lår",1,"","Squat_with_Bands"],
+["Knebøy, bred fotstilling","Wide Stance Barbell Squat","Stang","Styrke","forside lår",1,"","Wide_Stance_Barbell_Squat"],
+["Knehev i dipsstativ","Knee/Hip Raise On Parallel Bars","Annet","Styrke","mage",0,"","Knee_Hip_Raise_On_Parallel_Bars"],
+["Konsentrasjonscurl","Concentration Curls","Manualer","Styrke","biceps",0,"","Concentration_Curls"],
+["Kroppsvektroing","Bodyweight Mid Row","Annet","Styrke","midtre rygg",0,"","Bodyweight_Mid_Row"],
+["Landmine-press","Landmine Linear Jammer","Stang","Styrke","skuldre",1,"","Landmine_Linear_Jammer"],
+["Landmine-roing","Bent Over Two-Arm Long Bar Row","Stang","Styrke","midtre rygg",1,"","Bent_Over_Two-Arm_Long_Bar_Row"],
+["Landmine-rotasjon","Landmine 180's","Stang","Styrke","mage",1,"","Landmine_180s"],
+["Liggende bakre skulderhev","Dumbbell Lying Rear Lateral Raise","Manualer","Styrke","skuldre",0,"","Dumbbell_Lying_Rear_Lateral_Raise"],
+["Liggende beinhev på benk","Flat Bench Lying Leg Raise","Kroppsvekt","Styrke","mage",0,"","Flat_Bench_Lying_Leg_Raise"],
+["Liggende enarms sidehev","Lying One-Arm Lateral Raise","Manualer","Styrke","skuldre",0,"","Lying_One-Arm_Lateral_Raise"],
+["Liggende lårcurl","Lying Leg Curls","Maskin","Styrke","baksida lår",0,"","Lying_Leg_Curls"],
+["Liggende stangroing","Lying Cambered Barbell Row","Stang","Styrke","midtre rygg",1,"","Lying_Cambered_Barbell_Row"],
+["Liggende T-bar-roing","Lying T-Bar Row","Maskin","Styrke","midtre rygg",0,"","Lying_T-Bar_Row"],
+["Liggende tricepspress med manualer","Lying Dumbbell Tricep Extension","Manualer","Styrke","triceps",0,"","Lying_Dumbbell_Tricep_Extension"],
+["Log press","Log Lift","Annet","Strongman","skuldre",0,"","Log_Lift"],
+["Løft på skrå i kabel","Standing Cable Lift","Kabel","Styrke","mage",0,"","Standing_Cable_Lift"],
+["Løp","run","Kroppsvekt","Kondisjon","hele kroppen",0,"",""],
+["Magehjul","Ab Roller","Annet","Styrke","mage",0,"","Ab_Roller"],
+["Manualbenk, nøytralt grep","Dumbbell Bench Press with Neutral Grip","Manualer","Styrke","bryst",0,"","Dumbbell_Bench_Press_with_Neutral_Grip"],
+["Markløft","Barbell Deadlift","Stang","Styrke","korsrygg",1,"deadlift","Barbell_Deadlift"],
+["Markløft fra blokk","Rack Pulls","Stang","Styrkeløft","korsrygg",1,"blockpull","Rack_Pulls"],
+["Markløft i kabel","Cable Deadlifts","Kabel","Styrke","forside lår",0,"","Cable_Deadlifts"],
+["Markløft med axle","Axle Deadlift","Annet","Strongman","korsrygg",0,"","Axle_Deadlift"],
+["Markløft med cleangrep","Clean Deadlift","Stang","Vektløfting","baksida lår",1,"","Clean_Deadlift"],
+["Markløft med kjetting","Deadlift with Chains","Stang","Styrkeløft","korsrygg",1,"","Deadlift_with_Chains"],
+["Markløft med snatchgrep","Snatch Deadlift","Stang","Vektløfting","baksida lår",1,"","Snatch_Deadlift"],
+["Markløft med strikk","Deadlift with Bands","Stang","Styrkeløft","korsrygg",1,"","Deadlift_with_Bands"],
+["Militærpress","Standing Military Press strict press overhead press","Stang","Styrke","skuldre",1,"ohp","Standing_Military_Press"],
+["Monster walk","Monster Walk","Strikk","Styrke","utside lår",0,"","Monster_Walk"],
+["Muscle snatch","Muscle Snatch","Stang","Vektløfting","baksida lår",1,"","Muscle_Snatch"],
+["Muscle-up","Muscle Up","Annet","Styrke","latissimus",0,"","Muscle_Up"],
+["Nedoverskrå benkpress","Decline Barbell Bench Press","Stang","Styrke","bryst",1,"","Decline_Barbell_Bench_Press"],
+["Nedoverskrå flies med manualer","Decline Dumbbell Flyes","Manualer","Styrke","bryst",0,"","Decline_Dumbbell_Flyes"],
+["Nedoverskrå manualbenk","Decline Dumbbell Bench Press","Manualer","Styrke","bryst",0,"","Decline_Dumbbell_Bench_Press"],
+["Nedtrekk","Wide-Grip Lat Pulldown","Kabel","Styrke","latissimus",0,"pulldown","Wide-Grip_Lat_Pulldown"],
+["Nedtrekk med strake armer","Straight-Arm Pulldown","Kabel","Styrke","latissimus",0,"","Straight-Arm_Pulldown"],
+["Nedtrekk med undergrep","Underhand Cable Pulldowns","Kabel","Styrke","latissimus",0,"","Underhand_Cable_Pulldowns"],
+["Nedtrekk med V-håndtak","V-Bar Pulldown","Kabel","Styrke","latissimus",0,"","V-Bar_Pulldown"],
+["Nedtrekk, smalt grep","Close-Grip Front Lat Pulldown","Kabel","Styrke","latissimus",0,"","Close-Grip_Front_Lat_Pulldown"],
+["Nordic hamstring curl","Natural Glute Ham Raise","Kroppsvekt","Styrke","baksida lår",0,"","Natural_Glute_Ham_Raise"],
+["Omvendt butterfly","Reverse Machine Flyes","Maskin","Styrke","skuldre",0,"","Reverse_Machine_Flyes"],
+["Omvendt crunch","Reverse Crunch","Kroppsvekt","Styrke","mage",0,"","Reverse_Crunch"],
+["Omvendt håndleddscurl","Palms-Down Dumbbell Wrist Curl Over A Bench","Manualer","Styrke","underarmer",0,"","Palms-Down_Dumbbell_Wrist_Curl_Over_A_Bench"],
+["Omvendt rygghev","Reverse Hyperextension","Maskin","Styrke","baksida lår",0,"","Reverse_Hyperextension"],
+["Omvendte flies","Reverse Flyes","Manualer","Styrke","skuldre",0,"","Reverse_Flyes"],
+["Opptrekk i kabel","Upright Cable Row","Kabel","Styrke","trapezius",0,"","Upright_Cable_Row"],
+["Opptrekk med manualer","Standing Dumbbell Upright Row","Manualer","Styrke","trapezius",0,"","Standing_Dumbbell_Upright_Row"],
+["Opptrekk med stang","Upright Barbell Row","Stang","Styrke","skuldre",1,"","Upright_Barbell_Row"],
+["Overhead squat","Overhead Squat","Stang","Vektløfting","forside lår",1,"","Overhead_Squat"],
+["Pallof press","Pallof Press","Kabel","Styrke","mage",0,"","Pallof_Press"],
+["Pallof press med rotasjon","Pallof Press With Rotation","Kabel","Styrke","mage",0,"","Pallof_Press_With_Rotation"],
+["Pin press","Pin Presses","Stang","Styrkeløft","triceps",1,"","Pin_Presses"],
+["Pistol squat med kettlebell","Kettlebell Pistol Squat","Kettlebell","Styrke","forside lår",0,"","Kettlebell_Pistol_Squat"],
+["Planke","Plank","Kroppsvekt","Styrke","mage",0,"","Plank"],
+["Power clean","Power Clean","Stang","Styrke","baksida lår",1,"clean","Power_Clean"],
+["Power clean fra blokk","Power Clean from Blocks","Stang","Vektløfting","baksida lår",1,"blockclean","Power_Clean_from_Blocks"],
+["Power snatch","Power Snatch","Stang","Vektløfting","baksida lår",1,"powersnatch","Power_Snatch"],
+["Power snatch fra blokk","Power Snatch from Blocks","Stang","Vektløfting","forside lår",1,"","Power_Snatch_from_Blocks"],
+["Preacher curl","Preacher Curl","Stang","Styrke","biceps",1,"","Preacher_Curl"],
+["Preacher curl i kabel","Cable Preacher Curl","Kabel","Styrke","biceps",0,"","Cable_Preacher_Curl"],
+["Preacher curl i maskin","Machine Preacher Curls","Maskin","Styrke","biceps",0,"","Machine_Preacher_Curls"],
+["Preacher curl med overgrep","Reverse Barbell Preacher Curls","EZ-stang","Styrke","biceps",0,"","Reverse_Barbell_Preacher_Curls"],
+["Press bak nakken","Standing Barbell Press Behind Neck","Stang","Styrke","skuldre",1,"","Standing_Barbell_Press_Behind_Neck"],
+["Pull-through","Pull Through","Kabel","Styrke","sete",0,"","Pull_Through"],
+["Pull-ups","Pullups","Kroppsvekt","Styrke","latissimus",0,"","Pullups"],
+["Pull-ups med strikkhjelp","Band Assisted Pull-Up","Annet","Styrke","latissimus",0,"","Band_Assisted_Pull-Up"],
+["Pull-ups med vekt","Weighted Pull Ups","Annet","Styrke","latissimus",0,"","Weighted_Pull_Ups"],
+["Pull-ups, bredt grep","Wide-Grip Rear Pull-Up","Kroppsvekt","Styrke","latissimus",0,"","Wide-Grip_Rear_Pull-Up"],
+["Pullover med manual","Bent-Arm Dumbbell Pullover","Manualer","Styrke","bryst",0,"","Bent-Arm_Dumbbell_Pullover"],
+["Pullover med strake armer","Straight-Arm Dumbbell Pullover","Manualer","Styrke","bryst",0,"","Straight-Arm_Dumbbell_Pullover"],
+["Push jerk","Power Jerk","Stang","Vektløfting","forside lår",1,"pushjerk","Power_Jerk"],
+["Push press","Push Press","Stang","Vektløfting","skuldre",1,"pushpress","Push_Press"],
+["Push press bak nakken","Push Press - Behind the Neck","Stang","Vektløfting","skuldre",1,"","Push_Press_-_Behind_the_Neck"],
+["Push press med manualer","db push press","Manualer","Styrke","skuldre, triceps",0,"",""],
+["Push press med to kettlebells","Double Kettlebell Push Press","Kettlebell","Styrke","skuldre",0,"","Double_Kettlebell_Push_Press"],
+["Renegade row","Alternating Renegade Row","Kettlebell","Styrke","midtre rygg",0,"","Alternating_Renegade_Row"],
+["Rickshaw carry","Rickshaw Carry","Annet","Strongman","underarmer",0,"","Rickshaw_Carry"],
+["Ring rows","Inverted Row with Straps","Annet","Styrke","midtre rygg",0,"","Inverted_Row_with_Straps"],
+["Ringdips","Ring Dips","Annet","Styrke","triceps",0,"","Ring_Dips"],
+["Roing i slynge","Suspended Row","Annet","Styrke","midtre rygg",0,"","Suspended_Row"],
+["Roing i smithmaskin","Smith Machine Bent Over Row","Maskin","Styrke","midtre rygg",0,"","Smith_Machine_Bent_Over_Row"],
+["Roing i vektarmsmaskin","Leverage Iso Row","Maskin","Styrke","latissimus",0,"","Leverage_Iso_Row"],
+["Roing liggende på skråbenk","Incline Bench Pull","Stang","Styrke","midtre rygg",1,"","Incline_Bench_Pull"],
+["Roing med slede","Sled Row","Annet","Styrke","midtre rygg",0,"","Sled_Row"],
+["Roing med to kettlebells","Two-Arm Kettlebell Row","Kettlebell","Styrke","midtre rygg",0,"","Two-Arm_Kettlebell_Row"],
+["Roing med to manualer","Bent Over Two-Dumbbell Row","Manualer","Styrke","midtre rygg",0,"","Bent_Over_Two-Dumbbell_Row"],
+["Roing med to manualer, nøytralt grep","Bent Over Two-Dumbbell Row With Palms In","Manualer","Styrke","midtre rygg",0,"","Bent_Over_Two-Dumbbell_Row_With_Palms_In"],
+["Roing til ansiktet med tau","Cable Rope Rear-Delt Rows","Kabel","Styrke","skuldre",0,"","Cable_Rope_Rear-Delt_Rows"],
+["Romaskin","rowerg concept2 roing","Maskin","Kondisjon","hele kroppen",0,"",""],
+["Rumensk markløft","Romanian Deadlift","Stang","Styrke","baksida lår",1,"rdl","Romanian_Deadlift"],
+["Rumensk markløft fra underskudd","Romanian Deadlift from Deficit","Stang","Vektløfting","baksida lår",1,"","Romanian_Deadlift_from_Deficit"],
+["Rumensk markløft med manualer","Stiff-Legged Dumbbell Deadlift","Manualer","Styrke","baksida lår",0,"","Stiff-Legged_Dumbbell_Deadlift"],
+["Russian twist","Russian Twist","Kroppsvekt","Styrke","mage",0,"","Russian_Twist"],
+["Russian twist i kabel","Cable Russian Twists","Kabel","Styrke","mage",0,"","Cable_Russian_Twists"],
+["Rygghev","Hyperextensions (Back Extensions)","Annet","Styrke","korsrygg",0,"","Hyperextensions_Back_Extensions"],
+["Rygghev på gulvet","Hyperextensions With No Hyperextension Bench","Kroppsvekt","Styrke","korsrygg",0,"","Hyperextensions_With_No_Hyperextension_Bench"],
+["Saksespark","Flutter Kicks","Kroppsvekt","Styrke","sete",0,"","Flutter_Kicks"],
+["Sandsekk over skulderen","sandbag over shoulder","Annet","Strongman","hele kroppen",0,"",""],
+["Sandsekkbæring","sandbag carry","Annet","Strongman","hele kroppen",0,"",""],
+["Sandsekkløft","Sandbag Load","Annet","Strongman","forside lår",0,"","Sandbag_Load"],
+["Seteløft","Butt Lift (Bridge)","Kroppsvekt","Styrke","sete",0,"","Butt_Lift_Bridge"],
+["Seteløft med stang","Barbell Glute Bridge","Stang","Styrkeløft","sete",1,"","Barbell_Glute_Bridge"],
+["Shuttle run","pendelløp","Kroppsvekt","Kondisjon","hele kroppen",0,"",""],
+["Sidebøy med manual","Dumbbell Side Bend","Manualer","Styrke","mage",0,"","Dumbbell_Side_Bend"],
+["Sidehev","Side Lateral Raise","Manualer","Styrke","skuldre",0,"","Side_Lateral_Raise"],
+["Sidehev i kabel","Cable Seated Lateral Raise","Kabel","Styrke","skuldre",0,"","Cable_Seated_Lateral_Raise"],
+["Sidehev til fronthev","Side Laterals to Front Raise","Manualer","Styrke","skuldre",0,"","Side_Laterals_to_Front_Raise"],
+["Sideplanke","Side Bridge","Kroppsvekt","Styrke","mage",0,"","Side_Bridge"],
+["Sideutfall med stang","Barbell Side Split Squat","Stang","Styrke","forside lår",1,"","Barbell_Side_Split_Squat"],
+["Sittende bakre skulderhev","Seated Bent-Over Rear Delt Raise","Manualer","Styrke","skuldre",0,"","Seated_Bent-Over_Rear_Delt_Raise"],
+["Sittende bicepscurl","Seated Dumbbell Curl","Manualer","Styrke","biceps",0,"","Seated_Dumbbell_Curl"],
+["Sittende ettbeins tåhev","Dumbbell Seated One-Leg Calf Raise","Manualer","Styrke","legger",0,"","Dumbbell_Seated_One-Leg_Calf_Raise"],
+["Sittende good morning","Seated Good Mornings","Stang","Styrkeløft","korsrygg",1,"","Seated_Good_Mornings"],
+["Sittende kabelroing","Seated Cable Rows","Kabel","Styrke","midtre rygg",0,"","Seated_Cable_Rows"],
+["Sittende lårcurl","Seated Leg Curl","Maskin","Styrke","baksida lår",0,"","Seated_Leg_Curl"],
+["Sittende press","Seated Barbell Military Press","Stang","Styrke","skuldre",1,"seatedpress","Seated_Barbell_Military_Press"],
+["Sittende sidehev","Seated Side Lateral Raise","Manualer","Styrke","skuldre",0,"","Seated_Side_Lateral_Raise"],
+["Sittende skulderpress med kettlebell","Kettlebell Seated Press","Kettlebell","Styrke","skuldre",0,"","Kettlebell_Seated_Press"],
+["Sittende skulderpress med manualer","Seated Dumbbell Press","Manualer","Styrke","skuldre",0,"","Seated_Dumbbell_Press"],
+["Sittende tricepspress over hodet","Seated Triceps Press","Manualer","Styrke","triceps",0,"","Seated_Triceps_Press"],
+["Sittende tåhev i maskin","Seated Calf Raise","Maskin","Styrke","legger",0,"","Seated_Calf_Raise"],
+["Sittende tåhev med stang","Barbell Seated Calf Raise","Stang","Styrke","legger",1,"","Barbell_Seated_Calf_Raise"],
+["Situps","Sit-Up","Kroppsvekt","Styrke","mage",0,"","Sit-Up"],
+["SkiErg","ski","Maskin","Kondisjon","hele kroppen",0,"",""],
+["Skiveklyp","Plate Pinch","Annet","Styrke","underarmer",0,"","Plate_Pinch"],
+["Skrå bicepscurl","Incline Dumbbell Curl","Manualer","Styrke","biceps",0,"","Incline_Dumbbell_Curl"],
+["Skrå brystpress i vektarmsmaskin","Leverage Incline Chest Press","Maskin","Styrke","bryst",0,"","Leverage_Incline_Chest_Press"],
+["Skrå crunch","Oblique Crunches - On The Floor","Kroppsvekt","Styrke","mage",0,"","Oblique_Crunches_-_On_The_Floor"],
+["Skrå DB-benk","Incline Dumbbell Press","Manualer","Styrke","bryst",0,"inclinedb","Incline_Dumbbell_Press"],
+["Skrå flies i kabel","Incline Cable Flye","Kabel","Styrke","bryst",0,"","Incline_Cable_Flye"],
+["Skrå flies med manualer","Incline Dumbbell Flyes","Manualer","Styrke","bryst",0,"","Incline_Dumbbell_Flyes"],
+["Skrå hammercurl","Incline Hammer Curls","Manualer","Styrke","biceps",0,"","Incline_Hammer_Curls"],
+["Skrå manualbenk, nøytralt grep","Hammer Grip Incline DB Bench Press","Manualer","Styrke","bryst",0,"","Hammer_Grip_Incline_DB_Bench_Press"],
+["Skråbenk","Barbell Incline Bench Press - Medium Grip","Stang","Styrke","bryst",1,"incline","Barbell_Incline_Bench_Press_-_Medium_Grip"],
+["Skråbenk i smithmaskin","Smith Machine Incline Bench Press","Maskin","Styrke","bryst",0,"","Smith_Machine_Incline_Bench_Press"],
+["Skulderpress i kabel","Cable Shoulder Press","Kabel","Styrke","skuldre",0,"","Cable_Shoulder_Press"],
+["Skulderpress i maskin","Machine Shoulder (Military) Press","Maskin","Styrke","skuldre",0,"","Machine_Shoulder_Military_Press"],
+["Skulderpress i smithmaskin","Smith Machine Overhead Shoulder Press","Maskin","Styrke","skuldre",0,"","Smith_Machine_Overhead_Shoulder_Press"],
+["Skulderpress i vektarmsmaskin","Leverage Shoulder Press","Maskin","Styrke","skuldre",0,"","Leverage_Shoulder_Press"],
+["Skulderpress med manualer","Dumbbell Shoulder Press","Manualer","Styrke","skuldre",0,"","Dumbbell_Shoulder_Press"],
+["Skulderpress med to kettlebells","Two-Arm Kettlebell Military Press","Kettlebell","Styrke","skuldre",0,"","Two-Arm_Kettlebell_Military_Press"],
+["Skulderpress, nøytralt grep","Standing Palms-In Dumbbell Press","Manualer","Styrke","skuldre",0,"","Standing_Palms-In_Dumbbell_Press"],
+["Skuldertrekk i kabel","Cable Shrugs","Kabel","Styrke","trapezius",0,"","Cable_Shrugs"],
+["Skuldertrekk med manualer","Dumbbell Shrug","Manualer","Styrke","trapezius",0,"","Dumbbell_Shrug"],
+["Skuldertrekk med stang","Barbell Shrug","Stang","Styrke","trapezius",1,"","Barbell_Shrug"],
+["Skullcrusher med EZ-stang","EZ-Bar Skullcrusher","EZ-stang","Styrke","triceps",0,"","EZ-Bar_Skullcrusher"],
+["Skullcrusher med stang","Lying Close-Grip Barbell Triceps Extension Behind The Head","Stang","Styrke","triceps",1,"","Lying_Close-Grip_Barbell_Triceps_Extension_Behind_The_Head"],
+["Sledepush","Sled Push","Annet","Strongman","forside lår",0,"","Sled_Push"],
+["Sledetrekk med sele","Sled Drag - Harness","Annet","Strongman","forside lår",0,"","Sled_Drag_-_Harness"],
+["Smal benkpress","Close-Grip Barbell Bench Press","Stang","Styrke","triceps",1,"closegrip","Close-Grip_Barbell_Bench_Press"],
+["Smal benkpress med EZ-stang","Close-Grip EZ-Bar Press","EZ-stang","Styrke","triceps",0,"","Close-Grip_EZ-Bar_Press"],
+["Smal manualpress","Close-Grip Dumbbell Press","Manualer","Styrke","triceps",0,"","Close-Grip_Dumbbell_Press"],
+["Smale armhevinger","Push-Ups - Close Triceps Position","Kroppsvekt","Styrke","triceps",0,"","Push-Ups_-_Close_Triceps_Position"],
+["Snatch","Snatch","Stang","Vektløfting","forside lår",1,"snatch","Snatch"],
+["Snatch balance","Snatch Balance","Stang","Vektløfting","forside lår",1,"snbal","Snatch_Balance"],
+["Snatch fra blokk","Snatch from Blocks","Stang","Vektløfting","forside lår",1,"","Snatch_from_Blocks"],
+["Snatch med manual","db snatch","Manualer","Kondisjon","sete, skuldre",0,"",""],
+["Snatch med to kettlebells","Double Kettlebell Snatch","Kettlebell","Styrke","skuldre",0,"","Double_Kettlebell_Snatch"],
+["Snatch pull","Snatch Pull","Stang","Styrke","baksida lår",1,"snpull","Snatch_Pull"],
+["Snatch shrug","Snatch Shrug","Stang","Vektløfting","trapezius",1,"snshrug","Snatch_Shrug"],
+["Spider crawl","Spider Crawl","Kroppsvekt","Styrke","mage",0,"","Spider_Crawl"],
+["Spider curl","Spider Curl","EZ-stang","Styrke","biceps",0,"","Spider_Curl"],
+["Split clean","Split Clean","Stang","Vektløfting","forside lår",1,"","Split_Clean"],
+["Split jerk","Split Jerk","Stang","Vektløfting","forside lår",1,"","Split_Jerk"],
+["Split snatch","Split Snatch","Stang","Vektløfting","baksida lår",1,"","Split_Snatch"],
+["Splittknebøy i slynge","Suspended Split Squat","Annet","Styrke","forside lår",0,"","Suspended_Split_Squat"],
+["Splittknebøy med manualer","Split Squat with Dumbbells","Manualer","Styrke","forside lår",0,"","Split_Squat_with_Dumbbells"],
+["Squat jerk","Squat Jerk","Stang","Styrke","forside lår",1,"","Squat_Jerk"],
+["Stangroing","Bent Over Barbell Row","Stang","Styrke","midtre rygg",1,"row","Bent_Over_Barbell_Row"],
+["Stangroing med undergrep","Reverse Grip Bent-Over Rows","Stang","Styrke","midtre rygg",1,"","Reverse_Grip_Bent-Over_Rows"],
+["Step-up med knehev","Step-up with Knee Raise","Kroppsvekt","Styrke","sete",0,"","Step-up_with_Knee_Raise"],
+["Step-ups med manualer","Dumbbell Step Ups","Manualer","Styrke","forside lår",0,"","Dumbbell_Step_Ups"],
+["Step-ups med stang","Barbell Step Ups","Stang","Styrke","forside lår",1,"","Barbell_Step_Ups"],
+["Strak markløft","Stiff-Legged Barbell Deadlift","Stang","Styrke","baksida lår",1,"","Stiff-Legged_Barbell_Deadlift"],
+["Stående brystpress i kabel","Standing Cable Chest Press","Kabel","Styrke","bryst",0,"","Standing_Cable_Chest_Press"],
+["Stående lårcurl","Standing Leg Curl","Maskin","Styrke","baksida lår",0,"","Standing_Leg_Curl"],
+["Stående skulderpress med manualer","Standing Dumbbell Press","Manualer","Styrke","skuldre",0,"","Standing_Dumbbell_Press"],
+["Stående tåhev i maskin","Standing Calf Raises","Maskin","Styrke","legger",0,"","Standing_Calf_Raises"],
+["Sumo high pull med kettlebell","Kettlebell Sumo High Pull","Kettlebell","Styrke","trapezius",0,"","Kettlebell_Sumo_High_Pull"],
+["Sumoknebøy med manual","Plie Dumbbell Squat","Manualer","Styrke","forside lår",0,"","Plie_Dumbbell_Squat"],
+["Sumomarkløft","Sumo Deadlift","Stang","Styrkeløft","baksida lår",1,"sumo","Sumo_Deadlift"],
+["Svend press","Svend Press","Annet","Styrke","bryst",0,"","Svend_Press"],
+["T-bar-roing","T-Bar Row with Handle","Stang","Styrke","midtre rygg",1,"","T-Bar_Row_with_Handle"],
+["Tate press","Tate Press","Manualer","Styrke","triceps",0,"","Tate_Press"],
+["Tauklatring","Rope Climb","Annet","Styrke","latissimus",0,"","Rope_Climb"],
+["Thruster","barbell thruster","Stang","Kondisjon","forside lår, skuldre",1,"",""],
+["Thruster med kettlebell","Kettlebell Thruster","Kettlebell","Styrke","skuldre",0,"","Kettlebell_Thruster"],
+["Thruster med manualer","db thruster","Manualer","Kondisjon","forside lår, skuldre",0,"",""],
+["Toes-to-bar","toes to bar t2b","Kroppsvekt","Styrke","mage",0,"",""],
+["Trap bar-markløft","Trap Bar Deadlift","Annet","Styrke","forside lår",0,"trapbar","Trap_Bar_Deadlift"],
+["Tre kvarte situps","3/4 Sit-Up","Kroppsvekt","Styrke","mage",0,"","3_4_Sit-Up"],
+["Triceps kickback","Tricep Dumbbell Kickback","Manualer","Styrke","triceps",0,"","Tricep_Dumbbell_Kickback"],
+["Triceps pushdown","Triceps Pushdown","Kabel","Styrke","triceps",0,"","Triceps_Pushdown"],
+["Triceps pushdown med tau","Triceps Pushdown - Rope Attachment","Kabel","Styrke","triceps",0,"","Triceps_Pushdown_-_Rope_Attachment"],
+["Triceps pushdown med undergrep","Reverse Grip Triceps Pushdown","Kabel","Styrke","triceps",0,"","Reverse_Grip_Triceps_Pushdown"],
+["Triceps pushdown med V-håndtak","Triceps Pushdown - V-Bar Attachment","Kabel","Styrke","triceps",0,"","Triceps_Pushdown_-_V-Bar_Attachment"],
+["Tricepspress i maskin","Machine Triceps Extension","Maskin","Styrke","triceps",0,"","Machine_Triceps_Extension"],
+["Tricepspress over hodet med kettlebell","Kettlebell Overhead Triceps Extension","Kettlebell","Styrke","triceps",0,"","Kettlebell_Overhead_Triceps_Extension"],
+["Tricepspress over hodet med manual","Standing Dumbbell Triceps Extension","Manualer","Styrke","triceps",0,"","Standing_Dumbbell_Triceps_Extension"],
+["Tricepspress over hodet med stang","Standing Overhead Barbell Triceps Extension","Stang","Styrke","triceps",1,"","Standing_Overhead_Barbell_Triceps_Extension"],
+["Tricepspress over hodet med tau","Triceps Overhead Extension with Rope","Kabel","Styrke","triceps",0,"","Triceps_Overhead_Extension_with_Rope"],
+["Turkish get-up","Kettlebell Turkish Get-Up (Lunge style)","Kettlebell","Styrke","skuldre",0,"","Kettlebell_Turkish_Get-Up_Lunge_style"],
+["Tåhev i beinpress","Calf Press On The Leg Press Machine","Maskin","Styrke","legger",0,"","Calf_Press_On_The_Leg_Press_Machine"],
+["Tåhev med manualer","Standing Dumbbell Calf Raise","Manualer","Styrke","legger",0,"","Standing_Dumbbell_Calf_Raise"],
+["Tåhev med stang","Standing Barbell Calf Raise","Stang","Styrke","legger",1,"","Standing_Barbell_Calf_Raise"],
+["Tønneløft","Keg Load","Annet","Strongman","korsrygg",0,"","Keg_Load"],
+["Underskuddsmarkløft","Deficit Deadlift","Stang","Styrkeløft","korsrygg",1,"deficit","Deficit_Deadlift"],
+["Utadrotasjon i kabel","External Rotation with Cable","Kabel","Styrke","skuldre",0,"","External_Rotation_with_Cable"],
+["Utadrotasjon med manual","External Rotation","Manualer","Styrke","skuldre",0,"","External_Rotation"],
+["Utadrotasjon med strikk","External Rotation with Band","Strikk","Styrke","skuldre",0,"","External_Rotation_with_Band"],
+["Utfall med manualer","Dumbbell Lunges","Manualer","Styrke","forside lår",0,"","Dumbbell_Lunges"],
+["Utfall med stang","Barbell Lunge","Stang","Styrke","forside lår",1,"","Barbell_Lunge"],
+["Utrulling med stang","Barbell Ab Rollout","Stang","Styrke","mage",1,"","Barbell_Ab_Rollout"],
+["Utrulling med stang, på knærne","Barbell Ab Rollout - On Knees","Stang","Styrke","mage",1,"","Barbell_Ab_Rollout_-_On_Knees"],
+["Utside lår-maskin","Thigh Abductor","Maskin","Styrke","utside lår",0,"","Thigh_Abductor"],
+["Vedhugger i kabel","Standing Cable Wood Chop","Kabel","Styrke","mage",0,"","Standing_Cable_Wood_Chop"],
+["Vekslende bicepscurl","Dumbbell Alternate Bicep Curl","Manualer","Styrke","biceps",0,"","Dumbbell_Alternate_Bicep_Curl"],
+["Vekslende hammercurl","Alternate Hammer Curl","Manualer","Styrke","biceps",0,"","Alternate_Hammer_Curl"],
+["Vekslende hang clean med to kettlebells","Double Kettlebell Alternating Hang Clean","Kettlebell","Styrke","baksida lår",0,"","Double_Kettlebell_Alternating_Hang_Clean"],
+["Vekslende skulderpress med kettlebells","Alternating Kettlebell Press","Kettlebell","Styrke","skuldre",0,"","Alternating_Kettlebell_Press"],
+["Vekslende skulderpress med manualer","Standing Alternating Dumbbell Press","Manualer","Styrke","skuldre",0,"","Standing_Alternating_Dumbbell_Press"],
+["Wall balls","wall ball","Medisinball","Kondisjon","forside lår, skuldre",0,"",""],
+["Windmill","Kettlebell Windmill","Kettlebell","Styrke","mage",0,"","Kettlebell_Windmill"],
+["Y-hev med manualer","Dumbbell Scaption","Manualer","Styrke","skuldre",0,"","Dumbbell_Scaption"],
+["Yoke walk","Yoke Walk","Annet","Strongman","forside lår",0,"","Yoke_Walk"],
+["Zercher-knebøy","Zercher Squats","Stang","Styrke","forside lår",1,"","Zercher_Squats"],
+["Zottman curl","Zottman Curl","Manualer","Styrke","biceps",0,"","Zottman_Curl"],
+["Åttetall med kettlebell","Kettlebell Figure 8","Kettlebell","Styrke","mage",0,"","Kettlebell_Figure_8"]
+];
+// Søk på norsk eller engelsk, i navn, utstyr og muskler. Alle ordene må treffe. Navn som starter med søket, kommer først.
+const exNorm = t => String(t || '').toLowerCase().replace(/[-,.()/]/g, ' ');
+function exSearch(q, n){
+  const w = exNorm(q).split(/\s+/).filter(Boolean); if (!w.length) return [];
+  const hit = EXLIB.map((r, i) => ({i, name: exNorm(r[0]), all: exNorm(r[0] + ' ' + r[1] + ' ' + r[2] + ' ' + r[3] + ' ' + r[4])}))
+    .filter(x => w.every(t => x.all.includes(t)));
+  const rank = x => x.name.startsWith(w[0]) ? 0 : x.name.includes(w[0]) ? 1 : 2;
+  return hit.sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name, 'no')).slice(0, n).map(x => x.i);
+}
 const sw = (a, slot) => (a.swaps && a.swaps[slot]) || slot;   // hvilket løft ligger i plassen nå?
 // Stanga: 20 kg som standard, 15 kg kan velges under Innstillinger. Laveste vekt på stangøvelser er tom stang.
 const BAR = () => S.settings.bar === 15 ? 15 : 20;
@@ -1974,7 +2388,8 @@ function doSwap(slot){
     if (!(W > 0)) { fieldErr($('#swW'), 'Skriv inn en vekt for ' + nm.toLowerCase()); return; }
     const id = 'c_' + Date.now().toString(36);
     S.custom = S.custom || {};
-    S.custom[id] = {n: nm, bar: ($('#swBar') || {}).checked ? 1 : 0, alt: slot};
+    const li = ($('#swName') || {}).dataset ? +$('#swName').dataset.lib : NaN, lr = EXLIB[li];
+    S.custom[id] = Object.assign({n: nm, bar: ($('#swBar') || {}).checked ? 1 : 0, alt: slot}, lr && lr[0] === nm && lr[7] ? {src: lr[7]} : {});
     mergeCustom();
     B = ui.swapSel.lift = id;
   }
@@ -1997,6 +2412,14 @@ function doSwap(slot){
   toast(liftName(B) + (started ? ' gjelder fra neste økt' : ' er lagt inn'));
 }
 
+// Treff i biblioteket under «+ Egen øvelse». Øvelser appen har som alternativ for løftet, velges direkte.
+function libResHTML(q, slot){
+  const ids = exSearch(q, 8);
+  if (!String(q).trim()) return '';
+  if (!ids.length) return '<p class="small muted">Ingen treff. Skriv navnet under, så lager du øvelsen selv.</p>';
+  return ids.map(i => { const r = EXLIB[i];
+    return `<button class="lib-hit" data-a="swlib:${slot}:${i}"><b>${esc(r[0])}</b><small>${esc(r[2])}${r[4] ? ' · ' + esc(r[4]) : ''}</small></button>`; }).join('');
+}
 function swapRows(p, a){
   const slots = slotsOf(p);
   if (!slots.length) return '';
@@ -2007,6 +2430,9 @@ function swapRows(p, a){
         <option value="__new"${sel === '__new' ? ' selected' : ''}>+ Egen øvelse …</option></select></div>`;
     if (sel === '__new') {
       h += `<div class="swapbox">
+        <label for="swLib" class="small">Søk i øvelsesbiblioteket</label>
+        <input id="swLib" class="txt" type="search" maxlength="40" placeholder="For eksempel frontbøy, landmine eller sete" autocomplete="off" data-swlib="${slot}">
+        <div id="swLibRes" class="lib-res" aria-live="polite"></div>
         <label for="swName" class="small">Navn på øvelsen</label>
         <input id="swName" class="txt" type="text" maxlength="40" placeholder="For eksempel hang snatch" autocomplete="off">
         <label class="chk small"><input id="swBar" type="checkbox" checked> Vanlig stang (viser skiver per side)</label>
@@ -6404,6 +6830,18 @@ document.addEventListener('click', ev => {
     }
     case 'cut': { const e = S.draft.ex[+r[0]]; if (e.sets.length > 1 && e.sets[e.sets.length-1].d == null) { e.sets.pop(); e.cut = (e.cut||0) + 1; } save(); render(); break; }
     case 'doswap': doSwap(r[0]); break;
+    case 'swlib': {
+      const slot = r[0], e = EXLIB[+r[1]]; if (!e) break;
+      // Har programmet øvelsen som alternativ fra før, brukes den, med vektene du har i den
+      if (e[6] && (e[6] === slot || (LIFTS[e[6]] && LIFTS[e[6]].alt === slot))) { ui.swapSel = {slot, lift: e[6]}; render(); break; }
+      const nm = $('#swName'), bar = $('#swBar'), res = $('#swLibRes'), q = $('#swLib');
+      if (nm) { nm.value = e[0]; nm.dataset.lib = r[1]; }
+      if (bar) bar.checked = !!e[5];
+      if (res) res.innerHTML = `<p class="small muted">${esc(e[0])} er valgt. Skriv inn vekta og trykk «Legg til».</p>`;
+      if (q) q.value = '';
+      const w = $('#swW'); if (w) w.focus();
+      break;
+    }
     case 'plan': ui.plan = {id: S.active.programId, active: true}; render(); toTop(); break;
     case 'planprev': { const pp = prog(r[0]), inst = newInstance(pp); if (!inst) break; ui.plan = {id: pp.id, active: false, inst}; render(); toTop(); break; }
     case 'ax': {
@@ -6743,6 +7181,7 @@ document.addEventListener('input', ev => {
     const c = $('#mineCk'); if (c) c.innerHTML = mineCkTxt(ui.mineEdit);
   }
   else if (ev.target.id === 'note' && S.draft) { S.draft.note = ev.target.value; save(); }
+  else if (ev.target.id === 'swLib') { const r = $('#swLibRes'); if (r) r.innerHTML = libResHTML(ev.target.value, ev.target.dataset.swlib); return; }
   else if (ev.target.dataset && ev.target.dataset.ppsplit) {
     const ctx = ev.target.dataset.ppsplit, pk = ctx === 'session' ? S.draft && S.draft.pete : ui.freePete;
     if (pk) { pk.split = ev.target.value; if (ctx === 'session') save(); }
