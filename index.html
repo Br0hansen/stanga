@@ -487,6 +487,10 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .plan-ex .ln>span:last-child{color:var(--chalk-2);text-align:right;font-variant-numeric:tabular-nums}
 .plan-s.done-s .plan-ex .ln>span:last-child{color:var(--pen)}
 
+/* Fjern en øvelse fra dagens økt */
+.ex-rm-l{align-self:flex-start;color:var(--chalk-2);font-size:14px}
+.ex-rm{display:grid;gap:10px;padding:12px;border-radius:4px}
+.rm-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
 /* Pete Plan */
 .pp-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .pp-mach{display:flex;gap:4px;padding:3px;border-radius:4px;box-shadow:inset 0 0 0 1px var(--line)}
@@ -876,7 +880,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 88;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 89;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -2088,8 +2092,8 @@ function spReadiness(a){
   return p.days.map(d => {
     const L = sw(a, d.lift), hist = (a.e1log && a.e1log[L]) || [];
     const last = S.history.find(h => h.programId === 'sp12' && !h.skipped && h.date >= a.startedAt &&
-      h.ex.some(e => e.lift === L && /Toppsett|Singler/.test(e.tag || '')));
-    const e = last && last.ex.find(e => e.lift === L && /Toppsett|Singler/.test(e.tag || ''));
+      h.ex.some(e => e.lift === L && !e.rm && /Toppsett|Singler/.test(e.tag || '')));
+    const e = last && last.ex.find(e => e.lift === L && !e.rm && /Toppsett|Singler/.test(e.tag || ''));
     const eff = !e ? null : d.lift === 'clean' ? (e.q === 'god' ? 'raske og rene' : e.q === 'treg' ? 'tregere' : e.q === 'teknisk' ? 'teknikk sviktet' : null)
                                                : (e.rpe != null ? 'RPE ' + fmt(e.rpe) : null);
     const effOk = !e ? null : d.lift === 'clean' ? e.q === 'god' : (e.rpe != null && e.rpe <= 9);
@@ -2866,13 +2870,15 @@ function finish(){
   const prs = findRecords(s);   // før økta legges i loggen, så den ikke sammenlignes med seg selv
   // Samme økt som en venn er en engangsøkt: ingen progresjon, og programmet står der det står
   const undo = g ? undefined : undoPoint(!!s.pete);
-  const notes = g ? [{name:'Programmet ditt', text:'Står der det sto. Neste økt er den samme som før.', kind:'same'}] : progress(p, S.active, s);
+  const all = exAll(s), sp = all === s.ex ? s : Object.assign({}, s, {ex: all});
+  const notes = g ? [{name:'Programmet ditt', text:'Står der det sto. Neste økt er den samme som før.', kind:'same'}] : progress(p, S.active, sp);
+  if (!g) (s.rmEx || []).forEach(e => notes.push({name: liftName(e.lift), text:'Fjernet i dag. Økta flytter ikke vekta.', kind:'same'}));
   const vol = s.ex.reduce((sum,e) => sum + e.sets.reduce((v,x) => v + (x.d||0)*x.w, 0), 0);
   S.history.unshift({date:Date.now(), programId: g ? undefined : p.id, guest: g ? {sid:g.sid, who:g.who} : undefined, day:s.day, sub:s.sub, note:(s.note||'').trim(), metcon:!!(s.metcon || s.wod), mc: (s.metcon || s.wod) ? mcSaved(s.mc) : undefined,
     wod: s.wod ? {id:s.wod.id, navn:s.wod.navn, tekst:s.wod.tekst, resultat:(s.wod.resultat||'').trim()} : undefined,
     pete: s.pete ? peteDone(s.pete) : undefined, idx: g ? undefined : S.active.idx,
     cond: s.cond ? {title:s.cond.title, lines:s.cond.lines, res:s.cond.res || {}} : undefined,
-    ex: s.ex.map(e => ({lift:e.lift, tag:e.tag, rpe:e.rpe, q:e.q, sets:e.sets.map(x => Object.assign({t:x.t, w:x.w, d:x.d}, x.c ? {c:x.c} : {}))})), undo});
+    ex: all.map(e => Object.assign({lift:e.lift, tag:e.tag, rpe: e.rm ? undefined : e.rpe, q: e.rm ? undefined : e.q, sets:e.sets.map(x => Object.assign({t:x.t, w:x.w, d:x.d}, x.c ? {c:x.c} : {}))}, e.rm ? {rm:true} : {})), undo});
   if (g) { S.draft = S.parked || null; delete S.parked; }   // din egen økt kommer tilbake slik du forlot den
   else { keepOneUndo(); S.active.idx++; S.draft = null; }
   ui.summary = {day:s.day, notes, vol, prs};
@@ -2885,7 +2891,7 @@ function finish(){
 function skipSession(){
   const p = prog(S.active.programId), s = S.draft;
   S.history.unshift({date:Date.now(), programId:p.id, day:s.day, sub:s.sub, skipped:true, idx:S.active.idx,
-    ex: s.ex.map(e => ({lift:e.lift, tag:e.tag, sets:e.sets.map(x => ({t:x.t, w:x.w, d:null}))})), undo: undoPoint(false)});
+    ex: exAll(s).map(e => ({lift:e.lift, tag:e.tag, sets:e.sets.map(x => ({t:x.t, w:x.w, d:null}))})), undo: undoPoint(false)});
   keepOneUndo();
   S.active.idx++;
   S.draft = null; ui.confirm = null; ui.summary = null;
@@ -2897,6 +2903,23 @@ function skipSession(){
    Den siste programøkta har en kopi av programmet slik det var før økta (undo). Slettes den,
    går programmet tilbake dit: samme vekter og samme neste økt. Bare den nyeste økta har kopien. */
 const clone = o => o == null ? o : JSON.parse(JSON.stringify(o));
+/* Fjerne en øvelse fra dagens økt. Øvelsen flyttes til s.rmEx med settene slik de var, så «Ta tilbake» gir den
+   igjen uendret. o er plassen i økta, så den kommer tilbake på riktig sted. Når økta lagres, er den med igjen,
+   men uten loggede sett (rm): da ser hvert program den som urørt, og vekta står som den er. */
+function exRemove(ei){
+  const s = S.draft, e = s && s.ex[ei]; if (!e) return;
+  if (!(s.rmEx || []).length) s.ex.forEach((x, i) => { x.o = i; });
+  s.rmEx = (s.rmEx || []).concat(e); s.ex.splice(ei, 1);
+  ui.confirm = null; ui.exOpen = {}; ui.fresh = null; save(); render();
+  toast(liftName(e.lift) + ' er fjernet fra dagens økt');
+}
+function exBack(i){
+  const s = S.draft, e = s && (s.rmEx || [])[i]; if (!e) return;
+  s.rmEx.splice(i, 1); s.ex.push(e); s.ex.sort((a, b) => a.o - b.o);
+  ui.exOpen = {}; ui.fresh = null; save(); render(); toast(liftName(e.lift) + ' er tilbake i økta');
+}
+const exAll = s => !(s.rmEx || []).length ? s.ex
+  : s.ex.concat(s.rmEx.map(e => Object.assign(clone(e), {rm:true, sets: e.sets.map(x => Object.assign({}, x, {d:null}))}))).sort((a, b) => a.o - b.o);
 const undoPoint = pete => ({active: clone(S.active), pete: pete ? clone(S.pete) : undefined});
 // De siste øktene beholder kopien, så en tidligere økt kan rettes i loggen (se leRedo). Bare den nyeste kan angres helt.
 function keepOneUndo(){ let n = 0; S.history.forEach(h => { if (h.undo && ++n > UNDO_KEEP) delete h.undo; }); }
@@ -3115,7 +3138,7 @@ function vLogEdit(){
     <header class="head"><p class="eyebrow">Endre økt</p><h1>${esc(title)}</h1></header>
     <div class="box" style="gap:0"><div class="field"><label for="leDate">Dato</label>
       <span class="inp"><input id="leDate" type="date" value="${ymd(h.date)}" max="${ymd(Date.now())}"></span></div></div>
-    ${h.ex.map((e, ei) => `<section class="box le-ex">
+    ${h.ex.map((e, ei) => e.rm ? '' : `<section class="box le-ex">
       <h2>${esc(liftName(e.lift))}${e.tag ? ` <span class="tag" style="display:inline">${esc(e.tag)}</span>` : ''}</h2>
       <div class="le-head" aria-hidden="true"><span>Sett</span><span>kg</span><span>Reps</span></div>
       ${e.sets.map((x, si) => `<div class="le-row"><span>${si + 1}</span>
@@ -3786,12 +3809,12 @@ function vToday(){
         : S.active.e1rm && s.ex[0] && S.active.e1rm[s.ex[0].lift] ? `<p class="muted small">${p.prog === 'sp12' ? 'Estimert 1RM' : '1RM'} ${liftName(s.ex[0].lift).toLowerCase()}: ${fmt(Math.round(S.active.e1rm[s.ex[0].lift]*2)/2)} kg</p>` : ''}
     </header>`;
   if (p.prog === 'sp12') {
-    const c = mcRecentConflict(s.ex[0].slot);
+    const c = s.ex[0] && mcRecentConflict(s.ex[0].slot);
     if (c && !anyTouched) h += `<div class="warn">Du logget en ${MC[c.mc.type].n.toLowerCase()} metcon for ${Math.max(1, Math.round((Date.now() - c.date)/3600e3))} timer siden. Forvent høyere RPE i dag, og kutt gjerne ett backoff-sett.</div>`;
     if ((s.ph === 'd4' || s.ph === 'd8') && !anyTouched && ui.keepDl !== s.ph) h += vDeloadChoice(s.ph);
   }
   if (p.prog === 'burg') {
-    const c = mcRecentConflict(s.ex[0].slot);
+    const c = s.ex[0] && mcRecentConflict(s.ex[0].slot);
     if (c && !anyTouched) h += `<div class="warn">Du logget en ${MC[c.mc.type].n.toLowerCase()} metcon for ${Math.max(1, Math.round((Date.now() - c.date)/3600e3))} timer siden. Forvent tyngre løft i dag, og stopp ved prosentene der teknikken holder.</div>`;
   }
   s.ex.forEach((e,ei) => {
@@ -3848,8 +3871,17 @@ function vToday(){
       ${e.adj ? `<div class="amrap"><span>Juster vekt etter dagsform</span>
         <button class="step" data-a="w:${ei}:-1" aria-label="2,5 kg lettere">−</button>
         <button class="step" data-a="w:${ei}:1" aria-label="2,5 kg tyngre">+</button></div>` : ''}
+      ${ui.confirm === 'exrm:' + ei ? `<div class="skipbox ex-rm" aria-live="polite"><p class="small"><b>Fjerne ${esc(liftName(e.lift).toLowerCase())} fra dagens økt?</b>
+          Settene du har tatt i den, lagres ikke. Vekta står som den er til neste gang.</p>
+          <div class="row"><button class="btn danger sm" data-a="exrm:${ei}">Ja, fjern</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div></div>`
+        : `<button class="link ex-rm-l" data-a="${touched(e) ? 'confirm:exrm:' + ei : 'exrm:' + ei}">Fjern fra dagens økt</button>`}
     </section>`;
   });
+  // Øvelser du har fjernet i dag, kan hentes tilbake slik de var
+  if ((s.rmEx || []).length) h += `<section class="box rm-list"><span class="lbl">Fjernet fra dagens økt</span>
+      ${s.rmEx.map((e, i) => `<div class="rm-row"><span>${esc(liftName(e.lift))}${e.tag ? ` <span class="muted small">${esc(e.tag)}</span>` : ''}</span>
+        <button class="link" data-a="exback:${i}">Ta tilbake</button></div>`).join('')}
+      <p class="small muted">Vekta står som den er til neste gang.</p></section>`;
   // Burgener: kroppsvektøvelsene står som en påminnelse og logges ikke
   if (s.acc) h += `<section class="box"><span class="lbl">Til slutt, uten vekt</span><p class="small">${esc(s.acc)}</p></section>`;
   // Muscle MetCon: sekundærløft og finisher står som tekst og logges ikke
@@ -3892,7 +3924,7 @@ function vToday(){
   if (ui.confirm === 'skipday') {
     const a1 = JSON.parse(JSON.stringify(S.active)); a1.idx++;
     const next = tot && a1.idx >= tot ? null : buildSession(p, a1);
-    const lifts = [...new Set(s.ex.map(e => liftName(e.lift)))].map((n, i) => i ? n.toLowerCase() : n);
+    const lifts = [...new Set(exAll(s).map(e => liftName(e.lift)))].map((n, i) => i ? n.toLowerCase() : n);
     h += `<section class="box skipbox" aria-live="polite"><p><b>Hoppe over ${esc(s.day)}?</b></p>
       <p class="small">${lifts.length ? listNo(lifts) + ' får ingen økning denne gangen, og vektene står som de er.' : 'Økta lagres som hoppet over.'}${anyTouched ? ' Settene du har tatt i dag, lagres ikke.' : ''}${s.wod || s.pete ? ' Metconen du har valgt, lagres heller ikke.' : ''}
         ${next ? 'Neste økt blir ' + esc(next.day) + (next.sub && next.sub !== s.sub ? ' (' + esc(next.sub) + ')' : '') + '.' : 'Dette var siste økt i programmet.'}</p>
@@ -4197,14 +4229,14 @@ function vLog(){
     const title = sess.free ? (sess.pete ? 'Pete Plan' : sess.wod ? 'Metcon' : 'Fri økt') : sess.day;
     // Én linje per økt: løftene med toppvekt, eller hva den frie økta var. Trykk for detaljer.
     const sum = sess.free ? (sess.pete ? esc(sess.pete.name) : sess.wod ? esc(sess.wod.navn) : sess.note ? esc(sess.note.slice(0, 60)) : '')
-      : sess.ex.length ? Object.entries(sess.ex.reduce((m, e) => (m[e.lift] = Math.max(m[e.lift] || 0, ...e.sets.map(x => x.w)), m), {})).map(([l, w]) => liftName(l) + ' ' + fmt(w)).join(' · ')
+      : sess.ex.some(e => !e.rm) ? Object.entries(sess.ex.filter(e => !e.rm).reduce((m, e) => (m[e.lift] = Math.max(m[e.lift] || 0, ...e.sets.map(x => x.w)), m), {})).map(([l, w]) => liftName(l) + ' ' + fmt(w)).join(' · ')
       : sess.cond ? esc(sess.cond.title) : '';
     const vol = sess.free ? 0 : sess.ex.reduce((s,e) => s + e.sets.reduce((v,x) => v + (x.d||0)*x.w, 0), 0);
     const body = !open ? '' : sess.free ? noteH : `<p class="muted small">${p ? p.name + ' · ' : ''}${sess.sub} · ${fmt(Math.round(vol))} kg totalt</p>
       ${sess.ex.map(e => {
         const ws = [...new Set(e.sets.map(x => x.w))];
         const reps = e.sets.map(x => x.d == null ? '–' : x.d);
-        const right = ws.length === 1 ? reps.join(' ') + ' × ' + fmt(ws[0]) + ' kg' : e.sets.map(x => (x.d == null ? '–' : x.d) + '×' + fmt(x.w)).join(' · ');
+        const right = e.rm ? '<span class="muted">Fjernet</span>' : ws.length === 1 ? reps.join(' ') + ' × ' + fmt(ws[0]) + ' kg' : e.sets.map(x => (x.d == null ? '–' : x.d) + '×' + fmt(x.w)).join(' · ');
         const extra = [e.tag, e.rpe != null ? 'RPE ' + fmt(e.rpe) : e.q ? (LE_Q.find(([v]) => v === e.q) || [, e.q])[1].toLowerCase() : null].filter(Boolean).join(' · ');
         return `<div class="ln"><span>${liftName(e.lift)}${extra ? ' <span class="muted">' + extra + '</span>' : ''}</span><span>${right}</span></div>`;
       }).join('')}
@@ -6614,6 +6646,8 @@ document.addEventListener('click', ev => {
     }
     case 'chleave': sxDo(async () => { await rpc('chat_leave', {cid: r[0]}); ui.sxView = 'list'; CH.cid = null; }, 'Du har forlatt gruppen'); break;
     case 'restadd': if (ui.rest) { const now = Date.now(); ui.rest.end = Math.max(ui.rest.end, now) + (+r[0])*1000; ui.rest.total = Math.max(ui.rest.total, (ui.rest.end - now)/1000); ui.rest.done = false; updateRest(); } break;
+    case 'exrm': exRemove(+r[0]); break;
+    case 'exback': exBack(+r[0]); break;
     case 'exopen': { const o = ui.exOpen = ui.exOpen || {}; o[r[0]] = !o[r[0]]; render(); break; }
     case 'restscale': S.settings.restScale = +r[0]; save(); render(); break;
     case 'sound': S.settings.sound = !S.settings.sound; save(); unlockAudio(); render(); if (S.settings.sound) { beep(); toast('Lyd er på'); } break;
