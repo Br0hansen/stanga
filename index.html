@@ -487,6 +487,29 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .plan-ex .ln>span:last-child{color:var(--chalk-2);text-align:right;font-variant-numeric:tabular-nums}
 .plan-s.done-s .plan-ex .ln>span:last-child{color:var(--pen)}
 
+/* Egne programmer: redigering, hviledag og deling */
+#peName,.pe-day .txt,.pe-add .txt{width:100%;background:var(--iron);border:1px solid var(--line);border-radius:3px;color:var(--chalk);font:500 16px var(--face);padding:11px 12px}
+.pe-dh{display:flex;align-items:center;gap:8px}
+.pe-dh .txt{flex:1;font-weight:700}
+.pe-ex{display:grid;gap:2px;text-align:left;width:100%;border:0;border-radius:4px;padding:10px 12px;background:var(--field);color:var(--chalk);font:inherit;cursor:pointer}
+.pe-ex small,.pe-ex-h small{color:var(--chalk-2);font-size:13px}
+.pe-ex.open{display:grid;gap:12px;cursor:default;box-shadow:inset 0 0 0 1px var(--line)}
+.pe-ex-h{display:grid;gap:2px;text-align:left;border:0;background:none;color:var(--chalk);font:inherit;padding:0;cursor:pointer}
+.pe-f{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.pe-f.col{display:grid;justify-content:stretch;gap:6px}
+.pe-f > span{font-size:14px;color:var(--chalk-2)}
+.pe-step{display:flex;align-items:center;gap:10px}
+.pe-step b{min-width:2ch;text-align:center;font:800 22px/1 var(--face);font-variant-numeric:tabular-nums}
+.seg.wrap button{flex:1 1 64px}
+.pe-acts{gap:8px;flex-wrap:wrap}
+.pe-add{display:grid;gap:8px}
+.pe-wd{display:grid;gap:0}
+.pe-wd select{min-width:9em}
+.pe-pacts{display:flex;flex-wrap:wrap;gap:8px}
+.lib-hit.own b{font-weight:600}
+.rest-day{gap:4px}
+.ps-acts{justify-content:flex-end;gap:8px;padding:0 12px 10px}
+.sx-list .plan-ex{padding:4px 14px 10px}
 /* Øvelsesbiblioteket: treff under «+ Egen øvelse» */
 .lib-res{display:grid;gap:4px;align-self:stretch;width:100%}
 .lib-hit{display:grid;gap:2px;text-align:left;width:100%;border:0;border-radius:4px;padding:10px 12px;background:var(--field);color:var(--chalk);font:inherit;cursor:pointer}
@@ -884,7 +907,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 90;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 91;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -926,9 +949,9 @@ const ALTS = slot => Object.keys(LIFTS).filter(k => LIFTS[k].alt === slot);
    Felt: [norsk navn, søkeord (engelsk navn), utstyr, kategori, hovedmuskler, stang (viser skiver), nøkkel i LIFTS, id i databasen].
    Har appen øvelsen fra før, peker nøkkelen dit, så det blir ett navn og én vekt. Id-en gir bilder og fremgangsmåte senere. */
 const EXLIB = [
-["Air bike","assault bike echo","Maskin","Kondisjon","hele kroppen",0,"",""],
+["Air bike","assault bike echo","Maskin","Kondisjon","hele kroppen",0,"","Stanga_Air_bike"],
 ["Air squats","Bodyweight Squat","Kroppsvekt","Styrke","forside lår",0,"","Bodyweight_Squat"],
-["Amerikansk kettlebell swing","american swing","Kettlebell","Styrke","sete, baksida lår, skuldre",0,"",""],
+["Amerikansk kettlebell swing","american swing","Kettlebell","Styrke","sete, baksida lår, skuldre",0,"","Stanga_Amerikansk_kettlebell_swing"],
 ["Armheving til sideplanke","Push Up to Side Plank","Kroppsvekt","Styrke","bryst",0,"","Push_Up_to_Side_Plank"],
 ["Armhevinger","Pushups","Kroppsvekt","Styrke","bryst",0,"","Pushups"],
 ["Armhevinger i slynge","Suspended Push-Up","Annet","Styrke","bryst",0,"","Suspended_Push-Up"],
@@ -962,18 +985,18 @@ const EXLIB = [
 ["Bicepscurl med stang, bredt grep","Wide-Grip Standing Barbell Curl","Stang","Styrke","biceps",1,"","Wide-Grip_Standing_Barbell_Curl"],
 ["Bicepscurl med stang, smalt grep","Close-Grip Standing Barbell Curl","Stang","Styrke","biceps",1,"","Close-Grip_Standing_Barbell_Curl"],
 ["Bicepscurl over hodet i kabel","Overhead Cable Curl","Kabel","Styrke","biceps",0,"","Overhead_Cable_Curl"],
-["BikeErg","sykkel bike","Maskin","Kondisjon","forside lår",0,"",""],
+["BikeErg","sykkel bike","Maskin","Kondisjon","forside lår",0,"","Stanga_BikeErg"],
 ["Board press","Board Press","Stang","Styrkeløft","triceps",1,"","Board_Press"],
-["Bokshopp","box jump","Annet","Plyometri","forside lår, sete",0,"",""],
+["Bokshopp","box jump","Annet","Plyometri","forside lår, sete",0,"","Stanga_Bokshopp"],
 ["Boksknebøy","Box Squat","Stang","Styrkeløft","forside lår",1,"boxsquat","Box_Squat"],
-["Box step-overs","box step over","Annet","Kondisjon","forside lår, sete",0,"",""],
+["Box step-overs","box step over","Annet","Kondisjon","forside lår, sete",0,"","Stanga_Box_step_overs"],
 ["Bred benkpress","Wide-Grip Barbell Bench Press","Stang","Styrke","bryst",1,"","Wide-Grip_Barbell_Bench_Press"],
 ["Brystpress i kabel","Cable Chest Press","Kabel","Styrke","bryst",0,"","Cable_Chest_Press"],
 ["Brystpress i maskin","Machine Bench Press","Maskin","Styrke","bryst",0,"","Machine_Bench_Press"],
 ["Brystpress i vektarmsmaskin","Leverage Chest Press","Maskin","Styrke","bryst",0,"","Leverage_Chest_Press"],
-["Bulgarsk splittknebøy","bulgarian split squat","Manualer","Styrke","forside lår, sete",0,"bulgarian",""],
-["Burpees","burpee","Kroppsvekt","Kondisjon","hele kroppen",0,"",""],
-["Burpees over manual","burpee over dumbbell","Kroppsvekt","Kondisjon","hele kroppen",0,"",""],
+["Bulgarsk splittknebøy","bulgarian split squat","Manualer","Styrke","forside lår, sete",0,"bulgarian","Stanga_Bulgarsk_splittkneboy"],
+["Burpees","burpee","Kroppsvekt","Kondisjon","hele kroppen",0,"","Stanga_Burpees"],
+["Burpees over manual","burpee over dumbbell","Kroppsvekt","Kondisjon","hele kroppen",0,"","Stanga_Burpees_over_manual"],
 ["Butterfly","Butterfly","Maskin","Styrke","bryst",0,"","Butterfly"],
 ["Chest-supported row","Dumbbell Incline Row","Manualer","Styrke","midtre rygg",0,"csrow","Dumbbell_Incline_Row"],
 ["Chin-ups","Chin-Up","Kroppsvekt","Styrke","latissimus",0,"","Chin-Up"],
@@ -998,7 +1021,7 @@ const EXLIB = [
 ["Dips","Dips - Triceps Version","Kroppsvekt","Styrke","triceps",0,"","Dips_-_Triceps_Version"],
 ["Dips for bryst","Dips - Chest Version","Annet","Styrke","bryst",0,"","Dips_-_Chest_Version"],
 ["Dips i maskin","Dip Machine","Maskin","Styrke","triceps",0,"","Dip_Machine"],
-["Double-unders","double under hopprep","Annet","Kondisjon","legger",0,"",""],
+["Double-unders","double under hopprep","Annet","Kondisjon","legger",0,"","Stanga_Double_unders"],
 ["Drag curl","Drag Curl","Stang","Styrke","biceps",1,"","Drag_Curl"],
 ["Enarms armhevinger","Single-Arm Push-Up","Kroppsvekt","Styrke","bryst",0,"","Single-Arm_Push-Up"],
 ["Enarms gulvpress med kettlebell","One-Arm Kettlebell Floor Press","Kettlebell","Styrke","bryst",0,"","One-Arm_Kettlebell_Floor_Press"],
@@ -1029,7 +1052,7 @@ const EXLIB = [
 ["Flies i kabel på benk","Flat Bench Cable Flyes","Kabel","Styrke","bryst",0,"","Flat_Bench_Cable_Flyes"],
 ["Flies med manualer","Dumbbell Flyes","Manualer","Styrke","bryst",0,"","Dumbbell_Flyes"],
 ["Foroverbøyd sidehev i kabel","Bent Over Low-Pulley Side Lateral","Kabel","Styrke","skuldre",0,"","Bent_Over_Low-Pulley_Side_Lateral"],
-["Front rack-utfall med manualer","db front rack lunge","Manualer","Styrke","forside lår, sete",0,"",""],
+["Front rack-utfall med manualer","db front rack lunge","Manualer","Styrke","forside lår, sete",0,"","Stanga_Front_rack_utfall_med_manualer"],
 ["Frontbøy","Front Barbell Squat","Stang","Styrke","forside lår",1,"frontsquat","Front_Barbell_Squat"],
 ["Frontbøy med to kettlebells","Front Squats With Two Kettlebells","Kettlebell","Styrke","forside lår",0,"","Front_Squats_With_Two_Kettlebells"],
 ["Fronthev i kabel","Front Cable Raise","Kabel","Styrke","skuldre",0,"","Front_Cable_Raise"],
@@ -1052,19 +1075,19 @@ const EXLIB = [
 ["Hang clean","Hang Clean","Stang","Vektløfting","forside lår",1,"hangsquatclean","Hang_Clean"],
 ["Hang clean med kettlebell","Kettlebell Hang Clean","Kettlebell","Styrke","baksida lår",0,"","Kettlebell_Hang_Clean"],
 ["Hang clean under knærne","Hang Clean - Below the Knees","Stang","Vektløfting","forside lår",1,"","Hang_Clean_-_Below_the_Knees"],
-["Hang power clean med manualer","db hang clean","Manualer","Styrke","sete, skuldre",0,"",""],
+["Hang power clean med manualer","db hang clean","Manualer","Styrke","sete, skuldre",0,"","Stanga_Hang_power_clean_med_manualer"],
 ["Hang snatch","Hang Snatch","Stang","Vektløfting","baksida lår",1,"","Hang_Snatch"],
 ["Hang snatch under knærne","Hang Snatch - Below Knees","Stang","Vektløfting","baksida lår",1,"","Hang_Snatch_-_Below_Knees"],
 ["Hantelroing","One-Arm Dumbbell Row","Manualer","Styrke","midtre rygg",0,"dbrow","One-Arm_Dumbbell_Row"],
 ["Heaving snatch balance","Heaving Snatch Balance","Stang","Vektløfting","forside lår",1,"","Heaving_Snatch_Balance"],
 ["Hengende beinhev","Hanging Leg Raise","Kroppsvekt","Styrke","mage",0,"","Hanging_Leg_Raise"],
-["Hengende knehev","hanging knee raise","Kroppsvekt","Styrke","mage",0,"",""],
+["Hengende knehev","hanging knee raise","Kroppsvekt","Styrke","mage",0,"","Stanga_Hengende_knehev"],
 ["Hengende pike","Hanging Pike","Kroppsvekt","Styrke","mage",0,"","Hanging_Pike"],
 ["Hip thrust","Barbell Hip Thrust","Stang","Styrkeløft","sete",1,"","Barbell_Hip_Thrust"],
 ["Hip thrust i smithmaskin","Smith Machine Hip Raise","Maskin","Styrke","mage",0,"","Smith_Machine_Hip_Raise"],
 ["Hofteinnføring i kabel","Cable Hip Adduction","Kabel","Styrke","forside lår",0,"","Cable_Hip_Adduction"],
-["Hollow hold","hollow","Kroppsvekt","Styrke","mage",0,"",""],
-["Hopp tau","jump rope single unders","Annet","Kondisjon","legger",0,"",""],
+["Hollow hold","hollow","Kroppsvekt","Styrke","mage",0,"","Stanga_Hollow_hold"],
+["Hopp tau","jump rope single unders","Annet","Kondisjon","legger",0,"","Stanga_Hopp_tau"],
 ["Hoppknebøy","Freehand Jump Squat","Kroppsvekt","Styrke","forside lår",0,"","Freehand_Jump_Squat"],
 ["Håndleddscurl","Palms-Up Dumbbell Wrist Curl Over A Bench","Manualer","Styrke","underarmer",0,"","Palms-Up_Dumbbell_Wrist_Curl_Over_A_Bench"],
 ["Håndleddsrulle","Wrist Roller","Annet","Styrke","underarmer",0,"","Wrist_Roller"],
@@ -1081,8 +1104,8 @@ const EXLIB = [
 ["Kabelcrossover nedenfra","Low Cable Crossover","Kabel","Styrke","bryst",0,"","Low_Cable_Crossover"],
 ["Kabelcrunch","Cable Crunch","Kabel","Styrke","mage",0,"","Cable_Crunch"],
 ["Kettlebell clean med to armer","Two-Arm Kettlebell Clean","Kettlebell","Styrke","skuldre",0,"","Two-Arm_Kettlebell_Clean"],
-["Kettlebell markløft","kb deadlift","Kettlebell","Styrke","sete, baksida lår",0,"",""],
-["Kettlebell swing","russian swing two-arm","Kettlebell","Styrke","sete, baksida lår",0,"",""],
+["Kettlebell markløft","kb deadlift","Kettlebell","Styrke","sete, baksida lår",0,"","Stanga_Kettlebell_markloft"],
+["Kettlebell swing","russian swing two-arm","Kettlebell","Styrke","sete, baksida lår",0,"","Stanga_Kettlebell_swing"],
 ["Kickback i kabel","One-Legged Cable Kickback","Kabel","Styrke","sete",0,"","One-Legged_Cable_Kickback"],
 ["Kickback på alle fire","Glute Kickback","Kroppsvekt","Styrke","sete",0,"","Glute_Kickback"],
 ["Kipping muscle-up","Kipping Muscle Up","Annet","Styrke","latissimus",0,"","Kipping_Muscle_Up"],
@@ -1107,7 +1130,7 @@ const EXLIB = [
 ["Liggende tricepspress med manualer","Lying Dumbbell Tricep Extension","Manualer","Styrke","triceps",0,"","Lying_Dumbbell_Tricep_Extension"],
 ["Log press","Log Lift","Annet","Strongman","skuldre",0,"","Log_Lift"],
 ["Løft på skrå i kabel","Standing Cable Lift","Kabel","Styrke","mage",0,"","Standing_Cable_Lift"],
-["Løp","run","Kroppsvekt","Kondisjon","hele kroppen",0,"",""],
+["Løp","run","Kroppsvekt","Kondisjon","hele kroppen",0,"","Stanga_Lop"],
 ["Magehjul","Ab Roller","Annet","Styrke","mage",0,"","Ab_Roller"],
 ["Manualbenk, nøytralt grep","Dumbbell Bench Press with Neutral Grip","Manualer","Styrke","bryst",0,"","Dumbbell_Bench_Press_with_Neutral_Grip"],
 ["Markløft","Barbell Deadlift","Stang","Styrke","korsrygg",1,"deadlift","Barbell_Deadlift"],
@@ -1164,7 +1187,7 @@ const EXLIB = [
 ["Push jerk","Power Jerk","Stang","Vektløfting","forside lår",1,"pushjerk","Power_Jerk"],
 ["Push press","Push Press","Stang","Vektløfting","skuldre",1,"pushpress","Push_Press"],
 ["Push press bak nakken","Push Press - Behind the Neck","Stang","Vektløfting","skuldre",1,"","Push_Press_-_Behind_the_Neck"],
-["Push press med manualer","db push press","Manualer","Styrke","skuldre, triceps",0,"",""],
+["Push press med manualer","db push press","Manualer","Styrke","skuldre, triceps",0,"","Stanga_Push_press_med_manualer"],
 ["Push press med to kettlebells","Double Kettlebell Push Press","Kettlebell","Styrke","skuldre",0,"","Double_Kettlebell_Push_Press"],
 ["Renegade row","Alternating Renegade Row","Kettlebell","Styrke","midtre rygg",0,"","Alternating_Renegade_Row"],
 ["Rickshaw carry","Rickshaw Carry","Annet","Strongman","underarmer",0,"","Rickshaw_Carry"],
@@ -1179,7 +1202,7 @@ const EXLIB = [
 ["Roing med to manualer","Bent Over Two-Dumbbell Row","Manualer","Styrke","midtre rygg",0,"","Bent_Over_Two-Dumbbell_Row"],
 ["Roing med to manualer, nøytralt grep","Bent Over Two-Dumbbell Row With Palms In","Manualer","Styrke","midtre rygg",0,"","Bent_Over_Two-Dumbbell_Row_With_Palms_In"],
 ["Roing til ansiktet med tau","Cable Rope Rear-Delt Rows","Kabel","Styrke","skuldre",0,"","Cable_Rope_Rear-Delt_Rows"],
-["Romaskin","rowerg concept2 roing","Maskin","Kondisjon","hele kroppen",0,"",""],
+["Romaskin","rowerg concept2 roing","Maskin","Kondisjon","hele kroppen",0,"","Stanga_Romaskin"],
 ["Rumensk markløft","Romanian Deadlift","Stang","Styrke","baksida lår",1,"rdl","Romanian_Deadlift"],
 ["Rumensk markløft fra underskudd","Romanian Deadlift from Deficit","Stang","Vektløfting","baksida lår",1,"","Romanian_Deadlift_from_Deficit"],
 ["Rumensk markløft med manualer","Stiff-Legged Dumbbell Deadlift","Manualer","Styrke","baksida lår",0,"","Stiff-Legged_Dumbbell_Deadlift"],
@@ -1188,12 +1211,12 @@ const EXLIB = [
 ["Rygghev","Hyperextensions (Back Extensions)","Annet","Styrke","korsrygg",0,"","Hyperextensions_Back_Extensions"],
 ["Rygghev på gulvet","Hyperextensions With No Hyperextension Bench","Kroppsvekt","Styrke","korsrygg",0,"","Hyperextensions_With_No_Hyperextension_Bench"],
 ["Saksespark","Flutter Kicks","Kroppsvekt","Styrke","sete",0,"","Flutter_Kicks"],
-["Sandsekk over skulderen","sandbag over shoulder","Annet","Strongman","hele kroppen",0,"",""],
-["Sandsekkbæring","sandbag carry","Annet","Strongman","hele kroppen",0,"",""],
+["Sandsekk over skulderen","sandbag over shoulder","Annet","Strongman","hele kroppen",0,"","Stanga_Sandsekk_over_skulderen"],
+["Sandsekkbæring","sandbag carry","Annet","Strongman","hele kroppen",0,"","Stanga_Sandsekkbaering"],
 ["Sandsekkløft","Sandbag Load","Annet","Strongman","forside lår",0,"","Sandbag_Load"],
 ["Seteløft","Butt Lift (Bridge)","Kroppsvekt","Styrke","sete",0,"","Butt_Lift_Bridge"],
 ["Seteløft med stang","Barbell Glute Bridge","Stang","Styrkeløft","sete",1,"","Barbell_Glute_Bridge"],
-["Shuttle run","pendelløp","Kroppsvekt","Kondisjon","hele kroppen",0,"",""],
+["Shuttle run","pendelløp","Kroppsvekt","Kondisjon","hele kroppen",0,"","Stanga_Shuttle_run"],
 ["Sidebøy med manual","Dumbbell Side Bend","Manualer","Styrke","mage",0,"","Dumbbell_Side_Bend"],
 ["Sidehev","Side Lateral Raise","Manualer","Styrke","skuldre",0,"","Side_Lateral_Raise"],
 ["Sidehev i kabel","Cable Seated Lateral Raise","Kabel","Styrke","skuldre",0,"","Cable_Seated_Lateral_Raise"],
@@ -1214,7 +1237,7 @@ const EXLIB = [
 ["Sittende tåhev i maskin","Seated Calf Raise","Maskin","Styrke","legger",0,"","Seated_Calf_Raise"],
 ["Sittende tåhev med stang","Barbell Seated Calf Raise","Stang","Styrke","legger",1,"","Barbell_Seated_Calf_Raise"],
 ["Situps","Sit-Up","Kroppsvekt","Styrke","mage",0,"","Sit-Up"],
-["SkiErg","ski","Maskin","Kondisjon","hele kroppen",0,"",""],
+["SkiErg","ski","Maskin","Kondisjon","hele kroppen",0,"","Stanga_SkiErg"],
 ["Skiveklyp","Plate Pinch","Annet","Styrke","underarmer",0,"","Plate_Pinch"],
 ["Skrå bicepscurl","Incline Dumbbell Curl","Manualer","Styrke","biceps",0,"","Incline_Dumbbell_Curl"],
 ["Skrå brystpress i vektarmsmaskin","Leverage Incline Chest Press","Maskin","Styrke","bryst",0,"","Leverage_Incline_Chest_Press"],
@@ -1247,7 +1270,7 @@ const EXLIB = [
 ["Snatch","Snatch","Stang","Vektløfting","forside lår",1,"snatch","Snatch"],
 ["Snatch balance","Snatch Balance","Stang","Vektløfting","forside lår",1,"snbal","Snatch_Balance"],
 ["Snatch fra blokk","Snatch from Blocks","Stang","Vektløfting","forside lår",1,"","Snatch_from_Blocks"],
-["Snatch med manual","db snatch","Manualer","Kondisjon","sete, skuldre",0,"",""],
+["Snatch med manual","db snatch","Manualer","Kondisjon","sete, skuldre",0,"","Stanga_Snatch_med_manual"],
 ["Snatch med to kettlebells","Double Kettlebell Snatch","Kettlebell","Styrke","skuldre",0,"","Double_Kettlebell_Snatch"],
 ["Snatch pull","Snatch Pull","Stang","Styrke","baksida lår",1,"snpull","Snatch_Pull"],
 ["Snatch shrug","Snatch Shrug","Stang","Vektløfting","trapezius",1,"snshrug","Snatch_Shrug"],
@@ -1276,10 +1299,10 @@ const EXLIB = [
 ["T-bar-roing","T-Bar Row with Handle","Stang","Styrke","midtre rygg",1,"","T-Bar_Row_with_Handle"],
 ["Tate press","Tate Press","Manualer","Styrke","triceps",0,"","Tate_Press"],
 ["Tauklatring","Rope Climb","Annet","Styrke","latissimus",0,"","Rope_Climb"],
-["Thruster","barbell thruster","Stang","Kondisjon","forside lår, skuldre",1,"",""],
+["Thruster","barbell thruster","Stang","Kondisjon","forside lår, skuldre",1,"","Stanga_Thruster"],
 ["Thruster med kettlebell","Kettlebell Thruster","Kettlebell","Styrke","skuldre",0,"","Kettlebell_Thruster"],
-["Thruster med manualer","db thruster","Manualer","Kondisjon","forside lår, skuldre",0,"",""],
-["Toes-to-bar","toes to bar t2b","Kroppsvekt","Styrke","mage",0,"",""],
+["Thruster med manualer","db thruster","Manualer","Kondisjon","forside lår, skuldre",0,"","Stanga_Thruster_med_manualer"],
+["Toes-to-bar","toes to bar t2b","Kroppsvekt","Styrke","mage",0,"","Stanga_Toes_to_bar"],
 ["Trap bar-markløft","Trap Bar Deadlift","Annet","Styrke","forside lår",0,"trapbar","Trap_Bar_Deadlift"],
 ["Tre kvarte situps","3/4 Sit-Up","Kroppsvekt","Styrke","mage",0,"","3_4_Sit-Up"],
 ["Triceps kickback","Tricep Dumbbell Kickback","Manualer","Styrke","triceps",0,"","Tricep_Dumbbell_Kickback"],
@@ -1312,7 +1335,7 @@ const EXLIB = [
 ["Vekslende hang clean med to kettlebells","Double Kettlebell Alternating Hang Clean","Kettlebell","Styrke","baksida lår",0,"","Double_Kettlebell_Alternating_Hang_Clean"],
 ["Vekslende skulderpress med kettlebells","Alternating Kettlebell Press","Kettlebell","Styrke","skuldre",0,"","Alternating_Kettlebell_Press"],
 ["Vekslende skulderpress med manualer","Standing Alternating Dumbbell Press","Manualer","Styrke","skuldre",0,"","Standing_Alternating_Dumbbell_Press"],
-["Wall balls","wall ball","Medisinball","Kondisjon","forside lår, skuldre",0,"",""],
+["Wall balls","wall ball","Medisinball","Kondisjon","forside lår, skuldre",0,"","Stanga_Wall_balls"],
 ["Windmill","Kettlebell Windmill","Kettlebell","Styrke","mage",0,"","Kettlebell_Windmill"],
 ["Y-hev med manualer","Dumbbell Scaption","Manualer","Styrke","skuldre",0,"","Dumbbell_Scaption"],
 ["Yoke walk","Yoke Walk","Annet","Strongman","forside lår",0,"","Yoke_Walk"],
@@ -1320,6 +1343,9 @@ const EXLIB = [
 ["Zottman curl","Zottman Curl","Manualer","Styrke","biceps",0,"","Zottman_Curl"],
 ["Åttetall med kettlebell","Kettlebell Figure 8","Kettlebell","Styrke","mage",0,"","Kettlebell_Figure_8"]
 ];
+// Øvelsene i biblioteket som appen ikke har fra før, blir egne øvelser med nøkkel l_<id>. Da kan de brukes i egne programmer.
+const libKey = r => r[6] || 'l_' + r[7].toLowerCase().replace(/[^a-z0-9]+/g, '_');
+EXLIB.forEach(r => { if (!r[6]) LIFTS[libKey(r)] = {n: r[0], bar: r[5], bw: r[2] === 'Kroppsvekt' ? 1 : 0, lib: 1}; });
 // Søk på norsk eller engelsk, i navn, utstyr og muskler. Alle ordene må treffe. Navn som starter med søket, kommer først.
 const exNorm = t => String(t || '').toLowerCase().replace(/[-,.()/]/g, ' ');
 function exSearch(q, n){
@@ -2376,7 +2402,7 @@ function refValue(p, a, L){
 const refLabel = p => ({linear:'Arbeidsvekt', gzclp:'T1-vekt', '531':'Treningsmaks', jugg:'Arbeidsmaks'})[p.prog] || '1RM';
 const ratio = L => LIFTS[L].r || 1;
 const estFor = (p, a, from, to) => r25(refValue(p, a, from) / ratio(from) * ratio(to));
-const slotsOf = p => [...new Set(p.days.flatMap(d => d.ex ? d.ex.map(e => e.lift) : [d.lift]))].filter(s => s && ALTS(s).length);
+const slotsOf = p => p.prog === 'user' ? [] : [...new Set(p.days.flatMap(d => d.ex ? d.ex.map(e => e.lift) : [d.lift]))].filter(s => s && ALTS(s).length);
 
 function doSwap(slot){
   const a = S.active, p = prog(a.programId), A = sw(a, slot);
@@ -3132,10 +3158,10 @@ const GUIDE = {
 const $ = s => document.querySelector(s);
 const r25 = x => Math.round(x/2.5)*2.5;
 const fmt = n => (Math.round(n*100)/100).toLocaleString('nb-NO');
-const prog = id => PROGRAMS.find(p => p.id === id);
+const prog = id => PROGRAMS.find(p => p.id === id) || (() => { try { const u = S.userProgs && S.userProgs[id]; return u ? userDef(u) : undefined; } catch(e) { return undefined; } })();
 const inc = (p, lift) => (p.inc && p.inc[lift]) || 2.5;
 const liftName = l => LIFTS[l] ? LIFTS[l].n : l;
-const keyLabel = k => { const [l,t] = k.split('.'); return liftName(l) + (t ? ' · ' + t : ''); };
+const keyLabel = k => { const [l,t] = k.split('.'); return liftName(l) + (t ? ' · ' + (isUkey(t) ? ukeyTxt(t) : t) : ''); };
 const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
 const dateFmt = t => new Date(t).toLocaleDateString('nb-NO',{weekday:'short',day:'numeric',month:'short'});
 
@@ -3172,6 +3198,435 @@ let S = load();
 S.maxes = S.maxes || {};
 const myMax = (lift, dflt) => (S.maxes && S.maxes[lift] > 0) ? S.maxes[lift] : dflt;
 // Egne øvelser lagres i S.custom og legges inn i LIFTS, så resten av appen ser dem som vanlige løft
+/* ---------- Egne programmer ----------
+   Brukeren lager programmet selv: økter med øvelser fra biblioteket, sett × reps, pause og en progresjonsregel per øvelse.
+   Lagres i S.userProgs[id]: {id, name, sched, days, rev, by?, from?, share?, gone?}
+     sched: {mode:'rot', per} = øktene i rotasjon (A, B, A …), per = økter per uke (bare til uke-nummeret og planen)
+            {mode:'week', wd} = faste ukedager. wd[0..6] er mandag til søndag: indeksen til økta, eller null = hviledag.
+     days:  [{name, ex:[{lift, sets, reps, hi, rule, inc, rest}]}]. hi er toppen av spennet i dobbel progresjon.
+   Vekta per øvelse ligger i S.active.lifts under ukey(e): løftet + regel + reps, for eksempel «squat.l5» eller «curl.d8-12».
+   Samme løft med samme opplegg i flere økter deler vekt (knebøy i økt A og B), et annet opplegg får sin egen.
+   Slettede programmer merkes gone, så loggen fortsatt finner navnet. */
+const UP = () => (S && S.userProgs) || (S.userProgs = {});
+const ukey = e => e.lift + '.' + (e.rule === 'double' ? 'd' + e.reps + '-' + e.hi : (e.rule === 'fixed' ? 'f' : 'l') + e.reps);
+const ukeyTxt = t => { const m = /^[fld](\d+)(?:-(\d+))?$/.exec(t); return m ? (m[2] ? m[1] + '–' + m[2] : m[1]) + ' reps' : t; };
+const isUkey = t => /^[fld]\d+(-\d+)?$/.test(t || '');
+
+/* Progresjonsreglene. En ny regel (for eksempel RPE-styrt) er ett nytt felt her:
+   n og d er navn og forklaring i redigeringen, range = bruker spennet reps–hi, inc = bruker økningen i kg,
+   reps(e, st) = målet i dag, next(e, st, x, hit) = hva som skjer etter økta, med teksten til oppsummeringen. */
+const RULES = {
+  linear: {n:'Lineær', d:'Tar du alle reps i alle settene, går vekta opp neste gang. Bommer du tre økter på rad, går den ned 10 %.', inc:true,
+    reps: e => e.reps,
+    next(e, st, x, hit){
+      const old = st.w;
+      if (hit) { st.w = Math.round((old + e.inc) * 100) / 100; st.fails = 0; return {text: fmt(old) + ' → ' + fmt(st.w) + ' kg', kind:'up'}; }
+      st.fails = (st.fails || 0) + 1;
+      if (st.fails >= 3) { st.w = Math.max(LIFTS[x.lift] && LIFTS[x.lift].bar ? BAR() : 0, r25(old * .9)); st.fails = 0; return {text:'Ned 10 % til ' + fmt(st.w) + ' kg', kind:'down'}; }
+      return {text:'Samme vekt neste gang (bom ' + st.fails + ' av 3)', kind:'same'};
+    }},
+  double: {n:'Dobbel progresjon', d:'Repsene går opp én om gangen innenfor spennet. Når alle settene når toppen, går vekta opp, og du starter nederst igjen.', inc:true, range:true,
+    reps: (e, st) => Math.min(e.hi, Math.max(e.reps, st.r || e.reps)),
+    next(e, st, x, hit){
+      const old = st.w, r = x.sets[0].t;
+      if (!hit) return {text: r + ' reps på ' + fmt(old) + ' kg igjen', kind:'same'};
+      if (r >= e.hi) { st.w = Math.round((old + e.inc) * 100) / 100; st.r = e.reps; return {text: fmt(old) + ' → ' + fmt(st.w) + ' kg, tilbake til ' + e.reps + ' reps', kind:'up'}; }
+      st.r = r + 1; return {text:'Neste gang ' + st.r + ' reps på ' + fmt(old) + ' kg', kind:'up'};
+    }},
+  fixed: {n:'Fast', d:'Vekta står til du endrer den med − og + i økta. Neste gang starter du på vekta du endte på.',
+    reps: e => e.reps, adj:true,
+    next(e, st, x){
+      const old = st.w; st.w = x.sets[x.sets.length - 1].w;
+      return st.w === old ? {text:'Samme vekt neste gang, ' + fmt(old) + ' kg', kind:'same'} : {text: fmt(old) + ' → ' + fmt(st.w) + ' kg, som du endret i økta', kind: st.w > old ? 'up' : 'down'};
+    }}
+};
+const RULE_ORDER = ['linear', 'double', 'fixed'];
+const WD = ['Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag', 'Søndag'];
+const wdOf = t => (new Date(t).getDay() + 6) % 7;   // 0 = mandag
+const day0 = t => { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); };
+const addDay = t => { const d = new Date(t); d.setDate(d.getDate() + 1); d.setHours(0, 0, 0, 0); return d.getTime(); };
+const dateTxt = t => WD[wdOf(t)] + ' ' + new Date(t).toLocaleDateString('nb-NO', {day:'numeric', month:'short'}).replace(/\.$/, '');
+// Første treningsdag fra og med t
+function nextTrain(up, t){
+  for (let i = 0; i < 7; i++, t = addDay(t)) if (up.sched.wd[wdOf(t)] != null) return t;
+  return t;
+}
+// Faste ukedager: dagen for økt nummer a.idx. Neste økt er første treningsdag fra i dag, men aldri før dagen etter
+// forrige økt (wkFrom). Tar du onsdagens økt på mandag, er fredag neste. En dag du ikke trente, går ut.
+// Når økta er bygd, huskes dagen (wkDay ved wkIdx), så økta står til den er tatt, og planen teller videre derfra.
+function userDate(up, a){
+  if (a.wkDay != null && a.idx >= a.wkIdx) { let t = a.wkDay; for (let k = a.idx - a.wkIdx; k > 0; k--) t = nextTrain(up, addDay(t)); return t; }
+  return nextTrain(up, Math.max(day0(Date.now()), a.wkFrom || 0));
+}
+// Tyngste vekt du brukte sist i løftet, fra loggen
+function lastW(L){
+  for (const h of S.history) {
+    if (h.skipped || !h.ex) continue;
+    const e = h.ex.find(x => x.lift === L && !x.rm && x.sets.some(y => y.d > 0));
+    if (e) return Math.max(...e.sets.filter(y => y.d > 0).map(y => y.w));
+  }
+  return null;
+}
+// Ny øvelse i et program som er i gang: samme vekt som i et annet opplegg av løftet, ellers sist brukt, ellers tom stang
+function userGuess(a, e){
+  const o = Object.keys(a.lifts || {}).find(k => k.split('.')[0] === e.lift && a.lifts[k].w > 0);
+  if (o) return a.lifts[o].w;
+  const h = lastW(e.lift); if (h != null) return h;
+  return LIFTS[e.lift] && LIFTS[e.lift].bar ? BAR() : 0;
+}
+const userExs = up => up.days.flatMap(d => d.ex);
+const exLine = e => e.sets + ' × ' + (RULES[e.rule] && RULES[e.rule].range ? e.reps + '–' + e.hi : e.reps);
+const userPer = up => up.sched.mode === 'week' ? up.sched.wd.filter(x => x != null).length || 1 : up.sched.per || up.days.length;
+const userWhat = up => up.days.length + (up.days.length === 1 ? ' økt' : ' økter') + ' · ' +
+  (up.sched.mode === 'week' ? up.sched.wd.map((x, i) => x != null ? WD[i].slice(0, 3).toLowerCase() : '').filter(Boolean).join(', ') : 'i rotasjon');
+// Programmet slik resten av appen leser det, som programmene i PROGRAMS. Bygges på nytt når programmet er lagret.
+const UDEF = new Map();
+function userDef(up){
+  const c = UDEF.get(up.id); if (c && c.up === up) return c.p;
+  const inputs = {}, bw = {};
+  userExs(up).forEach(e => { const k = ukey(e); if (!(k in inputs)) { inputs[k] = 0; if (LIFTS[e.lift] && LIFTS[e.lift].bw) bw[k] = 1; } });
+  const rules = [...new Set(userExs(up).map(e => e.rule))].map(r => RULES[r].n + ': ' + RULES[r].d.charAt(0).toLowerCase() + RULES[r].d.slice(1));
+  const p = {id: up.id, name: esc(up.name), origin: up.by ? 'Delt av ' + esc(up.by) : 'Ditt eget program', level:'Eget program', perWeek: String(userPer(up)),
+    prog:'user', user: up, days: up.days.map(d => Object.assign({}, d, {name: esc(d.name)})), inputs, bw, inputLabel:'Startvekt',
+    summary: (up.days.length === 1 ? 'Én økt' : up.days.length + ' økter') + (up.sched.mode === 'week'
+      ? ' på faste ukedager: ' + esc(up.sched.wd.map((x, i) => x != null ? WD[i].toLowerCase() : '').filter(Boolean).join(', ')) + '.'
+      : ' som går i rotasjon. Når du har tatt den siste, starter du på den første igjen.'),
+    rule: rules.join(' ')};
+  UDEF.set(up.id, {up, p}); return p;
+}
+function buildUser(p, a){
+  const up = p.user, wk = up.sched.mode === 'week';
+  let di, sub, calT;
+  if (wk) { calT = userDate(up, a); di = up.sched.wd[wdOf(calT)]; sub = dateTxt(calT); }
+  else { di = a.idx % up.days.length; sub = 'Uke ' + (Math.floor(a.idx / userPer(up)) + 1); }
+  const d = up.days[di] || up.days[0];
+  a.lifts = a.lifts || {};
+  const ex = d.ex.map(e => {
+    const k = ukey(e), R = RULES[e.rule] || RULES.fixed, st = a.lifts[k] || (a.lifts[k] = {w: userGuess(a, e), fails: 0});
+    return {key: k, lift: e.lift, slot: e.lift, tag: R.range ? e.reps + '–' + e.hi + ' reps' : '', rest: e.rest || 120, adj: R.adj || undefined,
+      sets: mk(e.sets, R.reps(e, st), st.w)};
+  });
+  return {programId: p.id, day: esc(d.name), sub, ex, started: Date.now(), calT};
+}
+function progressUser(p, a, s){
+  const notes = [], seen = new Set(), defs = userExs(p.user);
+  s.ex.forEach(x => {
+    if (seen.has(x.key) || !x.sets.some(y => y.d != null)) return;
+    seen.add(x.key);
+    const e = defs.find(d => ukey(d) === x.key); if (!e) return;
+    a.lifts = a.lifts || {};
+    const st = a.lifts[x.key] || (a.lifts[x.key] = {w: x.sets[0].w, fails: 0}), hit = x.sets.every(y => y.d != null && y.d >= y.t);
+    notes.push(Object.assign({name: liftName(x.lift)}, (RULES[e.rule] || RULES.fixed).next(e, st, x, hit)));
+  });
+  userAdvance(p, a, s);
+  return notes;
+}
+// Etter en økt (også en hoppet over): på faste ukedager er neste økt tidligst dagen etter
+function userAdvance(p, a, s){
+  if (p.user.sched.mode === 'week' && s && s.calT) a.wkFrom = addDay(s.calT);
+  delete a.wkDay; delete a.wkIdx;
+}
+
+/* Kopiere et program. StrongLifts og Starting Strength blir lineære. GZCLP: T1 5×3 og T2 3×10 lineært,
+   T3 3×15–25 med dobbel progresjon (de skifter ikke trinn ved bom, slik GZCLP gjør). Er programmet aktivt, tas byttene dine med. */
+const COPYABLE = p => p && (p.prog === 'user' || p.prog === 'linear' || p.prog === 'gzclp');
+const defaultWd = (n, per) => { const k = Math.min(7, Math.max(1, per || n)), at = [[0],[0,3],[0,2,4],[0,1,3,4],[0,1,2,3,4],[0,1,2,3,4,5],[0,1,2,3,4,5,6]][k - 1];
+  const wd = Array(7).fill(null); at.forEach((d, i) => { wd[d] = i % n; }); return wd; };
+function copyOf(p){
+  if (p.prog === 'user') { const c = clone(p.user); ['id', 'share', 'gone', 'by', 'rev'].forEach(k => delete c[k]); c.name = (c.name + ' (kopi)').slice(0, 40); c.from = p.id; return c; }
+  const a = S.active && S.active.programId === p.id ? S.active : null, L = l => a ? sw(a, l) : l;
+  const ex = (lift, sets, reps, rule, iv, rest, hi) => ({lift: L(lift), sets, reps, hi: hi || reps + 4, rule, inc: iv, rest});
+  let days;
+  if (p.prog === 'linear') days = p.days.map(d => ({name: d.name, ex: d.ex.map(e => ex(e.lift, e.sets, e.reps, 'linear', inc(p, e.lift), linearRest(p, e.lift)))}));
+  else if (p.prog === 'gzclp') days = p.days.map(d => ({name: d.name, ex: d.ex.map(e => e.tier === 'T1' ? ex(e.lift, 5, 3, 'linear', inc(p, e.lift), 180)
+    : e.tier === 'T2' ? ex(e.lift, 3, 10, 'linear', inc(p, e.lift), 120) : ex(e.lift, 3, 15, 'double', 2.5, 90, 25))}));
+  else return null;
+  const per = parseInt(p.perWeek) || 3;
+  return {name: (p.name + ' (kopi)').slice(0, 40), sched: {mode:'rot', per, wd: defaultWd(days.length, per)}, days, from: p.id};
+}
+
+/* Deling. Det som sendes, er programmet med navnene på øvelsene, ikke vektene eller loggen.
+   Mottakeren får en kopi når hen godtar. Alt som kommer fra andre, sjekkes og vaskes i cleanProg før det brukes. */
+const BASE_LIFTS = new Set(Object.keys(LIFTS).filter(k => !k.startsWith('c_') && !LIFTS[k].lib));
+function exportProg(up){
+  const lifts = {};
+  userExs(up).forEach(e => { const L = LIFTS[e.lift]; if (L && !BASE_LIFTS.has(e.lift)) lifts[e.lift] = {n: L.n, bar: L.bar ? 1 : 0, bw: L.bw ? 1 : 0}; });
+  return {v: 1, name: up.name, sched: up.sched, days: up.days, lifts};
+}
+function cleanProg(o){
+  const str = (v, n) => String(v == null ? '' : v).replace(/[<>&"`]/g, '').replace(/\s+/g, ' ').trim().slice(0, n);
+  const num = (v, lo, hi, d) => { v = +v; return isFinite(v) ? Math.min(hi, Math.max(lo, v)) : d; };
+  const keyOk = k => typeof k === 'string' && /^[a-z0-9_]{1,48}$/.test(k);
+  if (!o || typeof o !== 'object' || !Array.isArray(o.days) || !o.days.length || o.days.length > 7) return null;
+  const lifts = {};
+  Object.entries(o.lifts && typeof o.lifts === 'object' ? o.lifts : {}).slice(0, 120).forEach(([k, v]) => {
+    if (keyOk(k) && v && !BASE_LIFTS.has(k)) lifts[k] = {n: str(v.n, 40) || 'Øvelse', bar: v.bar ? 1 : 0, bw: v.bw ? 1 : 0}; });
+  const days = o.days.map((d, i) => ({name: str(d && d.name, 30) || 'Økt ' + 'ABCDEFG'[i],
+    ex: (d && Array.isArray(d.ex) ? d.ex : []).slice(0, 15).filter(e => e && keyOk(e.lift) && (BASE_LIFTS.has(e.lift) || lifts[e.lift] || LIFTS[e.lift])).map(e => {
+      const rule = RULES[e.rule] ? e.rule : 'fixed', reps = Math.round(num(e.reps, 1, 50, 5));
+      return {lift: e.lift, sets: Math.round(num(e.sets, 1, 15, 3)), reps, hi: Math.round(num(e.hi, reps + 1, 60, reps + 4)), rule,
+        inc: Math.round(num(e.inc, 0, 20, 2.5) * 100) / 100, rest: Math.round(num(e.rest, 0, 600, 120))};
+    })}));
+  if (days.some(d => !d.ex.length)) return null;
+  const s = o.sched && typeof o.sched === 'object' ? o.sched : {};
+  const wd = Array.from({length: 7}, (_, i) => { const v = Array.isArray(s.wd) ? s.wd[i] : null; return Number.isInteger(v) && v >= 0 && v < days.length ? v : null; });
+  const mode = s.mode === 'week' && wd.some(x => x != null) ? 'week' : 'rot';
+  return {name: str(o.name, 40) || 'Program', sched: {mode, per: Math.round(num(s.per, 1, 7, days.length)), wd: wd.some(x => x != null) ? wd : defaultWd(days.length)}, days, lifts};
+}
+const newId = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+// Legger et vasket program inn hos deg. Egne øvelser fra den andre får nye nøkler hvis du har en med samme nøkkel og et annet navn.
+function importProg(c, extra){
+  const map = {};
+  Object.entries(c.lifts).forEach(([k, v]) => {
+    if (LIFTS[k] && LIFTS[k].lib) return;   // øvelsen finnes i biblioteket ditt
+    if (LIFTS[k] && LIFTS[k].n !== v.n) { const nk = newId('c_'); map[k] = nk; k = nk; }
+    S.custom = S.custom || {}; if (!S.custom[k]) S.custom[k] = {n: v.n, bar: v.bar, bw: v.bw};
+  });
+  c.days.forEach(d => d.ex.forEach(e => { if (map[e.lift]) e.lift = map[e.lift]; }));
+  delete c.lifts;
+  const id = newId('u_');
+  UP()[id] = Object.assign(c, {id, rev: Date.now()}, extra || {});
+  mergeCustom(); return id;
+}
+
+/* ---------- Redigering ----------
+   ui.pe = {d: arbeidskopien, open: 'di:ei' (øvelsen som er åpen), add: di (søk etter øvelse i økt di), q, confirm}.
+   Tekstfeltene oppdaterer kopien uten å tegne siden på nytt, så tastaturet blir stående. */
+const blankProg = () => ({name:'', sched: {mode:'rot', per: 3, wd: defaultWd(2, 3)}, days: [{name:'Økt A', ex: []}, {name:'Økt B', ex: []}]});
+function peOpen(d, id){ ui.pe = {d, id: id || null, open: null, add: d.days.length && !d.days[0].ex.length ? 0 : null, q: '', confirm: null, err: ''};
+  (ui.stack = ui.stack || []).push(ui.detail); ui.detail = 'pedit'; ui.tab = 'plan'; ui.confirm = null; render(); toTop(); }
+// Forslag når en øvelse legges til: stangøvelser lineært 3×5, resten dobbel progresjon 3×8–12, kondisjon fast
+function peDefaults(lift, r){
+  const L = LIFTS[lift] || {}, cat = r ? r[3] : '';
+  if (cat === 'Kondisjon' || cat === 'Plyometri') return {lift, sets: 3, reps: 10, hi: 15, rule:'fixed', inc: 2.5, rest: 60};
+  if (L.bar) return {lift, sets: 3, reps: 5, hi: 8, rule:'linear', inc: /deadlift|markl/i.test(lift + ' ' + (L.n || '')) ? 5 : 2.5, rest: 180};
+  return {lift, sets: 3, reps: 8, hi: 12, rule:'double', inc: 2.5, rest: 90};
+}
+function peResHTML(q, di){
+  if (!String(q).trim()) return '';
+  const ids = exSearch(q, 8), own = String(q).replace(/[<>&"`]/g, '').trim().slice(0, 40);
+  return ids.map(i => { const r = EXLIB[i];
+      return `<button class="lib-hit" data-a="pe:addex:${di}:${i}"><b>${esc(r[0])}</b><small>${esc(r[2])}${r[4] ? ' · ' + esc(r[4]) : ''}</small></button>`; }).join('')
+    + (own ? `<button class="lib-hit own" data-a="pe:addown:${di}"><b>+ Lag egen øvelse: «${esc(own)}»</b><small>Finnes ikke i biblioteket</small></button>` : '');
+}
+const REST_OPTS = [60, 90, 120, 180, 240, 300];
+const INC_OPTS = [1.25, 2.5, 5];
+function vProgEdit(){
+  const P = ui.pe; if (!P) { ui.detail = null; return vPlanTab(); }
+  const d = P.d, wk = d.sched.mode === 'week', names = d.days.map((x, i) => x.name || 'Økt ' + 'ABCDEFG'[i]);
+  const step = (a, v, lbl) => `<span class="pe-step" role="group" aria-label="${lbl}"><button class="step" data-a="${a}:-1" aria-label="${lbl}: én mindre">−</button><b>${v}</b><button class="step" data-a="${a}:1" aria-label="${lbl}: én mer">+</button></span>`;
+  const exRow = (e, di, ei) => {
+    const R = RULES[e.rule], k = di + ':' + ei, open = P.open === k, own = String(e.lift).startsWith('c_');
+    const sum = exLine(e) + ' · ' + R.n + (R.inc ? ' +' + fmt(e.inc) + ' kg' : '') + ' · ' + mmss(e.rest) + ' pause';
+    if (!open) return `<button class="pe-ex" data-a="pe:exopen:${k}" aria-expanded="false"><b>${esc(liftName(e.lift))}</b><small>${esc(sum)}</small></button>`;
+    return `<div class="pe-ex open"><button class="pe-ex-h" data-a="pe:exopen:${k}" aria-expanded="true"><b>${esc(liftName(e.lift))}</b><small>${esc(sum)}</small></button>
+      <div class="pe-f"><span>Sett</span>${step('pe:sets:' + k, e.sets, 'Sett')}</div>
+      <div class="pe-f"><span>${R.range ? 'Reps fra' : 'Reps'}</span>${step('pe:reps:' + k, e.reps, R.range ? 'Reps fra' : 'Reps')}</div>
+      ${R.range ? `<div class="pe-f"><span>Reps til</span>${step('pe:hi:' + k, e.hi, 'Reps til')}</div>` : ''}
+      <div class="pe-f col"><span>Progresjon</span><div class="seg" role="group" aria-label="Progresjon">${RULE_ORDER.map(r =>
+        `<button data-a="pe:rule:${k}:${r}" aria-pressed="${e.rule === r}">${RULES[r].n}</button>`).join('')}</div><small class="muted">${R.d}</small></div>
+      ${R.inc ? `<div class="pe-f col"><span>Økning</span><div class="seg" role="group" aria-label="Økning">${INC_OPTS.map(v =>
+        `<button data-a="pe:inc:${k}:${v}" aria-pressed="${e.inc === v}">+${fmt(v)} kg</button>`).join('')}</div></div>` : ''}
+      <div class="pe-f col"><span>Pause</span><div class="seg wrap" role="group" aria-label="Pause">${REST_OPTS.map(v =>
+        `<button data-a="pe:rest:${k}:${v}" aria-pressed="${e.rest === v}">${mmss(v)}</button>`).join('')}</div></div>
+      ${own ? `<label class="chk small"><input type="checkbox" data-pebar="${esc(e.lift)}"${LIFTS[e.lift] && LIFTS[e.lift].bar ? ' checked' : ''}> Vanlig stang (viser skiver per side)</label>` : ''}
+      <div class="row pe-acts"><button class="btn ghost sm" data-a="pe:exup:${k}"${ei ? '' : ' disabled'} aria-label="Flytt opp">↑</button>
+        <button class="btn ghost sm" data-a="pe:exdown:${k}"${ei < d.days[di].ex.length - 1 ? '' : ' disabled'} aria-label="Flytt ned">↓</button>
+        <button class="btn ghost sm" data-a="pe:exdel:${k}">Fjern øvelsen</button></div></div>`;
+  };
+  return `<button class="link" data-a="pe:cancel">‹ Avbryt</button>
+    <header class="head"><h1>${P.id ? 'Endre program' : 'Lag eget program'}</h1></header>
+    <div class="box"><label for="peName" class="lbl">Navn</label>
+      <input id="peName" class="txt" type="text" maxlength="40" data-pe="name" value="${esc(d.name)}" placeholder="For eksempel Overkropp og bein" autocomplete="off"></div>
+    <h2 class="sec">Når trener du?</h2>
+    <div class="box"><div class="seg" role="group" aria-label="Når trener du?">
+        <button data-a="pe:mode:rot" aria-pressed="${!wk}">Økter i rotasjon</button><button data-a="pe:mode:week" aria-pressed="${wk}">Faste ukedager</button></div>
+      ${wk ? `<p class="small muted">Velg økt for hver dag. Dagene uten økt er hviledager. Tar du en økt på en annen dag, er neste økt den som kommer etter i uka.</p>
+        <div class="pe-wd">${WD.map((n, i) => `<div class="field"><label for="pewd-${i}">${n}</label>
+          <select id="pewd-${i}" data-pewd="${i}"><option value=""${d.sched.wd[i] == null ? ' selected' : ''}>Hviledag</option>${names.map((nm, j) =>
+            `<option value="${j}"${d.sched.wd[i] === j ? ' selected' : ''}>${esc(nm)}</option>`).join('')}</select></div>`).join('')}</div>`
+      : `<p class="small muted">Du tar øktene etter tur når det passer deg: ${esc(names.join(', '))}, og så den første igjen.</p>
+        <div class="pe-f"><span>Økter per uke</span>${step('pe:per', d.sched.per, 'Økter per uke')}</div>
+        <p class="small muted">Brukes til uke-nummeret i planen.</p>`}</div>
+    <h2 class="sec">Øktene</h2>
+    ${d.days.map((day, di) => `<section class="box pe-day">
+      <div class="pe-dh"><label class="sr-only" for="peDay-${di}">Navn på økt ${di + 1}</label>
+        <input id="peDay-${di}" class="txt" type="text" maxlength="30" data-pe="day:${di}" value="${esc(day.name)}" placeholder="Økt ${'ABCDEFG'[di]}" autocomplete="off">
+        ${d.days.length > 1 ? (P.confirm === 'daydel:' + di ? `<button class="btn danger sm" data-a="pe:daydel:${di}">Fjern</button><button class="btn ghost sm" data-a="pe:noconfirm">Nei</button>`
+          : `<button class="x" data-a="${day.ex.length ? 'pe:confirm:daydel:' + di : 'pe:daydel:' + di}" aria-label="Fjern ${esc(names[di])}">×</button>`) : ''}</div>
+      ${day.ex.map((e, ei) => exRow(e, di, ei)).join('') || '<p class="small muted">Ingen øvelser ennå.</p>'}
+      ${P.add === di ? `<div class="pe-add"><label for="peQ" class="small">Søk i øvelsesbiblioteket</label>
+          <input id="peQ" class="txt" type="search" maxlength="40" data-peq="${di}" value="${esc(P.q)}" placeholder="For eksempel knebøy, kabel eller sete" autocomplete="off">
+          <div id="peRes" class="lib-res" aria-live="polite">${peResHTML(P.q, di)}</div>
+          <button class="link" data-a="pe:addclose">Ferdig med å legge til</button></div>`
+        : `<button class="btn ghost sm" data-a="pe:addopen:${di}">+ Legg til øvelse</button>`}
+    </section>`).join('')}
+    ${d.days.length < 7 ? '<button class="btn ghost" data-a="pe:dayadd">+ Legg til økt</button>' : ''}
+    ${P.err ? `<p class="ferr pe-err" role="alert">${esc(P.err)}</p>` : ''}
+    <button class="btn" data-a="pe:save">${P.id ? 'Lagre endringene' : 'Lagre programmet'}</button>
+    ${P.id && S.active && S.active.programId === P.id ? '<p class="muted small">Programmet er aktivt. Endringene gjelder fra neste økt du ikke har begynt på. Vektene følger øvelsene, så du mister ikke det du har bygd opp.</p>' : ''}`;
+}
+function peAct(r){
+  const P = ui.pe, cmd = r[0]; if (!P && !['new', 'edit', 'copy'].includes(cmd)) return;
+  const d = P && P.d, ex = () => d.days[+r[1]].ex[+r[2]];
+  const clampHi = e => { if (e.hi <= e.reps) e.hi = e.reps + 1; };
+  switch (cmd) {
+    case 'new': return peOpen(blankProg());
+    case 'edit': { const up = UP()[r[1]]; if (up) peOpen(clone(up), up.id); return; }
+    case 'copy': { const c = copyOf(prog(r[1])); if (c) { peOpen(c); toast('Kopien er klar. Endre det du vil, og lagre.'); } return; }
+    case 'cancel': ui.pe = null; ui.detail = (ui.stack || []).pop() || null; render(); toTop(); return;
+    case 'mode': d.sched.mode = r[1]; if (r[1] === 'week' && !d.sched.wd.some(x => x != null)) d.sched.wd = defaultWd(d.days.length, d.sched.per); break;
+    case 'per': d.sched.per = Math.min(7, Math.max(1, d.sched.per + +r[1])); break;
+    case 'dayadd': d.days.push({name: 'Økt ' + 'ABCDEFG'[d.days.length], ex: []}); P.add = d.days.length - 1; P.q = ''; P.open = null; break;
+    case 'daydel': { const di = +r[1]; d.days.splice(di, 1);
+      d.sched.wd = d.sched.wd.map(x => x == null || x === di ? null : x > di ? x - 1 : x); P.confirm = null; P.open = null; P.add = null; break; }
+    case 'confirm': P.confirm = r.slice(1).join(':'); break;
+    case 'noconfirm': P.confirm = null; break;
+    case 'exopen': P.open = P.open === r[1] + ':' + r[2] ? null : r[1] + ':' + r[2]; break;
+    case 'addopen': P.add = +r[1]; P.q = ''; P.open = null; render(); { const q = $('#peQ'); if (q) q.focus(); } return;
+    case 'addclose': P.add = null; P.q = ''; break;
+    case 'addex': { const lr = EXLIB[+r[2]]; if (!lr) return; d.days[+r[1]].ex.push(peDefaults(libKey(lr), lr)); P.q = '';
+      toast(lr[0] + ' er lagt til'); render(); const q = $('#peQ'); if (q) q.focus(); return; }
+    case 'addown': { const nm = String(P.q).replace(/[<>&"`]/g, '').trim().slice(0, 40); if (!nm) return;
+      const k = newId('c_'); S.custom = S.custom || {}; S.custom[k] = {n: nm, bar: 0}; mergeCustom(); save();
+      d.days[+r[1]].ex.push(peDefaults(k)); P.q = ''; P.open = r[1] + ':' + (d.days[+r[1]].ex.length - 1); P.add = null; toast(nm + ' er lagt til'); break; }
+    case 'sets': { const e = ex(); e.sets = Math.min(15, Math.max(1, e.sets + +r[3])); break; }
+    case 'reps': { const e = ex(); e.reps = Math.min(50, Math.max(1, e.reps + +r[3])); clampHi(e); break; }
+    case 'hi': { const e = ex(); e.hi = Math.min(60, Math.max(e.reps + 1, e.hi + +r[3])); break; }
+    case 'rule': { const e = ex(); if (RULES[r[3]]) e.rule = r[3]; clampHi(e); break; }
+    case 'inc': ex().inc = +r[3]; break;
+    case 'rest': ex().rest = +r[3]; break;
+    case 'exup': case 'exdown': { const list = d.days[+r[1]].ex, i = +r[2], j = cmd === 'exup' ? i - 1 : i + 1; if (j < 0 || j >= list.length) return;
+      [list[i], list[j]] = [list[j], list[i]]; P.open = r[1] + ':' + j; break; }
+    case 'exdel': d.days[+r[1]].ex.splice(+r[2], 1); P.open = null; break;
+    case 'save': return peSave();
+    case 'del': return peDelete(r[1]);
+  }
+  P.err = ''; render();
+}
+function peSave(){
+  const P = ui.pe, d = P.d;
+  d.name = String(d.name || '').replace(/[<>&"`]/g, '').trim().slice(0, 40);
+  d.days.forEach((x, i) => { x.name = String(x.name || '').replace(/[<>&"`]/g, '').trim().slice(0, 30) || 'Økt ' + 'ABCDEFG'[i]; });
+  const fail = m => { P.err = m; render(); const e = $('.pe-err'); if (e) e.scrollIntoView({block:'center'}); };
+  if (!d.name) { fieldErr($('#peName'), 'Gi programmet et navn'); return; }
+  const empty = d.days.find(x => !x.ex.length); if (empty) return fail(empty.name + ' har ingen øvelser. Legg til minst én, eller fjern økta.');
+  if (d.sched.mode === 'week') {
+    if (!d.sched.wd.some(x => x != null)) return fail('Velg minst én ukedag med økt, eller bruk økter i rotasjon.');
+    const unused = d.days.filter((x, i) => !d.sched.wd.includes(i)); if (unused.length) return fail(listNo(unused.map(x => x.name)) + ' ligger ikke på noen ukedag.');
+  }
+  const id = P.id || newId('u_'), old = UP()[id];
+  const up = Object.assign({}, old || {}, clone(d), {id, rev: Date.now()});
+  delete up.gone;
+  UP()[id] = up;
+  // Et aktivt program: neste økt bygges på nytt hvis du ikke har begynt på den
+  if (S.active && S.active.programId === id && !draftTouched()) { dropOwnDraft(); delete S.active.wkDay; delete S.active.wkIdx; }
+  ui.pe = null; save();
+  ui.stack = (ui.stack || []).filter(x => x !== id); ui.detail = id; render(); toTop();
+  toast(P.id ? 'Endringene er lagret' : up.name + ' er lagret. Legg inn startvektene og aktiver når du er klar.');
+}
+function peDelete(id){
+  const up = UP()[id]; if (!up) return;
+  if (S.active && S.active.programId === id) { toast('Programmet er aktivt. Bytt til et annet program først.'); return; }
+  up.gone = true; ui.confirm = null; save();
+  ui.detail = 'library'; ui.stack = []; render(); toTop(); toast(up.name + ' er slettet. Loggen beholder øktene.');
+}
+
+// Startvektene til et eget program: forslaget er det du brukte sist i øvelsen, ellers tom stang
+function vUserStart(p){
+  const a = S.active && S.active.programId === p.id ? S.active : null;
+  const sug = k => { const L = k.split('.')[0];
+    if (a && a.lifts && a.lifts[k]) return a.lifts[k].w;
+    const h = lastW(L); if (h != null) return h;
+    return LIFTS[L] && LIFTS[L].bar ? BAR() : LIFTS[L] && LIFTS[L].bw ? 0 : null; };
+  return `<h2 class="sec">Startvekter</h2>
+    <div class="box" style="gap:0">${Object.keys(p.inputs).map((k, i) => { const v = sug(k); return `
+      <div class="field"><label for="in-${i}">${esc(keyLabel(k))}${p.bw[k] ? '<small class="muted">Ekstra vekt. 0 = bare kroppen</small>' : ''}</label>
+        <span class="inp"><input id="in-${i}" data-key="${esc(k)}"${p.bw[k] ? ' data-bw="1"' : ''} type="text" inputmode="decimal" placeholder="–" value="${v != null ? fmt(v) : ''}">kg</span></div>`; }).join('')}</div>`;
+}
+// Knappene på programsiden til et eget program, og kopiering av de andre
+function vUserActs(p){
+  if (p.prog !== 'user') return COPYABLE(p) ? `<button class="btn ghost" data-a="pe:copy:${p.id}">Kopier og lag ditt eget</button>` : '';
+  const id = p.id, act = S.active && S.active.programId === id;
+  return `<div class="row pe-pacts"><button class="btn ghost sm" data-a="pe:edit:${id}">Endre</button><button class="btn ghost sm" data-a="pe:copy:${id}">Kopier</button>
+      <button class="btn ghost sm" data-a="ps:pick:${id}">Del med en venn</button>
+      ${act ? '' : ui.confirm === 'pdel:' + id ? `<button class="btn danger sm" data-a="pe:del:${id}">Ja, slett</button><button class="btn ghost sm" data-a="cancel">Nei</button>`
+        : `<button class="btn ghost sm" data-a="confirm:pdel:${id}">Slett</button>`}</div>
+    ${ui.share && ui.share.id === id ? vSharePick(p) : ''}`;
+}
+
+/* ---------- Dele et program med en venn ----------
+   Begge må si ja: du velger vennen og bekrefter, og vennen må godta før programmet havner hos dem.
+   Raden ligger i program_shares (se migrasjonen programdeling). Vennen får et pushvarsel hvis det er slått på. */
+function vSharePick(p){
+  const S_ = ui.share;
+  if (!auth) return `<div class="box"><p class="small">Du må være logget inn for å dele. Logg inn eller lag konto under Sammen.</p>
+      <button class="btn sm" data-a="tab:together">Gå til Sammen</button></div>`;
+  if (!SX.loaded || !SX.me) {
+    if (!S_.loading) { S_.loading = true; sxLoad(true).finally(() => { if (ui.share) render(); }); }
+    return SX.err ? `<div class="box"><p class="small">${esc(SX.err)}</p></div>` : '<div class="box"><p class="small muted">Henter vennene dine …</p></div>'; }
+  const fr = sxFriendIds();
+  if (!fr.length) return `<div class="box"><p class="small">Du har ingen venner i Sammen ennå. Legg til noen på brukernavn først.</p>
+      <button class="btn sm" data-a="tab:together">Gå til Sammen</button></div>`;
+  const sent = new Set((SX.ps || []).filter(x => x.sender === uid() && x.status === 'pending' && x.name === p.user.name).map(x => x.recipient));
+  if (S_.to) return `<div class="box skipbox" aria-live="polite"><p><b>Dele «${p.name}» med ${uname(S_.to)}?</b></p>
+      <p class="small">${uname(S_.to)} får øktene, øvelsene og reglene, men ikke vektene dine. Programmet havner hos ${uname(S_.to)} først når hen godtar.</p>
+      <div class="row"><button class="btn sm" data-a="ps:send:${p.id}"${S_.busy ? ' disabled' : ''}>${S_.busy ? 'Sender …' : 'Ja, del'}</button><button class="btn ghost sm" data-a="ps:close">Avbryt</button></div></div>`;
+  return `<div class="box"><span class="lbl">Hvem vil du dele med?</span><div class="sx-list">${fr.sort((a, b) => uname(a).localeCompare(uname(b))).map(f =>
+      `<div class="sx-row">${av(f)}<span><b>${uname(f)}</b>${sent.has(f) ? '<small>Venter på svar</small>' : ''}</span>
+        <button class="btn sm" data-a="ps:to:${f}"${sent.has(f) ? ' disabled' : ''}>Velg</button></div>`).join('')}</div>
+      <button class="link" data-a="ps:close">Avbryt</button></div>`;
+}
+// Programmer til deg og programmer du har delt, under Sammen → Venner
+function vShares(){
+  const me = uid(), list = SX.ps || [];
+  const inc = list.filter(x => x.recipient === me && x.status === 'pending');
+  const out = list.filter(x => x.sender === me);
+  const open = ui.psOpen || {};
+  const prev = x => { const c = cleanProg(x.program); if (!c) return '<p class="small muted">Programmet kunne ikke leses.</p>';
+    const nm = k => (LIFTS[k] && LIFTS[k].n) || (c.lifts[k] && c.lifts[k].n) || 'Øvelse';
+    return `<div class="plan-ex">${c.days.map(d => `<div class="ln"><span><b>${esc(d.name)}</b></span><span class="muted">${c.sched.mode === 'week'
+      ? esc(c.sched.wd.map((v, i) => v === c.days.indexOf(d) ? WD[i].slice(0, 3).toLowerCase() : '').filter(Boolean).join(', ')) : ''}</span></div>
+      ${d.ex.map(e => `<div class="ln"><span>${esc(nm(e.lift))}</span><span>${esc(exLine(e))} · ${esc(RULES[e.rule].n)}</span></div>`).join('')}`).join('')}</div>`; };
+  let h = '';
+  if (inc.length) h += `<h2 class="sec sx-h">Programmer til deg <span class="badge">${inc.length}</span></h2><div class="sx-list">${inc.map(x => `
+    <div class="sx-row ps-row">${av(x.sender)}<span><b>«${esc(x.name)}»</b><small>Fra ${uname(x.sender)}</small></span>
+      <button class="link" data-a="ps:view:${x.id}" aria-expanded="${!!open[x.id]}">${open[x.id] ? 'Skjul' : 'Se'}</button></div>
+    ${open[x.id] ? prev(x) : ''}
+    <div class="row ps-acts"><button class="btn ghost sm" data-a="ps:dec:${x.id}">Avslå</button><button class="btn sm" data-a="ps:acc:${x.id}">Godta</button></div>`).join('')}</div>`;
+  if (out.length) h += `<h2 class="sec">Programmer du har delt</h2><div class="sx-list">${out.map(x => `
+    <div class="sx-row">${av(x.recipient)}<span><b>«${esc(x.name)}»</b><small>${uname(x.recipient)} · ${x.status === 'pending' ? 'Venter på svar' : x.status === 'accepted' ? 'Tatt imot' : 'Avslått'}</small></span>
+      <button class="btn ghost sm" data-a="ps:del:${x.id}">${x.status === 'pending' ? 'Trekk tilbake' : 'Fjern'}</button></div>`).join('')}</div>`;
+  return h;
+}
+async function psAct(r){
+  const cmd = r[0], id = r[1];
+  if (cmd === 'pick') { ui.share = {id}; render(); return; }
+  if (cmd === 'close') { ui.share = null; render(); return; }
+  if (cmd === 'to') { ui.share = Object.assign({}, ui.share, {to: id}); render(); return; }
+  if (cmd === 'view') { ui.psOpen = Object.assign({}, ui.psOpen, {[id]: !(ui.psOpen || {})[id]}); render(); return; }
+  try {
+    if (cmd === 'send') {
+      const up = UP()[id], to = ui.share && ui.share.to; if (!up || !to || ui.share.busy) return;
+      ui.share.busy = true; render();
+      await db('program_shares', '', {method:'POST', body:{recipient: to, name: up.name, program: exportProg(up)}});
+      ui.share = null; toast('Sendt. ' + uname(to) + ' må godta før programmet havner der.');
+    } else if (cmd === 'acc') {
+      const x = (SX.ps || []).find(y => y.id === id); if (!x) return;
+      const c = cleanProg(x.program); if (!c) { toast('Programmet kunne ikke leses, så det er ikke lagt inn.'); return; }
+      const rows = await db('program_shares', 'id=eq.' + id + '&status=eq.pending', {method:'PATCH', body:{status:'accepted', answered_at: new Date().toISOString()}, headers:{Prefer:'return=representation'}});
+      if (!rows || !rows.length) { toast('Delingen er trukket tilbake.'); }
+      else if (!Object.values(UP()).some(u => u.share === id)) { importProg(c, {by: uname(x.sender), share: id}); save(); toast('«' + c.name + '» ligger nå under Program → Bytt program.'); }
+    } else if (cmd === 'dec') {
+      await db('program_shares', 'id=eq.' + id + '&status=eq.pending', {method:'PATCH', body:{status:'declined', answered_at: new Date().toISOString()}});
+      toast('Avslått');
+    } else if (cmd === 'del') {
+      await db('program_shares', 'id=eq.' + id, {method:'DELETE'});
+    }
+  } catch(e) { if (ui.share) ui.share.busy = false; toast(sxErr(e)); }
+  await sxLoad(true); render();
+}
+
 function mergeCustom(){
   Object.keys(LIFTS).filter(k => k.startsWith('c_')).forEach(k => delete LIFTS[k]);
   Object.assign(LIFTS, S.custom || {});
@@ -3201,6 +3656,7 @@ function mk(n, reps, w, lastAm){
 // Husker planlagt vekt på hovedløftene, så progresjonen ser om du tok av vekt i økta
 const withPw = s => (s.ex.forEach(e => { if (e.part === 'mmc' && e.pw == null) e.pw = e.sets[0].w; }), s);
 function buildSession(p, a){
+  if (p.prog === 'user') return buildUser(p, a);
   if (p.prog === 'sp12') return buildSP(p, a);
   if (p.prog === 'cube') return buildCube(p, a);
   if (p.prog === 'jugg') return buildJug(p, a);
@@ -3239,6 +3695,7 @@ function buildSession(p, a){
 
 /* ---------- Motor: oppdater instansen etter en økt ---------- */
 function progress(p, a, s){
+  if (p.prog === 'user') return progressUser(p, a, s);
   if (p.prog === 'sp12') return progressSP(p, a, s);
   if (p.prog === 'cube') return progressCube(p, a, s);
   if (p.prog === 'jugg') return progressJug(p, a, s);
@@ -3319,6 +3776,7 @@ function skipSession(){
   S.history.unshift({date:Date.now(), programId:p.id, day:s.day, sub:s.sub, skipped:true, idx:S.active.idx,
     ex: exAll(s).map(e => ({lift:e.lift, tag:e.tag, sets:e.sets.map(x => ({t:x.t, w:x.w, d:null}))})), undo: undoPoint(false)});
   keepOneUndo();
+  if (p.prog === 'user') userAdvance(p, S.active, s);
   S.active.idx++;
   S.draft = null; ui.confirm = null; ui.summary = null;
   ui.rest = null; updateRest();
@@ -3623,7 +4081,7 @@ function mmcSecInputs(p){
 function activate(id){
   const p = prog(id);
   // Tomme felt fylles ikke med standardtall: da ville noen andres maksløft blitt dine startvekter
-  const empty = p.prog === 'athx' ? [] : [...document.querySelectorAll('input[data-key]')].filter(inp => !(parseFloat(String(inp.value).replace(',', '.')) > 0));
+  const empty = p.prog === 'athx' ? [] : [...document.querySelectorAll('input[data-key]')].filter(inp => !(parseFloat(String(inp.value).replace(',', '.')) > 0) && !(inp.dataset.bw && !(parseFloat(String(inp.value).replace(',', '.')) < 0)));
   if (empty.length) { fieldErr(empty[0], p.orm ? 'Velg hvor du starter, eller skriv inn startvektene' : 'Skriv inn 1RM eller et sett du klarte for alle løftene'); return; }
   const a = newInstance(p);
   if (!a) return;
@@ -4183,7 +4641,13 @@ function vToday(){
   // ATHX følger kalenderen. En økt du ikke har begynt på, byttes når uka er over.
   if (p.prog === 'athx' && !(S.draft && S.draft.ex.some(e => e.sets.some(x => x.d != null))) && axSync(S.active)) { S.draft = null; save(); }
   const tot = g ? 0 : totalOf(p, S.active), over = tot && S.active.idx >= tot && !S.draft;
-  if (!S.draft && !over) { S.draft = buildSession(p, S.active); save(); }
+  // Faste ukedager: en økt du ikke har begynt på, følger kalenderen. Har dagen den var satt opp for gått, bygges den på nytt.
+  if (p.prog === 'user' && p.user.sched.mode === 'week' && !g) {
+    const t = S.draft && S.draft.ex.some(e => e.sets.some(x => x.d != null));
+    if (S.draft && !t && S.draft.calT !== nextTrain(p.user, Math.max(day0(Date.now()), S.active.wkFrom || 0))) { S.draft = null; save(); }
+    if (!S.draft) { delete S.active.wkDay; delete S.active.wkIdx; }
+  }
+  if (!S.draft && !over) { S.draft = buildSession(p, S.active); if (S.draft.calT && !g) { S.active.wkDay = S.draft.calT; S.active.wkIdx = S.active.idx; } save(); }
   const s = S.draft;
   // Under en økt ligger «Se planen» og «Logg fri økt» i tekstraden nederst, så toppen bare viser økta
   let h = over ? '<div class="topbar"><button class="quick" data-a="free">+ Logg fri økt</button></div>' : '';
@@ -4234,6 +4698,8 @@ function vToday(){
         : ['mmc','emc','cir','cbe'].includes(p.prog) && s.ex[0] && S.active.e1rm[s.ex[0].lift] ? `<p class="muted small">Treningsmaks ${liftName(s.ex[0].lift).toLowerCase()}: ${fmt(Math.round((s.ex[0].cbeWk ? cbeTm(S.active, s.ex[0].lift, s.ex[0].cbeWk) : mmcTm(S.active, s.ex[0].lift)) * 2) / 2)} kg</p>`
         : S.active.e1rm && s.ex[0] && S.active.e1rm[s.ex[0].lift] ? `<p class="muted small">${p.prog === 'sp12' ? 'Estimert 1RM' : '1RM'} ${liftName(s.ex[0].lift).toLowerCase()}: ${fmt(Math.round(S.active.e1rm[s.ex[0].lift]*2)/2)} kg</p>` : ''}
     </header>`;
+  if (s.calT && s.calT > day0(Date.now()) && !anyTouched) h += `<div class="box rest-day"><b>Hviledag i dag</b>
+      <p class="small">Neste økt er ${esc(s.sub.toLowerCase())}. Vil du trene i dag, tar du den nå. Da blir neste økt den som kommer etter.</p></div>`;
   if (p.prog === 'sp12') {
     const c = s.ex[0] && mcRecentConflict(s.ex[0].slot);
     if (c && !anyTouched) h += `<div class="warn">Du logget en ${MC[c.mc.type].n.toLowerCase()} metcon for ${Math.max(1, Math.round((Date.now() - c.date)/3600e3))} timer siden. Forvent høyere RPE i dag, og kutt gjerne ett backoff-sett.</div>`;
@@ -4388,6 +4854,7 @@ function vDeloadChoice(ph){
 }
 
 function dayLines(p, d){
+  if (p.prog === 'user') return d.ex.map(e => `<div>${esc(liftName(e.lift))}<span>${esc(exLine(e))} · ${esc(RULES[e.rule].n.toLowerCase())}</span></div>`);
   if (d.lines) return d.lines.map(([n, v]) => `<div>${n}<span>${v}</span></div>`);
   if (p.prog === 'cube') {
     const di = p.days.indexOf(d);
@@ -4492,6 +4959,14 @@ const PROG_WHAT = {
   athx27:'Forberedelse til ATHX-stevnet, regnet baklengs fra datoen', burg12:'Olympisk vektløfting: snatch og clean & jerk',
   mmc12:'Styrke, metcon og finisher i hver økt', emc12:'Styrke og EMOM-er med fire stasjoner',
   cir12:'Styrke og kretser med en ny øvelse hvert minutt', cbe12:'Tre av fire baseløft per uke i rotasjon, med kondisjon'};
+// Dine egne programmer og de du har fått, øverst i biblioteket
+function vMine(act){
+  const mine = Object.values(UP()).filter(u => !u.gone && u.id !== act).sort((a, b) => a.name.localeCompare(b.name, 'no'));
+  return `<h2 class="sec">Dine programmer</h2><div class="plist">${mine.map(u => `
+      <button data-a="open:${u.id}"><span><b>${esc(u.name)}</b><small>${esc(userWhat(u))}</small><small>${u.by ? 'Delt av ' + esc(u.by) : 'Laget av deg'}</small></span>${chev}</button>`).join('')}
+      <button data-a="pe:new"><span><b>+ Lag eget program</b><small>Velg øvelser, sett, reps og hvordan vekta øker</small></span>${chev}</button></div>
+    <h2 class="sec">Ferdige programmer</h2>`;
+}
 // Biblioteket. root: Program-fanen uten aktivt program. Ellers åpnet fra «Bytt program».
 function vPrograms(root){
   const f = ui.progF || '', act = S.active && S.active.programId;
@@ -4499,6 +4974,7 @@ function vPrograms(root){
   return `${root ? '' : '<button class="link" data-a="back">‹ Program</button>'}
     <header class="head"><h1>${root ? 'Program' : 'Bytt program'}</h1></header>
     <p class="muted small">${root ? 'Velg et styrkeprogram. Trykk på ett for å se øktene og aktivere det.' : 'Det aktive programmet byttes først når du aktiverer et nytt. Loggen din blir liggende.'}</p>
+    ${vMine(act)}
     <div class="filt" role="group" aria-label="Filtrer etter nivå">${[''].concat(LEVELS).map(l =>
       `<button data-a="progf:${l}" aria-pressed="${f === l}">${l || 'Alle'}</button>`).join('')}</div>
     <button class="guide-row" data-a="guide">
@@ -4565,12 +5041,13 @@ function vDetail(p){
       <div class="meta" style="margin-top:8px"><span class="pill">${p.level}</span><span class="pill">${p.perWeek} økter/uke</span></div></header>
     <p>${p.summary}</p>
     <div class="box"><h2 class="sec" style="margin:0">Slik øker vekten</h2><p class="small">${p.rule}</p></div>
-    ${p.prog === 'athx' ? axSetup(other, isActive) : `${vStart(p)}${['mmc','emc','cir'].includes(p.prog) ? mmcSecInputs(p) : ''}
-    <p class="muted small">${p.orm ? p.ormNote || 'Start lett. Teknikken skal sitte før vekten blir tung.' : p.prog === '531' ? 'Appen regner ut treningsmaks som 90 % av dette.' : p.prog === 'jugg' ? 'Appen regner ut arbeidsmaks som 90 % av dette.' : p.prog === 'sp12' ? 'Startvektene regnes ut fra dette. Etter hvert styrer RPE-en din vektene.' : p.prog === 'cube' ? 'Alle vekter regnes ut som prosent av dette.' : p.prog === 'burg' ? 'Alle vekter regnes ut som prosent av dette. Trekk og shrugs ligger over 100 %, det er meningen.' : ['mmc','emc','cir','cbe'].includes(p.prog) ? 'Treningsmaksen starter på 90 % av dette, og RPE-en din flytter den etter hver uke. Bruk dagsaktuelle maksløft.' : 'Start lett. Teknikken skal sitte før vekten blir tung.'}
+    ${p.prog === 'athx' ? axSetup(other, isActive) : `${p.prog === 'user' ? vUserStart(p) : vStart(p)}${['mmc','emc','cir'].includes(p.prog) ? mmcSecInputs(p) : ''}
+    <p class="muted small">${p.prog === 'user' ? 'Forslaget er den tyngste vekta du brukte sist i øvelsen, ellers tom stang. Endre det som ikke stemmer.' : p.orm ? p.ormNote || 'Start lett. Teknikken skal sitte før vekten blir tung.' : p.prog === '531' ? 'Appen regner ut treningsmaks som 90 % av dette.' : p.prog === 'jugg' ? 'Appen regner ut arbeidsmaks som 90 % av dette.' : p.prog === 'sp12' ? 'Startvektene regnes ut fra dette. Etter hvert styrer RPE-en din vektene.' : p.prog === 'cube' ? 'Alle vekter regnes ut som prosent av dette.' : p.prog === 'burg' ? 'Alle vekter regnes ut som prosent av dette. Trekk og shrugs ligger over 100 %, det er meningen.' : ['mmc','emc','cir','cbe'].includes(p.prog) ? 'Treningsmaksen starter på 90 % av dette, og RPE-en din flytter den etter hver uke. Bruk dagsaktuelle maksløft.' : 'Start lett. Teknikken skal sitte før vekten blir tung.'}
       ${slotsOf(p).length ? ' Vil du bytte et løft, gjør du det under Program → Løft og vekter når programmet er aktivt.' : ''}
       ${other ? ' Dette erstatter '+other.name+'. Loggen din blir liggende.' : ''}${isActive ? ' Programmet er aktivt. Aktiverer du på nytt, starter det fra økt 1 med vektene over.' : ''}</p>`}
     <button class="btn" data-a="activate:${p.id}">${isActive ? 'Start på nytt' : 'Aktiver program'}</button>
     <button class="btn ghost" data-a="planprev:${p.id}">Se hele planen</button>
+    ${vUserActs(p)}
     <details class="about"><summary>Om programmet, forskningen og øktene</summary><div class="about-in">
       ${vProgramGuide(p)}
       <h2 class="sec">Øktene</h2>
@@ -4735,7 +5212,8 @@ function vPlanTab(){
   if (d === 'pete') return vPete();
   if (d === 'guide') return vGuide();
   if (d === 'library') return vPrograms(false);
-  if (d) return vDetail(prog(d));
+  if (d === 'pedit') return vProgEdit();
+  if (d) { const p = prog(d); if (p) return vDetail(p); ui.detail = null; }
   if (!S.active || !prog(S.active.programId)) return vPrograms(true);
   const p = prog(S.active.programId), P = {id: p.id, active: true};
   return `<header class="head"><h1>Program</h1></header>
@@ -4762,6 +5240,7 @@ function pwLabel(p, grp, k){
   const parts = k.split('.'), rest = parts[0] === 'x' ? parts.slice(2) : parts.slice(1);
   if (!rest.length || parts[0] === 'x') return 'Arbeidsvekt';
   if (/^T\d$/.test(rest[0])) return rest[0] + '-vekt';
+  if (isUkey(rest[0])) return 'Arbeidsvekt (' + ukeyTxt(rest[0]) + ')';
   const last = rest[rest.length - 1];
   return last === 'top' ? 'Toppsett' : last === 'back' ? 'Backoff' : 'Arbeidsvekt (' + rest.join(' ') + ')';
 }
@@ -5866,7 +6345,7 @@ const jwtBody = t => { try { const b = t.split('.')[1].replace(/-/g, '+').replac
   }
 })();
 
-function sxReset(){ Object.assign(SX, {loaded:false, at:0, me:null, fr:[], ppl:{}, sess:[], part:[], prop:[], chats:[], live:new Map(), hidden:false, seenAt:0, prev:0, err:''}); ui.sxView = 'list'; ui.sxTab = ''; sxBadge(); }
+function sxReset(){ Object.assign(SX, {loaded:false, at:0, me:null, ps:[], fr:[], ppl:{}, sess:[], part:[], prop:[], chats:[], live:new Map(), hidden:false, seenAt:0, prev:0, err:''}); ui.sxView = 'list'; ui.sxTab = ''; sxBadge(); }
 
 // Hent alt Sammen-fanen trenger: profilen din, venner, kommende timer, påmeldinger, forslag og navnene på de involverte.
 // quiet: hentingen i bakgrunnen. Da tegnes skjermen bare på nytt hvis noe er endret.
@@ -5889,19 +6368,20 @@ function sxLoad(quiet){
         const sess = await db('sessions', 'select=*&order=starts_at&or=' +
           encodeURIComponent(`(ends_at.gte.${iso(now)},and(ends_at.is.null,starts_at.gte.${iso(now - FIXED_LEN)}))`));
         const ids = sess.map(s => s.id);
-        const [part, prop, chats, live, pres] = await Promise.all([
+        const [part, prop, chats, live, pres, ps] = await Promise.all([
           ids.length ? db('participants', 'select=*&session_id=' + inList(ids)) : [],
           ids.length ? db('proposals', 'select=*&order=proposed_at&session_id=' + inList(ids)) : [],
           rpc('chat_list').catch(() => []),
           rpc('presence_now').catch(() => []),
-          db('presence', 'select=hidden').catch(() => [])]);
+          db('presence', 'select=hidden').catch(() => []),
+          db('program_shares', 'select=*&order=created_at.desc&limit=50').catch(() => [])]);
         const people = [...fr.map(f => f.requester), ...fr.map(f => f.addressee), ...sess.map(s => s.owner),
-          ...part.map(p => p.user_id), ...prop.map(p => p.user_id), ...chats.flatMap(c => c.members)].filter(x => x !== me);
+          ...part.map(p => p.user_id), ...prop.map(p => p.user_id), ...chats.flatMap(c => c.members), ...ps.flatMap(x => [x.sender, x.recipient])].filter(x => x !== me);
         const ppl = people.length ? await db('profiles', 'select=id,username,display_name&id=' + inList(people)) : [];
         SX.ppl = Object.fromEntries(ppl.map(p => [p.id, p])); SX.ppl[me] = SX.me;
-        const sig = JSON.stringify([fr, sess, part, prop, chats, ppl, live]);
+        const sig = JSON.stringify([fr, sess, part, prop, chats, ppl, live, ps]);
         same = quiet && sig === SX.sig && SX.loaded && !SX.err;
-        Object.assign(SX, {fr, sess, part, prop, chats, sig, live: new Map(live.map(x => [x.user_id, x.state])), hidden: !!(pres[0] && pres[0].hidden)});
+        Object.assign(SX, {fr, sess, part, prop, chats, ps, sig, live: new Map(live.map(x => [x.user_id, x.state])), hidden: !!(pres[0] && pres[0].hidden)});
         sxSyncPlans();
       }
       SX.loaded = true; SX.err = ''; SX.at = Date.now();
@@ -6042,6 +6522,10 @@ function sxNews(since){
     if (f.addressee === me && f.status === 'pending') out.push({at: at(f), who: f.requester, txt: 'vil legge deg til', sub: 'Venneforespørsel'});
     if (f.requester === me && f.status === 'accepted' && f.accepted_at && Date.parse(f.accepted_at) > since) out.push({at: Date.parse(f.accepted_at), who: f.addressee, txt: 'godtok forespørselen din', sub: 'Dere er venner nå'});
   });
+  (SX.ps || []).forEach(x => {
+    if (x.recipient === me && x.status === 'pending') out.push({at: at(x), who: x.sender, txt: 'vil dele et program med deg', sub: '«' + x.name + '». Svar under Venner'});
+    if (x.sender === me && x.status === 'accepted' && x.answered_at && Date.parse(x.answered_at) > since) out.push({at: Date.parse(x.answered_at), who: x.recipient, txt: 'tok imot programmet ditt', sub: '«' + x.name + '»'});
+  });
   SX.prop.forEach(p => { const s = mine.get(p.session_id); if (s && at(p) > since) out.push({at: at(p), who: p.user_id, txt: 'foreslår ' + hm(p.proposed_at), sub: sub(s), sid: s.id}); });
   SX.part.forEach(p => { const s = mine.get(p.session_id); if (s && p.user_id !== me && at(p) > since) out.push({at: at(p), who: p.user_id, txt: 'meldte seg på', sub: sub(s), sid: s.id}); });
   SX.sess.forEach(s => { if (s.owner !== me && !s.cancelled_at && at(s) > since && sxEnd(s) > Date.now())
@@ -6165,7 +6649,7 @@ function sharePlan(x){
   const p = S.active && prog(S.active.programId);
   return {prog: p ? p.name : '', day: x.day, sub: x.sub || '', acc: x.acc || '', ex: x.ex.map(e => {
     const r = rmOf(e.lift) ? e.lift : e.slot && rmOf(e.slot) ? e.slot : null;
-    return {l: e.lift, tag: e.tag || '', rest: e.rest || 120, wu: e.wu || null, r,
+    return {l: e.lift, n: liftName(e.lift), b: LIFTS[e.lift] && LIFTS[e.lift].bar ? 1 : 0, tag: e.tag || '', rest: e.rest || 120, wu: e.wu || null, r,
       s: e.sets.map(y => Object.assign({t: y.t, f: !y.w ? 0 : r ? Math.round(y.w / rmOf(r) * 1000) / 1000 : null}, y.am ? {am: 1} : {}, y.c ? {c: y.c} : {}))};
   })};
 }
@@ -6191,6 +6675,8 @@ function guestSess(s){
   const P = s.plan, who = uname(s.owner), w = s.workout_kind === 'bank' && BANK && BANK.find(x => x.i === s.workout_ref);
   const x = {guest: {sid: s.id, who}, day: P.day, sub: 'Med ' + who + (P.prog ? ' · ' + P.prog : ''), acc: P.acc || '', started: Date.now(),
     ex: P.ex.map(e => {
+      // En øvelse appen din ikke har (en venns egen), blir din egen med samme navn
+      if (!LIFTS[e.l] && /^c_[a-z0-9_]{1,40}$/.test(e.l)) { S.custom = S.custom || {}; S.custom[e.l] = {n: String(e.n || 'Øvelse').replace(/[<>&"`]/g, '').slice(0, 40), bar: e.b ? 1 : 0}; mergeCustom(); save(); }
       const rm = e.r ? rmOf(e.r) : null, bar = LIFTS[e.l] && LIFTS[e.l].bar ? BAR() : 0;
       return {key: e.l, lift: e.l, slot: e.l, tag: e.tag, rest: e.rest, wu: e.wu, adj: true,
         hint: e.s.some(y => y.f == null) ? 'Appen kunne ikke regne ut vekten, så velg den selv med − og +.' : '',
@@ -6475,6 +6961,7 @@ function vSxFriends(){
     <label class="lbl" for="sxQ">Legg til med brukernavn</label>
     <div class="sx-search"><span class="muted">@</span><input id="sxQ" type="search" autocapitalize="none" autocomplete="off" spellcheck="false" placeholder="brukernavn" value="${esc(ui.sxQ || '')}"></div>
     <div id="sxRes">${sxResHTML()}</div>
+    ${vShares()}
     ${inc.length ? `<h2 class="sec sx-h">Forespørsler <span class="badge">${inc.length}</span></h2><div class="sx-list">${inc.map(f => `<div class="sx-row">${av(f.requester)}<span><b>${uname(f.requester)}</b><small>Vil legge deg til</small></span>
         <button class="btn ghost sm" data-a="sxdecline:${f.requester}">Avslå</button><button class="btn sm" data-a="sxaccept:${f.requester}">Godta</button></div>`).join('')}</div>` : ''}
     ${out.length ? `<h2 class="sec">Sendt</h2><div class="sx-list">${out.map(f => `<div class="sx-row">${av(f.addressee)}<span><b>${uname(f.addressee)}</b><small>Venter på svar</small></span>
@@ -7085,6 +7572,8 @@ document.addEventListener('click', ev => {
     case 'chleave': sxDo(async () => { await rpc('chat_leave', {cid: r[0]}); ui.sxView = 'list'; CH.cid = null; }, 'Du har forlatt gruppen'); break;
     case 'restadd': if (ui.rest) { const now = Date.now(); ui.rest.end = Math.max(ui.rest.end, now) + (+r[0])*1000; ui.rest.total = Math.max(ui.rest.total, (ui.rest.end - now)/1000); ui.rest.done = false; updateRest(); } break;
     case 'exrm': exRemove(+r[0]); break;
+    case 'pe': peAct(r); break;
+    case 'ps': psAct(r); break;
     case 'exback': exBack(+r[0]); break;
     case 'exopen': { const o = ui.exOpen = ui.exOpen || {}; o[r[0]] = !o[r[0]]; render(); break; }
     case 'restscale': S.settings.restScale = +r[0]; save(); render(); break;
@@ -7181,6 +7670,12 @@ document.addEventListener('input', ev => {
     const c = $('#mineCk'); if (c) c.innerHTML = mineCkTxt(ui.mineEdit);
   }
   else if (ev.target.id === 'note' && S.draft) { S.draft.note = ev.target.value; save(); }
+  else if (ev.target.dataset && ev.target.dataset.pe && ui.pe) {
+    const [k, i] = ev.target.dataset.pe.split(':');
+    if (k === 'name') ui.pe.d.name = ev.target.value; else if (k === 'day' && ui.pe.d.days[+i]) ui.pe.d.days[+i].name = ev.target.value;
+    return;
+  }
+  else if (ev.target.id === 'peQ' && ui.pe) { ui.pe.q = ev.target.value; const r = $('#peRes'); if (r) r.innerHTML = peResHTML(ev.target.value, ev.target.dataset.peq); return; }
   else if (ev.target.id === 'swLib') { const r = $('#swLibRes'); if (r) r.innerHTML = libResHTML(ev.target.value, ev.target.dataset.swlib); return; }
   else if (ev.target.dataset && ev.target.dataset.ppsplit) {
     const ctx = ev.target.dataset.ppsplit, pk = ctx === 'session' ? S.draft && S.draft.pete : ui.freePete;
@@ -7220,6 +7715,9 @@ document.addEventListener('input', ev => {
 document.addEventListener('change', ev => {
   if (ev.target.dataset && ev.target.dataset.ckf) { ckField(ev.target); return; }
   if (ev.target.dataset && ev.target.dataset.pw) { pwSave(ev.target); return; }
+  if (ev.target.dataset && ev.target.dataset.pewd != null && ui.pe) { const v = ev.target.value; ui.pe.d.sched.wd[+ev.target.dataset.pewd] = v === '' ? null : +v; ui.pe.err = ''; return; }
+  if (ev.target.dataset && ev.target.dataset.pebar && S.custom && S.custom[ev.target.dataset.pebar]) {
+    S.custom[ev.target.dataset.pebar].bar = ev.target.checked ? 1 : 0; mergeCustom(); save(); return; }
   if (ev.target.dataset && ev.target.dataset.max) {
     const v = parseFloat(String(ev.target.value).replace(',', '.'));
     if (v > 0) { S.maxes[ev.target.dataset.max] = v; save(); toast('Lagret'); } else { ev.target.value = fmt(S.maxes[ev.target.dataset.max]); }
