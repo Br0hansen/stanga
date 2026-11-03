@@ -876,7 +876,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 87;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 88;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -3660,7 +3660,7 @@ function peteBox(ctx, picked){
   return `<section class="box pp-card${picked ? ' pp-picked' : ''}">
     <div class="pp-top"><span class="lbl">${picked ? 'Dagens Pete Plan' : 'Fortsett Pete Plan'}</span>
       ${picked ? `<button class="link" data-a="pp:rm:${ctx}">Fjern</button>` : `<span class="small muted">Runde ${round} · uke ${wk} · økt ${day} av 6</span>`}</div>
-    ${picked ? '' : `<div class="pp-mach" role="group" aria-label="Apparat">${Object.entries(PETE_MACH).map(([k,v]) => `<button data-a="pp:mach:${k}" aria-pressed="${mach === k}">${v}</button>`).join('')}</div>`}
+    <div class="pp-mach" role="group" aria-label="Apparat">${Object.entries(PETE_MACH).map(([k,v]) => `<button data-a="pp:mach:${k}${picked ? ':' + ctx : ''}" aria-pressed="${mach === k}">${v}</button>`).join('')}</div>
     <div><p class="small muted">${PETE_KIND[ss.kind]}${ss.restTxt ? ' · ' + ss.restTxt : ''}${picked ? ' · ' + PETE_MACH[mach] : ''}${ver === 'str' && (ss.kind === 'steady' || ss.kind === 'hard') ? ' · tilpasset styrke' : ''}</p><h2>${ss.name}</h2></div>
     <div class="pp-facts">
       <div><span>Målfart</span><b>${t.sec ? (ss.bike ? splitTxt(t.sec*2) : splitTxt(t.sec)) : '–'}</b><span>${ss.bike ? 'per 1000 m' : 'per 500 m'}</span></div>
@@ -6501,7 +6501,17 @@ document.addEventListener('click', ev => {
     }
     case 'pp': {
       const set = S.settings.pete, [cmd, arg] = r;
-      if (cmd === 'mach') set.mach = arg;
+      if (cmd === 'mach') {
+        set.mach = arg;
+        // Valgt økt: bytt apparat på den også, og regn ut minuttene på nytt
+        const pk = r[2] === 'session' ? S.draft && S.draft.pete : r[2] === 'free' ? ui.freePete : null;
+        if (pk && pk.mach !== arg) {
+          pk.mach = arg; pk.split = '';
+          const ss = peteSession(pk.idx, pk.ver, arg), min = peteWorkMin(ss, peteTarget(ss, arg));
+          const mc = r[2] === 'session' ? S.draft.mc : ui.freeMcData;
+          if (mc && min) mc.min = min;
+        }
+      }
       else if (cmd === 'ver') set.ver = arg;
       else if (cmd === 'toggle') { set.on = !set.on; toast(set.on ? 'Pete Plan vises i økta' : 'Pete Plan er skjult'); }
       else if (cmd === 'pick') { petePick(arg); toast('Pete Plan valgt'); }
