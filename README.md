@@ -31,17 +31,21 @@ All tekst har minst 4,5:1 i kontrast mot arket, og kanten på settrutene minst 3
 
 Appen har fire faner: **I dag** (dagens økt), **Program**, **Fremgang** og **Sammen**. **Innstillinger** åpnes med tannhjulet øverst til høyre på I dag.
 
+**Program** er delt i **Plan**, **Oppsett** og **Bibliotek**. Plan viser det aktive opplegget, pågående økt med direktevei til I dag, og kommende uker. Oppsett samler arbeidsvekter, faste øvelsesbytter, Pete Plan, lagrede maksløft og avslutning. Bibliotek beholder alle ferdige og egne programmer, programguiden, startvekter, kopiering og deling.
+
 ## I økta
 
-- **Øktoversikten** har en fremdriftslinje med én bit per øvelse. Øvelsen du holder på med, ligger på et eget ark. Det store tallet er alltid neste sett, med skivene rett under: først oppvarmingssettene, så arbeidsvekten. **Trykk på tallet**, eller hvor som helst øverst på arket, for å føre inn neste sett med målet som reps. Pausen starter med en gang. Rutene under brukes til å rette opp. Ferdige øvelser blir én linje når du begynner på neste. Øvelser du ikke har begynt på, står som én linje med navn og vekt. Trykk på en linje for å åpne den.
-- **Fullfør økt** spør først hvis noen sett ikke er logget, og sier hvilke løft som regnes som bom og hvilke som står på samme vekt.
+- **Øktoversikten** har en fremdriftslinje med én bit per øvelse. Øvelsen du holder på med, ligger på et eget ark. Det store tallet er alltid neste sett, med skivene rett under: først oppvarmingssettene, så arbeidsvekten. **Trykk på den store registreringsflaten** for å føre inn neste sett med målet som reps, også mens pausen går. Pausen starter med en gang. Rutene under brukes til å rette opp. Ferdige øvelser blir én linje med en gang. Neste øvelse åpnes automatisk, og visningen følger med slik at pauseklokka, neste vekt og reps er synlige uten rulling. EMOM-løft følger rundene i programmet. Kort med RPE eller ekstra AMRAP-reps er fortsatt tilgjengelige. Øvelser du ikke har begynt på, står som én linje med navn og vekt. Trykk på en linje for å åpne den.
+- **Angre** tar tilbake siste registrering med ett trykk, også etter overgangen til neste øvelse. Forrige pause gjenopprettes. Nye endringer i øvelsene gjør at en gammel angring ikke kan overskrive dem.
+- **Oppvarming** står åpen mens den er aktuell og kan foldes sammen. Arbeidssettene har en egen rad.
+- **Fullfør økt** ligger etter øktinnholdet og spør først hvis noen sett ikke er logget, og sier hvilke løft som regnes som bom og hvilke som står på samme vekt.
 - **Oppsummeringen** står i stedet for neste økt etter «Fullfør økt»: hva som skjer med hvert løft, rekorder, volumet som én linje, og neste økt med vekter. **Klar for neste økt** viser neste økt, så ingen sett kan trykkes i en økt du ikke har startet.
-- **Under settene** står «Trykk på tallet = gjort · trykk på et sett igjen = én rep mindre» de tre første øktene.
+- **På registreringsflaten** står handlingen og antallet reps. Under settene forklares retting av reps de tre første øktene.
 - **Etter styrken** er én rad med «+ Kondisjon» (når Pete Plan er på), «+ Metcon» og «+ Notat». Trykk for å åpne en del. En del med innhold, for eksempel en valgt Pete Plan-økt eller et notat, står åpen til du trykker på den. Slår du av Metcon eller Kondisjon, tas metconen eller Pete Plan-økta ut av økta. Den lagres ikke og teller ikke i budsjettet. Et nytt trykk henter den tilbake slik den var. Notatet skjules bare. Metcon-budsjettet ligger under «+ Metcon».
 - **Under «Fullfør økt»** står bare «Hopp over økta». Planen ligger under Program, og fri økt logges fra Fremgang.
-- **Bytt i dag** står på hvert øvelseskort, ved siden av **Fjern fra dagens økt**. Først kommer alternativene appen har for løftet (frontbøy for knebøy, med vekt regnet om), så inntil seks øvelser fra biblioteket med samme hovedmuskel, med samme utstyr først, og et søkefelt. Du velger øvelsen og bekrefter vekta: forslaget er omregnet vekt, ellers det du løftet sist. Innbytteren får samme sett og reps og står med «I stedet for …». **Tilbake til …** angrer. Originalen logges som urørt og «Byttet ut», så programmet ikke flytter vekta i den. Innbytteren logges med egen vekt og teller i rekorder. Bare dagens økt endres. Faste bytter gjøres under Program → Løft og vekter.
+- **Valg** på hvert øvelseskort åpner **Bytt i dag** og **Fjern fra dagens økt**. Først kommer alternativene appen har for løftet (frontbøy for knebøy, med vekt regnet om), så inntil seks øvelser fra biblioteket med samme hovedmuskel, med samme utstyr først, og et søkefelt. Du velger øvelsen og bekrefter vekta: forslaget er omregnet vekt, ellers det du løftet sist. Innbytteren får samme sett og reps og står med «I stedet for …». **Tilbake til …** angrer. Originalen logges som urørt og «Byttet ut», så programmet ikke flytter vekta i den. Innbytteren logges med egen vekt og teller i rekorder. Bare dagens økt endres. Faste bytter gjøres under Program → Oppsett.
 - **Hopp over økta** Du får en bekreftelse som sier hvilke løft som ikke får økning den gangen. Økta står som «Hoppet over» i loggen og i hele planen, men teller ikke som treningsdag.
-- **Oppvarming** står først i samme rekke som arbeidssettene. Oppvarmingssettene er mindre og grå, med vekten under hvert sett. Neste oppvarmingssett står som det store tallet i kortet, med skiver per side. Rutene blir stående når oppvarmingen er gjort, så arbeidssettene ikke flytter seg. Hovedløft får full oppvarming der siste sett er en single på ca. 90 % av arbeidsvekten (80 % under 60 kg), så hoppet til første arbeidssett er lite. Repsene synker mot toppen, så oppvarmingen ikke sliter deg ut. Oppvarmingsvektene rundes til nærmeste 5 kg per side (10 kg på stanga, for eksempel 50, 70, 80 og 90 kg), så du slipper småskiver. Arbeidsvektene rundes ikke. Sekundærøvelser får to korte sett, det siste på ca. 85 %. Settene kan trykkes som gjort og gir 60 sekunders pause, men teller ikke som arbeidssett og lagres ikke i loggen.
+- **Oppvarming** står i en egen del over arbeidssettene, åpen mens oppvarmingen er aktuell. Oppvarmingssettene er mindre og grå, med vekten under hvert sett. Neste oppvarmingssett står som det store tallet i kortet, med skiver per side. Når oppvarmingen er gjort, komprimeres oversikten og kan åpnes igjen. Pause og vekt bruker et område med fast høyde, så arbeidssettene ikke flytter seg når pausen starter og slutter. Hovedløft får full oppvarming der siste sett er en single på ca. 90 % av arbeidsvekten (80 % under 60 kg), så hoppet til første arbeidssett er lite. Repsene synker mot toppen, så oppvarmingen ikke sliter deg ut. Oppvarmingsvektene rundes til nærmeste 5 kg per side (10 kg på stanga, for eksempel 50, 70, 80 og 90 kg), så du slipper småskiver. Arbeidsvektene rundes ikke. Sekundærøvelser får to korte sett, det siste på ca. 85 %. Settene kan trykkes som gjort og gir 60 sekunders pause, men teller ikke som arbeidssett og lagres ikke i loggen.
 - **Pauser etter type sett**, slik forskningen anbefaler: tunge sett 3 min, volumsett 2 min og lette hjelpeøvelser 90 s. Strength & Power, Cube, Juggernaut og Burgener har egne pauser. Oppvarming gir 60 s, og 2 min etter siste oppvarmingssett. Under **Innstillinger → Pause mellom sett** kan alle pauser skaleres til Kortere (75 %) eller Lengre (125 %), ved siden av pauselyden. Etter siste sett i økta går det ingen pause. Å rette reps på et sett som er gjort, starter ikke pausen på nytt.
 - **Pausen står i arket.** Mens pausen går, er det store tallet tiden som er igjen, med neste vekt i stort tall helt til høyre i arket («Neste», vekten og kg × reps under) og en tykk strek under som brukes opp. Skivene for neste sett står rett under, så du kan laste stanga. De siste 10 sekundene blir tiden og streken røde. Ved null blinker skjermen lyst én gang, og tallet blir vekten igjen. Linjen nederst har knappene «+30 s» og «Start nå», og viser tiden når du er på en annen fane. Går du over, teller tiden oppover der (+0:12). Lyd ved slutten kan slås på under **Innstillinger**.
 - **Skiver per side** regnes ut med 20 kg stang og skivene 20, 15, 10, 5, 2,5 og 1,25 kg. 25 kg er bevisst utelatt. Under **Innstillinger → Stang** kan du velge 15 kg stang. Da regnes skivene, oppvarmingen og laveste vekt på stangøvelser ut fra 15 kg. Arbeidsvektene i programmet endres ikke.
@@ -94,7 +98,7 @@ En egen fane der du legger ut når du skal trene, og vennene dine kan bli med. K
 
 ## Egne programmer
 
-Under **Program → Bytt program** står **Dine programmer** øverst, med **+ Lag eget program**. De ferdige programmene står under.
+Under **Program → Bibliotek** står **Dine programmer** øverst, med **+ Lag eget program**. De ferdige programmene står under.
 
 - **Øktene:** Gi økta et navn, og legg til øvelser fra øvelsesbiblioteket med søk. Finnes ikke øvelsen, lager du den selv med navnet du skrev. Per øvelse velger du sett, reps, pause og progresjon. Øvelser kan flyttes opp og ned og fjernes. Opptil sju økter.
 - **Progresjon per øvelse:**
@@ -111,11 +115,11 @@ Under **Program → Bytt program** står **Dine programmer** øverst, med **+ La
 
 ## Øvelsesbiblioteket
 
-393 øvelser med norske navn, utstyr, kategori og hovedmuskler. 365 er valgt ut fra [Free Exercise DB](https://github.com/yuhonas/free-exercise-db) (Unlicense, fri bruk), og 28 som manglet (wall balls, burpees, kettlebell swing, thruster, bokshopp, toes-to-bar, romaskin, SkiErg og flere) er lagt til. Øvelser appen har fra før, peker til sin egen versjon, så det blir ett navn og én vekt. Søket virker på norsk og engelsk, og på utstyr og muskler. Biblioteket brukes i **Lag eget program** og under **Program → Løft og vekter → + Egen øvelse**. Ligger i `EXLIB` i `index.html`.
+393 øvelser med norske navn, utstyr, kategori og hovedmuskler. 365 er valgt ut fra [Free Exercise DB](https://github.com/yuhonas/free-exercise-db) (Unlicense, fri bruk), og 28 som manglet (wall balls, burpees, kettlebell swing, thruster, bokshopp, toes-to-bar, romaskin, SkiErg og flere) er lagt til. Øvelser appen har fra før, peker til sin egen versjon, så det blir ett navn og én vekt. Søket virker på norsk og engelsk, og på utstyr og muskler. Biblioteket brukes i **Lag eget program** og under **Program → Oppsett → Øvelser og bytter → + Egen øvelse**. Ligger i `EXLIB` i `index.html`.
 
 ## Pete Plan
 
-Et fast kondisjonsvalg ved siden av øktbanken, på romaskin, ski eller sykkel. Kan slås av og på under **Program → Kondisjon: Pete Plan**. Bytte av løft, avslutte programmet og lagrede maksløft ligger under **Program → Løft og vekter**.
+Et fast kondisjonsvalg ved siden av øktbanken, på romaskin, ski eller sykkel. Kan slås av og på under **Program → Oppsett → Kondisjon: Pete Plan**. Bytte av løft, avslutte programmet og lagrede maksløft ligger under **Program → Oppsett**.
 
 **Vekter i programmet** (under Løft og vekter): tallene programmet du kjører regner vektene ut fra, som treningsmaks, 1RM, toppsett, backoff og arbeidsvekter, kan rettes for hånd. Appen prøver hvert tall og viser hvilke som styrer de neste øktene og fra hvilken økt ("Brukes i neste økt", "Brukes fra Dag 1 (uke 5 av 12)"). Tall som ikke brukes de neste 9 øktene, ligger under «Andre tall i programmet». Neste økt bygges på nytt med en gang, med mindre den er påbegynt. Programmet fortsetter med vanlig progresjon fra de nye tallene, og loggen endres ikke.
 
@@ -131,7 +135,7 @@ Et fast kondisjonsvalg ved siden av øktbanken, på romaskin, ski eller sykkel. 
 
 ## Programguide
 
-Under **Program → Bytt program → Programguide** står det hva hvert program fokuserer på, hvem det passer for, hva forskningen sier og hva man realistisk kan forvente. Hver påstand har et evidensnivå (A, B, C eller H) og lenke til kilden. Teksten ligger i `GUIDE`, `GUIDE_GENERAL` og `REFS` i `index.html`. Kildene ble slått opp i PubMed i oktober 2026.
+Under **Program → Bibliotek → Programguide** står det hva hvert program fokuserer på, hvem det passer for, hva forskningen sier og hva man realistisk kan forvente. Hver påstand har et evidensnivå (A, B, C eller H) og lenke til kilden. Teksten ligger i `GUIDE`, `GUIDE_GENERAL` og `REFS` i `index.html`. Kildene ble slått opp i PubMed i oktober 2026.
 
 ## Strength & Power
 
@@ -142,7 +146,7 @@ Under **Program → Bytt program → Programguide** står det hva hvert program 
 
 ## Burgener 12 uker
 
-**Program under Program → Bytt program.** Mike Burgeners 12-ukers program for olympisk vektløfting, hentet fra LiftVault-arket. Prosentene er tatt fra formlene i arket, ikke fra de ferdige kiloene.
+**Program under Program → Bibliotek.** Mike Burgeners 12-ukers program for olympisk vektløfting, hentet fra LiftVault-arket. Prosentene er tatt fra formlene i arket, ikke fra de ferdige kiloene.
 
 - **Oppsett:** 1RM i snatch, clean & jerk, knebøy og frontbøy. Hver øvelse regnes ut fra maksen arket bruker (snatch-familien fra snatch, clean, jerk, trekk, shrugs og RDL fra clean & jerk). Trekk og shrugs ligger over 100 % med vilje.
 - **Fire økter i uka i rekkefølge**, 48 i alt. Hvert sett er en egen rute med vekt og reps. Et kompleks som power snatch + overhead squat står som «1+3» i ruta.
@@ -152,7 +156,7 @@ Under **Program → Bytt program → Programguide** står det hva hvert program 
 
 ## ATHX 2027
 
-**Program under Program → Bytt program.** Planen fra `docs/superpowers/specs/2026-10-26-athx-2027-treningsplan.md` er et eget program:
+**Program under Program → Bibliotek.** Planen fra `docs/superpowers/specs/2026-10-26-athx-2027-treningsplan.md` er et eget program:
 
 - **Oppsett:** Brukeren velger stevne fra lista over 2027-stevner, eller en egen dato. Videre velges klasse (LITE, ATHX, PRO), form (individuell eller par), divisjon og 4 (anbefalt) eller 3 økter i uka. I mixed velger hver utøver vektene for sitt kjønn. LITE og mixed finnes bare for par.
 - **Startverdier:** Feltene fylles med det brukeren vet fra før: et tungt sett som vekt × reps i S2OH, knebøy og markløft, en løpstid på en annen distanse og 2K-tid på ski. Alt er valgfritt. Står et løft tomt, gjetter appen og sier fra i økta. Det er ingen testuke.
@@ -265,3 +269,7 @@ To funksjoner gjør jobben:
 - `progress(mal, instans, økt)` oppdaterer instansen etter økta. Hvert program har sin egen regel (`linear`, `gzclp`, `531`). Egne programmer (`user`) har en regel per øvelse, fra `RULES`.
 
 Vil du legge til et nytt program som bruker en eksisterende regel, holder det å legge til et objekt i `PROGRAMS`.
+
+## Kontroll av endringer
+
+Kjør `node --test tests/*.test.cjs`. Testene dekker Sammen, settlogging, automatisk overgang mellom øvelser og EMOM-runder, pause, angring, AMRAP/RPE, programnavigasjon og lagring/progresjon ved fullført økt. Versjon 95 ble i tillegg kontrollert i nettleser ved 320 × 740 og 390 × 844 med lokale eksempeldata.

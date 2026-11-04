@@ -911,6 +911,60 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .whl-band{position:absolute;left:0;right:0;top:88px;height:44px;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);background:var(--press);opacity:.5;pointer-events:none;z-index:-1}
 .ck-end .txt{width:100%;box-sizing:border-box;background:var(--iron);border:1px solid var(--line);border-radius:3px;color:var(--chalk);font:500 16px var(--face);padding:11px 12px}
 
+/* I dag: samme flater i arbeid og pause. Klokka bruker plassen til vekten, uten å flytte settene. */
+.today-progress{display:flex;justify-content:space-between;gap:12px;color:var(--chalk-2);font-size:13px;margin-top:10px}
+.today-ex{gap:10px;scroll-margin-top:12px;overflow-anchor:none}
+.today-ex .ex-head{align-items:center;min-height:44px}
+.today-ex .ex-head h2{font-size:21px}
+.today-menu{min-width:64px;min-height:44px;justify-content:flex-end;flex:none}
+.today-ex .ex-hit{appearance:none;border:0;color:var(--ink);background:transparent;text-align:left;font:inherit;margin:0 -16px;padding:0 16px;gap:8px;border-radius:0;min-width:0}
+.today-ex .ex-hit:active{background:var(--press)}
+.today-stage{font:500 13px/18px var(--face);color:var(--ink-2)}
+.today-ex.now .kg{font-size:96px;height:88px;min-height:88px;margin:0;line-height:.9;align-items:center;min-width:0}
+.today-ex .today-log-label{font:600 15px/20px var(--face);color:var(--ink);padding:4px 0}
+.today-ex .rest-bar{height:5px;margin:0}
+.today-controls{display:flex;align-items:center;justify-content:flex-end;gap:8px;height:44px;min-height:44px}
+.today-controls .link{min-height:44px;min-width:52px;padding:0 6px;color:var(--ink-2);justify-content:center;white-space:nowrap;font-size:14px}
+.today-controls [data-a="undoset"]{margin-right:auto;color:var(--pen)}
+.today-controls #todayRestHint{margin-right:auto}
+.stage.inline-rest #rest{display:none}
+.today-ex .platebox{padding:4px 0 10px;min-height:46px;gap:8px}
+.today-ex .platebox .plates{height:28px;transform:scale(.8);transform-origin:left center;margin-right:-5px}
+.today-ex .platebox .pl-txt{font-size:15px}
+.today-ex .platebox .pl-txt small{font-size:12px}
+.today-warmup{border-bottom:1px solid var(--rule);padding-bottom:2px}
+.today-warmup summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;min-height:44px;color:var(--ink-2);font-size:13px}
+.today-warmup summary::-webkit-details-marker{display:none}
+.today-warmup[open] summary .chev{transform:rotate(90deg)}
+.today-warmup .wu-grp{padding:4px 0 12px}
+.today-warmup .chip.sm{width:44px;min-height:44px}
+.today-set-label{font:500 13px/18px var(--face)}
+.today-ex .chips>.chip-grp{width:100%;gap:8px}
+.today-ex .chips .cw{flex:0 0 50px;min-width:44px}
+.today-ex .chips .chip{width:100%;height:50px}
+.today-ex .today-options .link{min-height:44px}
+.today-options{border-top:1px solid var(--rule);padding-top:8px}
+.today-tail{display:grid;gap:14px;scroll-margin-top:12px;outline:none}
+.today-ex .step,.today-ex .seg button{min-height:44px;min-width:44px}
+.program-sections{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding:4px;border:1px solid var(--line);border-radius:4px}
+.program-sections button{appearance:none;border:0;background:transparent;color:var(--chalk-2);font:600 15px var(--face);border-radius:3px;min-height:44px;cursor:pointer}
+.program-sections button[aria-pressed="true"]{background:var(--chalk);color:var(--iron)}
+.program-setup{display:grid;gap:14px}
+.program-plan .act-card .act-facts{display:none}
+.program-plan{display:grid;gap:14px}
+.program-plan .act-card h2{font-size:27px}
+.program-plan .plan-ex .btn{margin-top:8px}
+.program-library .filt button{min-height:44px}
+.program-library{display:grid;gap:14px}
+[id^="training-"]{scroll-margin-top:12px}
+@media(max-width:359px){
+  .today-ex{padding:12px;gap:8px}
+  .today-ex .ex-hit{margin:0 -12px;padding:0 12px}
+  .today-ex.now .kg{font-size:82px}
+  .stage[data-clock] .today-ex #kgU b{font-size:36px}
+  .today-ex .chips .cw{flex-basis:calc((100% - 32px)/5)}
+  .today-ex .platebox{gap:4px}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -946,7 +1000,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 94;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 95;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -3655,7 +3709,7 @@ async function psAct(r){
       const c = cleanProg(x.program); if (!c) { toast('Programmet kunne ikke leses, så det er ikke lagt inn.'); return; }
       const rows = await db('program_shares', 'id=eq.' + id + '&status=eq.pending', {method:'PATCH', body:{status:'accepted', answered_at: new Date().toISOString()}, headers:{Prefer:'return=representation'}});
       if (!rows || !rows.length) { toast('Delingen er trukket tilbake.'); }
-      else if (!Object.values(UP()).some(u => u.share === id)) { importProg(c, {by: uname(x.sender), share: id}); save(); toast('«' + c.name + '» ligger nå under Program → Bytt program.'); }
+      else if (!Object.values(UP()).some(u => u.share === id)) { importProg(c, {by: uname(x.sender), share: id}); save(); toast('«' + c.name + '» ligger nå under Program → Bibliotek.'); }
     } else if (cmd === 'dec') {
       await db('program_shares', 'id=eq.' + id + '&status=eq.pending', {method:'PATCH', body:{status:'declined', answered_at: new Date().toISOString()}});
       toast('Avslått');
@@ -4561,13 +4615,14 @@ function planWeeks(P, p, a, short){
   // Uka står i overskriften, så «Uke 9 av 12» trengs ikke på hver økt
   const subOf = (r, w) => ax ? r.sub.replace(/^Uke \d+ av \d+ · /, '') : ['burg','mmc','emc','cir','cbe'].includes(p.prog) ? r.sub.replace(/^Uke \d+ av \d+( · )?/, '') : r.sub !== 'Uke ' + (w + 1) ? r.sub : '';
   const from = short ? Math.floor(Math.min(a.idx, N - 1) / per) : 0, to = short ? from + 2 : weeks.length;
+  const inProgress = P.active && ownDraft() && ownDraft().ex.some(e => e.sets.some(x => x.d != null) || (e.wuDone || []).length);
   const exLine = r => r.ex.slice(0, 3).map(e => { const t = Math.max(...e.sets.map(x => x.w)); return liftName(e.lift) + (t > 0 ? ' ' + fmt(t) : ''); }).join(' · ') + (r.ex.length > 3 ? ' …' : '');
   const more = P.active && weeks.length > 2 ? `<button class="btn ghost" data-a="planall">${short ? 'Vis alle ' + weeks.length + ' uker' : 'Vis bare denne og neste uke'}</button>` : '';
   return `${ax ? axScore(a) : ''}
     ${weeks.map((list, w) => list && w >= from && w < to ? `<h2 class="sec">Uke ${w + 1}${ax && a.ax.weeks[w] ? ' · ' + AX_PH[a.ax.weeks[w].ph] : ''}</h2><div class="list">${list.map(r => {
       const m = r.ex[0], sub = r.sub ? subOf(r, w) : '';
       return `<details class="box acc plan-s${r.done ? ' done-s' : ''}${r.skipped ? ' skip-s' : ''}${r.next ? ' next-s' : ''}"${r.next ? ' open' : ''}>
-        <summary><span class="ps"><span class="ps-top"><b>${esc(r.day)}</b>${r.done ? '<span class="pill">Gjort</span>' : r.skipped ? '<span class="pill">Hoppet over</span>' : r.next ? '<span class="pill on">Neste</span>' : ''}</span>
+        <summary><span class="ps"><span class="ps-top"><b>${esc(r.day)}</b>${r.done ? '<span class="pill">Gjort</span>' : r.skipped ? '<span class="pill">Hoppet over</span>' : r.next ? `<span class="pill on">${inProgress ? 'Pågår' : 'Neste'}</span>` : ''}</span>
           ${sub ? `<span class="small muted">${esc(sub)}</span>` : ''}
           <span class="small">${m ? exLine(r) : r.cond ? esc(r.cond.title) : ''}</span>
           ${r.wod ? `<span class="small muted">Metcon · ${esc(r.wod.tekst.split('\n')[0].replace(/:$/, ''))}${r.done && r.wod.resultat ? ' · ' + esc(r.wod.resultat) : ''}</span>` : ''}</span></summary>
@@ -4576,7 +4631,8 @@ function planWeeks(P, p, a, short){
             ${r.cond.lines ? `<ul class="ax-lines small">${r.cond.lines.map(l => `<li>${esc(l)}</li>`).join('')}</ul>` : ''}` : ''}
           ${r.wod ? `<div class="plan-mc"><div class="ln"><span><b>${esc(r.wod.navn)}</b></span><span>${r.done ? esc(r.wod.resultat || '') : ''}</span></div>
             <pre class="wodtxt small">${esc(r.wod.tekst)}</pre></div>` : ''}
-          ${(r.boxes || []).map(([l, t]) => `<div class="plan-mc"><span class="lbl">${esc(l)}</span><p class="small" style="white-space:pre-line;margin:0">${esc(t)}</p></div>`).join('')}</div>
+          ${(r.boxes || []).map(([l, t]) => `<div class="plan-mc"><span class="lbl">${esc(l)}</span><p class="small" style="white-space:pre-line;margin:0">${esc(t)}</p></div>`).join('')}
+          ${r.next ? `<button class="btn" data-a="tab:today">${inProgress ? 'Fortsett dagens økt' : 'Gå til dagens økt'}</button>` : ''}</div>
       </details>`; }).join('')}</div>` : '').join('')}
     ${more}`;
 }
@@ -4747,6 +4803,44 @@ function vFree(){
     <button class="btn" data-a="freesave">Lagre fri økt</button>`;
 }
 
+// Samme rekkefølge i visning og automatisk overgang. EMOM-løft følger runder, ikke hele øvelser.
+function todayCurrent(s){
+  if (!s) return -1;
+  const done = e => e.sets.every(x => x.d != null);
+  return s.rr ? s.ex.reduce((b, e, i) => done(e) ? b : b < 0 || e.sets.filter(x => x.d != null).length < s.ex[b].sets.filter(x => x.d != null).length ? i : b, -1)
+    : s.ex.findIndex(e => !done(e));
+}
+function rememberSet(ei){
+  const s = S.draft;
+  return {draft:s, session:s.started, ei, before:clone(s.ex[ei]), rest:ui.rest ? clone(ui.rest) : null};
+}
+function canUndoSet(){
+  const u = ui.setUndo, s = S.draft;
+  return !!(u && s && u.draft === s && u.session === s.started && u.check === JSON.stringify(s.ex));
+}
+function followExercise(ei){
+  const target = $(ei < 0 ? '#today-after' : '#exercise-' + ei);
+  if (!target) return;
+  target.scrollIntoView({block:'start', behavior:'instant'});
+  const focus = target.querySelector('.ex-hit') || target.querySelector('h2') || target;
+  if (!focus.hasAttribute('tabindex') && focus.tagName !== 'BUTTON') focus.tabIndex = -1;
+  focus.focus({preventScroll:true});
+}
+function registeredSet(before, previous, message){
+  before.check = JSON.stringify(S.draft.ex); ui.setUndo = before;
+  const next = todayCurrent(S.draft);
+  if (next !== previous && ui.exOpen) delete ui.exOpen[S.draft.started + '-' + previous];
+  save(); trainTick(); render(); wake();
+  if (next !== previous) followExercise(next);
+  say(message + (next !== previous ? next < 0 ? '. Alle arbeidssett er registrert.' : '. Neste: ' + liftName(S.draft.ex[next].lift) : '') + '. Angre siste registrering er tilgjengelig.');
+}
+function undoSet(){
+  if (!canUndoSet()) { ui.setUndo = null; render(); return; }
+  const u = ui.setUndo;
+  S.draft.ex[u.ei] = u.before; ui.rest = u.rest; ui.setUndo = null;
+  (ui.exOpen = ui.exOpen || {})[S.draft.started + '-' + u.ei] = true;
+  save(); render(); followExercise(u.ei); say('Siste registrering angret. ' + liftName(u.before.lift));
+}
 function vToday(){
   if (ui.bank) return vBank();
   if (ui.free) return vFree();
@@ -4809,13 +4903,14 @@ function vToday(){
   // men neste øvelse blir den du holder på med, så pauseklokka står i den med en gang alle settene er krysset av.
   const asks = e => e.sp && allDone(e) && ((e.part === 'extra' && e.rpe == null) || ((e.part === 'top' || e.part === 'back' || e.ask) && (e.slot === 'clean' ? e.q == null : e.rpe == null)));
   // Cube EMOM (s.rr): løftene tas runde for runde, så neste løft er det med færrest loggede sett
-  const cur = s.rr ? s.ex.reduce((b, e, i) => allDone(e) ? b : b < 0 || e.sets.filter(x => x.d != null).length < s.ex[b].sets.filter(x => x.d != null).length ? i : b, -1) : s.ex.findIndex(e => !allDone(e));
+  const cur = todayCurrent(s);
   const setsLeft = s.ex.reduce((n, e) => n + e.sets.filter(x => x.d == null).length, 0);
   const mins = Math.floor((Date.now() - s.started) / 60000);
   if (!g) h += guestToday();
   h += `<header class="head">
       <p class="eyebrow">${p.name} · ${s.sub}</p>
-      <div class="h-row"><h1>${s.day}</h1>${anyTouched ? `<span>${mins} min · ${setsLeft ? setsLeft + ' sett igjen' : 'alt gjort'}</span>` : ''}${topBtns()}</div>
+      <div class="h-row"><h1>${s.day}</h1>${topBtns()}</div>
+      <div class="today-progress"><span>${s.ex.reduce((n, e) => n + e.sets.length, 0) - setsLeft} av ${s.ex.reduce((n, e) => n + e.sets.length, 0)} arbeidssett</span><span>${anyTouched ? mins + ' min i gang' : 'Klar når du er'}</span></div>
       <div class="prog" aria-label="${cur < 0 ? 'Alle øvelser er gjort' : 'Øvelse ' + (cur+1) + ' av ' + s.ex.length}">${s.ex.map(e => {
         const d = e.sets.filter(x => x.d != null).length;
         return `<i class="${d === e.sets.length ? 'full' : ''}"><b style="width:${Math.round(d / e.sets.length * 100)}%"></b></i>`; }).join('')}</div>
@@ -4839,8 +4934,8 @@ function vToday(){
     const top = Math.max(...e.sets.map(x => x.w));
     const k = s.started + '-' + ei, opened = !!(ui.exOpen && ui.exOpen[k]);
     const wk = wuKind(s, ei), wu = wk ? warmups(e.slot, e.sets[0].w, e.sets[0].t, wk) : [];
-    // Ferdig øvelse blir én linje når du har begynt på en senere øvelse. Trykk for å åpne den igjen.
-    if (!opened && cur !== ei && allDone(e) && !asks(e) && s.ex.slice(ei+1).some(touched)) {
+    // Ferdig øvelse blir én linje med en gang. Vurderinger og AMRAP er fortsatt tilgjengelige.
+    if (!opened && cur !== ei && allDone(e) && !asks(e) && !e.sets.some(x => x.am)) {
       const hit = e.sets.every(x => x.d >= x.t);
       h += `<button class="ex-row" data-a="exopen:${k}" aria-label="${liftName(e.lift)}, ferdig: ${setsLine(e, true)}. Trykk for å åpne">
         <span class="ck ${hit ? '' : 'miss'}" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="${hit ? 'M5 12l5 5L20 7' : 'M12 7v6M12 17v.01'}"/></svg></span>
@@ -4848,9 +4943,9 @@ function vToday(){
       return;
     }
     // Øvelser som ikke er påbegynt etter den du holder på med, vises som én linje med navn og vekt
-    if (!opened && cur > -1 && ei > cur && !touched(e)) {
+    if (!opened && cur > -1 && ei !== cur && !allDone(e)) {
       h += `<button class="ex-row ex-line" data-a="exopen:${k}" aria-label="${ei === cur + 1 ? 'Neste' : 'Senere'}: ${liftName(e.lift)}, ${setsLine(e)}. Trykk for å åpne">
-        <small>${ei === cur + 1 ? 'Neste' : 'Senere'}</small><b>${liftName(e.lift)}</b><span>${fmt(top)} kg</span></button>`;
+        <small>${ei === cur + 1 ? 'Neste' : 'Senere'}</small><b>${liftName(e.lift)}</b><span>${fmt(top)} kg</span>${touched(e) ? `<span class="small muted">${e.sets.filter(x => x.d != null).length} av ${e.sets.length} sett</span>` : ''}</button>`;
       return;
     }
     const now = ei === cur;
@@ -4864,32 +4959,38 @@ function vToday(){
     // så kortet trenger ikke si «Oppvarming 2 av 3» eller «sett 2 av 5» i tillegg.
     const [bigW, bigR] = warm ? wu[wuNext] : nextSi > -1 ? [e.sets[nextSi].w, e.sets[nextSi].c || e.sets[nextSi].t] : [top, 0];
     const bigAm = !warm && nextSi > -1 && e.sets[nextSi].am;
-    const head = `<div class="ex-head"><h2>${liftName(e.lift)}</h2>${e.tag ? `<span class="tag">${e.tag}</span>` : ''}</div>
+    const menuOpen = ui.exMenu === k || ui.confirm === 'exrm:' + ei || ui.confirm === 'exun:' + ei || (ui.exSw && ui.exSw.k === s.started && ui.exSw.ei === ei);
+    const head = `${now ? `<p class="today-stage">${warm ? 'Oppvarming · ' + (wuNext + 1) + ' av ' + wu.length : nextSi > -1 ? 'Arbeidssett · ' + (nextSi + 1) + ' av ' + e.sets.length : 'Alle sett er registrert'}</p>` : ''}
         ${now ? `<div class="kg"><span id="kgN" data-w="${fmt(bigW)}">${fmt(bigW)}</span><small id="kgU" data-u="kg${bigR ? ' × ' + bigR + (bigAm ? '+' : '') : ''}">kg${bigR ? ' × ' + bigR + (bigAm ? '+' : '') : ''}</small></div>
-        <div class="rest-bar" aria-hidden="true"><i></i></div>`
+        `
           : `<div class="kg">${fmt(bigW)}<small>kg${bigR ? ' × ' + bigR + (bigAm ? '+' : '') : ''}</small></div>`}
-        ${LIFTS[e.lift].bar ? `<div class="platesrow ${now ? 'platebox' : ''}">${plateHTML(bigW, now)}</div>` : ''}`;
-    // Hele toppen av arket er knappen for neste sett: stor flate, ingen leting etter riktig rute
+        ${now ? `<span class="today-log-label">Registrer ${warm ? 'oppvarming' : 'sett'} · ${bigR}${bigAm ? '+' : ''} reps</span>` : ''}`;
+    // Vekt, pause og registrering deler én stor trykkflate; øvelsesvalgene står utenfor.
     const canNext = now && (warm || nextSi > -1);
-    h += `<section class="ex ${now ? 'now' : ''}">
-      ${canNext ? `<div class="ex-hit" role="button" tabindex="0" data-a="next:${ei}" aria-label="Før inn ${bigR}${bigAm ? '+' : ''} reps på ${fmt(bigW)} kg${warm ? ', oppvarming' : ''}">${head}</div>` : head}
+    h += `<section class="ex today-ex ${now ? 'now' : ''}" id="exercise-${ei}">
+      <div class="ex-head"><div><h2>${liftName(e.lift)}</h2>${e.tag ? `<span class="tag">${e.tag}</span>` : ''}<p class="small muted">${setsLine(e)}</p></div><button class="link today-menu" data-a="exmenu:${k}" aria-expanded="${!!menuOpen}" aria-controls="exercise-options-${ei}" aria-label="Valg for ${esc(liftName(e.lift))}">Valg ${chev}</button></div>
+      ${canNext ? `<button class="ex-hit" data-a="next:${ei}" aria-label="Registrer ${bigR}${bigAm ? '+' : ''} reps på ${fmt(bigW)} kg${warm ? ', oppvarming' : ''}">${head}</button>` : head}
+      ${now ? `<div class="rest-bar" aria-hidden="true"><i></i></div><div class="today-controls" id="todayRestControls"><span id="todayRestHint" class="small muted">Pausen starter automatisk</span><button class="link" data-a="undoset" ${canUndoSet() ? '' : 'hidden'}>Angre</button><button class="link" data-a="restadd:30" id="todayRestAdd" hidden aria-label="30 sekunder lengre pause">+30 s</button><button class="link" data-a="skip" id="todayRestSkip" hidden>Avslutt pause</button></div>` : ''}
+      ${LIFTS[e.lift].bar ? `<div class="platesrow ${now ? 'platebox' : ''}">${plateHTML(bigW, now)}</div>` : ''}
       ${e.hint ? `<p class="wu">${e.hint}</p>` : ''}
-      <div class="chips">${wu.length ? `<div class="chip-grp wu-grp">${vWarmup(e, ei, wu, wuNext, warm)}</div>` : ''}<div class="chip-grp">${e.sets.map((x,si) => {
+      ${wu.length ? `<details class="today-warmup" ${(ui.wuOpen?.[k] ?? warm) ? 'open' : ''}><summary data-a="wuopen:${k}" aria-controls="warmup-${ei}">Oppvarming · ${wu.filter(([w, r]) => wuDone.includes(w + 'x' + r)).length} av ${wu.length} gjort ${chev}</summary><div class="chip-grp wu-grp" id="warmup-${ei}">${vWarmup(e, ei, wu, wuNext, warm)}</div></details>` : ''}
+      <p class="today-set-label">Arbeidssett <span class="muted">· ${e.sets.filter(x => x.d != null).length} av ${e.sets.length}</span></p>
+      <div class="chips"><div class="chip-grp">${e.sets.map((x,si) => {
         const st = x.d == null ? (si === nextSi ? 'next' : '') : (x.d >= x.t ? 'ok' : 'miss');
         const fr = x.d != null && ui.fresh === ei + ':' + si ? ' fresh' : '';
         const lbl = 'Sett '+(si+1)+': '+(x.d == null ? 'ikke gjort, mål '+(x.c || x.t)+' reps' : x.d+' reps')+(x.am ? ', så mange du klarer' : '');
-        return `<div class="cw"><button class="chip ${st} ${x.am?'am':''}${fr}" data-a="set:${ei}:${si}" aria-label="${lbl}">${x.c && (x.d == null || x.d === x.t) ? x.c : x.d == null ? x.t : x.d}${x.am ? '<sup>+</sup>' : ''}</button>${varies || wu.length ? `<small>${fmt(x.w)}</small>` : ''}</div>`;
+        return `<div class="cw"><button class="chip ${st} ${x.am?'am':''}${fr}" data-a="set:${ei}:${si}" aria-label="${lbl}">${x.c && (x.d == null || x.d === x.t) ? x.c : x.d == null ? x.t : x.d}${x.am ? '<sup>+</sup>' : ''}</button>${varies ? `<small>${fmt(x.w)}</small>` : ''}</div>`;
       }).join('')}</div></div>
       ${amIdx > -1 ? `<div class="amrap"><span>Siste sett, så mange du klarer</span>
         <button class="step" data-a="am:${ei}:${amIdx}:-1" aria-label="Én rep mindre">−</button>
         <b>${e.sets[amIdx].d}</b>
         <button class="step" data-a="am:${ei}:${amIdx}:1" aria-label="Én rep mer">+</button></div>` : ''}
-      ${canNext && S.history.filter(x => !x.free && !x.skipped).length < 3 ? '<p class="chip-hint">Trykk på tallet = gjort · trykk på et sett igjen = én rep mindre</p>' : ''}
+      ${canNext && S.history.filter(x => !x.free && !x.skipped).length < 3 ? '<p class="chip-hint">Trykk på et registrert sett for én rep mindre.</p>' : ''}
       ${e.sp ? spExtras(e, ei) : ''}
       ${e.adj ? `<div class="amrap"><span>Juster vekt etter dagsform</span>
         <button class="step" data-a="w:${ei}:-1" aria-label="2,5 kg lettere">−</button>
         <button class="step" data-a="w:${ei}:1" aria-label="2,5 kg tyngre">+</button></div>` : ''}
-      ${ui.confirm === 'exrm:' + ei ? `<div class="skipbox ex-rm" aria-live="polite"><p class="small"><b>Fjerne ${esc(liftName(e.subOf ? e.subName : e.lift).toLowerCase())} fra dagens økt?</b>
+      <div class="today-options" id="exercise-options-${ei}" ${menuOpen ? '' : 'hidden'}>${ui.confirm === 'exrm:' + ei ? `<div class="skipbox ex-rm" aria-live="polite"><p class="small"><b>Fjerne ${esc(liftName(e.subOf ? e.subName : e.lift).toLowerCase())} fra dagens økt?</b>
           Settene du har tatt i den, lagres ikke. Vekta står som den er til neste gang.</p>
           <div class="row"><button class="btn danger sm" data-a="exrm:${ei}">Ja, fjern</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div></div>`
         : ui.confirm === 'exun:' + ei ? `<div class="skipbox ex-rm" aria-live="polite"><p class="small"><b>Tilbake til ${esc(liftName(e.subName).toLowerCase())}?</b>
@@ -4898,9 +4999,10 @@ function vToday(){
         : ui.exSw && ui.exSw.k === s.started && ui.exSw.ei === ei ? exSwapBox(s, e, ei, touched(e))
         : `<div class="ex-acts"><button class="link ex-rm-l" data-a="exsw:${ei}">${e.subOf ? 'Bytt til en annen' : 'Bytt i dag'}</button>
           ${e.subOf ? `<button class="link ex-rm-l" data-a="${touched(e) ? 'confirm:exun:' + ei : 'exun:' + ei}">Tilbake til ${esc(liftName(e.subName).toLowerCase())}</button>` : ''}
-          <button class="link ex-rm-l" data-a="${touched(e) ? 'confirm:exrm:' + ei : 'exrm:' + ei}">Fjern fra dagens økt</button></div>`}
+          <button class="link ex-rm-l" data-a="${touched(e) ? 'confirm:exrm:' + ei : 'exrm:' + ei}">Fjern fra dagens økt</button></div>`}</div>
     </section>`;
   });
+  h += `<section class="today-tail" id="today-after" tabindex="-1">${cur < 0 && canUndoSet() ? '<button class="link" data-a="undoset">Angre siste registrering</button>' : ''}`;
   // Øvelser du har fjernet i dag, kan hentes tilbake slik de var
   // Originalen til en byttet øvelse står ikke her. Den hentes med «Tilbake til …» i kortet.
   if ((s.rmEx || []).some(e => !e.swapId)) h += `<section class="box rm-list"><span class="lbl">Fjernet fra dagens økt</span>
@@ -4945,7 +5047,7 @@ function vToday(){
     h += `<section class="box skipbox" aria-live="polite"><p><b>Fullføre med ${setsLeft} sett som ikke er logget?</b></p>
       <p class="small">Ikke logget: ${esc(listNo(missing))}. ${esc(why)}</p>
       <div class="row"><button class="btn sm" data-a="finish">Fullfør likevel</button><button class="btn ghost sm" data-a="cancel">Fortsett økta</button></div></section>`;
-  } else h += `<button class="btn" data-a="${setsLeft ? 'confirm:finish' : 'finish'}" ${anyTouched || s.cond ? '' : 'disabled'}>Fullfør økt</button>`;
+  } else h += `<button class="btn${setsLeft ? ' ghost' : ''}" data-a="${setsLeft ? 'confirm:finish' : 'finish'}" ${anyTouched || s.cond ? '' : 'disabled'}>Fullfør økt</button>`;
   if (ui.confirm === 'skipday') {
     const a1 = JSON.parse(JSON.stringify(S.active)); a1.idx++;
     const next = tot && a1.idx >= tot ? null : buildSession(p, a1);
@@ -4964,7 +5066,7 @@ function vToday(){
   // Planen ligger under Program og fri økt under Fremgang, så her står bare det som gjelder dagens økt
   else if (ui.confirm !== 'skipday') h += `<div class="links"><button class="link" data-a="confirm:skipday">Hopp over økta</button></div>`;
   ui.fresh = null;   // blekket tegnes bare én gang, på settet du nettopp førte inn
-  return h;
+  return h + '</section>';
 }
 
 // Lett uke: vis tallene appen har, og la utøveren velge
@@ -5101,11 +5203,11 @@ function vMine(act){
     <h2 class="sec">Ferdige programmer</h2>`;
 }
 // Biblioteket. root: Program-fanen uten aktivt program. Ellers åpnet fra «Bytt program».
-function vPrograms(root){
+function vPrograms(root, embedded = false){
   const f = ui.progF || '', act = S.active && S.active.programId;
   const list = PROGRAMS.filter(p => p.id !== act && (!f || p.level.toLowerCase().includes(f.toLowerCase())));
-  return `${root ? '' : '<button class="link" data-a="back">‹ Program</button>'}
-    <header class="head"><h1>${root ? 'Program' : 'Bytt program'}</h1></header>
+  return `${root || embedded ? '' : '<button class="link" data-a="back">‹ Program</button>'}
+    ${embedded ? '' : `<header class="head"><h1>${root ? 'Program' : 'Bytt program'}</h1></header>`}
     <p class="muted small">${root ? 'Velg et styrkeprogram. Trykk på ett for å se øktene og aktivere det.' : 'Det aktive programmet byttes først når du aktiverer et nytt. Loggen din blir liggende.'}</p>
     ${vMine(act)}
     <div class="filt" role="group" aria-label="Filtrer etter nivå">${[''].concat(LEVELS).map(l =>
@@ -5176,7 +5278,7 @@ function vDetail(p){
     <div class="box"><h2 class="sec" style="margin:0">Slik øker vekten</h2><p class="small">${p.rule}</p></div>
     ${p.prog === 'athx' ? axSetup(other, isActive) : `${p.prog === 'user' ? vUserStart(p) : vStart(p)}${['mmc','emc','cir'].includes(p.prog) ? mmcSecInputs(p) : ''}
     <p class="muted small">${p.prog === 'user' ? 'Forslaget er den tyngste vekta du brukte sist i øvelsen, ellers tom stang. Endre det som ikke stemmer.' : p.orm ? p.ormNote || 'Start lett. Teknikken skal sitte før vekten blir tung.' : p.prog === '531' ? 'Appen regner ut treningsmaks som 90 % av dette.' : p.prog === 'jugg' ? 'Appen regner ut arbeidsmaks som 90 % av dette.' : p.prog === 'sp12' ? 'Startvektene regnes ut fra dette. Etter hvert styrer RPE-en din vektene.' : p.prog === 'cube' ? 'Alle vekter regnes ut som prosent av dette.' : p.prog === 'burg' ? 'Alle vekter regnes ut som prosent av dette. Trekk og shrugs ligger over 100 %, det er meningen.' : ['mmc','emc','cir','cbe'].includes(p.prog) ? 'Treningsmaksen starter på 90 % av dette, og RPE-en din flytter den etter hver uke. Bruk dagsaktuelle maksløft.' : 'Start lett. Teknikken skal sitte før vekten blir tung.'}
-      ${slotsOf(p).length ? ' Vil du bytte et løft, gjør du det under Program → Løft og vekter når programmet er aktivt.' : ''}
+      ${slotsOf(p).length ? ' Vil du bytte et løft, gjør du det under Program → Oppsett når programmet er aktivt.' : ''}
       ${other ? ' Dette erstatter '+other.name+'. Loggen din blir liggende.' : ''}${isActive ? ' Programmet er aktivt. Aktiverer du på nytt, starter det fra økt 1 med vektene over.' : ''}</p>`}
     <button class="btn" data-a="activate:${p.id}">${isActive ? 'Start på nytt' : 'Aktiver program'}</button>
     <button class="btn ghost" data-a="planprev:${p.id}">Se hele planen</button>
@@ -5337,8 +5439,7 @@ const gearBtn = () => `<button class="gear" data-a="go:settings" aria-label="Inn
 // Klokka har fast plass ved tannhjulet på I dag, med eller uten økt
 const topBtns = () => `<div class="hbtns"><button class="gear${ckOn() ? ' ck-live' : ''}" data-a="ck:open" aria-label="${ckOn() ? 'Klokka går. Åpne den' : 'Klokke'}">${clockSVG}</button>${gearBtn()}</div>`;
 
-// Program: det aktive programmet, snarveier til innstillingene for treningen og et annet program, og hele planen under.
-// Uten aktivt program er Program biblioteket.
+// Planen først, innstillinger og bibliotek i egne seksjoner. Alle eksisterende detaljflyter gjenbrukes.
 function vPlanTab(){
   const d = ui.detail;
   if (d === 'training') return vTraining();
@@ -5347,18 +5448,23 @@ function vPlanTab(){
   if (d === 'library') return vPrograms(false);
   if (d === 'pedit') return vProgEdit();
   if (d) { const p = prog(d); if (p) return vDetail(p); ui.detail = null; }
-  if (!S.active || !prog(S.active.programId)) return vPrograms(true);
-  const p = prog(S.active.programId), P = {id: p.id, active: true};
-  return `<header class="head"><h1>Program</h1></header>
-    ${vActiveCard()}
+  const p = S.active && prog(S.active.programId), tab = ui.programTab || (p ? 'plan' : 'library');
+  let h = `<header class="head"><h1>Program</h1><p class="eyebrow">Planen og opplegget ditt</p></header>
+    <div class="program-sections" role="group" aria-label="Seksjoner i Program">${[['plan','Plan'],['setup','Oppsett'],['library','Bibliotek']].map(([k,n]) => `<button data-a="programsection:${k}" aria-pressed="${tab === k}" aria-controls="program-content">${n}</button>`).join('')}</div>`;
+  if (tab === 'library') return h + `<section class="program-library" id="program-content">${vPrograms(!p, true)}</section>`;
+  if (!p) return h + `<section class="box" id="program-content"><h2>Ingen aktivt program</h2><p class="small muted">Velg et opplegg fra biblioteket for å få en plan og velge startvekter.</p><button class="btn" data-a="programsection:library">Finn et program</button></section>`;
+  if (tab === 'setup') return h + `<section class="program-setup" id="program-content"><div class="box"><span class="lbl">Aktivt program</span><h2>${esc(p.name)}</h2><p class="small muted">Endringer her gjelder programmet fremover.</p></div>
     <div class="plist">
-      <button data-a="go:training"><span><b>Løft og vekter</b><small>${slotsOf(p).length ? 'Vekter i programmet, bytt øvelse og avslutt' : 'Vekter i programmet, lagrede maksløft og avslutt'}</small></span>${chev}</button>
-      <button data-a="go:pete"><span><b>Kondisjon: Pete Plan</b><small>${peteOn() ? 'På' : 'Av'} · romaskin, ski eller sykkel ved siden av styrken</small></span>${chev}</button>
-      <button data-a="go:library"><span><b>Bytt program</b><small>Bibliotek og programguide</small></span>${chev}</button>
+      <button data-a="trainingpart:weights"><span><b>Arbeidsvekter og treningsmaks</b><small>Juster vektene som styrer kommende økter</small></span>${chev}</button>
+      ${slotsOf(p).length ? `<button data-a="trainingpart:swaps"><span><b>Øvelser og bytter</b><small>Velg øvelsene du bruker fast i programmet</small></span>${chev}</button>` : ''}
+      <button data-a="go:pete"><span><b>Kondisjon: Pete Plan</b><small>${peteOn() ? 'På' : 'Av'} · romaskin, ski eller sykkel</small></span>${chev}</button>
+      <button data-a="trainingpart:maxes"><span><b>Lagrede maksløft</b><small>Brukes til nye programmer og økter med venner</small></span>${chev}</button>
+      <button data-a="open:${p.id}"><span><b>Om programmet</b><small>Programguide, startvekter og alternativer</small></span>${chev}</button>
     </div>
-    <h2 style="margin-top:12px">Planen</h2>
+    ${ui.confirm === 'quit' ? `<div class="box skipbox"><p><b>Avslutte ${esc(p.name)}?</b></p><p class="small">Treningsloggen blir liggende.</p><div class="row"><button class="btn danger sm" data-a="quit">Ja, avslutt</button><button class="btn ghost sm" data-a="cancel">Behold programmet</button></div></div>` : '<button class="btn danger" data-a="confirm:quit">Avslutt program</button>'}</section>`;
+  return h + `<section class="program-plan" id="program-content">${vActiveCard()}
     <p class="muted small">${PLAN_NOTE[p.prog] || ''}${totalOf(p, S.active) ? '' : ' Programmet har ingen fast slutt, så planen viser 12 uker.'}</p>
-    ${planWeeks(P, p, S.active, !ui.planAll)}`;
+    ${planWeeks({id:p.id, active:true}, p, S.active, !ui.planAll)}</section>`;
 }
 
 /* Vekter i programmet du kjører: tallene programmet regner vektene ut fra, rettet for hånd.
@@ -5438,14 +5544,14 @@ function vTraining(){
   const p = S.active && prog(S.active.programId);
   return `<button class="link" data-a="back">‹ Program</button>
     <header class="head"><h1>Løft og vekter</h1></header>
-    ${p ? swapRows(p, S.active) : ''}
-    ${p ? vProgWeights(p) : ''}
+    <section class="program-setup" id="training-weights">${p ? vProgWeights(p) : ''}</section>
+    <section class="program-setup" id="training-swaps">${p ? swapRows(p, S.active) : ''}</section>
     <h2 class="sec">Aktivt program</h2>
     <div class="box">${p ? `<p><b>${p.name}</b> <span class="muted">· ${oekter(S.active.idx)} fullført siden ${dateFmt(S.active.startedAt)}</span></p>
       ${ui.confirm === 'quit' ? `<div class="row"><button class="btn danger sm" data-a="quit">Ja, avslutt</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div>`
         : `<button class="btn ghost sm" data-a="confirm:quit">Avslutt program</button>`}`
       : `<p class="muted">Ingen program er aktivt.</p>`}</div>
-    <h2 class="sec">Lagrede maksløft (1RM)</h2>
+    <h2 class="sec" id="training-maxes">Lagrede maksløft (1RM)</h2>
     <div class="box" style="gap:0">${Object.keys(S.maxes).length ? Object.keys(S.maxes).map(l => `
       <div class="field"><label for="max-${l}">${liftName(l)}</label>
         <span class="inp"><input id="max-${l}" data-max="${l}" type="text" inputmode="decimal" value="${fmt(S.maxes[l])}">kg</span></div>`).join('')
@@ -5579,9 +5685,20 @@ function sheetClock(t){
   if (t) { stage.dataset.clock = '1'; n.textContent = t; u.innerHTML = `<span class="nx-l">Neste</span><b>${n.dataset.w}</b><span>${u.dataset.u}</span>`; }
   else { delete stage.dataset.clock; n.textContent = n.dataset.w; u.textContent = u.dataset.u; }
 }
+function updateTodayRest(left){
+  const controls = $('#todayRestControls'), stage = document.querySelector('.stage');
+  stage.classList.toggle('inline-rest', !!controls);
+  if (!controls) return;
+  const resting = !!ui.rest;
+  $('#todayRestAdd').hidden = !resting;
+  $('#todayRestSkip').hidden = !resting;
+  const hint = $('#todayRestHint');
+  hint.hidden = resting || canUndoSet();
+  hint.textContent = left <= 0 ? 'Klar for neste sett' : 'Pausen starter automatisk';
+}
 function updateRest(){
   const el = $('#rest'), stage = document.querySelector('.stage');
-  if (!ui.rest) { el.hidden = true; delete stage.dataset.rest; sheetClock(null); return; }
+  if (!ui.rest) { el.hidden = true; delete stage.dataset.rest; sheetClock(null); updateTodayRest(); return; }
   const left = (ui.rest.end - Date.now()) / 1000;
   if (left < -600) { ui.rest = null; updateRest(); return; }   // gi opp etter 10 minutter overtid
   let lvl, state;
@@ -5601,6 +5718,7 @@ function updateRest(){
   sheetClock(left > 0 ? mmss(Math.ceil(left)) : null);
   // Står klokka i arket, viser linjen nederst bare knappene, så tiden ikke står to steder
   $('#restL').textContent = left > 0 ? (stage.dataset.clock ? 'Pause' : 'av ' + mmss(ui.rest.total)) : 'Klar for neste sett';
+  updateTodayRest(left);
 }
 setInterval(updateRest, 250);
 
@@ -7518,18 +7636,33 @@ document.addEventListener('click', ev => {
     case 'activate': activate(r[0]); break;
     case 'startmode': ui.start = {id: r[0], mode: r[1]}; render(); break;
     case 'planall': ui.planAll = !ui.planAll; render(); break;
+    case 'programsection':
+      if (!['plan','setup','library'].includes(r[0])) break;
+      ui.programTab = r[0]; ui.detail = null; ui.confirm = null; render(); toTop(); break;
+    case 'trainingpart':
+      (ui.stack = ui.stack || []).push(ui.detail); ui.detail = 'training'; ui.confirm = null;
+      render(); toTop(); document.getElementById('training-' + r[0])?.scrollIntoView({block:'start',behavior:'instant'}); break;
+    case 'undoset': undoSet(); break;
+    case 'exmenu': ui.exMenu = ui.exMenu === r[0] ? null : r[0]; render(); break;
+    case 'wuopen': {
+      ev.preventDefault(); const o = ui.wuOpen = ui.wuOpen || {};
+      o[r[0]] = !b.closest('details').open; render(); break;
+    }
     case 'set': {
+      if (!S.draft || !S.draft.ex[+r[0]]?.sets[+r[1]]) break;
+      const before = rememberSet(+r[0]), previous = todayCurrent(S.draft);
       const ex = S.draft.ex[+r[0]], x = ex.sets[+r[1]], was = x.d;
       if (x.am) x.d = x.d == null ? x.t : null;
       else x.d = x.d == null ? x.t : (x.d > 0 ? x.d - 1 : null);
       // Å rette reps på et sett som er gjort, starter ikke pausen på nytt
       if (was == null && x.d != null) restAfter(ex.rest);
       ui.fresh = r[0] + ':' + r[1];
-      save(); trainTick(); render(); wake(); break;
+      registeredSet(before, previous, liftName(ex.lift) + ', sett ' + (+r[1] + 1) + (x.d == null ? ' fjernet' : ': ' + x.d + ' reps')); break;
     }
     // Trykk på arket: neste oppvarmingssett, ellers neste arbeidssett, føres inn med målet som reps
     case 'next': {
       const ei = +r[0], s = S.draft, e = s && s.ex[ei]; if (!e) break;
+      const before = rememberSet(ei), previous = todayCurrent(s);
       const wk = !e.sets.some(x => x.d != null) && wuKind(s, ei), done = e.wuDone || [];
       const wu = wk ? warmups(e.slot, e.sets[0].w, e.sets[0].t, wk) : [];
       const wi = wu.findIndex(([w, n]) => !done.includes(w + 'x' + n));
@@ -7542,7 +7675,7 @@ document.addEventListener('click', ev => {
         e.sets[si].d = e.sets[si].t; ui.fresh = ei + ':' + si;
         restAfter(e.rest);
       }
-      save(); trainTick(); render(); wake(); break;
+      registeredSet(before, previous, liftName(e.lift) + (wi > -1 ? ', oppvarming registrert' : ', sett registrert')); break;
     }
     case 'am': { const x = S.draft.ex[+r[0]].sets[+r[1]]; x.d = Math.max(0, Math.min(99, x.d + (+r[2]))); save(); render(); break; }
     case 'rpe': S.draft.ex[+r[0]].rpe = +r[1]; save(); render(); break;
@@ -7550,10 +7683,12 @@ document.addEventListener('click', ev => {
     case 'w': { const e = S.draft.ex[+r[0]], min = LIFTS[e.lift] && LIFTS[e.lift].bar ? BAR() : LIFTS[e.lift] && LIFTS[e.lift].bw ? 0 : 2.5;
       e.sets.forEach(x => { if (!(e.adj && x.d != null)) x.w = Math.max(min, x.w + 2.5*(+r[1])); }); save(); render(); break; }
     case 'wu': {
+      if (!S.draft || !S.draft.ex[+r[0]]) break;
+      const before = rememberSet(+r[0]), previous = todayCurrent(S.draft);
       const e = S.draft.ex[+r[0]], k = r[1]; e.wuDone = e.wuDone || [];
       const j = e.wuDone.indexOf(k);
       if (j > -1) e.wuDone.splice(j, 1); else { e.wuDone.push(k); ui.fresh = 'wu:' + r[0] + ':' + k; startRest(r[2] === '1' ? REST.warmupLast : REST.warmup); }
-      save(); render(); wake(); break;
+      registeredSet(before, previous, liftName(e.lift) + ', oppvarming ' + (j > -1 ? 'angret' : 'registrert')); break;
     }
     case 'cut': { const e = S.draft.ex[+r[0]]; if (e.sets.length > 1 && e.sets[e.sets.length-1].d == null) { e.sets.pop(); e.cut = (e.cut||0) + 1; } save(); render(); break; }
     case 'doswap': doSwap(r[0]); break;
