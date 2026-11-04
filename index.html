@@ -725,6 +725,40 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .sx-row .st.ok{color:var(--pen)}
 .sx-row .btn.sm{padding:10px 12px;font-size:15px}
 
+/* Sammen: dagens venner og egne timer først. Originalens papir, kritt og Archivo. */
+.sx-head{align-items:center}.sx-head .quick{flex:none}
+.sx-nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;border-bottom:1px solid var(--line)}
+.sx-nav button{min-height:48px;padding:10px 4px;display:flex;align-items:center;justify-content:center;gap:7px;border:0;border-bottom:2px solid transparent;background:none;color:var(--chalk-2);font:500 15px var(--face);cursor:pointer}
+.sx-nav button[aria-pressed="true"]{color:var(--chalk);border-bottom-color:var(--chalk);font-weight:600}
+.sx-nav .badge{min-width:18px;height:18px;font-size:11px}
+.sx-today{gap:12px}.sx-today-title{display:flex;gap:14px;align-items:center}
+.sx-today-title>b{font:800 65px/.9 var(--face);font-stretch:68%;letter-spacing:-.02em}
+.sx-today-title h2{font-size:23px;line-height:1.15;text-wrap:initial}
+.sx-today-people{display:flex;align-items:center;gap:8px;padding-top:12px;border-top:1px solid var(--rule)}
+.sx-today-people>button{flex:1;min-width:0;min-height:44px;display:flex;align-items:center;gap:8px;padding:0;background:none;border:0;text-align:left;color:var(--ink);font-family:var(--face);cursor:pointer}
+.sx-today-people>button>span:not(.av){min-width:0;display:grid;gap:3px}
+.sx-today-people b{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.sx-today-people small{font-size:11px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sx-today-people small.sx-training{color:var(--train)}
+.sx-today-people>.sx-today-all{flex:0 0 28px;justify-content:center;font-size:18px}
+.sx-news-summary{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;background:none;border:0;padding:0;font:400 13px var(--face);color:var(--chalk-2);text-align:left;cursor:pointer}
+.sx-news-summary i{width:5px;height:5px;border-radius:50%;background:var(--red)}.sx-news-summary b{font-weight:600;color:var(--chalk)}.sx-news-summary>span:last-child{margin-left:auto}
+.sx-sessions{display:grid;gap:10px;min-width:0}.sx-sessions:focus{outline:none}.sx-sessions .sec{margin:5px 0 0}.sx-sessions .sec:not(:first-child){margin-top:10px}
+.sx-session.own{cursor:default}.sx-session .sx-top{gap:8px;align-items:baseline}.sx-session .sx-top .tag{white-space:normal;font-size:12px}.sx-session .sx-top>.sx-sub{text-align:right;font-size:12px}
+.sx-session-main{display:flex;align-items:center;gap:14px;min-width:0}.sx-session-main>.sx-time{flex:none;white-space:nowrap}
+.sx-session-copy{flex:1;min-width:0;display:grid;gap:3px}.sx-session-copy>b{font-size:15px;font-weight:600;overflow-wrap:anywhere}
+.sx-session-open{flex:none;width:32px;min-height:44px;border:0;padding:0;background:none;color:var(--ink-2);font:400 24px var(--face);cursor:pointer}
+.sx-session-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:10px;margin-top:2px;border-top:1px solid var(--rule)}
+.sx-session .sx-session-foot .btn.sm{width:auto;flex:none}.sx-session-foot>.sx-sub{font-size:12px}
+.sx-private{width:100%;justify-content:flex-start;background:none;border:0;border-top:1px solid var(--rule);padding-bottom:0;text-align:left;color:var(--ink-2);font:400 13px var(--face);cursor:pointer;min-height:40px}.sx-private svg{width:16px;height:16px;fill:currentColor;flex:none}.sx-private>span:last-child{margin-left:auto}
+.sx-section-title{font:700 22px/1.15 var(--face);margin:3px 0 0}.sx-empty{padding-block:12px}
+.sx-sheet{position:fixed;inset:auto 0 0;margin:0 auto;width:min(100%,560px);max-width:100%;max-height:90dvh;padding:0 0 max(12px,env(safe-area-inset-bottom));border:1px solid var(--line);border-bottom:0;border-radius:16px 16px 0 0;background:var(--iron);color:var(--chalk);box-shadow:0 -16px 60px rgba(0,0,0,.5);overflow:hidden}
+.sx-sheet[open]{display:flex;flex-direction:column}.sx-sheet::backdrop{background:rgba(0,0,0,.65)}
+.sx-sheet-handle{flex:none;width:34px;height:3px;border-radius:3px;background:var(--chalk-3);margin:9px auto 0}
+.sx-sheet-head{flex:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 18px;border-bottom:1px solid var(--line)}.sx-sheet-head h2{font-size:23px;font-stretch:85%}.sx-sheet-head h2:focus{outline:none}.sx-sheet-head .link{min-height:44px}
+.sx-sheet-body{padding:18px;min-height:0;overflow-y:auto;overscroll-behavior:contain;display:grid;gap:14px}.sx-sheet-body>.head h1{font-size:42px;font-stretch:62%}
+.sx-sheet-status{flex:none;padding:10px 18px;background:var(--chalk);color:var(--iron);font-size:14px;font-weight:600}
+@media(max-width:359px){.sx-session-main{gap:10px}.sx-session-copy>b{font-size:14px}.sx-session .sx-top>.sx-sub{font-size:11px}.sx-today-people{gap:6px}.sx-today-people>button{gap:6px}.sx-today-people b{font-size:11px}.sx-today-people small{font-size:10px}.sx-today-people>.sx-today-all{flex-basis:22px}.sx-sheet-body{padding:14px}.sx-sheet{max-height:94dvh}}
+
 /* Chat: meldingene er lapper av samme papir. Det du skriver selv, står i blå penn. */
 .ch-row .ch-t{flex:none;font-size:12px;color:var(--chalk-3);font-style:normal}
 .ch-row .ch-n{flex:none;min-width:22px;height:22px;padding:0 7px;border-radius:11px;background:var(--red);color:#fff;font:700 12px/22px var(--face);font-style:normal;text-align:center}
@@ -912,7 +946,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 93;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 94;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -5494,6 +5528,7 @@ function render(){
   // Hjulet for testet tid i Pete Plan legges over siden det ble åpnet fra, og glemmes når du går et annet sted
   if (ui.whl && ui.whl.bi === 'pp') { if (ui.whl.at === ui.tab + '/' + ui.detail) h += whlHTML(); else ui.whl = null; }
   paint(h);
+  sxSheetPaint();
   if (ui.whl && ui.whl.bi === 'pp') whlInit();
   const inChat = ui.tab === 'together' && /^c:/.test(ui.sxView || '');
   $('#view').classList.toggle('chat', inChat);
@@ -6213,6 +6248,8 @@ if (ckOn()) ui.clockView = 'run';
 // Ny side: til toppen, og fokus på overskriften så skjermleseren begynner der.
 // Står fokus i fanelinja, blir det stående der, slik faner pleier å virke.
 function toTop(){
+  const sheet = $('#sxSheet');
+  if (sheet && sheet.open) { const h = sheet.querySelector('h1, h2'); if (h) { h.tabIndex = -1; h.focus({preventScroll:true}); } return; }
   const sc = $('#scroller'); if (sc) sc.scrollTop = 0;
   const a = document.activeElement; if (a && a.closest && a.closest('.tabs')) return;
   const h = $('#view h1'); if (h) { h.tabIndex = -1; h.focus({preventScroll: true}); }
@@ -6220,7 +6257,7 @@ function toTop(){
 
 let toastT;
 // Lange meldinger står lenger. Teksten leses opp fra #live, som alltid finnes, så skjermleseren får den med seg.
-function toast(msg){ const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, Math.max(2200, msg.length * 60)); say(msg); }
+function toast(msg){ const st = $('#sxSheetStatus'); if (st && $('#sxSheet').open) { st.textContent = msg; st.hidden = false; } const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, Math.max(2200, msg.length * 60)); say(msg); }
 function say(msg){ const l = $('#live'); l.textContent = ''; setTimeout(() => l.textContent = msg, 60); }   // tømmes først, så samme melding to ganger også leses opp
 // Feil i et felt står rett under feltet og leses opp sammen med det. Den forsvinner når du skriver i feltet (se clearErr).
 function fieldErr(inp, msg, keep){
@@ -6444,7 +6481,7 @@ const jwtBody = t => { try { const b = t.split('.')[1].replace(/-/g, '+').replac
   }
 })();
 
-function sxReset(){ Object.assign(SX, {loaded:false, at:0, me:null, ps:[], fr:[], ppl:{}, sess:[], part:[], prop:[], chats:[], live:new Map(), hidden:false, seenAt:0, prev:0, err:''}); ui.sxView = 'list'; ui.sxTab = ''; sxBadge(); }
+function sxReset(){ Object.assign(SX, {loaded:false, at:0, me:null, ps:[], fr:[], ppl:{}, sess:[], part:[], prop:[], chats:[], live:new Map(), hidden:false, seenAt:0, prev:0, err:''}); ui.sxView = 'list'; ui.sxTab = ''; ui.sxFilter = 'today'; ui.sxUnder = null; sxBadge(); }
 
 // Hent alt Sammen-fanen trenger: profilen din, venner, kommende timer, påmeldinger, forslag og navnene på de involverte.
 // quiet: hentingen i bakgrunnen. Da tegnes skjermen bare på nytt hvis noe er endret.
@@ -6463,9 +6500,9 @@ function sxLoad(quiet){
       if (SX.me) {
         if (!seen.length) await db('seen', '', {method:'POST', body:{user_id: me}});
         SX.seenAt = seen.length ? Date.parse(seen[0].last_seen_at) : Date.now();
-        const now = Date.now(), iso = t => new Date(t).toISOString();
+        const now = Date.now(), iso = t => new Date(t).toISOString(), from = Math.min(+dayStart(now), now - FIXED_LEN);
         const sess = await db('sessions', 'select=*&order=starts_at&or=' +
-          encodeURIComponent(`(ends_at.gte.${iso(now)},and(ends_at.is.null,starts_at.gte.${iso(now - FIXED_LEN)}))`));
+          encodeURIComponent(`(ends_at.gte.${iso(+dayStart(now))},and(ends_at.is.null,starts_at.gte.${iso(from)}))`));
         const ids = sess.map(s => s.id);
         const [part, prop, chats, live, pres, ps] = await Promise.all([
           ids.length ? db('participants', 'select=*&session_id=' + inList(ids)) : [],
@@ -6478,7 +6515,7 @@ function sxLoad(quiet){
           ...part.map(p => p.user_id), ...prop.map(p => p.user_id), ...chats.flatMap(c => c.members), ...ps.flatMap(x => [x.sender, x.recipient])].filter(x => x !== me);
         const ppl = people.length ? await db('profiles', 'select=id,username,display_name&id=' + inList(people)) : [];
         SX.ppl = Object.fromEntries(ppl.map(p => [p.id, p])); SX.ppl[me] = SX.me;
-        const sig = JSON.stringify([fr, sess, part, prop, chats, ppl, live, ps]);
+        const sig = JSON.stringify([+dayStart(now), fr, sess, part, prop, chats, ppl, live, ps]);
         same = quiet && sig === SX.sig && SX.loaded && !SX.err;
         Object.assign(SX, {fr, sess, part, prop, chats, ps, sig, live: new Map(live.map(x => [x.user_id, x.state])), hidden: !!(pres[0] && pres[0].hidden)});
         sxSyncPlans();
@@ -6653,9 +6690,7 @@ function vTogether(){
     ${SX.err ? `<div class="warn">${esc(SX.err)}</div><button class="btn ghost" data-a="sxretry">Prøv igjen</button>` : '<p class="muted">Henter …</p>'}`;
   if (!SX.me) return vSxUsername();
   const v = ui.sxView || 'list';
-  if (v === 'form') return vSxForm();
-  if (v === 'friends') return vSxFriends();
-  if (v.startsWith('s:')) return vSxSess(v.slice(2));
+  if (sxSheetView(v) || v === 'friends') return vSxList();
   if (v.startsWith('c:')) return vSxChat(v.slice(2));
   if (v === 'cnew' || v === 'cdm') return vSxPick(v);
   if (v.startsWith('cadd:')) return vSxPick('cadd', v.slice(5));
@@ -6868,60 +6903,164 @@ function ownerBox(s){
     ${P.acc ? `<p class="small muted">${esc(P.acc)}</p>` : ''}</section>`;
 }
 
+// Dagsoversikten teller unike, godkjente venner på dagens timer, ikke innlogginger.
+// En time som går over midnatt, hører til begge dagene. Avlyste timer teller ikke.
+function sxDaySessions(now = Date.now()){
+  const from = +dayStart(now), to = new Date(from); to.setDate(to.getDate() + 1);
+  return SX.sess.filter(s => !s.cancelled_at && Date.parse(s.starts_at) < +to && sxEnd(s) > from)
+    .sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at));
+}
+function sxTodayFriends(now = Date.now()){
+  const accepted = new Set(sxFriendIds()), seen = new Map();
+  for (const s of sxDaySessions(now)) {
+    const ids = [s.owner, ...SX.part.filter(p => p.session_id === s.id).map(p => p.user_id)];
+    for (const id of ids) {
+      if (!accepted.has(id)) continue;
+      const previous = seen.get(id);
+      // Åpne en pågående/kommende time, eller den siste hvis alle er over.
+      if (!previous || (sxEnd(previous) <= now && (sxEnd(s) > now || Date.parse(s.starts_at) > Date.parse(previous.starts_at)))) seen.set(id, s);
+    }
+  }
+  return [...seen].map(([id, session]) => ({id, session}));
+}
+function sxListSessions(filter = 'today', now = Date.now()){
+  const me = uid(), today = new Set(sxDaySessions(now).map(s => s.id));
+  const mine = s => s.owner === me || SX.part.some(p => p.session_id === s.id && p.user_id === me);
+  return SX.sess.filter(s => sxEnd(s) > now && (!s.cancelled_at || mine(s)) &&
+    (filter === 'mine' ? mine(s) : filter === 'upcoming' ? Date.parse(s.starts_at) > now && !today.has(s.id) : today.has(s.id) || (s.cancelled_at && dayDiff(s.starts_at) === 0)))
+    .sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at));
+}
+function sxPreviewTime(s){
+  const short = t => hm(t).replace(/:00$/, '');
+  return s.kind === 'window' ? short(s.starts_at) + '–' + short(s.ends_at) : hm(s.starts_at);
+}
+const sxSheetView = v => v === 'form' || v === 'news' || /^s:/.test(v || '');
+function sxSection(){
+  if (ui.sxView === 'friends' || (sxSheetView(ui.sxView) && ui.sxUnder === 'friends')) return 'friends';
+  return ui.sxTab === 'chat' ? 'chat' : ui.sxTab === 'friends' ? 'friends' : 'timer';
+}
+function vSxHeader(section){
+  const me = uid(), pending = SX.fr.filter(f => f.addressee === me && f.status === 'pending').length +
+    (SX.ps || []).filter(p => p.recipient === me && p.status === 'pending').length;
+  return `<header class="head h-row sx-head"><div><h1>Sammen</h1><p class="eyebrow">Med vennene dine</p></div>
+    <button class="quick acc" data-a="sxnew">+ Ny time</button></header>
+    <nav class="sx-nav" aria-label="Seksjoner i Sammen">${[['timer','Oversikt',0],['chat','Chat',chatUnread()],['friends','Venner',pending]].map(([key, label, n]) =>
+      `<button data-a="sxtab:${key}" aria-pressed="${section === key}">${label}${n ? ` <span class="badge" aria-label="${n} nye">${n}</span>` : ''}</button>`).join('')}</nav>`;
+}
+function vSxToday(){
+  const friends = sxTodayFriends(), n = friends.length;
+  if (!sxFriendIds().length) return `<section class="box sx-today"><span class="lbl">Trening med venner</span><h2>Finn treningsvennene dine</h2>
+    <p class="muted small">Legg til noen du kjenner, så ser dere hverandres timer her.</p><button class="btn ghost sm" data-a="sxtab:friends">Finn venner</button></section>`;
+  const date = new Date().toLocaleDateString('nb-NO', {weekday:'long', day:'numeric', month:'long'});
+  return `<section class="box sx-today" aria-label="${n} ${n === 1 ? 'venn trener' : 'venner trener'} i dag">
+    <p class="eyebrow">I dag · ${esc(date)}</p><div class="sx-today-title"><b aria-hidden="true">${n}</b>
+      <h2>${n === 1 ? 'venn trener' : 'venner trener'}<br>i dag.</h2></div>
+    ${n ? `<div class="sx-today-people">${friends.slice(0, 3).map(({id, session}) => {
+      const p = SX.ppl[id] || {}, name = p.display_name || p.username || 'En venn', training = SX.live.get(id) === 'train';
+      return `<button data-a="sxopen:${session.id}" aria-label="Se dagens time med ${esc(name)}, ${training ? 'trener nå' : sxTime(session)}">${av(id, 1)}<span><b>${esc(name)}</b><small${training ? ' class="sx-training"' : ''}>${training ? 'Trener nå' : sxPreviewTime(session)}</small></span></button>`;
+    }).join('')}<button class="sx-today-all" data-a="sxfilter:today:show" aria-label="Se alle dagens timer">${n > 3 ? '+' + (n - 3) : '→'}</button></div>`
+    : '<p class="muted small">Ingen venner har lagt ut en time i dag ennå.</p>'}</section>`;
+}
+function vSxNews(){
+  const news = sxNews(SX.prev || SX.seenAt);
+  return news.length ? `<div class="list">${news.map(n => `<button class="sx-news" data-a="${n.sid ? 'sxopen:' + n.sid : 'sxtab:friends'}">
+    ${av(n.who)}<span><b>${esc(uname(n.who))} ${esc(n.txt)}</b><small>${esc(n.sub)}</small></span><i class="dot" aria-hidden="true"></i></button>`).join('')}</div>`
+    : '<p class="muted small">Du er oppdatert. Nye forslag, timer og forespørsler vises her.</p>';
+}
 function sxCard(s){
-  const me = uid(), own = s.owner === me, w = sxWorkout(s);
-  const ps = SX.part.filter(p => p.session_id === s.id), props = SX.prop.filter(p => p.session_id === s.id);
-  const others = ps.filter(p => p.user_id !== me && p.user_id !== s.owner).map(p => uname(p.user_id));
+  const me = uid(), own = s.owner === me, w = sxWorkout(s), cancelled = !!s.cancelled_at;
+  const ps = SX.part.filter(p => p.session_id === s.id && p.user_id !== s.owner), props = SX.prop.filter(p => p.session_id === s.id);
   const joined = ps.some(p => p.user_id === me), myProp = props.find(p => p.user_id === me);
-  const cancelled = !!s.cancelled_at;
-  if (own) return `<button class="sx-card own${cancelled ? ' cancelled' : ''}" data-a="sxopen:${s.id}">
-      <span class="sx-top"><span class="tag">${cancelled ? 'Avlyst' : 'Din time' + (s.kind === 'window' ? ' · tidsvindu' : '')}</span>
-        <span class="sx-cnt">${cancelled ? '' : s.kind === 'window' ? (props.length ? props.length + ' forslag' : 'Ingen forslag ennå') : (others.length ? others.length + ' med' : 'Ingen påmeldt ennå')}</span></span>
-      <span class="sx-time">${sxTime(s)}</span>
-      <span class="sx-sub">${esc(w.txt)}${s.place ? ' · ' + esc(s.place) : ''}</span>
-      ${myLine(s)}
-    </button>`;
-  const who = others.length ? (others.length > 2 ? others.slice(0, 2).join(', ') + ' og ' + (others.length - 2) + ' til' : others.join(' og ')) + ' er med' : '';
-  return `<article class="sx-card${cancelled ? ' cancelled' : ''}">
-      <button class="sx-hit" data-a="sxopen:${s.id}" aria-label="Åpne timen til ${uname(s.owner)}">
-        <span class="sx-top"><span class="sx-who">${av(s.owner, 1)}<b>${uname(s.owner)}</b></span><span class="sx-time sm">${sxTime(s)}</span></span>
-        <span class="tag${s.workout_kind === 'none' ? '' : ' same'}">${cancelled ? 'Avlyst' : (s.kind === 'window' ? 'Tidsvindu · ' : '') + w.lbl}</span>
-        ${s.workout_kind !== 'none' ? `<span class="sx-what">${esc(w.txt)}</span>` : ''}
-        ${s.plan && !joined && !cancelled ? `<span class="sx-sub">Kjører ${esc(s.plan.day)}: ${esc(listNo(s.plan.ex.map((e, i) => i ? liftName(e.l).toLowerCase() : liftName(e.l))))}</span>` : ''}
-        ${s.place || who ? `<span class="sx-sub">${[s.place && esc(s.place), who].filter(Boolean).join(' · ')}</span>` : ''}
-        ${myLine(s)}
-      </button>
-      ${cancelled ? '' : s.kind === 'fixed'
-        // Har eieren en økt på timen, åpnes timen, så du kan velge samme økt eller din egen
-        ? (joined ? `<button class="btn ghost sm" data-a="sxleave:${s.id}">Meld av</button>` : `<button class="btn sm" data-a="${s.plan ? 'sxopen' : 'sxjoin'}:${s.id}">Bli med</button>`)
-        : `<button class="btn ghost sm" data-a="sxopen:${s.id}">${myProp ? 'Ditt forslag: ' + hm(myProp.proposed_at) : 'Foreslå tid'}</button>`}
+  const names = ps.filter(p => p.user_id !== me).map(p => uname(p.user_id));
+  const label = own ? 'Din time' : joined ? 'Du er med · ' + uname(s.owner) : 'Med ' + uname(s.owner);
+  const date = (ui.sxFilter || 'today') !== 'today' ? ' · ' + dayLabel(s.starts_at).toLowerCase() : '';
+  const status = cancelled ? 'Avlyst' : s.kind === 'window' ? (own && props.length ? props.length + ' tidsforslag' : 'Tidsvindu')
+    : names.length ? (names.length > 2 ? names.length + ' andre er med' : names.join(' og ') + ' er med') : 'Fast tid';
+  const x = !cancelled && (own || joined) ? mySessFor(s) : null;
+  return `<article class="sx-card sx-session${own ? ' own' : ''}${cancelled ? ' cancelled' : ''}">
+    <div class="sx-top"><span class="tag">${esc(label + date)}</span><span class="sx-sub">${esc(status)}</span></div>
+    <div class="sx-session-main"><span class="sx-time${s.kind === 'window' ? ' sm' : ''}">${sxTime(s)}</span>
+      <div class="sx-session-copy"><b>${esc(s.place || (s.kind === 'window' ? 'Finn et tidspunkt som passer' : w.txt))}</b>
+        ${s.place ? `<span class="sx-sub">${esc(s.kind === 'window' ? 'Finn et tidspunkt som passer' : w.txt)}</span>` : ''}</div>
+      <button class="sx-session-open" data-a="sxopen:${s.id}" aria-label="${own ? 'Åpne din time' : 'Åpne timen til ' + esc(uname(s.owner))}">›</button></div>
+    ${cancelled ? '' : own || joined ? `<button class="sx-session-foot sx-private" data-a="sxopen:${s.id}">${DB_ICON}<span>${x ? 'Din økt · ' + esc(x.day) : 'Se timen og hvem som er med'}</span><span aria-hidden="true">›</span></button>`
+      : `<div class="sx-session-foot"><span class="sx-sub">${esc(s.plan ? 'Velg samme økt eller din egen' : s.kind === 'window' ? 'Alle kan foreslå tid' : w.lbl)}</span>
+        <button class="btn${s.kind === 'window' ? ' ghost' : ''} sm" data-a="sxopen:${s.id}">${myProp ? 'Ditt forslag: ' + hm(myProp.proposed_at) : s.kind === 'window' ? 'Foreslå tid' : 'Bli med'}</button></div>`}
     </article>`;
 }
-
 function vSxList(){
-  const me = uid(), news = sxNews(SX.prev || SX.seenAt), now = Date.now();
-  const list = SX.sess.filter(s => sxEnd(s) > now &&
-    (!s.cancelled_at || s.owner === me || SX.part.some(p => p.session_id === s.id && p.user_id === me)));
-  const friends = SX.fr.filter(f => f.status === 'accepted').length;
-  let h = `<header class="head h-row"><div><p class="eyebrow">Med vennene dine</p><h1>Sammen</h1></div>
-      <div class="sx-acts"><button class="quick" data-a="sxview:friends">Venner</button><button class="quick acc" data-a="sxnew">+ Ny time</button></div></header>`;
+  const section = sxSection(); let h = vSxHeader(section);
   if (SX.err) h += `<div class="warn">${esc(SX.err)}</div>`;
-  const chat = ui.sxTab === 'chat', unread = chatUnread();
-  h += `<div class="seg2" role="group" aria-label="Timer eller chat">
-      <button data-a="sxtab:timer" aria-pressed="${!chat}"><b>Timer</b></button>
-      <button data-a="sxtab:chat" aria-pressed="${chat}"><b>Chat${unread ? ` <span class="badge">${unread}</span>` : ''}</b></button></div>`;
-  if (chat) return vSxChats(h);
+  if (section === 'friends') return h + vSxFriends(true);
+  if (section === 'chat') return vSxChats(h);
+  const filter = ui.sxFilter || 'today', list = sxListSessions(filter), me = uid(), news = sxNews(SX.prev || SX.seenAt);
+  const mine = list.filter(s => s.owner === me || SX.part.some(p => p.session_id === s.id && p.user_id === me));
+  const others = list.filter(s => !mine.includes(s));
+  h += vSxToday();
+  if (news.length) h += `<button class="sx-news-summary" data-a="sxnews"><i aria-hidden="true"></i><span><b>${news.length} nye</b> siden sist</span><span>Se nytt ›</span></button>`;
   if (ui.push === 'off' && !S.settings.pushNo) h += `<div class="box"><p class="small"><b>Vil du få varsel</b> når noen blir med på timene dine?</p>
-      <div class="row"><button class="btn sm" data-a="pushon">Slå på varsler</button><button class="btn ghost sm" data-a="pushno">Ikke nå</button></div></div>`;
-  if (news.length) h += `<h2 class="sec sx-h">Nytt <span class="badge">${news.length}</span></h2>
-    <div class="list">${news.slice(0, 8).map(n => `<button class="sx-news" data-a="${n.sid ? 'sxopen:' + n.sid : 'sxview:friends'}">
-      ${av(n.who)}<span><b>${uname(n.who)} ${n.txt}</b><small>${esc(n.sub)}</small></span><i class="dot" aria-hidden="true"></i></button>`).join('')}</div>`;
-  if (!list.length) return h + `<div class="empty"><h2>Ingen timer ennå</h2>
-      <p class="muted">${friends ? 'Legg ut når du skal trene, så kan vennene dine bli med.' : 'Start med å legge til vennene dine på brukernavn. Så kan dere se hverandres timer.'}</p>
-      <button class="btn" data-a="${friends ? 'sxnew' : 'sxview:friends'}">${friends ? 'Legg ut en time' : 'Finn venner'}</button></div>`;
-  let day = '';
-  list.forEach(s => { const d = dayLabel(s.starts_at); if (d !== day) { day = d; h += `<h2 class="sec">${d}</h2>`; } h += sxCard(s); });
-  return h;
+    <div class="row"><button class="btn sm" data-a="pushon">Slå på varsler</button><button class="btn ghost sm" data-a="pushno">Ikke nå</button></div></div>`;
+  h += `<div class="filt" role="group" aria-label="Vis timer">${[['today','I dag'],['upcoming','Kommende'],['mine','Mine']].map(([k, t]) => `<button data-a="sxfilter:${k}" aria-pressed="${filter === k}">${t}</button>`).join('')}</div><section class="sx-sessions" id="sxSessions" tabindex="-1" aria-label="Timer">`;
+  if (mine.length) h += `<h2 class="sec">${mine.length === 1 && filter === 'today' ? 'Din neste time' : 'Dine timer'}</h2>${mine.map(sxCard).join('')}`;
+  if (others.length) h += `<h2 class="sec">${filter === 'today' ? 'Bli med en venn' : 'Vennenes kommende timer'}</h2>${others.map(sxCard).join('')}`;
+  if (!list.length && sxFriendIds().length) h += `<div class="empty sx-empty"><h2>${filter === 'today' ? 'Ingen flere timer i dag' : filter === 'mine' ? 'Du har ingen kommende timer' : 'Ingen kommende timer'}</h2>
+    <p class="muted">${sxFriendIds().length ? 'Legg ut når du vil trene, så kan vennene dine bli med.' : 'Legg til vennene dine på brukernavn for å se hverandres timer.'}</p>
+    <button class="btn" data-a="${sxFriendIds().length ? 'sxnew' : 'sxtab:friends'}">${sxFriendIds().length ? 'Legg ut en time' : 'Finn venner'}</button></div>`;
+  return h + '</section><p class="small muted">Bare venner ser timene dine.</p>';
+}
+// Timedetaljer og skjema bruker eksisterende handlinger og data, i et eget ark.
+function sxSheetOpen(view, trigger){
+  if (!sxSheetView(ui.sxView)) {
+    ui.sxUnder = ui.sxView === 'friends' ? 'friends' : 'list';
+    ui.sxScroll = ($('#scroller') || {}).scrollTop || 0;
+    ui.sxTrigger = trigger || (document.activeElement.dataset || {}).a;
+  }
+  ui.sxView = view; ui.confirm = null; render();
+}
+function sxSheetClose(){
+  if (ui.sxBusy) return;
+  const back = ui.sxView === 'form' && ui.sxForm && ui.sxForm.id ? 's:' + ui.sxForm.id : ui.sxUnder || 'list';
+  ui.sxView = back; ui.sxForm = null; ui.confirm = null; render();
+}
+function sxSheetPaint(){
+  let dialog = $('#sxSheet');
+  const view = ui.sxView || 'list', show = ui.tab === 'together' && !ui.detail && !ui.bank && auth && SX.loaded && SX.me && sxSheetView(view);
+  if (!show) {
+    if (dialog && dialog.open) {
+      dialog.close(); dialog._key = ''; dialog._html = '';
+      if (ui.tab === 'together' && (view === 'list' || view === 'friends')) {
+        const sc = $('#scroller'); if (sc) sc.scrollTop = ui.sxScroll || 0;
+        const trigger = ui.sxTrigger && document.querySelector(`[data-a="${CSS.escape(ui.sxTrigger)}"]`);
+        const target = trigger || document.querySelector('.sx-nav [aria-pressed="true"]');
+        if (target) target.focus({preventScroll:true});
+      }
+    }
+    return;
+  }
+  if (!dialog) {
+    dialog = document.createElement('dialog'); dialog.id = 'sxSheet'; dialog.className = 'sx-sheet';
+    dialog.setAttribute('aria-labelledby', 'sxSheetTitle');
+    dialog.innerHTML = '<div class="sx-sheet-handle" aria-hidden="true"></div><header class="sx-sheet-head"><h2 id="sxSheetTitle" tabindex="-1"></h2><button class="link" data-a="sxclose" aria-label="Lukk arket">Lukk ×</button></header><p class="sx-sheet-status" id="sxSheetStatus" role="status" hidden></p><div class="sx-sheet-body" id="sxSheetBody"></div>';
+    document.querySelector('.app').append(dialog);
+    dialog.addEventListener('cancel', e => { e.preventDefault(); sxSheetClose(); });
+    dialog.addEventListener('click', e => { const r = dialog.getBoundingClientRect(); if (e.target === dialog && (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom)) sxSheetClose(); });
+  }
+  const s = /^s:/.test(view) && SX.sess.find(s => s.id === view.slice(2));
+  const title = view === 'news' ? 'Nytt siden sist' : view === 'form' ? ui.sxForm && ui.sxForm.id ? 'Endre time' : 'Ny time' : s && s.owner === uid() ? 'Din time' : 'Tren sammen';
+  const html = view === 'news' ? vSxNews() : view === 'form' ? vSxForm(true) : vSxSess(view.slice(2), true);
+  const body = $('#sxSheetBody'), same = dialog._key === view, active = document.activeElement;
+  const key = same && dialog.contains(active) ? active.id ? '#' + CSS.escape(active.id) : active.dataset.a ? `[data-a="${CSS.escape(active.dataset.a)}"]` : active.dataset.sxf ? `[data-sxf="${CSS.escape(active.dataset.sxf)}"]${active.type === 'radio' ? `[value="${CSS.escape(active.value)}"]` : ''}` : null : null;
+  const selection = key && /^(INPUT|TEXTAREA)$/.test(active.tagName) && active.selectionStart != null ? [active.selectionStart, active.selectionEnd] : null;
+  const scroll = same ? body.scrollTop : 0;
+  $('#sxSheetTitle').textContent = title;
+  if (dialog._html !== html) { body.innerHTML = html; dialog._html = html; }
+  if (!same) $('#sxSheetStatus').hidden = true;
+  dialog._key = view;
+  if (!dialog.open) dialog.showModal();
+  body.scrollTop = scroll;
+  const target = key && dialog.querySelector(key);
+  if (target) { target.focus({preventScroll:true}); if (selection) try { target.setSelectionRange(...selection); } catch(e) {} }
+  else if (!same || !dialog.contains(document.activeElement)) $('#sxSheetTitle').focus({preventScroll:true});
 }
 
 // Skjemaet for ny time, og for å endre en du har lagt ut
@@ -6933,11 +7072,10 @@ function sxFormInit(s){
     : {kind:'fixed', day:0, from: next(), to:'', place: S.settings.sxPlace || '', wk:'none', ref:null, text:''};
   ui.sxMsg = '';
 }
-function vSxForm(){
+function vSxForm(sheet = false){
   const f = ui.sxForm, days = Array.from({length:7}, (_, i) => { const d = new Date(); d.setDate(d.getDate() + i); return i === 0 ? 'I dag' : i === 1 ? 'I morgen' : d.toLocaleDateString('nb-NO', {weekday:'short', day:'numeric'}).replace('.', ''); });
   const w = f.ref && BANK && BANK.find(x => x.i === f.ref);
-  return `<button class="link" data-a="sxview:${f.id ? 's:' + f.id : 'list'}">‹ Avbryt</button>
-    <header class="head"><h1>${f.id ? 'Endre time' : 'Ny time'}</h1></header>
+  return `${sheet ? '' : `<button class="link" data-a="sxview:${f.id ? 's:' + f.id : 'list'}">‹ Avbryt</button><header class="head"><h1>${f.id ? 'Endre time' : 'Ny time'}</h1></header>`}
     <div class="sx-form">
       <div class="seg2" role="group" aria-label="Type time">
         <button data-a="sxf:kind:fixed" aria-pressed="${f.kind === 'fixed'}"><b>Fast tid</b><small>Andre melder seg på</small></button>
@@ -6975,28 +7113,31 @@ async function sxSave(){
   if (f.id) await db('sessions', 'id=eq.' + f.id, {method:'PATCH', body});
   else await db('sessions', '', {method:'POST', body});
   S.settings.sxPlace = body.place || ''; save();
-  ui.sxView = f.id ? 's:' + f.id : 'list'; ui.sxForm = null;
+  ui.sxView = f.id ? 's:' + f.id : 'list';
+  if (!f.id) { ui.sxTab = 'timer'; ui.sxFilter = f.day === 0 ? 'today' : 'upcoming'; ui.sxUnder = 'list'; }
+  ui.sxForm = null;
 }
 
-function vSxSess(id){
+function vSxSess(id, sheet = false){
   const s = SX.sess.find(x => x.id === id);
   if (!s) return `<button class="link" data-a="sxview:list">‹ Sammen</button><p class="muted">Timen finnes ikke lenger.</p>`;
-  const me = uid(), own = s.owner === me, w = sxWorkout(s), cancelled = !!s.cancelled_at;
+  const me = uid(), own = s.owner === me, w = sxWorkout(s), cancelled = !!s.cancelled_at, ended = sxEnd(s) <= Date.now();
   const ps = SX.part.filter(p => p.session_id === s.id && p.user_id !== s.owner), props = SX.prop.filter(p => p.session_id === s.id);
   const joined = ps.some(p => p.user_id === me), myProp = props.find(p => p.user_id === me);
-  let h = `<button class="link" data-a="sxview:list">‹ Sammen</button>
+  let h = `${sheet ? '' : '<button class="link" data-a="sxview:list">‹ Sammen</button>'}
     <header class="head"><p class="eyebrow" style="color:var(--accent)">${own ? 'Din time' : 'Time med ' + uname(s.owner)} · ${dayLabel(s.starts_at).toLowerCase()}${s.kind === 'window' ? ' · tidsvindu' : ''}</p>
       <h1 style="text-transform:none">${sxTime(s)}</h1>${s.place ? `<p class="muted">${esc(s.place)}</p>` : ''}</header>`;
   if (cancelled) h += `<div class="warn">Timen er avlyst.</div>`;
+  else if (ended) h += `<p class="muted small">Timen er over. Du kan fortsatt se avtalen her.</p>`;
   if (s.workout_kind !== 'none' || !s.plan || own) h += `<section class="box"><span class="lbl">Økt</span><p><b>${esc(w.txt)}</b></p>${w.body ? `<pre class="wodtxt">${esc(w.body)}</pre>` : ''}</section>`;
   h += ownerBox(s);
   // Du velger selv: samme økt som eieren, med dine vekter, eller neste økt i ditt eget program
-  if (!own && s.kind === 'fixed' && !cancelled && s.plan) h += joined
+  if (!own && s.kind === 'fixed' && !cancelled && !ended && s.plan) h += joined
     ? `<div class="seg" role="group" aria-label="Hvilken økt kjører du?"><button data-a="sxplan:${s.id}:same" aria-pressed="${myPlan(s) === 'same'}">Samme som ${esc(uname(s.owner))}</button><button data-a="sxplan:${s.id}:own" aria-pressed="${myPlan(s) !== 'same'}">Min egen økt</button></div>`
     : `<section class="box"><span class="lbl">Bli med</span><p class="small">Du velger selv hva du kjører. Samme økt får vekter ut fra dine makser, og programmet ditt står der det står.</p>
         <div class="row"><button class="btn sm" data-a="sxjoin:${s.id}:same" ${ui.sxBusy ? 'disabled' : ''}>Samme økt</button><button class="btn ghost sm" data-a="sxjoin:${s.id}:own" ${ui.sxBusy ? 'disabled' : ''}>Min egen økt</button></div></section>`;
-  if (own || joined || !s.plan) h += myBox(s);
-  if (s.kind === 'window' && !cancelled) {
+  if (!ended && (own || joined || !s.plan)) h += myBox(s);
+  if (s.kind === 'window' && !cancelled && !ended) {
     const opts = props.map(p => `<div class="sx-prop">${av(p.user_id)}<span><b>${uname(p.user_id)}</b>${p.comment ? `<small>«${esc(p.comment)}»</small>` : ''}</span>
         <span class="sx-time">${hm(p.proposed_at)}</span>
         ${own ? `<button class="btn sm" data-a="sxpick:${p.id}">Velg</button>` : ''}</div>`).join('');
@@ -7014,12 +7155,12 @@ function vSxSess(id){
   h += `<h2 class="sec">Med på timen</h2><div class="sx-people"><span>${av(s.owner)}${own ? 'Deg' : uname(s.owner)}</span>${ps.map(p => `<span>${av(p.user_id)}<span>${p.user_id === me ? 'Deg' : uname(p.user_id)}${pick(p)}</span></span>`).join('')}</div>`;
   const ch = SX.chats.find(c => c.session_id === s.id);   // bare eieren og de påmeldte er med i chatten
   if (ch) h += `<button class="btn ghost" data-a="chopen:${ch.id}">Chat for timen${ch.unread ? ' · ' + ch.unread + ' nye' : ''}</button>`;
-  if (own) {
+  if (own && !ended) {
     if (cancelled) h += `<button class="btn ghost" data-a="sxdel:${s.id}">Slett timen</button>`;
     else h += `<div class="sx-form" style="gap:8px"><button class="btn ghost" data-a="sxedit:${s.id}">Endre time</button>
       ${ui.confirm === 'sxc:' + s.id ? `<div class="row"><button class="btn danger sm" data-a="sxcancel:${s.id}">Ja, avlys</button><button class="btn ghost sm" data-a="cancel">Nei</button></div>`
         : `<button class="btn danger" data-a="confirm:sxc:${s.id}">Avlys timen</button>`}</div>`;
-  } else if (s.kind === 'fixed' && !cancelled) {
+  } else if (!own && s.kind === 'fixed' && !cancelled && !ended) {
     h += joined ? `<button class="btn ghost" data-a="sxleave:${s.id}">Meld av</button>` : s.plan ? '' : `<button class="btn" data-a="sxjoin:${s.id}">Bli med</button>`;
   }
   return h;
@@ -7048,21 +7189,21 @@ function sxSearch(q){
     const el = $('#sxRes'); if (el) el.innerHTML = sxResHTML();
   }, 250);
 }
-function vSxFriends(){
+function vSxFriends(embedded = false){
   const me = uid();
   const inc = SX.fr.filter(f => f.addressee === me && f.status === 'pending');
   const out = SX.fr.filter(f => f.requester === me && f.status === 'pending');
   const acc = SX.fr.filter(f => f.status === 'accepted').map(f => f.requester === me ? f.addressee : f.requester)
     .sort((a, b) => uname(a).localeCompare(uname(b)));
   const nextOf = id => { const s = SX.sess.find(x => x.owner === id && !x.cancelled_at && sxEnd(x) > Date.now()); return s ? 'Trener ' + dayLabel(s.starts_at).toLowerCase() + ' ' + sxTime(s) : ''; };
-  return `<button class="link" data-a="sxview:list">‹ Sammen</button>
-    <header class="head h-row"><h1>Venner</h1><span>Du er <b style="color:var(--chalk)">@${esc(SX.me.username)}</b></span></header>
+  return `${embedded ? '<h2 class="sx-section-title">Vennene dine</h2>' : '<button class="link" data-a="sxview:list">‹ Sammen</button><header class="head"><h1>Venner</h1></header>'}
+    <p class="muted small">Du er <b>@${esc(SX.me.username)}</b></p>
     <label class="lbl" for="sxQ">Legg til med brukernavn</label>
     <div class="sx-search"><span class="muted">@</span><input id="sxQ" type="search" autocapitalize="none" autocomplete="off" spellcheck="false" placeholder="brukernavn" value="${esc(ui.sxQ || '')}"></div>
     <div id="sxRes">${sxResHTML()}</div>
-    ${vShares()}
     ${inc.length ? `<h2 class="sec sx-h">Forespørsler <span class="badge">${inc.length}</span></h2><div class="sx-list">${inc.map(f => `<div class="sx-row">${av(f.requester)}<span><b>${uname(f.requester)}</b><small>Vil legge deg til</small></span>
         <button class="btn ghost sm" data-a="sxdecline:${f.requester}">Avslå</button><button class="btn sm" data-a="sxaccept:${f.requester}">Godta</button></div>`).join('')}</div>` : ''}
+    ${vShares()}
     ${out.length ? `<h2 class="sec">Sendt</h2><div class="sx-list">${out.map(f => `<div class="sx-row">${av(f.addressee)}<span><b>${uname(f.addressee)}</b><small>Venter på svar</small></span>
         <button class="btn ghost sm" data-a="sxdecline:${f.addressee}">Angre</button></div>`).join('')}</div>` : ''}
     <h2 class="sec">Vennene dine · ${acc.length}</h2>
@@ -7606,15 +7747,19 @@ document.addEventListener('click', ev => {
     case 'sxview': ui.sxView = r.join(':'); ui.confirm = null; ui.sxRes = null; ui.sxQ = ''; render(); toTop();
       if (ui.sxView === 'friends') sxLoad(true);   // forespørsler og svar kan ha kommet siden sist
       break;
-    case 'sxopen': ui.sxView = 's:' + r[0]; ui.confirm = null; render(); toTop(); break;
-    case 'sxnew': sxFormInit(); ui.sxView = 'form'; render(); toTop(); break;
-    case 'sxedit': { const s0 = SX.sess.find(x => x.id === r[0]); if (s0) { sxFormInit(s0); ui.sxView = 'form'; render(); toTop(); } break; }
+    case 'sxopen': sxSheetOpen('s:' + r[0], b.dataset.a); break;
+    case 'sxclose': sxSheetClose(); break;
+    case 'sxnews': sxSheetOpen('news', b.dataset.a); break;
+    case 'sxfilter': ui.sxFilter = ['today','upcoming','mine'].includes(r[0]) ? r[0] : 'today'; render();
+      if (r[1] === 'show') { const list = $('#sxSessions'); if (list) { list.scrollIntoView({block:'start'}); list.focus({preventScroll:true}); } } break;
+    case 'sxnew': sxFormInit(); sxSheetOpen('form', b.dataset.a); break;
+    case 'sxedit': { const s0 = SX.sess.find(x => x.id === r[0]); if (s0) { sxFormInit(s0); sxSheetOpen('form', b.dataset.a); } break; }
     case 'sxf': ui.sxForm[r[0]] = r[0] === 'day' ? +r[1] : r[1]; render(); break;
     case 'sxbank': openBank('sx'); break;
     case 'sxsave': if (ui.sxBusy) break; ui.sxBusy = true; ui.sxMsg = ''; render();
       sxSave().then(() => { toast(ui.sxView === 'list' ? 'Timen er lagt ut' : 'Endringene er lagret'); return sxLoad(); })
         .catch(e => { ui.sxMsg = e.status || e.code ? sxErr(e) : e.message; })
-        .finally(() => { ui.sxBusy = false; render(); toTop(); });
+        .finally(() => { ui.sxBusy = false; render(); });
       break;
     case 'sxjoin': sxDo(() => db('participants', '', {method:'POST', body:{session_id: r[0], plan: r[1] === 'same' ? 'same' : 'own'}}), r[1] === 'same' ? 'Du er med og kjører samme økt' : 'Du er med'); break;
     case 'sxplan': sxDo(() => db('participants', 'session_id=eq.' + r[0] + '&user_id=eq.' + uid(), {method:'PATCH', body:{plan: r[1]}}), r[1] === 'same' ? 'Du kjører samme økt' : 'Du kjører din egen økt'); break;
@@ -7653,7 +7798,8 @@ document.addEventListener('click', ev => {
     case 'pushoff': sxDo(pushOff, 'Varsler er slått av'); break;
     case 'pushtest': sxDo(() => rpc('push_test'), 'Testvarselet er sendt'); break;
     case 'pushno': S.settings.pushNo = true; save(); render(); break;
-    case 'sxtab': ui.sxTab = r[0]; ui.sxView = 'list'; ui.confirm = null; render(); toTop(); if (r[0] === 'chat') chatListRefresh(); break;
+    case 'sxtab': ui.sxTab = r[0]; ui.sxView = r[0] === 'friends' ? 'friends' : 'list'; ui.confirm = null; render(); toTop();
+      if (r[0] === 'chat') chatListRefresh(); else if (r[0] === 'friends') sxLoad(true); break;
     case 'chopen': chatOpen(r[0]); break;
     case 'chsend': chatSend(); break;
     case 'chdm': sxDo(async () => { ui.chGo = await rpc('chat_dm', {friend: r[0]}); }).then(chatGo); break;
