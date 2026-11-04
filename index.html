@@ -518,6 +518,11 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .ex-rm-l{align-self:flex-start;color:var(--chalk-2);font-size:14px}
 .ex-rm{display:grid;gap:10px;padding:12px;border-radius:4px}
 .rm-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+/* Bytte en øvelse i dagens økt */
+.ex-acts{display:flex;flex-wrap:wrap;gap:6px 20px}
+.ex-sw{display:grid;gap:8px;padding:12px;border-radius:4px}
+.ex-sw .lbl{margin-top:4px}
+.ex-sw-pick{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 /* Pete Plan */
 .pp-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .pp-mach{display:flex;gap:4px;padding:3px;border-radius:4px;box-shadow:inset 0 0 0 1px var(--line)}
@@ -907,7 +912,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 92;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 93;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -3753,15 +3758,17 @@ function finish(){
   const prs = findRecords(s);   // før økta legges i loggen, så den ikke sammenlignes med seg selv
   // Samme økt som en venn er en engangsøkt: ingen progresjon, og programmet står der det står
   const undo = g ? undefined : undoPoint(!!s.pete);
-  const all = exAll(s), sp = all === s.ex ? s : Object.assign({}, s, {ex: all});
+  // Progresjonen ser originalen til en byttet øvelse som urørt, og ser ikke innbytteren
+  const all = exAll(s), sp = all === s.ex ? s : Object.assign({}, s, {ex: all.filter(e => !e.subOf)});
   const notes = g ? [{name:'Programmet ditt', text:'Står der det sto. Neste økt er den samme som før.', kind:'same'}] : progress(p, S.active, sp);
-  if (!g) (s.rmEx || []).forEach(e => notes.push({name: liftName(e.lift), text:'Fjernet i dag. Økta flytter ikke vekta.', kind:'same'}));
+  if (!g) (s.rmEx || []).forEach(e => { const by = e.swapId && s.ex.find(x => x.subOf === e.swapId);
+    notes.push({name: liftName(e.lift), text: by ? 'Byttet til ' + liftName(by.lift).toLowerCase() + ' i dag. Vekta står som den er.' : 'Fjernet i dag. Økta flytter ikke vekta.', kind:'same'}); });
   const vol = s.ex.reduce((sum,e) => sum + e.sets.reduce((v,x) => v + (x.d||0)*x.w, 0), 0);
   S.history.unshift({date:Date.now(), programId: g ? undefined : p.id, guest: g ? {sid:g.sid, who:g.who} : undefined, day:s.day, sub:s.sub, note:(s.note||'').trim(), metcon:!!(s.metcon || s.wod), mc: (s.metcon || s.wod) ? mcSaved(s.mc) : undefined,
     wod: s.wod ? {id:s.wod.id, navn:s.wod.navn, tekst:s.wod.tekst, resultat:(s.wod.resultat||'').trim()} : undefined,
     pete: s.pete ? peteDone(s.pete) : undefined, idx: g ? undefined : S.active.idx,
     cond: s.cond ? {title:s.cond.title, lines:s.cond.lines, res:s.cond.res || {}} : undefined,
-    ex: all.map(e => Object.assign({lift:e.lift, tag:e.tag, rpe: e.rm ? undefined : e.rpe, q: e.rm ? undefined : e.q, sets:e.sets.map(x => Object.assign({t:x.t, w:x.w, d:x.d}, x.c ? {c:x.c} : {}))}, e.rm ? {rm:true} : {})), undo});
+    ex: all.map(e => Object.assign({lift:e.lift, tag:e.tag, rpe: e.rm ? undefined : e.rpe, q: e.rm ? undefined : e.q, sets:e.sets.map(x => Object.assign({t:x.t, w:x.w, d:x.d}, x.c ? {c:x.c} : {}))}, e.rm ? {rm:true} : {}, e.rm && e.swapId ? {sw:true} : {}, e.subOf ? {sub:e.subName} : {})), undo});
   if (g) { S.draft = S.parked || null; delete S.parked; }   // din egen økt kommer tilbake slik du forlot den
   else { keepOneUndo(); S.active.idx++; S.draft = null; }
   ui.summary = {day:s.day, notes, vol, prs};
@@ -3791,7 +3798,11 @@ const clone = o => o == null ? o : JSON.parse(JSON.stringify(o));
    igjen uendret. o er plassen i økta, så den kommer tilbake på riktig sted. Når økta lagres, er den med igjen,
    men uten loggede sett (rm): da ser hvert program den som urørt, og vekta står som den er. */
 function exRemove(ei){
-  const s = S.draft, e = s && s.ex[ei]; if (!e) return;
+  const s = S.draft; let e = s && s.ex[ei]; if (!e) return;
+  // Er øvelsen byttet inn i dag, er det originalen som fjernes. Innbytteren forsvinner.
+  if (e.subOf) { const j = (s.rmEx || []).findIndex(x => x.swapId === e.subOf);
+    if (j > -1) { e = s.rmEx.splice(j, 1)[0]; delete e.swapId; s.ex[ei] = e; } }
+  ui.exSw = null;
   if (!(s.rmEx || []).length) s.ex.forEach((x, i) => { x.o = i; });
   s.rmEx = (s.rmEx || []).concat(e); s.ex.splice(ei, 1);
   ui.confirm = null; ui.exOpen = {}; ui.fresh = null; save(); render();
@@ -3804,6 +3815,87 @@ function exBack(i){
 }
 const exAll = s => !(s.rmEx || []).length ? s.ex
   : s.ex.concat(s.rmEx.map(e => Object.assign(clone(e), {rm:true, sets: e.sets.map(x => Object.assign({}, x, {d:null}))}))).sort((a, b) => a.o - b.o);
+
+/* Bytte en øvelse i dagens økt. Originalen legges til side i s.rmEx med swapId, slik «Fjern» gjør, og logges
+   som urørt. Da står vekta i programmet som den er. Innbytteren tar plassen med samme sett og reps og sin egen
+   vekt. Den har subOf (samme id) og subName (originalen). Progresjonen ser ikke innbytteren, men loggen,
+   rekordene og «sist brukt» gjør det. Bare dagens økt endres. */
+const libRow = L => EXLIB.find(r => libKey(r) === L)
+  || (S.custom && S.custom[L] && S.custom[L].src ? EXLIB.find(r => r[7] === S.custom[L].src) : null);
+const swFam = L => (LIFTS[L] && LIFTS[L].alt) || L;   // løftet alternativene hører til
+// Forslag: alternativene appen har for løftet, så øvelser i biblioteket med samme hovedmuskel (samme utstyr først)
+function swapCands(s, e){
+  const from = e.subOf ? e.subName : e.lift;
+  const used = new Set(s.ex.map(x => x.lift).concat((s.rmEx || []).map(x => x.lift), [from]));
+  const base = swFam(from);
+  const fam = ALTS(base).length ? [base, ...ALTS(base)].filter(l => !used.has(l) && !LIFTS[l].cx) : [];
+  const row = libRow(from), m = row && row[4].split(',')[0].trim();
+  const lib = !m ? [] : EXLIB.map((r, i) => ({r, i, k: libKey(r)}))
+    .filter(x => x.r[4].split(',')[0].trim() === m && !used.has(x.k) && !fam.includes(x.k) && LIFTS[x.k] && !LIFTS[x.k].cx)
+    .sort((a, b) => (a.r[2] !== row[2]) - (b.r[2] !== row[2]) || (a.r[3] !== row[3]) - (b.r[3] !== row[3]) || a.r[0].localeCompare(b.r[0], 'no'))
+    .slice(0, fam.length ? 4 : 6).map(x => x.i);
+  return {fam, lib, row};
+}
+// Vekt i innbytteren: regnet om fra løftet du bytter når de hører sammen, ellers det du løftet sist, ellers tom
+function swapW(e, T){
+  const top = Math.max(...e.sets.map(x => x.w)), from = e.subOf ? e.subName : e.lift;
+  if (top > 0 && swFam(from) === swFam(T) && !e.subOf) return r25(top / ratio(e.lift) * ratio(T));
+  const l = lastW(T); if (l != null) return l;
+  return LIFTS[T] && LIFTS[T].bw ? 0 : null;
+}
+function exSwap(ei, T, W){
+  const s = S.draft, e = s && s.ex[ei]; if (!e || !LIFTS[T]) return;
+  if (!(s.rmEx || []).length) s.ex.forEach((x, i) => { x.o = i; });
+  const id = e.subOf || 'sw' + Date.now().toString(36), from = e.subOf ? e.subName : e.lift;
+  if (!e.subOf) { e.swapId = id; s.rmEx = (s.rmEx || []).concat(e); }   // byttes en innbytter, står originalen alt til side
+  const top = Math.max(...e.sets.map(x => x.w)), min = LIFTS[T].bar ? BAR() : 0;
+  s.ex[ei] = {key: 'sub.' + T, lift: T, slot: T, subOf: id, subName: from, tag: 'I stedet for ' + liftName(from).toLowerCase(),
+    rest: e.rest || 120, adj: true, o: e.o,
+    sets: e.sets.map(x => ({t: x.t, w: Math.max(min, top > 0 ? r25(x.w * W / top) : W), d: null}))};
+  ui.exSw = null; ui.confirm = null; ui.exOpen = {}; ui.fresh = null; save(); render();
+  toast(liftName(T) + ' er byttet inn i dag');
+}
+function exUnswap(ei){
+  const s = S.draft, e = s && s.ex[ei]; if (!e || !e.subOf) return;
+  const j = (s.rmEx || []).findIndex(x => x.swapId === e.subOf); if (j < 0) return;
+  const o = s.rmEx.splice(j, 1)[0]; delete o.swapId; s.ex[ei] = o;
+  ui.exSw = null; ui.confirm = null; ui.exOpen = {}; ui.fresh = null; save(); render();
+  toast(liftName(o.lift) + ' er tilbake i økta');
+}
+// Velgeren i øvelseskortet: først hvilken øvelse, så vekta
+function exSwapBox(s, e, ei, touched){
+  const sel = ui.exSw.T, from = e.subOf ? e.subName : e.lift;
+  const hit = (T, sub) => `<button class="lib-hit" data-a="exswpick:${ei}:${T}"><b>${esc(liftName(T))}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</button>`;
+  let h = `<div class="skipbox ex-sw" aria-live="polite"><p class="small"><b>Bytt ${esc(liftName(e.lift).toLowerCase())} i dag</b>
+    ${touched ? ` Settene du har tatt i den, lagres ikke.` : ''} Neste gang står ${esc(liftName(from).toLowerCase())} i økta igjen.</p>`;
+  if (sel && LIFTS[sel]) {
+    const w = swapW(e, sel);
+    h += `<div class="ex-sw-pick"><b>${esc(liftName(sel))}</b><button class="link" data-a="exswpick:${ei}:">Velg en annen</button></div>
+      <label for="exSwW" class="small">${new Set(e.sets.map(x => x.w)).size > 1 ? 'Vekt i det tyngste settet' : 'Vekt'}</label>
+      <span class="inp"><input id="exSwW" type="text" inputmode="decimal" value="${w == null ? '' : fmt(w)}" placeholder="kg">kg</span>
+      <div class="row"><button class="btn sm" data-a="exswgo:${ei}">Bytt inn</button><button class="btn ghost sm" data-a="exswx">Avbryt</button></div></div>`;
+    return h;
+  }
+  const c = swapCands(s, e);
+  if (c.fam.length) h += `<span class="lbl">Alternativer til ${esc(liftName(swFam(from)).toLowerCase())}</span>
+    <div class="lib-res">${c.fam.map(T => { const w = swapW(e, T); return hit(T, w != null && w > 0 ? 'Omtrent ' + fmt(w) + ' kg' : ''); }).join('')}</div>`;
+  if (c.lib.length) h += `<span class="lbl">Samme muskel: ${esc(c.row[4].split(',')[0].trim())}</span>
+    <div class="lib-res">${c.lib.map(i => { const r = EXLIB[i], l = lastW(libKey(r));
+      return hit(libKey(r), r[2] + (l != null ? ' · sist ' + fmt(l) + ' kg' : '')); }).join('')}</div>`;
+  h += `<label for="exSwQ" class="small">Søk i øvelsesbiblioteket</label>
+    <input id="exSwQ" class="txt" type="search" maxlength="40" placeholder="For eksempel beinpress eller manualer" autocomplete="off" data-exsw="${ei}">
+    <div id="exSwRes" class="lib-res"></div>
+    <div class="row"><button class="btn ghost sm" data-a="exswx">Avbryt</button></div></div>`;
+  return h;
+}
+function exSwRes(q, ei){
+  const s = S.draft, e = s && s.ex[ei]; if (!e || !String(q).trim()) return '';
+  const used = new Set(s.ex.map(x => x.lift).concat([e.subOf ? e.subName : e.lift]));
+  const ids = exSearch(q, 12).filter(i => !used.has(libKey(EXLIB[i])) && LIFTS[libKey(EXLIB[i])]).slice(0, 8);
+  if (!ids.length) return '<p class="small muted">Ingen treff i biblioteket.</p>';
+  return ids.map(i => { const r = EXLIB[i];
+    return `<button class="lib-hit" data-a="exswpick:${ei}:${libKey(r)}"><b>${esc(r[0])}</b><small>${esc(r[2])}${r[4] ? ' · ' + esc(r[4]) : ''}</small></button>`; }).join('');
+}
 const undoPoint = pete => ({active: clone(S.active), pete: pete ? clone(S.pete) : undefined});
 // De siste øktene beholder kopien, så en tidligere økt kan rettes i loggen (se leRedo). Bare den nyeste kan angres helt.
 function keepOneUndo(){ let n = 0; S.history.forEach(h => { if (h.undo && ++n > UNDO_KEEP) delete h.undo; }); }
@@ -4763,15 +4855,22 @@ function vToday(){
       ${e.adj ? `<div class="amrap"><span>Juster vekt etter dagsform</span>
         <button class="step" data-a="w:${ei}:-1" aria-label="2,5 kg lettere">−</button>
         <button class="step" data-a="w:${ei}:1" aria-label="2,5 kg tyngre">+</button></div>` : ''}
-      ${ui.confirm === 'exrm:' + ei ? `<div class="skipbox ex-rm" aria-live="polite"><p class="small"><b>Fjerne ${esc(liftName(e.lift).toLowerCase())} fra dagens økt?</b>
+      ${ui.confirm === 'exrm:' + ei ? `<div class="skipbox ex-rm" aria-live="polite"><p class="small"><b>Fjerne ${esc(liftName(e.subOf ? e.subName : e.lift).toLowerCase())} fra dagens økt?</b>
           Settene du har tatt i den, lagres ikke. Vekta står som den er til neste gang.</p>
           <div class="row"><button class="btn danger sm" data-a="exrm:${ei}">Ja, fjern</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div></div>`
-        : `<button class="link ex-rm-l" data-a="${touched(e) ? 'confirm:exrm:' + ei : 'exrm:' + ei}">Fjern fra dagens økt</button>`}
+        : ui.confirm === 'exun:' + ei ? `<div class="skipbox ex-rm" aria-live="polite"><p class="small"><b>Tilbake til ${esc(liftName(e.subName).toLowerCase())}?</b>
+          Settene du har tatt i ${esc(liftName(e.lift).toLowerCase())}, lagres ikke.</p>
+          <div class="row"><button class="btn sm" data-a="exun:${ei}">Ja, bytt tilbake</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div></div>`
+        : ui.exSw && ui.exSw.k === s.started && ui.exSw.ei === ei ? exSwapBox(s, e, ei, touched(e))
+        : `<div class="ex-acts"><button class="link ex-rm-l" data-a="exsw:${ei}">${e.subOf ? 'Bytt til en annen' : 'Bytt i dag'}</button>
+          ${e.subOf ? `<button class="link ex-rm-l" data-a="${touched(e) ? 'confirm:exun:' + ei : 'exun:' + ei}">Tilbake til ${esc(liftName(e.subName).toLowerCase())}</button>` : ''}
+          <button class="link ex-rm-l" data-a="${touched(e) ? 'confirm:exrm:' + ei : 'exrm:' + ei}">Fjern fra dagens økt</button></div>`}
     </section>`;
   });
   // Øvelser du har fjernet i dag, kan hentes tilbake slik de var
-  if ((s.rmEx || []).length) h += `<section class="box rm-list"><span class="lbl">Fjernet fra dagens økt</span>
-      ${s.rmEx.map((e, i) => `<div class="rm-row"><span>${esc(liftName(e.lift))}${e.tag ? ` <span class="muted small">${esc(e.tag)}</span>` : ''}</span>
+  // Originalen til en byttet øvelse står ikke her. Den hentes med «Tilbake til …» i kortet.
+  if ((s.rmEx || []).some(e => !e.swapId)) h += `<section class="box rm-list"><span class="lbl">Fjernet fra dagens økt</span>
+      ${s.rmEx.map((e, i) => e.swapId ? '' : `<div class="rm-row"><span>${esc(liftName(e.lift))}${e.tag ? ` <span class="muted small">${esc(e.tag)}</span>` : ''}</span>
         <button class="link" data-a="exback:${i}">Ta tilbake</button></div>`).join('')}
       <p class="small muted">Vekta står som den er til neste gang.</p></section>`;
   // Burgener: kroppsvektøvelsene står som en påminnelse og logges ikke
@@ -5139,7 +5238,7 @@ function vLog(){
       ${sess.ex.map(e => {
         const ws = [...new Set(e.sets.map(x => x.w))];
         const reps = e.sets.map(x => x.d == null ? '–' : x.d);
-        const right = e.rm ? '<span class="muted">Fjernet</span>' : ws.length === 1 ? reps.join(' ') + ' × ' + fmt(ws[0]) + ' kg' : e.sets.map(x => (x.d == null ? '–' : x.d) + '×' + fmt(x.w)).join(' · ');
+        const right = e.rm ? `<span class="muted">${e.sw ? 'Byttet ut' : 'Fjernet'}</span>` : ws.length === 1 ? reps.join(' ') + ' × ' + fmt(ws[0]) + ' kg' : e.sets.map(x => (x.d == null ? '–' : x.d) + '×' + fmt(x.w)).join(' · ');
         const extra = [e.tag, e.rpe != null ? 'RPE ' + fmt(e.rpe) : e.q ? (LE_Q.find(([v]) => v === e.q) || [, e.q])[1].toLowerCase() : null].filter(Boolean).join(' · ');
         return `<div class="ln"><span>${liftName(e.lift)}${extra ? ' <span class="muted">' + extra + '</span>' : ''}</span><span>${right}</span></div>`;
       }).join('')}
@@ -7307,7 +7406,7 @@ document.addEventListener('click', ev => {
     case 'am': { const x = S.draft.ex[+r[0]].sets[+r[1]]; x.d = Math.max(0, Math.min(99, x.d + (+r[2]))); save(); render(); break; }
     case 'rpe': S.draft.ex[+r[0]].rpe = +r[1]; save(); render(); break;
     case 'q': S.draft.ex[+r[0]].q = r[1]; save(); render(); break;
-    case 'w': { const e = S.draft.ex[+r[0]], min = LIFTS[e.lift] && LIFTS[e.lift].bar ? BAR() : 2.5;
+    case 'w': { const e = S.draft.ex[+r[0]], min = LIFTS[e.lift] && LIFTS[e.lift].bar ? BAR() : LIFTS[e.lift] && LIFTS[e.lift].bw ? 0 : 2.5;
       e.sets.forEach(x => { if (!(e.adj && x.d != null)) x.w = Math.max(min, x.w + 2.5*(+r[1])); }); save(); render(); break; }
     case 'wu': {
       const e = S.draft.ex[+r[0]], k = r[1]; e.wuDone = e.wuDone || [];
@@ -7575,6 +7674,14 @@ document.addEventListener('click', ev => {
     case 'pe': peAct(r); break;
     case 'ps': psAct(r); break;
     case 'exback': exBack(+r[0]); break;
+    case 'exsw': ui.exSw = {k: S.draft.started, ei: +r[0], T: null}; ui.confirm = null; render(); break;
+    case 'exswpick': if (ui.exSw) { ui.exSw.T = r[1] || null; render(); if (ui.exSw.T) { const w = $('#exSwW'); if (w) w.focus(); } } break;
+    case 'exswx': ui.exSw = null; render(); break;
+    case 'exswgo': { const T = ui.exSw && ui.exSw.T, W = parseFloat(String(($('#exSwW') || {}).value || '').replace(',', '.'));
+      if (!T) break;
+      if (!(W >= 0) || (W === 0 && !LIFTS[T].bw && !LIFTS[T].bar)) { fieldErr($('#exSwW'), 'Skriv inn en vekt for ' + liftName(T).toLowerCase()); break; }
+      exSwap(+r[0], T, W); break; }
+    case 'exun': exUnswap(+r[0]); break;
     case 'exopen': { const o = ui.exOpen = ui.exOpen || {}; o[r[0]] = !o[r[0]]; render(); break; }
     case 'restscale': S.settings.restScale = +r[0]; save(); render(); break;
     case 'sound': S.settings.sound = !S.settings.sound; save(); unlockAudio(); render(); if (S.settings.sound) { beep(); toast('Lyd er på'); } break;
@@ -7678,6 +7785,7 @@ document.addEventListener('input', ev => {
     return;
   }
   else if (ev.target.id === 'peQ' && ui.pe) { ui.pe.q = ev.target.value; const r = $('#peRes'); if (r) r.innerHTML = peResHTML(ev.target.value, ev.target.dataset.peq); return; }
+  else if (ev.target.id === 'exSwQ') { const r = $('#exSwRes'); if (r) r.innerHTML = exSwRes(ev.target.value, +ev.target.dataset.exsw); return; }
   else if (ev.target.id === 'swLib') { const r = $('#swLibRes'); if (r) r.innerHTML = libResHTML(ev.target.value, ev.target.dataset.swlib); return; }
   else if (ev.target.dataset && ev.target.dataset.ppsplit) {
     const ctx = ev.target.dataset.ppsplit, pk = ctx === 'session' ? S.draft && S.draft.pete : ui.freePete;
