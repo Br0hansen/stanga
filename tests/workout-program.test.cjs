@@ -80,6 +80,31 @@ test('rest duration rounds to the nearest ten seconds after applying the selecte
     assert.equal(f.state('(ui.rest.end-Date.now())/1000'),expected);
   }
 });
+test('the inline pause updates independently of the displayed weight and reps',()=>{
+  const f=fixture();
+  for(const id of ['#todayRestControls','#todayRestAdd','#todayRestSkip','#todayRestLabel','#todayRestTime','#kgN','.current-reps'])f.nodes.set(id,{textContent:'',disabled:false});
+  f.nodes.get('#kgN').textContent='100';f.nodes.get('.current-reps').textContent='5 reps';
+  f.run('updateRest()');
+  assert.equal(f.nodes.get('#todayRestTime').textContent,'—');
+  assert.equal(f.nodes.get('#todayRestSkip').disabled,true);
+  f.warm();f.click('next:0');assert.equal(f.nodes.get('#todayRestTime').textContent,'3:00');
+  f.advance(45000);f.run('updateRest()');assert.equal(f.nodes.get('#todayRestTime').textContent,'2:15');
+  f.click('next:0');assert.equal(f.nodes.get('#todayRestTime').textContent,'3:00');
+  f.click('restadd:30');assert.equal(f.nodes.get('#todayRestTime').textContent,'3:30');
+  f.click('skip');assert.equal(f.nodes.get('#todayRestTime').textContent,'—');
+  assert.equal(f.nodes.get('#todayRestAdd').disabled,true);
+  assert.equal(f.nodes.get('#kgN').textContent,'100');
+  assert.equal(f.nodes.get('.current-reps').textContent,'5 reps');
+});
+test('the inline pause shows overtime after expiry and restarts on the next set',()=>{
+  const f=fixture();
+  for(const id of ['#todayRestControls','#todayRestAdd','#todayRestSkip','#todayRestLabel','#todayRestTime'])f.nodes.set(id,{textContent:'',disabled:false});
+  f.warm();f.click('next:0');f.advance(185000);f.run('updateRest()');
+  assert.equal(f.nodes.get('#todayRestLabel').textContent,'Klar');
+  assert.equal(f.nodes.get('#todayRestTime').textContent,'+0:05');
+  f.click('next:0');assert.equal(f.nodes.get('#todayRestLabel').textContent,'Pause');
+  assert.equal(f.nodes.get('#todayRestTime').textContent,'3:00');
+});
 test('Strength & Power clean sets restart with a rounded shorter pause',()=>{
   const f=fixture('sp12');
   f.run("S.active.idx=2;S.draft=buildSession(prog('sp12'),S.active);S.settings.restScale=.75");f.warm();
