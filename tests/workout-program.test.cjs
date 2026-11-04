@@ -294,3 +294,10 @@ test('RP slots swap within the sheet categories, and the new exercises are in th
   const c=f.state('swapCands(S.draft,S.draft.ex[0]).fam');
   assert.ok(c.includes('inclinedb')&&c.every(l=>f.state(`RP_CAT.ipush.ex.includes(${JSON.stringify(l)})`)));
 });
+test('exercises from the RP sheets have a video button, and other exercises do not',()=>{
+  const f=fixture('rp3');
+  assert.ok(f.state("Object.values(RP_CAT).flatMap(c=>c.ex).every(l=>/^[A-Za-z0-9_-]{11}$/.test(EXVID[l]))"));
+  assert.match(f.run('vToday()'),/data-a="video:bench"/);
+  f.run(`S.active=newInstance(prog('burg12'));S.draft=buildSession(prog('burg12'),S.active);`);
+  assert.doesNotMatch(f.run('vToday()'),/data-a="video:snatch"/);
+});

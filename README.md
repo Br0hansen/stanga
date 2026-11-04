@@ -127,6 +127,7 @@ Under **Program → Bibliotek** står **Dine programmer** øverst, med **+ Lag e
 - **Reps i reserve:** 3, 3, 2 og 1. Målet for reps er regnet baklengs fra 10RM, for eksempel 14 reps i uke 1 av Basis.
 - **Vurdering:** Etter hver øvelse svarer du hvor støl du var fra sist og hvor tunge repsene var. Lett gir ett sett mer neste uke, passe like mange og tungt ett mindre, som 1, 0 og −1 i arket. Vurderingen spørres ikke i uka før deload.
 - **Deload:** 2 sett med halve reps fra uke 1. De siste dagene i uka er vekta også halvert, som i arket. Andre øvelse i et supersett står over.
+- **Video:** Alle øvelsene fra arkene har en **Video**-knapp i øvelseskortet. Den åpner instruksjonsvideoen fra RP i et ark over økta, fra youtube-nocookie.com, så YouTube ikke setter sporingskaker før du spiller av. Lukk, Escape eller trykk utenfor stopper videoen. Under videoen står en lenke til YouTube, hvis den ikke kan spilles i appen. Lenkene ligger i `EXVID`, og knappen vises i alle programmer som bruker øvelsene, for eksempel benkpress i StrongLifts.
 - **Teknisk:** `RP_CAT` (kategoriene med alternativer), `RP_DAYS` (øktene), `buildRp` og `progressRp` i `index.html`. Instansen har `rm` (10RM), `est` (siste anslag), `sets` (sett neste uke per plass), `r1` (reps i uke 1) og `swaps` (valgt øvelse per plass). En plass heter «meso.dag.rad».
 
 ## Pete Plan

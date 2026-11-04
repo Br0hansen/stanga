@@ -905,7 +905,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .today-ex .ex-head .tag{white-space:normal;margin-top:3px}
 .today-ex .ex-head p{font-size:12px;margin-top:3px}
 .today-ex-actions{display:flex;align-items:center;gap:4px;flex:none}
-.today-menu,.today-undo{min-width:48px;min-height:44px;justify-content:center;font-size:12px;padding:0 4px}
+.today-menu,.today-undo,.today-video{min-width:48px;min-height:44px;justify-content:center;font-size:12px;padding:0 4px}
 .today-menu .chev{width:14px;height:14px}
 .today-undo{color:var(--pen)}
 .today-undo:disabled{opacity:.3;cursor:default}
@@ -953,6 +953,8 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .today-tail{display:grid;gap:14px;scroll-margin-top:12px;outline:none}
 .exercise-sheet{--chalk:var(--ink);--chalk-2:var(--ink-2);--chalk-3:var(--ink-3);--line:var(--rule);--iron:var(--field);--iron-2:var(--paper);--iron-3:var(--press);--accent:var(--pen);--miss:var(--red);background:var(--paper);color:var(--ink)}
 .exercise-sheet .ex-acts{display:grid;gap:0}
+.video-box{position:relative;width:100%;aspect-ratio:16/9;border-radius:8px;overflow:hidden;background:#000}.video-box iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.video-sheet a{color:var(--pen)}
 .exercise-sheet .ex-acts .link{width:100%;min-height:52px;padding:12px 0;justify-content:flex-start;text-align:left;color:var(--ink);border-bottom:1px solid var(--rule)}
 .exercise-sheet .ex-acts .link:last-child{border-bottom:0}
 .exercise-sheet .ex-acts [data-a^="confirm:exrm"],.exercise-sheet .ex-acts [data-a^="exrm"]{color:var(--red)}
@@ -970,7 +972,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 @media(max-width:359px){
   .today-ex .ex-head{padding:12px;gap:4px}
   .today-ex .ex-head h2{font-size:20px}
-  .today-menu,.today-undo{font-size:11px;min-width:44px}
+  .today-menu,.today-undo,.today-video{font-size:11px;min-width:44px}
   .today-ex .ex-hit{padding:0 12px 12px}
   .today-metrics{gap:10px;height:78px}
   .today-weight b{font-size:72px}
@@ -1019,7 +1021,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 101;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 102;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -1494,6 +1496,46 @@ const EXLIB = [
 ["Åttetall med kettlebell","Kettlebell Figure 8","Kettlebell","Styrke","mage",0,"","Kettlebell_Figure_8"]
 ];
 // Øvelsene i biblioteket som appen ikke har fra før, blir egne øvelser med nøkkel l_<id>. Da kan de brukes i egne programmer.
+// Instruksjonsvideoer på YouTube, fra lenkene i RP-arkene. Nøkkelen er løftet, verdien er video-id-en.
+// Knappen «Video» i øvelseskortet åpner videoen i et ark (vVideo), med youtube-nocookie.com, så YouTube ikke setter
+// sporingskaker før du spiller av. Uten nett eller hvis videoen ikke kan bygges inn, står lenken til YouTube under.
+const EXVID = {
+  bench:'Dl-by6_vATQ', closegrip:'3s_QUA4HcxI', csrow:'4Idz7uwm3OU', dbbench:'20_pP7oaH34', dbrow:'Wdv_3ojsPhU', deadlift:'euEPxA3gsDo',
+  deficit:'WWS1rPFPyiQ', frontsquat:'lNYA35p8XJQ', incline:'zWRCV_td3I8', inclinedb:'LYZDsNv8kJ8', l_ab_crunch_machine:'GWeVF2aVk8g',
+  l_band_assisted_pull_up:'ghHW6sETs-I', l_barbell_curl:'tYpquedo9e0', l_barbell_shrug:'hR8aOS5LZjU', l_barbell_walking_lunge:'vNgwqFsVstY',
+  l_bent_over_two_dumbbell_row:'o1yPuXatVRs', l_butterfly:'ZYM1mNayaeI', l_cable_crossover:'60Ai9_c60xg',
+  l_calf_press_on_the_leg_press_machine:'oRRs1bGzimM', l_chin_up:'SmRa30Jci54', l_close_grip_front_lat_pulldown:'QzjjwxZOVdE',
+  l_close_grip_standing_barbell_curl:'GztM7atVgd8', l_dips_triceps_version:'B48xWtzMHxk', l_dumbbell_alternate_bicep_curl:'S97e09rLmEU',
+  l_dumbbell_bicep_curl:'yYB76DOBPsM', l_dumbbell_flyes:'t2Kk-TOhq14', l_dumbbell_shrug:'z3yCDRGrQTM', l_ez_bar_curl:'MCjBeB844rU',
+  l_ez_bar_skullcrusher:'hJLXuvZd05w', l_face_pull:'Ana4dJbCvxE', l_good_morning:'hzHJugCcT6g', l_hack_squat:'SOyO4LHjhX4', l_hammer_curls:'xsOm9xn83-8',
+  l_hanging_leg_raise:'5p-vP_XyNaA', l_hyperextensions_back_extensions:'OMUGU1Vh8Ao', l_incline_cable_flye:'UPGRju60F60',
+  l_incline_dumbbell_curl:'2jsTYbOkx1U', l_incline_dumbbell_flyes:'_GBEHrc_V5U', l_jm_press:'daSL236nYZs', l_leg_press:'mJSsWpuyiCM',
+  l_leverage_iso_row:'J44yAQ_LXXU', l_lying_close_grip_barbell_triceps_extension_behind_the_head:'gYbmiluG5Ho',
+  l_lying_dumbbell_tricep_extension:'TtXlapucVxM', l_lying_leg_curls:'m4KB9-Uo4Kc', l_machine_bench_press:'cg4tsxQ1BP4',
+  l_machine_shoulder_military_press:'W6kJbZeFssU', l_pullups:'NF4nbNsqreQ', l_push_ups_close_triceps_position:'PFtO-p5VLO0', l_pushups:'TM_PeJIdQwE',
+  l_reverse_flyes:'c32OxRaEhxM', l_seated_cable_rows:'y47HOtqxZkg', l_seated_dumbbell_press:'RGFdTZznnRs', l_seated_leg_curl:'BHxrogNaKoo',
+  l_side_lateral_raise:'pg3hz43P09w', l_standing_biceps_cable_curl:'nW7w5vG6IIc', l_standing_calf_raises:'wrPN51LyOUE',
+  l_standing_dumbbell_press:'Ax_6UXGQo7o', l_standing_dumbbell_upright_row:'KkpCTyjGlZo', l_standing_overhead_barbell_triceps_extension:'He-GN_4MAY4',
+  l_stanga_bicepscurl_med_rotasjon:'DcRJ3bLJuVw', l_stanga_bratt_skra_db_benk:'YIqmLutlM1g', l_stanga_chin_ups_med_hjelp:'2PC8eYTte5w',
+  l_stanga_curl_med_tau_og_rotasjon:'sR_EdrSruyQ', l_stanga_dips_med_hjelp:'a5_JKN7j7Ug', l_stanga_ettbeins_larcurl:'SMln-yOUKSA',
+  l_stanga_face_pull_med_manualer:'d90AskSQcDc', l_stanga_face_pull_med_stang:'BvX7g1yr1pY', l_stanga_flies_i_maskin:'6L7xI3jO_GU',
+  l_stanga_foroverboyd_skuldertrekk_med_manualer:'S3NIBLmlKaU', l_stanga_foroverboyd_skuldertrekk_med_stang:'6DiJh6_jeoo',
+  l_stanga_frontboy_med_kryssgrep:'uFEPuNtHoOU', l_stanga_gaende_utfall_med_manualer:'LRgZFHceZGo', l_stanga_good_morning_lav_stang:'Z3AC4mmiKhw',
+  l_stanga_hengende_knehev:'dmwMfjPQIP8', l_stanga_kabelflies_ovenfra:'ipoTKasbDyQ', l_stanga_kneboy_i_maskin_med_fottene_fram:'SYji94GabJg',
+  l_stanga_lav_skra_db_benk:'efDlxayx234', l_stanga_markloft_med_sma_skiver:'7If7L0lAur8', l_stanga_modifisert_candlestick:'sPIBL43Ds48',
+  l_stanga_nedtrekk_bredt_grep:'xyoFXl-k644', l_stanga_pull_ups_med_hjelp_noytralt_grep:'UNo4yBbidG4', l_stanga_pull_ups_noytralt_grep:'lFyDmuDjRts',
+  l_stanga_roing_med_ez_stang_undergrep:'ROIrNQJBKZ0', l_stanga_sidehev_med_tommelen_ned:'7P2LTF73EOM',
+  l_stanga_sittende_tricepspress_over_hodet_med_ez_stang:'pOX1m37rOWo', l_stanga_sittende_tricepspress_over_hodet_med_stang:'aNzU6AYZiEs',
+  l_stanga_situps_med_strake_armer:'ENaZCLrz8_c', l_stanga_situps_pa_skrabenk:'JYiWXFIikW4', l_stanga_skrabenk_bredt_grep:'MDuOnEyof1w',
+  l_stanga_skrapress_i_maskin:'eaI0E6ZcwM4', l_stanga_smal_kneboy_med_fottene_fram:'ppluAD4MHK8', l_stanga_smal_skrabenk:'2JIPv1E5a0I',
+  l_stanga_spider_curl_med_manualer:'y_GK6fn7raU', l_stanga_stangroing_til_brystet:'tRT-cLlXJZ0', l_stanga_tahev_i_smithmaskin:'IkrC1u5e-RQ',
+  l_stanga_tahev_pa_trappetrinn:'mucRuC4sEjQ', l_stanga_tricepspress_over_hodet_med_ez_stang:'U3SkMY6jw5M', l_stanga_v_ups:'vz97voWk3jU',
+  l_stiff_legged_barbell_deadlift:'zbYgjREbdb0', l_triceps_overhead_extension_with_rope:'B21LHpkamJM', l_triceps_pushdown:'B33bKk_r5PU',
+  l_triceps_pushdown_rope_attachment:'tu2Q82-HMg0', l_underhand_cable_pulldowns:'bxfHw1LvH24', l_upright_barbell_row:'fbFISuP7Ezk',
+  l_upright_cable_row:'FoZM6vuuKBc', l_v_bar_pulldown:'uMjeHo2_EwM', l_wide_grip_barbell_bench_press:'ILToidt_G0U', l_wide_grip_rear_pull_up:'HOWPPDueZY8',
+  l_wide_stance_barbell_squat:'wjw-4R5VR20', ohp:'n9RZ6FEthGU', pulldown:'gQ179IUjMsQ', row:'o2qSVwxiFk4', seatedpress:'dF9Pm_-2zmg', squat:'2-o_-HTPhv8',
+  sumo:'xp1IeyTOB4U', trapbar:'f-_q_3tN6Yo'
+};
 const libKey = r => r[6] || 'l_' + r[7].toLowerCase().replace(/[^a-z0-9]+/g, '_');
 EXLIB.forEach(r => { if (!r[6]) LIFTS[libKey(r)] = {n: r[0], bar: r[5], bw: r[2] === 'Kroppsvekt' ? 1 : 0, lib: 1}; });
 // Søk på norsk eller engelsk, i navn, utstyr og muskler. Alle ordene må treffe. Navn som starter med søket, kommer først.
@@ -5130,6 +5172,36 @@ function exerciseMenuClear(){
   if (/^ex(rm|un):/.test(ui.confirm || '')) ui.confirm = null;
 }
 function exerciseMenuClose(){ exerciseMenuClear(); render(); }
+// Videoarket. Står utenfor visningen, så render() ikke laster videoen på nytt mens den spiller.
+// Lukk, Escape eller trykk utenfor stopper videoen og gir fokus tilbake til knappen.
+function videoOpen(L){
+  const id = EXVID[L]; if (!id) return;
+  let d = $('#videoSheet');
+  if (!d) {
+    d = document.createElement('dialog'); d.id = 'videoSheet'; d.className = 'sx-sheet exercise-sheet video-sheet';
+    d.setAttribute('aria-labelledby', 'videoSheetTitle');
+    d.innerHTML = '<div class="sx-sheet-handle" aria-hidden="true"></div><header class="sx-sheet-head"><h2 id="videoSheetTitle" tabindex="-1"></h2><button class="link" data-a="videoclose" aria-label="Lukk videoen">Lukk ×</button></header><div class="sx-sheet-body" id="videoSheetBody"></div>';
+    document.querySelector('.app').append(d);
+    d.addEventListener('cancel', e => { e.preventDefault(); videoClose(); });
+    d.addEventListener('click', e => {
+      const r = d.getBoundingClientRect();
+      if (e.target === d && (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom)) videoClose();
+    });
+  }
+  d._trigger = document.activeElement && document.activeElement.dataset && document.activeElement.dataset.a || 'video:' + L;
+  $('#videoSheetTitle').textContent = liftName(L);
+  $('#videoSheetBody').innerHTML = `<div class="video-box"><iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&playsinline=1"
+      title="Video: ${esc(liftName(L))}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+    <p class="small muted">Instruksjonsvideo fra RP på YouTube. Virker den ikke her, kan du <a href="https://youtu.be/${id}" target="_blank" rel="noopener">åpne den i YouTube</a>.</p>`;
+  if (!d.open) d.showModal();
+  $('#videoSheetTitle').focus({preventScroll:true});
+}
+function videoClose(){
+  const d = $('#videoSheet'); if (!d) return;
+  $('#videoSheetBody').innerHTML = '';   // stopper avspillingen
+  if (d.open) d.close();
+  const t = document.querySelector(`[data-a="${CSS.escape(d._trigger || '')}"]`); if (t) t.focus({preventScroll:true});
+}
 // Et ekte modalt dialogark holder valgene synlige og fokuset inne i arket.
 function exerciseSheetPaint(){
   let dialog = $('#exerciseSheet');
@@ -5304,7 +5376,7 @@ function vToday(){
     // Vekt, reps og skiver er én stor trykkflate. Pausen får en egen, stabil rad under settene.
     const canNext = now && (warm || nextSi > -1);
     h += `<section class="ex today-ex ${now ? 'now' : ''}" id="exercise-${ei}">
-      <div class="ex-head"><div class="today-ex-title"><h2>${liftName(e.lift)}</h2>${e.tag ? `<span class="tag">${e.tag}</span>` : ''}<p class="small muted">${setsLine(e)}</p></div><div class="today-ex-actions">${now ? `<button class="link today-undo" data-a="undoset" ${canUndoSet() ? '' : 'disabled'}>Angre</button>` : ''}<button class="link today-menu" data-a="exmenu:${k}" aria-expanded="${!!menuOpen}" aria-haspopup="dialog" aria-controls="exerciseSheet" aria-label="Valg for ${esc(liftName(e.lift))}">Valg ${chev}</button></div></div>
+      <div class="ex-head"><div class="today-ex-title"><h2>${liftName(e.lift)}</h2>${e.tag ? `<span class="tag">${e.tag}</span>` : ''}<p class="small muted">${setsLine(e)}</p></div><div class="today-ex-actions">${now ? `<button class="link today-undo" data-a="undoset" ${canUndoSet() ? '' : 'disabled'}>Angre</button>` : ''}${EXVID[e.lift] ? `<button class="link today-video" data-a="video:${e.lift}" aria-haspopup="dialog" aria-label="Video av ${esc(liftName(e.lift).toLowerCase())}">Video</button>` : ''}<button class="link today-menu" data-a="exmenu:${k}" aria-expanded="${!!menuOpen}" aria-haspopup="dialog" aria-controls="exerciseSheet" aria-label="Valg for ${esc(liftName(e.lift))}">Valg ${chev}</button></div></div>
       ${canNext ? `<button class="ex-hit" data-a="next:${ei}" aria-label="Registrer ${bigR}${bigAm ? '+' : ''} reps på ${fmt(bigW)} kg${warm ? ', oppvarming' : ''}">${head}</button>` : head}
       <div class="chips" role="group" aria-label="Arbeidssett"><div class="chip-grp" style="--sets-per-row:${Math.min(5, e.sets.length)}">${e.sets.map((x,si) => {
         const st = x.d == null ? (si === nextSi ? 'next' : '') : (x.d >= x.t ? 'ok' : 'miss');
@@ -7964,6 +8036,8 @@ document.addEventListener('click', ev => {
     case 'undoset': undoSet(); break;
     case 'exmenu': exerciseMenuOpen(r[0]); break;
     case 'exmenuclose': exerciseMenuClose(); break;
+    case 'video': videoOpen(r[0]); break;
+    case 'videoclose': videoClose(); break;
     case 'wuopen': {
       ev.preventDefault(); const o = ui.wuOpen = ui.wuOpen || {};
       o[r[0]] = !b.closest('details').open; render(); break;
