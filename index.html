@@ -907,7 +907,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 91;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 92;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -7619,7 +7619,9 @@ document.addEventListener('change', ev => {
 });
 
 /* iOS gir av og til hjemskjerm-appen et vindu som slutter over skjermkanten.
-   Da måler vi avstanden og strekker app-skallet ned til kanten. */
+   Da måler vi avstanden og strekker app-skallet ned til kanten.
+   Bare på iOS: på Android teller skjermhøyden med statuslinja og navigasjonslinja, så avstanden er alltid
+   50–100 px. Strekker vi da, havner fanelinja under skjermkanten (sett på Google Pixel). */
 const isTyping = () => { const a = document.activeElement; return !!a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName); };
 function fitViewport(){
   if (isTyping()) return;          // tastaturet er oppe: ikke mål nå
@@ -7627,7 +7629,7 @@ function fitViewport(){
     const standalone = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
     const portrait = innerHeight > innerWidth;
     const gap = Math.round(screen.height - innerHeight);
-    const fix = standalone && portrait && gap > 0 && gap < 140 ? gap : 0;
+    const fix = isIOS && standalone && portrait && gap > 0 && gap < 140 ? gap : 0;
     document.querySelector('.app').style.bottom = fix ? (-fix) + 'px' : '';
     ui.gapFix = fix;
   } catch(e) {}
