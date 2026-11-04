@@ -253,3 +253,44 @@ test('confirmed removal closes the menu and keeps the removed lift recoverable',
   assert.equal(f.state('S.draft.rmEx[0].sets[0].d'),5);
   assert.equal(f.state('S.draft.ex.length'),2);
 });
+test('RP programs follow the sheet: 10RM percentages, reps in reserve, ratings and deload',()=>{
+  const f=fixture('rp3');
+  f.run(`S.active.rm={bench:80};S.draft=buildSession(prog('rp3'),S.active);`);
+  // Uke 1 i Basis: 85 % av 10RM, 3 reps i reserve, og vurderingen spørres etter settene
+  assert.equal(f.state('S.draft.ex[0].lift'),'bench');
+  assert.equal(f.state('S.draft.ex[0].sets[0].w'),67.5);
+  assert.equal(f.state('S.draft.ex[0].tag'),'3 reps i reserve');
+  assert.equal(f.state('S.draft.ex[0].rpAsk'),true);
+  f.run(`S.draft.ex.forEach(e=>e.sets.forEach(x=>x.d=x.t));`);
+  assert.match(f.run('vToday()'),/Hvor støl var du fra sist/);
+  f.click('q:0:lett');f.click('finish');
+  // Lett gir ett sett mer neste uke, og vekta går 5 % opp fra uke 1
+  f.run(`S.active.idx=3;S.draft=buildSession(prog('rp3'),S.active);`);
+  assert.equal(f.state('S.draft.ex[0].sets.length'),4);
+  assert.equal(f.state('S.draft.ex[0].sets[0].w'),f.state('r25(S.active.rm.bench*.85*1.05)'));
+  // Deload: 2 sett med halve reps fra uke 1, andre øvelse i supersett står over i Metabolitt
+  f.run(`S.active.idx=12;S.draft=buildSession(prog('rp3'),S.active);`);
+  assert.equal(f.state('S.draft.sub'),'Uke 5 av 13 · Basis, deload');
+  assert.equal(f.state('S.draft.ex[0].sets.length'),2);
+  assert.equal(f.state('S.draft.ex[0].sets[0].t'),Math.round(f.state('S.active.r1["0.0.0"]')/2));
+  // Ny mesosyklus: 10RM fra settene dine, 75 % i uke 1
+  f.run(`S.active.est.bench=90;S.active.idx=15;S.draft=buildSession(prog('rp3'),S.active);`);
+  assert.equal(f.state('S.active.rm.bench'),90);
+  assert.equal(f.state('S.draft.ex[0].sets[0].w'),67.5);
+  f.run(`S.active.idx=27;S.draft=buildSession(prog('rp3'),S.active);`);
+  assert.equal(f.state('S.draft.ex.some(e=>e.ss2)'),false);
+});
+test('RP slots swap within the sheet categories, and the new exercises are in the library',()=>{
+  const f=fixture('nf5');
+  assert.equal(f.state("EXLIB.length"),431);
+  assert.ok(f.state("RP_CAT.vtri.ex.every(l=>LIFTS[l])"));
+  assert.ok(f.state("Object.values(RP_CAT).flatMap(c=>c.ex).every(l=>EXLIB.some(r=>libKey(r)===l))"));
+  // Oppsett: plassen får en øvelse fra kategorien, og økta bygges på nytt
+  assert.match(f.run('swapRows(prog("nf5"),S.active)'),/data-rpswap="0\.0\.0"/);
+  f.run(`rpSwap('0.0.0','l_stanga_lav_skra_db_benk','inclinedb');`);
+  assert.equal(f.state('buildSession(prog("nf5"),S.active).ex[0].lift'),'l_stanga_lav_skra_db_benk');
+  // Bytt i dag: alternativene er lista fra arket
+  f.run(`S.draft=buildSession(prog('nf5'),S.active);`);
+  const c=f.state('swapCands(S.draft,S.draft.ex[0]).fam');
+  assert.ok(c.includes('inclinedb')&&c.every(l=>f.state(`RP_CAT.ipush.ex.includes(${JSON.stringify(l)})`)));
+});

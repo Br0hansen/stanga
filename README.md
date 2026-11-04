@@ -1,6 +1,6 @@
 # Stanga – treningsapp på hjemskjermen
 
-Styrkeprogrammer (StrongLifts 5×5, Starting Strength, GZCLP, 5/3/1 FSL og BBB, Juggernaut, Cube Method og Strength & Power), Burgener 12 uker for olympisk vektløfting, Muscle MetCon 12 uker (styrke, metcon og finisher i hver økt, sekundærløft styrt av RPE), EMOM Capacity 12 uker (styrke som E2MOM og 4-stasjons EMOM-er), Circuit EMOM 12 uker (kretser med åtte stasjoner), Cube EMOM 12 uker (tre baseløft i E4MOM hver økt), et konkurranseprogram for ATHX 2027, øktbank med metcons, egne metcons, metcon-klokke og treningslogg. Alle data lagres lokalt på telefonen.
+Styrkeprogrammer (StrongLifts 5×5, Starting Strength, GZCLP, 5/3/1 FSL og BBB, Juggernaut, Cube Method og Strength & Power), Burgener 12 uker for olympisk vektløfting, Muscle MetCon 12 uker (styrke, metcon og finisher i hver økt, sekundærløft styrt av RPE), EMOM Capacity 12 uker (styrke som E2MOM og 4-stasjons EMOM-er), Circuit EMOM 12 uker (kretser med åtte stasjoner), Cube EMOM 12 uker (tre baseløft i E4MOM hver økt), RP Hypertrofi på 3 og 5 dager (13 uker i tre mesosykluser), et konkurranseprogram for ATHX 2027, øktbank med metcons, egne metcons, metcon-klokke og treningslogg. Alle data lagres lokalt på telefonen.
 
 ## Utseende: Treningsboka
 
@@ -115,7 +115,19 @@ Under **Program → Bibliotek** står **Dine programmer** øverst, med **+ Lag e
 
 ## Øvelsesbiblioteket
 
-393 øvelser med norske navn, utstyr, kategori og hovedmuskler. 365 er valgt ut fra [Free Exercise DB](https://github.com/yuhonas/free-exercise-db) (Unlicense, fri bruk), og 28 som manglet (wall balls, burpees, kettlebell swing, thruster, bokshopp, toes-to-bar, romaskin, SkiErg og flere) er lagt til. Øvelser appen har fra før, peker til sin egen versjon, så det blir ett navn og én vekt. Søket virker på norsk og engelsk, og på utstyr og muskler. Biblioteket brukes i **Lag eget program** og under **Program → Oppsett → Øvelser og bytter → + Egen øvelse**. Ligger i `EXLIB` i `index.html`.
+431 øvelser med norske navn, utstyr, kategori og hovedmuskler. 365 er valgt ut fra [Free Exercise DB](https://github.com/yuhonas/free-exercise-db) (Unlicense, fri bruk), og 66 som manglet er lagt til: wall balls, burpees, kettlebell swing, thruster, bokshopp, toes-to-bar, romaskin, SkiErg og flere, pluss 38 alternativer fra RP-arkene (for eksempel nedtrekk med bredt grep, lav skrå DB-benk, tricepspress over hodet med EZ-stang og foroverbøyd skuldertrekk). Øvelser appen har fra før, peker til sin egen versjon, så det blir ett navn og én vekt. Søket virker på norsk og engelsk, og på utstyr og muskler. Biblioteket brukes i **Lag eget program** og under **Program → Oppsett → Øvelser og bytter → + Egen øvelse**. Ligger i `EXLIB` i `index.html`.
+
+## RP Hypertrofi 3 og 5 dager
+
+**Program under Program → Bibliotek.** Lagt inn fra de to RP-arkene (Renaissance Periodization): *Male Physique Template 3x Week Full Body* og 5-dagersmalen (`N_F_5_1`). Prosentene og reglene er tatt fra formlene i arkene.
+
+- **Tre mesosykluser, 13 uker:** Basis (4 uker + deload), Metabolitt (4 uker + deload, med supersett) og Resensitivisering (2 uker + deload). 3-dagersprogrammet har press, bein og trekk. 5-dagersprogrammet har bryst og rygg, forside lår, rygg og bryst, sete og baksida lår, og skuldre og armer.
+- **Plasser med alternativer:** Hver plass i økta er en kategori fra arket, for eksempel flat press eller nedtrekk og pull-ups, med en standardøvelse. Standardøvelsene er valgene fra Meso 1 i Jonas sitt ark. Plasser uten valg har fått en vanlig basisøvelse. Alle alternativene i arket ligger i øvelsesbiblioteket og kan velges under **Program → Oppsett → Øvelser og bytter** for hele mesosyklusen, eller med **Valg → Bytt i dag** i økta.
+- **Vekt:** prosent av 10RM i øvelsen. Uke 1 er 85 % (Basis), 75 % (Metabolitt) eller 100 % (Resensitivisering), og uke 2, 3 og 4 er 5 %, 7,5 % og 10 % over uke 1. Andre øvelse i et supersett starter på 60 %. 10RM skrives inn på programsiden. Står et felt tomt, finner du vekta i første økt med − og +, og appen anslår 10RM fra settene (Epley med reps + reps i reserve). Ved hver ny mesosyklus regnes 10RM ut fra settene dine. 10RM kan rettes under **Vekter i programmet**.
+- **Reps i reserve:** 3, 3, 2 og 1. Målet for reps er regnet baklengs fra 10RM, for eksempel 14 reps i uke 1 av Basis.
+- **Vurdering:** Etter hver øvelse svarer du hvor støl du var fra sist og hvor tunge repsene var. Lett gir ett sett mer neste uke, passe like mange og tungt ett mindre, som 1, 0 og −1 i arket. Vurderingen spørres ikke i uka før deload.
+- **Deload:** 2 sett med halve reps fra uke 1. De siste dagene i uka er vekta også halvert, som i arket. Andre øvelse i et supersett står over.
+- **Teknisk:** `RP_CAT` (kategoriene med alternativer), `RP_DAYS` (øktene), `buildRp` og `progressRp` i `index.html`. Instansen har `rm` (10RM), `est` (siste anslag), `sets` (sett neste uke per plass), `r1` (reps i uke 1) og `swaps` (valgt øvelse per plass). En plass heter «meso.dag.rad».
 
 ## Pete Plan
 

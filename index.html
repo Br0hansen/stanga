@@ -1019,7 +1019,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 99;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 100;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -1057,7 +1057,7 @@ const ALTS = slot => Object.keys(LIFTS).filter(k => LIFTS[k].alt === slot);
 
 /* ---------- Øvelsesbiblioteket ----------
    365 øvelser valgt ut fra Free Exercise DB (github.com/yuhonas/free-exercise-db, Unlicense: fri bruk),
-   med norske navn, pluss 28 øvelser databasen mangler (wall balls, burpees, kettlebell swing og flere).
+   med norske navn, pluss 66 øvelser databasen mangler (wall balls, burpees, kettlebell swing, øvelsene fra RP-arkene og flere).
    Felt: [norsk navn, søkeord (engelsk navn), utstyr, kategori, hovedmuskler, stang (viser skiver), nøkkel i LIFTS, id i databasen].
    Har appen øvelsen fra før, peker nøkkelen dit, så det blir ett navn og én vekt. Id-en gir bilder og fremgangsmåte senere. */
 const EXLIB = [
@@ -1093,6 +1093,7 @@ const EXLIB = [
 ["Bicepscurl i kabel","Standing Biceps Cable Curl","Kabel","Styrke","biceps",0,"","Standing_Biceps_Cable_Curl"],
 ["Bicepscurl i maskin","Machine Bicep Curl","Maskin","Styrke","biceps",0,"","Machine_Bicep_Curl"],
 ["Bicepscurl med manualer","Dumbbell Bicep Curl","Manualer","Styrke","biceps",0,"","Dumbbell_Bicep_Curl"],
+["Bicepscurl med rotasjon","Dumbbell Twist Curl supinating","Manualer","Styrke","biceps",0,"","Stanga_Bicepscurl_med_rotasjon"],
 ["Bicepscurl med stang","Barbell Curl","Stang","Styrke","biceps",1,"","Barbell_Curl"],
 ["Bicepscurl med stang, bredt grep","Wide-Grip Standing Barbell Curl","Stang","Styrke","biceps",1,"","Wide-Grip_Standing_Barbell_Curl"],
 ["Bicepscurl med stang, smalt grep","Close-Grip Standing Barbell Curl","Stang","Styrke","biceps",1,"","Close-Grip_Standing_Barbell_Curl"],
@@ -1102,6 +1103,7 @@ const EXLIB = [
 ["Bokshopp","box jump","Annet","Plyometri","forside lår, sete",0,"","Stanga_Bokshopp"],
 ["Boksknebøy","Box Squat","Stang","Styrkeløft","forside lår",1,"boxsquat","Box_Squat"],
 ["Box step-overs","box step over","Annet","Kondisjon","forside lår, sete",0,"","Stanga_Box_step_overs"],
+["Bratt skrå DB-benk","High Incline Dumbbell Press","Manualer","Styrke","skuldre, bryst",0,"","Stanga_Bratt_skra_DB_benk"],
 ["Bred benkpress","Wide-Grip Barbell Bench Press","Stang","Styrke","bryst",1,"","Wide-Grip_Barbell_Bench_Press"],
 ["Brystpress i kabel","Cable Chest Press","Kabel","Styrke","bryst",0,"","Cable_Chest_Press"],
 ["Brystpress i maskin","Machine Bench Press","Maskin","Styrke","bryst",0,"","Machine_Bench_Press"],
@@ -1112,6 +1114,7 @@ const EXLIB = [
 ["Butterfly","Butterfly","Maskin","Styrke","bryst",0,"","Butterfly"],
 ["Chest-supported row","Dumbbell Incline Row","Manualer","Styrke","midtre rygg",0,"csrow","Dumbbell_Incline_Row"],
 ["Chin-ups","Chin-Up","Kroppsvekt","Styrke","latissimus",0,"","Chin-Up"],
+["Chin-ups med hjelp","Assisted Underhand Chin-Up","Kroppsvekt","Styrke","latissimus",0,"","Stanga_Chin_ups_med_hjelp"],
 ["Clean","Clean","Stang","Vektløfting","baksida lår",1,"squatclean","Clean"],
 ["Clean & jerk","Clean and Jerk","Stang","Vektløfting","skuldre",1,"cj","Clean_and_Jerk"],
 ["Clean fra blokk","Clean from Blocks","Stang","Vektløfting","forside lår",1,"","Clean_from_Blocks"],
@@ -1126,6 +1129,7 @@ const EXLIB = [
 ["Curl med overgrep","Reverse Barbell Curl","Stang","Styrke","biceps",1,"","Reverse_Barbell_Curl"],
 ["Curl med overgrep i kabel","Reverse Cable Curl","Kabel","Styrke","biceps",0,"","Reverse_Cable_Curl"],
 ["Curl med overgrep, manualer","Standing Dumbbell Reverse Curl","Manualer","Styrke","biceps",0,"","Standing_Dumbbell_Reverse_Curl"],
+["Curl med tau og rotasjon","Cable Rope Twist Curl","Kabel","Styrke","biceps",0,"","Stanga_Curl_med_tau_og_rotasjon"],
 ["DB-benk","Dumbbell Bench Press","Manualer","Styrke","bryst",0,"dbbench","Dumbbell_Bench_Press"],
 ["Dead bug","Dead Bug","Kroppsvekt","Styrke","mage",0,"","Dead_Bug"],
 ["Dead clean med kettlebell","Kettlebell Dead Clean","Kettlebell","Styrke","baksida lår",0,"","Kettlebell_Dead_Clean"],
@@ -1133,6 +1137,7 @@ const EXLIB = [
 ["Dips","Dips - Triceps Version","Kroppsvekt","Styrke","triceps",0,"","Dips_-_Triceps_Version"],
 ["Dips for bryst","Dips - Chest Version","Annet","Styrke","bryst",0,"","Dips_-_Chest_Version"],
 ["Dips i maskin","Dip Machine","Maskin","Styrke","triceps",0,"","Dip_Machine"],
+["Dips med hjelp","Assisted Dips machine band","Maskin","Styrke","triceps",0,"","Stanga_Dips_med_hjelp"],
 ["Double-unders","double under hopprep","Annet","Kondisjon","legger",0,"","Stanga_Double_unders"],
 ["Drag curl","Drag Curl","Stang","Styrke","biceps",1,"","Drag_Curl"],
 ["Enarms armhevinger","Single-Arm Push-Up","Kroppsvekt","Styrke","bryst",0,"","Single-Arm_Push-Up"],
@@ -1156,16 +1161,23 @@ const EXLIB = [
 ["Enarms triceps pushdown","Cable One Arm Tricep Extension","Kabel","Styrke","triceps",0,"","Cable_One_Arm_Tricep_Extension"],
 ["Enarms tricepspress","Dumbbell One-Arm Triceps Extension","Manualer","Styrke","triceps",0,"","Dumbbell_One-Arm_Triceps_Extension"],
 ["Ettbeins beinspark","Single-Leg Leg Extension","Maskin","Styrke","forside lår",0,"","Single-Leg_Leg_Extension"],
+["Ettbeins lårcurl","Single-Leg Leg Curl","Maskin","Styrke","baksida lår",0,"","Stanga_Ettbeins_larcurl"],
 ["Ettbeins markløft med kettlebell","Kettlebell One-Legged Deadlift","Kettlebell","Styrke","baksida lår",0,"","Kettlebell_One-Legged_Deadlift"],
 ["Ettbeins seteløft","Single Leg Glute Bridge","Kroppsvekt","Styrke","sete",0,"","Single_Leg_Glute_Bridge"],
 ["Face pull","Face Pull","Kabel","Styrke","skuldre",0,"","Face_Pull"],
+["Face pull med manualer","Dumbbell Face Pull","Manualer","Styrke","skuldre",0,"","Stanga_Face_pull_med_manualer"],
+["Face pull med stang","Barbell Face Pull","Stang","Styrke","skuldre",1,"","Stanga_Face_pull_med_stang"],
 ["Farmer carry","Farmer's Walk","Annet","Strongman","underarmer",0,"","Farmers_Walk"],
 ["Fartsknebøy","Speed Squats","Stang","Styrke","forside lår",1,"","Speed_Squats"],
 ["Flies i kabel på benk","Flat Bench Cable Flyes","Kabel","Styrke","bryst",0,"","Flat_Bench_Cable_Flyes"],
+["Flies i maskin","Machine Chest Fly","Maskin","Styrke","bryst",0,"","Stanga_Flies_i_maskin"],
 ["Flies med manualer","Dumbbell Flyes","Manualer","Styrke","bryst",0,"","Dumbbell_Flyes"],
 ["Foroverbøyd sidehev i kabel","Bent Over Low-Pulley Side Lateral","Kabel","Styrke","skuldre",0,"","Bent_Over_Low-Pulley_Side_Lateral"],
+["Foroverbøyd skuldertrekk med manualer","Dumbbell Bent Over Shrug","Manualer","Styrke","trapezius",0,"","Stanga_Foroverboyd_skuldertrekk_med_manualer"],
+["Foroverbøyd skuldertrekk med stang","Barbell Bent Over Shrug","Stang","Styrke","trapezius",1,"","Stanga_Foroverboyd_skuldertrekk_med_stang"],
 ["Front rack-utfall med manualer","db front rack lunge","Manualer","Styrke","forside lår, sete",0,"","Stanga_Front_rack_utfall_med_manualer"],
 ["Frontbøy","Front Barbell Squat","Stang","Styrke","forside lår",1,"frontsquat","Front_Barbell_Squat"],
+["Frontbøy med kryssgrep","Front Squat cross grip alternate","Stang","Styrke","forside lår",1,"","Stanga_Frontboy_med_kryssgrep"],
 ["Frontbøy med to kettlebells","Front Squats With Two Kettlebells","Kettlebell","Styrke","forside lår",0,"","Front_Squats_With_Two_Kettlebells"],
 ["Fronthev i kabel","Front Cable Raise","Kabel","Styrke","skuldre",0,"","Front_Cable_Raise"],
 ["Fronthev med manualer","Front Dumbbell Raise","Manualer","Styrke","skuldre",0,"","Front_Dumbbell_Raise"],
@@ -1175,8 +1187,10 @@ const EXLIB = [
 ["Goblet squat","Goblet Squat","Kettlebell","Styrke","forside lår",0,"","Goblet_Squat"],
 ["Good morning","Good Morning","Stang","Styrkeløft","baksida lår",1,"","Good_Morning"],
 ["Good morning med strikk","Band Good Morning","Strikk","Styrkeløft","baksida lår",0,"","Band_Good_Morning"],
+["Good morning, lav stang","Low Bar Good Morning","Stang","Styrke","baksida lår",1,"","Stanga_Good_morning_lav_stang"],
 ["Gulvpress","Floor Press","Stang","Styrkeløft","triceps",1,"floorpress","Floor_Press"],
 ["Gulvpress med manualer","Dumbbell Floor Press","Manualer","Styrkeløft","triceps",0,"","Dumbbell_Floor_Press"],
+["Gående utfall med manualer","Dumbbell Walking Lunge","Manualer","Styrke","forside lår, sete",0,"","Stanga_Gaende_utfall_med_manualer"],
 ["Gående utfall med stang","Barbell Walking Lunge","Stang","Styrke","forside lår",1,"","Barbell_Walking_Lunge"],
 ["Hack squat","Hack Squat","Maskin","Styrke","forside lår",0,"","Hack_Squat"],
 ["Hack squat med stang","Barbell Hack Squat","Stang","Styrke","forside lår",1,"","Barbell_Hack_Squat"],
@@ -1215,6 +1229,7 @@ const EXLIB = [
 ["Kabelcrossover","Cable Crossover","Kabel","Styrke","bryst",0,"","Cable_Crossover"],
 ["Kabelcrossover nedenfra","Low Cable Crossover","Kabel","Styrke","bryst",0,"","Low_Cable_Crossover"],
 ["Kabelcrunch","Cable Crunch","Kabel","Styrke","mage",0,"","Cable_Crunch"],
+["Kabelflies ovenfra","High Cable Flye high to low","Kabel","Styrke","bryst",0,"","Stanga_Kabelflies_ovenfra"],
 ["Kettlebell clean med to armer","Two-Arm Kettlebell Clean","Kettlebell","Styrke","skuldre",0,"","Two-Arm_Kettlebell_Clean"],
 ["Kettlebell markløft","kb deadlift","Kettlebell","Styrke","sete, baksida lår",0,"","Stanga_Kettlebell_markloft"],
 ["Kettlebell swing","russian swing two-arm","Kettlebell","Styrke","sete, baksida lår",0,"","Stanga_Kettlebell_swing"],
@@ -1222,6 +1237,7 @@ const EXLIB = [
 ["Kickback på alle fire","Glute Kickback","Kroppsvekt","Styrke","sete",0,"","Glute_Kickback"],
 ["Kipping muscle-up","Kipping Muscle Up","Annet","Styrke","latissimus",0,"","Kipping_Muscle_Up"],
 ["Knebøy","Barbell Squat","Stang","Styrke","forside lår",1,"squat","Barbell_Squat"],
+["Knebøy i maskin med føttene fram","Machine Feet Forward Squat smith","Maskin","Styrke","forside lår",0,"","Stanga_Kneboy_i_maskin_med_fottene_fram"],
 ["Knebøy i smithmaskin","Smith Machine Squat","Maskin","Styrke","forside lår",0,"","Smith_Machine_Squat"],
 ["Knebøy med kjetting","Squat with Chains","Stang","Styrkeløft","forside lår",1,"","Squat_with_Chains"],
 ["Knebøy med manualer","Dumbbell Squat","Manualer","Styrke","forside lår",0,"","Dumbbell_Squat"],
@@ -1233,6 +1249,7 @@ const EXLIB = [
 ["Landmine-press","Landmine Linear Jammer","Stang","Styrke","skuldre",1,"","Landmine_Linear_Jammer"],
 ["Landmine-roing","Bent Over Two-Arm Long Bar Row","Stang","Styrke","midtre rygg",1,"","Bent_Over_Two-Arm_Long_Bar_Row"],
 ["Landmine-rotasjon","Landmine 180's","Stang","Styrke","mage",1,"","Landmine_180s"],
+["Lav skrå DB-benk","Low Incline Dumbbell Press","Manualer","Styrke","bryst",0,"","Stanga_Lav_skra_DB_benk"],
 ["Liggende bakre skulderhev","Dumbbell Lying Rear Lateral Raise","Manualer","Styrke","skuldre",0,"","Dumbbell_Lying_Rear_Lateral_Raise"],
 ["Liggende beinhev på benk","Flat Bench Lying Leg Raise","Kroppsvekt","Styrke","mage",0,"","Flat_Bench_Lying_Leg_Raise"],
 ["Liggende enarms sidehev","Lying One-Arm Lateral Raise","Manualer","Styrke","skuldre",0,"","Lying_One-Arm_Lateral_Raise"],
@@ -1251,9 +1268,11 @@ const EXLIB = [
 ["Markløft med axle","Axle Deadlift","Annet","Strongman","korsrygg",0,"","Axle_Deadlift"],
 ["Markløft med cleangrep","Clean Deadlift","Stang","Vektløfting","baksida lår",1,"","Clean_Deadlift"],
 ["Markløft med kjetting","Deadlift with Chains","Stang","Styrkeløft","korsrygg",1,"","Deadlift_with_Chains"],
+["Markløft med små skiver","25s Deadlift small plates","Stang","Styrke","sete, baksida lår",1,"","Stanga_Markloft_med_sma_skiver"],
 ["Markløft med snatchgrep","Snatch Deadlift","Stang","Vektløfting","baksida lår",1,"","Snatch_Deadlift"],
 ["Markløft med strikk","Deadlift with Bands","Stang","Styrkeløft","korsrygg",1,"","Deadlift_with_Bands"],
 ["Militærpress","Standing Military Press strict press overhead press","Stang","Styrke","skuldre",1,"ohp","Standing_Military_Press"],
+["Modifisert candlestick","Modified Candlestick","Kroppsvekt","Styrke","mage",0,"","Stanga_Modifisert_candlestick"],
 ["Monster walk","Monster Walk","Strikk","Styrke","utside lår",0,"","Monster_Walk"],
 ["Muscle snatch","Muscle Snatch","Stang","Vektløfting","baksida lår",1,"","Muscle_Snatch"],
 ["Muscle-up","Muscle Up","Annet","Styrke","latissimus",0,"","Muscle_Up"],
@@ -1264,6 +1283,7 @@ const EXLIB = [
 ["Nedtrekk med strake armer","Straight-Arm Pulldown","Kabel","Styrke","latissimus",0,"","Straight-Arm_Pulldown"],
 ["Nedtrekk med undergrep","Underhand Cable Pulldowns","Kabel","Styrke","latissimus",0,"","Underhand_Cable_Pulldowns"],
 ["Nedtrekk med V-håndtak","V-Bar Pulldown","Kabel","Styrke","latissimus",0,"","V-Bar_Pulldown"],
+["Nedtrekk, bredt grep","Wide Grip Pulldown","Kabel","Styrke","latissimus",0,"","Stanga_Nedtrekk_bredt_grep"],
 ["Nedtrekk, smalt grep","Close-Grip Front Lat Pulldown","Kabel","Styrke","latissimus",0,"","Close-Grip_Front_Lat_Pulldown"],
 ["Nordic hamstring curl","Natural Glute Ham Raise","Kroppsvekt","Styrke","baksida lår",0,"","Natural_Glute_Ham_Raise"],
 ["Omvendt butterfly","Reverse Machine Flyes","Maskin","Styrke","skuldre",0,"","Reverse_Machine_Flyes"],
@@ -1291,9 +1311,11 @@ const EXLIB = [
 ["Press bak nakken","Standing Barbell Press Behind Neck","Stang","Styrke","skuldre",1,"","Standing_Barbell_Press_Behind_Neck"],
 ["Pull-through","Pull Through","Kabel","Styrke","sete",0,"","Pull_Through"],
 ["Pull-ups","Pullups","Kroppsvekt","Styrke","latissimus",0,"","Pullups"],
+["Pull-ups med hjelp, nøytralt grep","Assisted Parallel Grip Pull-Up","Kroppsvekt","Styrke","latissimus",0,"","Stanga_Pull_ups_med_hjelp_noytralt_grep"],
 ["Pull-ups med strikkhjelp","Band Assisted Pull-Up","Annet","Styrke","latissimus",0,"","Band_Assisted_Pull-Up"],
 ["Pull-ups med vekt","Weighted Pull Ups","Annet","Styrke","latissimus",0,"","Weighted_Pull_Ups"],
 ["Pull-ups, bredt grep","Wide-Grip Rear Pull-Up","Kroppsvekt","Styrke","latissimus",0,"","Wide-Grip_Rear_Pull-Up"],
+["Pull-ups, nøytralt grep","Parallel Grip Pull-Up neutral","Kroppsvekt","Styrke","latissimus",0,"","Stanga_Pull_ups_noytralt_grep"],
 ["Pullover med manual","Bent-Arm Dumbbell Pullover","Manualer","Styrke","bryst",0,"","Bent-Arm_Dumbbell_Pullover"],
 ["Pullover med strake armer","Straight-Arm Dumbbell Pullover","Manualer","Styrke","bryst",0,"","Straight-Arm_Dumbbell_Pullover"],
 ["Push jerk","Power Jerk","Stang","Vektløfting","forside lår",1,"pushjerk","Power_Jerk"],
@@ -1309,6 +1331,7 @@ const EXLIB = [
 ["Roing i smithmaskin","Smith Machine Bent Over Row","Maskin","Styrke","midtre rygg",0,"","Smith_Machine_Bent_Over_Row"],
 ["Roing i vektarmsmaskin","Leverage Iso Row","Maskin","Styrke","latissimus",0,"","Leverage_Iso_Row"],
 ["Roing liggende på skråbenk","Incline Bench Pull","Stang","Styrke","midtre rygg",1,"","Incline_Bench_Pull"],
+["Roing med EZ-stang, undergrep","Underhand EZ Bar Row","EZ-stang","Styrke","midtre rygg",0,"","Stanga_Roing_med_EZ_stang_undergrep"],
 ["Roing med slede","Sled Row","Annet","Styrke","midtre rygg",0,"","Sled_Row"],
 ["Roing med to kettlebells","Two-Arm Kettlebell Row","Kettlebell","Styrke","midtre rygg",0,"","Two-Arm_Kettlebell_Row"],
 ["Roing med to manualer","Bent Over Two-Dumbbell Row","Manualer","Styrke","midtre rygg",0,"","Bent_Over_Two-Dumbbell_Row"],
@@ -1332,6 +1355,7 @@ const EXLIB = [
 ["Sidebøy med manual","Dumbbell Side Bend","Manualer","Styrke","mage",0,"","Dumbbell_Side_Bend"],
 ["Sidehev","Side Lateral Raise","Manualer","Styrke","skuldre",0,"","Side_Lateral_Raise"],
 ["Sidehev i kabel","Cable Seated Lateral Raise","Kabel","Styrke","skuldre",0,"","Cable_Seated_Lateral_Raise"],
+["Sidehev med tommelen ned","Thumbs Down Lateral Raise","Manualer","Styrke","skuldre",0,"","Stanga_Sidehev_med_tommelen_ned"],
 ["Sidehev til fronthev","Side Laterals to Front Raise","Manualer","Styrke","skuldre",0,"","Side_Laterals_to_Front_Raise"],
 ["Sideplanke","Side Bridge","Kroppsvekt","Styrke","mage",0,"","Side_Bridge"],
 ["Sideutfall med stang","Barbell Side Split Squat","Stang","Styrke","forside lår",1,"","Barbell_Side_Split_Squat"],
@@ -1346,9 +1370,13 @@ const EXLIB = [
 ["Sittende skulderpress med kettlebell","Kettlebell Seated Press","Kettlebell","Styrke","skuldre",0,"","Kettlebell_Seated_Press"],
 ["Sittende skulderpress med manualer","Seated Dumbbell Press","Manualer","Styrke","skuldre",0,"","Seated_Dumbbell_Press"],
 ["Sittende tricepspress over hodet","Seated Triceps Press","Manualer","Styrke","triceps",0,"","Seated_Triceps_Press"],
+["Sittende tricepspress over hodet med EZ-stang","Seated EZ Bar Overhead Tricep Extension","EZ-stang","Styrke","triceps",0,"","Stanga_Sittende_tricepspress_over_hodet_med_EZ_stang"],
+["Sittende tricepspress over hodet med stang","Seated Barbell Overhead Tricep Extension","Stang","Styrke","triceps",1,"","Stanga_Sittende_tricepspress_over_hodet_med_stang"],
 ["Sittende tåhev i maskin","Seated Calf Raise","Maskin","Styrke","legger",0,"","Seated_Calf_Raise"],
 ["Sittende tåhev med stang","Barbell Seated Calf Raise","Stang","Styrke","legger",1,"","Barbell_Seated_Calf_Raise"],
 ["Situps","Sit-Up","Kroppsvekt","Styrke","mage",0,"","Sit-Up"],
+["Situps med strake armer","Reaching Sit-Up","Kroppsvekt","Styrke","mage",0,"","Stanga_Situps_med_strake_armer"],
+["Situps på skråbenk","Slant Board Sit-Up decline","Kroppsvekt","Styrke","mage",0,"","Stanga_Situps_pa_skrabenk"],
 ["SkiErg","ski","Maskin","Kondisjon","hele kroppen",0,"","Stanga_SkiErg"],
 ["Skiveklyp","Plate Pinch","Annet","Styrke","underarmer",0,"","Plate_Pinch"],
 ["Skrå bicepscurl","Incline Dumbbell Curl","Manualer","Styrke","biceps",0,"","Incline_Dumbbell_Curl"],
@@ -1361,6 +1389,8 @@ const EXLIB = [
 ["Skrå manualbenk, nøytralt grep","Hammer Grip Incline DB Bench Press","Manualer","Styrke","bryst",0,"","Hammer_Grip_Incline_DB_Bench_Press"],
 ["Skråbenk","Barbell Incline Bench Press - Medium Grip","Stang","Styrke","bryst",1,"incline","Barbell_Incline_Bench_Press_-_Medium_Grip"],
 ["Skråbenk i smithmaskin","Smith Machine Incline Bench Press","Maskin","Styrke","bryst",0,"","Smith_Machine_Incline_Bench_Press"],
+["Skråbenk, bredt grep","Incline Wide Grip Bench Press","Stang","Styrke","bryst",1,"","Stanga_Skrabenk_bredt_grep"],
+["Skråpress i maskin","Incline Machine Chest Press","Maskin","Styrke","bryst",0,"","Stanga_Skrapress_i_maskin"],
 ["Skulderpress i kabel","Cable Shoulder Press","Kabel","Styrke","skuldre",0,"","Cable_Shoulder_Press"],
 ["Skulderpress i maskin","Machine Shoulder (Military) Press","Maskin","Styrke","skuldre",0,"","Machine_Shoulder_Military_Press"],
 ["Skulderpress i smithmaskin","Smith Machine Overhead Shoulder Press","Maskin","Styrke","skuldre",0,"","Smith_Machine_Overhead_Shoulder_Press"],
@@ -1377,7 +1407,9 @@ const EXLIB = [
 ["Sledetrekk med sele","Sled Drag - Harness","Annet","Strongman","forside lår",0,"","Sled_Drag_-_Harness"],
 ["Smal benkpress","Close-Grip Barbell Bench Press","Stang","Styrke","triceps",1,"closegrip","Close-Grip_Barbell_Bench_Press"],
 ["Smal benkpress med EZ-stang","Close-Grip EZ-Bar Press","EZ-stang","Styrke","triceps",0,"","Close-Grip_EZ-Bar_Press"],
+["Smal knebøy med føttene fram","Close Stance Feet Forward Squat","Stang","Styrke","forside lår",1,"","Stanga_Smal_kneboy_med_fottene_fram"],
 ["Smal manualpress","Close-Grip Dumbbell Press","Manualer","Styrke","triceps",0,"","Close-Grip_Dumbbell_Press"],
+["Smal skråbenk","Incline Close Grip Bench Press","Stang","Styrke","bryst, triceps",1,"","Stanga_Smal_skrabenk"],
 ["Smale armhevinger","Push-Ups - Close Triceps Position","Kroppsvekt","Styrke","triceps",0,"","Push-Ups_-_Close_Triceps_Position"],
 ["Snatch","Snatch","Stang","Vektløfting","forside lår",1,"snatch","Snatch"],
 ["Snatch balance","Snatch Balance","Stang","Vektløfting","forside lår",1,"snbal","Snatch_Balance"],
@@ -1388,6 +1420,7 @@ const EXLIB = [
 ["Snatch shrug","Snatch Shrug","Stang","Vektløfting","trapezius",1,"snshrug","Snatch_Shrug"],
 ["Spider crawl","Spider Crawl","Kroppsvekt","Styrke","mage",0,"","Spider_Crawl"],
 ["Spider curl","Spider Curl","EZ-stang","Styrke","biceps",0,"","Spider_Curl"],
+["Spider curl med manualer","Dumbbell Spider Curl","Manualer","Styrke","biceps",0,"","Stanga_Spider_curl_med_manualer"],
 ["Split clean","Split Clean","Stang","Vektløfting","forside lår",1,"","Split_Clean"],
 ["Split jerk","Split Jerk","Stang","Vektløfting","forside lår",1,"","Split_Jerk"],
 ["Split snatch","Split Snatch","Stang","Vektløfting","baksida lår",1,"","Split_Snatch"],
@@ -1396,6 +1429,7 @@ const EXLIB = [
 ["Squat jerk","Squat Jerk","Stang","Styrke","forside lår",1,"","Squat_Jerk"],
 ["Stangroing","Bent Over Barbell Row","Stang","Styrke","midtre rygg",1,"row","Bent_Over_Barbell_Row"],
 ["Stangroing med undergrep","Reverse Grip Bent-Over Rows","Stang","Styrke","midtre rygg",1,"","Reverse_Grip_Bent-Over_Rows"],
+["Stangroing til brystet","Barbell Row to Chest","Stang","Styrke","midtre rygg",1,"","Stanga_Stangroing_til_brystet"],
 ["Step-up med knehev","Step-up with Knee Raise","Kroppsvekt","Styrke","sete",0,"","Step-up_with_Knee_Raise"],
 ["Step-ups med manualer","Dumbbell Step Ups","Manualer","Styrke","forside lår",0,"","Dumbbell_Step_Ups"],
 ["Step-ups med stang","Barbell Step Ups","Stang","Styrke","forside lår",1,"","Barbell_Step_Ups"],
@@ -1423,15 +1457,18 @@ const EXLIB = [
 ["Triceps pushdown med undergrep","Reverse Grip Triceps Pushdown","Kabel","Styrke","triceps",0,"","Reverse_Grip_Triceps_Pushdown"],
 ["Triceps pushdown med V-håndtak","Triceps Pushdown - V-Bar Attachment","Kabel","Styrke","triceps",0,"","Triceps_Pushdown_-_V-Bar_Attachment"],
 ["Tricepspress i maskin","Machine Triceps Extension","Maskin","Styrke","triceps",0,"","Machine_Triceps_Extension"],
+["Tricepspress over hodet med EZ-stang","EZ Bar Overhead Tricep Extension","EZ-stang","Styrke","triceps",0,"","Stanga_Tricepspress_over_hodet_med_EZ_stang"],
 ["Tricepspress over hodet med kettlebell","Kettlebell Overhead Triceps Extension","Kettlebell","Styrke","triceps",0,"","Kettlebell_Overhead_Triceps_Extension"],
 ["Tricepspress over hodet med manual","Standing Dumbbell Triceps Extension","Manualer","Styrke","triceps",0,"","Standing_Dumbbell_Triceps_Extension"],
 ["Tricepspress over hodet med stang","Standing Overhead Barbell Triceps Extension","Stang","Styrke","triceps",1,"","Standing_Overhead_Barbell_Triceps_Extension"],
 ["Tricepspress over hodet med tau","Triceps Overhead Extension with Rope","Kabel","Styrke","triceps",0,"","Triceps_Overhead_Extension_with_Rope"],
 ["Turkish get-up","Kettlebell Turkish Get-Up (Lunge style)","Kettlebell","Styrke","skuldre",0,"","Kettlebell_Turkish_Get-Up_Lunge_style"],
 ["Tåhev i beinpress","Calf Press On The Leg Press Machine","Maskin","Styrke","legger",0,"","Calf_Press_On_The_Leg_Press_Machine"],
+["Tåhev i smithmaskin","Smith Machine Calf Raise","Maskin","Styrke","legger",0,"","Stanga_Tahev_i_smithmaskin"],
 ["Tåhev med manualer","Standing Dumbbell Calf Raise","Manualer","Styrke","legger",0,"","Standing_Dumbbell_Calf_Raise"],
 ["Tåhev med stang","Standing Barbell Calf Raise","Stang","Styrke","legger",1,"","Standing_Barbell_Calf_Raise"],
 ["Tønneløft","Keg Load","Annet","Strongman","korsrygg",0,"","Keg_Load"],
+["Tåhev på trappetrinn","Stair Calf Raise","Kroppsvekt","Styrke","legger",0,"","Stanga_Tahev_pa_trappetrinn"],
 ["Underskuddsmarkløft","Deficit Deadlift","Stang","Styrkeløft","korsrygg",1,"deficit","Deficit_Deadlift"],
 ["Utadrotasjon i kabel","External Rotation with Cable","Kabel","Styrke","skuldre",0,"","External_Rotation_with_Cable"],
 ["Utadrotasjon med manual","External Rotation","Manualer","Styrke","skuldre",0,"","External_Rotation"],
@@ -1441,6 +1478,7 @@ const EXLIB = [
 ["Utrulling med stang","Barbell Ab Rollout","Stang","Styrke","mage",1,"","Barbell_Ab_Rollout"],
 ["Utrulling med stang, på knærne","Barbell Ab Rollout - On Knees","Stang","Styrke","mage",1,"","Barbell_Ab_Rollout_-_On_Knees"],
 ["Utside lår-maskin","Thigh Abductor","Maskin","Styrke","utside lår",0,"","Thigh_Abductor"],
+["V-ups","V-Up","Kroppsvekt","Styrke","mage",0,"","Stanga_V_ups"],
 ["Vedhugger i kabel","Standing Cable Wood Chop","Kabel","Styrke","mage",0,"","Standing_Cable_Wood_Chop"],
 ["Vekslende bicepscurl","Dumbbell Alternate Bicep Curl","Manualer","Styrke","biceps",0,"","Dumbbell_Alternate_Bicep_Curl"],
 ["Vekslende hammercurl","Alternate Hammer Curl","Manualer","Styrke","biceps",0,"","Alternate_Hammer_Curl"],
@@ -1692,6 +1730,196 @@ function progressBurg(p, a, s){
   if (s.ex.some(e => e.sets.some(x => x.d != null))) notes.push({name:s.day, text:'Vektene følger prosentplanen', kind:'same'});
   return notes;
 }
+
+/* ---------- RP Hypertrofi 3 og 5 dager (Renaissance Periodization, malene i Jonas sine ark) ----------
+   Tre mesosykluser: Basis (4 uker + deload), Metabolitt (4 uker + deload, med supersett) og
+   Resensitivisering (2 uker + deload). 13 uker i alt.
+   Hver plass i økta er en kategori fra arket (for eksempel flat press) med en standardøvelse.
+   Alternativene i kategorien er lista fra arket, og de kan byttes under Oppsett eller i økta.
+   Vekta er prosent av 10RM i øvelsen, som formlene i arket: uke 1 er 85 % (Basis), 75 % (Metabolitt) eller
+   100 % (Resensitivisering), og uke 2, 3 og 4 er 5 %, 7,5 % og 10 % over uke 1. Andre øvelse i et supersett
+   starter på 60 %. Reps i reserve går 3, 3, 2 og 1. Deloaduka har 2 sett med halve reps fra uke 1. På de siste
+   dagene i uka (flagg h) er vekta også halvert. Andre øvelse i et supersett står over i deloaduka (flagg S).
+   Vurderingen etter øvelsen (lett, passe, tungt) gir ett sett mer, like mange eller ett mindre neste uke, som
+   1, 0 og −1 i arket. Vurderingen i siste uke før deload brukes ikke, fordi deload alltid har 2 sett.
+   Instansen: a.rm[løft] = 10RM i denne mesosyklusen, a.est[løft] = siste anslag fra settene dine (blir ny 10RM når
+   neste mesosyklus starter), a.sets[plass] = sett neste uke, a.r1[plass] = reps i første sett i uke 1,
+   a.swaps[plass] = valgt øvelse. Plassen heter «meso.dag.rad», for eksempel «0.2.4».
+   RP_DAYS: per program, per mesosyklus, per dag: [kategori, sett i uke 1, standardøvelse, flagg]. */
+const RP_CAT = {
+  abs:{n:'Mage', ex:['l_ab_crunch_machine','l_stanga_situps_pa_skrabenk','l_stanga_situps_med_strake_armer','l_stanga_v_ups','l_stanga_modifisert_candlestick','l_stanga_hengende_knehev','l_hanging_leg_raise']},
+  biceps:{n:'Biceps', ex:['l_barbell_curl','l_ez_bar_curl','l_close_grip_standing_barbell_curl','l_dumbbell_bicep_curl','l_standing_biceps_cable_curl','l_incline_dumbbell_curl','l_stanga_bicepscurl_med_rotasjon','l_hammer_curls','l_stanga_spider_curl_med_manualer','l_dumbbell_alternate_bicep_curl','l_stanga_curl_med_tau_og_rotasjon']},
+  calves:{n:'Legger', ex:['l_standing_calf_raises','l_stanga_tahev_pa_trappetrinn','l_calf_press_on_the_leg_press_machine','l_stanga_tahev_i_smithmaskin']},
+  chest:{n:'Brystflies', ex:['l_dumbbell_flyes','l_incline_dumbbell_flyes','l_cable_crossover','l_stanga_kabelflies_ovenfra','l_stanga_flies_i_maskin','l_incline_cable_flye','l_butterfly']},
+  cit:{n:'Brystflies eller triceps', ex:['l_dumbbell_flyes','l_ez_bar_skullcrusher','l_incline_dumbbell_flyes','l_stanga_tricepspress_over_hodet_med_ez_stang','l_cable_crossover','l_jm_press','l_stanga_kabelflies_ovenfra','l_standing_overhead_barbell_triceps_extension','l_stanga_flies_i_maskin','l_dips_triceps_version','l_incline_cable_flye','l_stanga_sittende_tricepspress_over_hodet_med_ez_stang','l_butterfly','l_stanga_dips_med_hjelp','l_stanga_sittende_tricepspress_over_hodet_med_stang','l_lying_dumbbell_tricep_extension','l_triceps_overhead_extension_with_rope','l_triceps_pushdown','l_triceps_pushdown_rope_attachment','l_lying_close_grip_barbell_triceps_extension_behind_the_head']},
+  fdelt:{n:'Skulderpress', ex:['ohp','seatedpress','l_seated_dumbbell_press','l_stanga_bratt_skra_db_benk','l_machine_shoulder_military_press','l_standing_dumbbell_press']},
+  glutes:{n:'Sete', ex:['l_barbell_walking_lunge','l_stanga_gaende_utfall_med_manualer','l_wide_stance_barbell_squat','deficit','l_stanga_markloft_med_sma_skiver','sumo','deadlift','trapbar']},
+  hinge:{n:'Baksida lår, hoftebøy', ex:['l_stiff_legged_barbell_deadlift','l_stanga_good_morning_lav_stang','l_good_morning','l_hyperextensions_back_extensions']},
+  hams:{n:'Lårcurl', ex:['l_lying_leg_curls','l_seated_leg_curl','l_stanga_ettbeins_larcurl']},
+  hpull:{n:'Roing', ex:['row','l_stanga_roing_med_ez_stang_undergrep','l_stanga_stangroing_til_brystet','dbrow','csrow','l_leverage_iso_row','l_bent_over_two_dumbbell_row','l_seated_cable_rows']},
+  hpush:{n:'Flat press', ex:['bench','l_wide_grip_barbell_bench_press','dbbench','closegrip','l_machine_bench_press','l_pushups','l_push_ups_close_triceps_position']},
+  htri:{n:'Triceps, liggende', ex:['l_ez_bar_skullcrusher','l_jm_press','l_dips_triceps_version','l_stanga_dips_med_hjelp','l_lying_dumbbell_tricep_extension','l_triceps_pushdown','l_triceps_pushdown_rope_attachment','l_lying_close_grip_barbell_triceps_extension_behind_the_head']},
+  ipush:{n:'Skrå press', ex:['incline','l_stanga_skrabenk_bredt_grep','l_stanga_lav_skra_db_benk','inclinedb','l_stanga_smal_skrabenk','l_stanga_skrapress_i_maskin']},
+  ipf:{n:'Skrå press eller skulderpress', ex:['incline','ohp','l_stanga_skrabenk_bredt_grep','seatedpress','l_stanga_lav_skra_db_benk','l_seated_dumbbell_press','inclinedb','l_stanga_bratt_skra_db_benk','l_stanga_smal_skrabenk','l_machine_shoulder_military_press','l_stanga_skrapress_i_maskin','l_standing_dumbbell_press']},
+  quads:{n:'Forside lår', ex:['squat','l_stanga_smal_kneboy_med_fottene_fram','l_stanga_kneboy_i_maskin_med_fottene_fram','l_leg_press','l_hack_squat','frontsquat','l_stanga_frontboy_med_kryssgrep']},
+  rdelt:{n:'Bakre skulder', ex:['l_stanga_face_pull_med_stang','l_stanga_face_pull_med_manualer','l_face_pull','l_reverse_flyes']},
+  rsd:{n:'Bakre eller sideskulder', ex:['l_stanga_face_pull_med_stang','l_upright_barbell_row','l_stanga_face_pull_med_manualer','l_standing_dumbbell_upright_row','l_face_pull','l_upright_cable_row','l_reverse_flyes','l_side_lateral_raise','l_stanga_sidehev_med_tommelen_ned']},
+  sdelt:{n:'Sideskulder', ex:['l_upright_barbell_row','l_standing_dumbbell_upright_row','l_upright_cable_row','l_side_lateral_raise','l_stanga_sidehev_med_tommelen_ned']},
+  traps:{n:'Skuldertrekk', ex:['l_barbell_shrug','l_stanga_foroverboyd_skuldertrekk_med_stang','l_dumbbell_shrug','l_stanga_foroverboyd_skuldertrekk_med_manualer']},
+  tri:{n:'Triceps', ex:['l_ez_bar_skullcrusher','l_stanga_tricepspress_over_hodet_med_ez_stang','l_jm_press','l_standing_overhead_barbell_triceps_extension','l_dips_triceps_version','l_stanga_sittende_tricepspress_over_hodet_med_ez_stang','l_stanga_dips_med_hjelp','l_stanga_sittende_tricepspress_over_hodet_med_stang','l_lying_dumbbell_tricep_extension','l_triceps_overhead_extension_with_rope','l_triceps_pushdown','l_triceps_pushdown_rope_attachment','l_lying_close_grip_barbell_triceps_extension_behind_the_head']},
+  vpull:{n:'Nedtrekk og pull-ups', ex:['l_pullups','l_stanga_pull_ups_noytralt_grep','l_chin_up','l_wide_grip_rear_pull_up','l_band_assisted_pull_up','l_stanga_pull_ups_med_hjelp_noytralt_grep','l_stanga_chin_ups_med_hjelp','pulldown','l_v_bar_pulldown','l_underhand_cable_pulldowns','l_stanga_nedtrekk_bredt_grep','l_close_grip_front_lat_pulldown']},
+  vtri:{n:'Triceps over hodet', ex:['l_stanga_tricepspress_over_hodet_med_ez_stang','l_standing_overhead_barbell_triceps_extension','l_stanga_sittende_tricepspress_over_hodet_med_ez_stang','l_stanga_sittende_tricepspress_over_hodet_med_stang','l_triceps_overhead_extension_with_rope']}
+};
+const RP_DAYS = {
+  rp3: [
+    [[['hpush',3,'bench'], ['cit',3,'l_standing_overhead_barbell_triceps_extension'], ['ipf',3,'ohp'], ['sdelt',3,'l_side_lateral_raise'], ['vpull',3,'pulldown'], ['hpull',3,'l_seated_cable_rows'], ['hams',2,'l_seated_leg_curl'], ['quads',2,'squat']],
+     [['quads',3,'squat'], ['quads',3,'l_leg_press'], ['hinge',3,'l_stiff_legged_barbell_deadlift'], ['sdelt',3,'l_side_lateral_raise'], ['vpull',3,'l_stanga_nedtrekk_bredt_grep'], ['hpull',3,'l_seated_cable_rows'], ['ipf',2,'l_stanga_skrabenk_bredt_grep'], ['hpush',2,'bench']],
+     [['vpull',3,'l_underhand_cable_pulldowns','h'], ['hpull',3,'row','h'], ['rsd',3,'l_face_pull','h'], ['biceps',3,'l_ez_bar_curl','h'], ['hpush',3,'bench','h'], ['ipush',3,'inclinedb','h'], ['glutes',2,'deadlift','h'], ['hams',2,'l_seated_leg_curl','h']]],
+    [[['hpush',4,'bench'], ['cit',4,'l_standing_overhead_barbell_triceps_extension','s'], ['ipf',4,'ohp','S'], ['ipf',4,'l_stanga_skrabenk_bredt_grep'], ['sdelt',3,'l_upright_cable_row'], ['vpull',3,'l_chin_up'], ['hpull',3,'row'], ['hams',2,'l_seated_leg_curl'], ['quads',2,'squat']],
+     [['quads',4,'squat'], ['quads',4,'l_leg_press'], ['hinge',4,'l_stiff_legged_barbell_deadlift'], ['sdelt',3,'l_side_lateral_raise','s'], ['sdelt',3,'l_upright_cable_row','S'], ['vpull',3,'l_stanga_nedtrekk_bredt_grep'], ['hpull',3,'l_seated_cable_rows'], ['ipf',2,'l_stanga_skrabenk_bredt_grep'], ['hpush',2,'bench']],
+     [['vpull',4,'l_underhand_cable_pulldowns','h'], ['hpull',4,'row','h'], ['rsd',4,'l_face_pull','h'], ['biceps',3,'l_ez_bar_curl','hs'], ['biceps',3,'l_incline_dumbbell_curl','S'], ['hpush',3,'bench','h'], ['ipush',3,'inclinedb','h'], ['glutes',2,'deadlift','h'], ['hams',2,'l_seated_leg_curl','h']]],
+    [[['hpush',3,'closegrip'], ['ipf',3,'ohp'], ['sdelt',2,'l_side_lateral_raise'], ['vpull',2,'pulldown'], ['hpull',2,'l_seated_cable_rows'], ['hams',1,'l_seated_leg_curl'], ['quads',1,'squat']],
+     [['quads',3,'squat'], ['hinge',3,'l_stiff_legged_barbell_deadlift'], ['sdelt',2,'l_side_lateral_raise'], ['vpull',2,'l_stanga_nedtrekk_bredt_grep'], ['hpull',2,'l_seated_cable_rows'], ['ipf',1,'l_stanga_skrabenk_bredt_grep'], ['hpush',1,'bench']],
+     [['vpull',3,'l_underhand_cable_pulldowns','h'], ['hpull',3,'row','h'], ['rsd',3,'l_face_pull','h'], ['biceps',2,'l_ez_bar_curl','h'], ['hpush',2,'bench','h'], ['ipush',2,'inclinedb','h'], ['glutes',1,'deadlift','h'], ['hams',1,'l_seated_leg_curl','h']]]],
+  nf5: [
+    [[['ipush',3,'inclinedb'], ['chest',3,'l_cable_crossover'], ['hpush',2,'bench'], ['hpull',3,'l_seated_cable_rows'], ['rsd',3,'l_face_pull'], ['abs',3,'l_ab_crunch_machine']],
+     [['quads',3,'squat'], ['quads',3,'l_leg_press'], ['hams',3,'l_seated_leg_curl'], ['calves',6,'l_standing_calf_raises']],
+     [['vpull',3,'pulldown'], ['vpull',3,'l_stanga_nedtrekk_bredt_grep'], ['hpull',3,'l_seated_cable_rows'], ['hpush',3,'bench'], ['rsd',3,'l_face_pull'], ['abs',3,'l_ab_crunch_machine']],
+     [['glutes',3,'deadlift','h'], ['glutes',3,'l_barbell_walking_lunge','h'], ['hinge',3,'l_stiff_legged_barbell_deadlift','h'], ['quads',3,'squat','h'], ['calves',6,'l_standing_calf_raises','h']],
+     [['biceps',3,'l_ez_bar_curl','h'], ['tri',3,'l_triceps_pushdown_rope_attachment','h'], ['fdelt',3,'ohp','h'], ['traps',3,'l_dumbbell_shrug','h'], ['vpull',3,'pulldown','h'], ['ipush',3,'inclinedb','h'], ['abs',3,'l_ab_crunch_machine','h']]],
+    [[['ipush',4,'inclinedb'], ['chest',3,'l_cable_crossover','s'], ['hpush',3,'bench','S'], ['hpush',2,'dbbench'], ['hpull',3,'l_seated_cable_rows'], ['rsd',3,'l_face_pull'], ['abs',3,'l_ab_crunch_machine']],
+     [['quads',4,'squat'], ['quads',4,'l_leg_press'], ['hams',4,'l_seated_leg_curl'], ['calves',6,'l_standing_calf_raises']],
+     [['vpull',4,'pulldown'], ['vpull',4,'l_stanga_nedtrekk_bredt_grep'], ['hpull',3,'l_seated_cable_rows'], ['hpush',3,'bench'], ['rsd',3,'l_face_pull','s'], ['rsd',3,'l_side_lateral_raise','S'], ['abs',3,'l_ab_crunch_machine']],
+     [['glutes',4,'deadlift','h'], ['glutes',4,'l_barbell_walking_lunge','h'], ['hinge',4,'l_stiff_legged_barbell_deadlift','h'], ['quads',4,'squat','h'], ['calves',6,'l_standing_calf_raises','h']],
+     [['biceps',4,'l_ez_bar_curl','hs'], ['biceps',4,'l_incline_dumbbell_curl','S'], ['tri',4,'l_triceps_pushdown_rope_attachment','hs'], ['fdelt',4,'ohp','S'], ['fdelt',4,'l_seated_dumbbell_press','h'], ['traps',4,'l_dumbbell_shrug','h'], ['vpull',3,'pulldown','h'], ['ipush',3,'inclinedb','h'], ['abs',3,'l_ab_crunch_machine','h']]],
+    [[['ipush',3,'inclinedb'], ['hpush',1,'bench'], ['hpull',2,'l_seated_cable_rows'], ['rsd',2,'l_face_pull'], ['abs',2,'l_ab_crunch_machine']],
+     [['quads',3,'squat'], ['hams',3,'l_seated_leg_curl'], ['calves',5,'l_standing_calf_raises']],
+     [['vpull',3,'pulldown'], ['hpull',2,'l_seated_cable_rows'], ['hpush',2,'bench'], ['rsd',2,'l_face_pull'], ['abs',2,'l_ab_crunch_machine']],
+     [['glutes',3,'deadlift','h'], ['hinge',3,'l_stiff_legged_barbell_deadlift','h'], ['quads',3,'squat','h'], ['calves',5,'l_standing_calf_raises','h']],
+     [['biceps',3,'l_ez_bar_curl','h'], ['tri',3,'l_triceps_pushdown_rope_attachment','h'], ['fdelt',3,'ohp','h'], ['traps',3,'l_dumbbell_shrug','h'], ['vpull',2,'pulldown','h'], ['ipush',2,'inclinedb','h'], ['abs',2,'l_ab_crunch_machine','h']]]]
+};
+const RP_DAYN = {
+  rp3: ['Dag 1 · Press', 'Dag 2 · Bein', 'Dag 3 · Trekk'],
+  nf5: ['Dag 1 · Bryst og rygg', 'Dag 2 · Forside lår', 'Dag 3 · Rygg og bryst', 'Dag 4 · Sete og baksida lår', 'Dag 5 · Skuldre og armer']
+};
+const RP_MESO = [{n:'Basis', f:.85, wk:4}, {n:'Metabolitt', f:.75, wk:4}, {n:'Resensitivisering', f:1, wk:2}];
+const RP_MULT = [1, 1.05, 1.075, 1.1], RP_RIR = [3, 3, 2, 1];
+const RP_WEEKS = RP_MESO.reduce((n, m) => n + m.wk + 1, 0);
+const RP_Q = [['lett', 'Lett'], ['passe', 'Passe'], ['tungt', 'Tungt']];
+const RP_QV = {lett: 1, passe: 0, tungt: -1};
+const rpRir = n => n + (n === 1 ? ' rep' : ' reps') + ' i reserve';
+// Mål for reps: Epley baklengs fra 10RM, minus reps i reserve. Uke 1 i Basis gir 14, i Metabolitt 20, i Resensitivisering 7.
+const rpReps = (f, k, rir) => Math.max(5, Math.min(30, Math.round(30 * (4 / 3 / (f * RP_MULT[k]) - 1) - rir)));
+// 10RM anslått fra et sett: Epley med reps + reps i reserve gir 1RM, og 10RM er 75 % av det
+const rp10 = (w, r, rir) => w * (1 + (r + rir) / 30) * .75;
+// Hvor i programmet økt nummer i ligger: mesosyklus, uke i mesosyklusen, dag, deload og uke totalt
+function rpPos(p, i){
+  const n = p.days.length; let w = Math.floor(i / n), gw = w;
+  for (let mi = 0; mi < RP_MESO.length; mi++) {
+    const W = RP_MESO[mi].wk + 1;
+    if (w < W) return {mi, k: w, di: i % n, dl: w === RP_MESO[mi].wk, gw};
+    w -= W;
+  }
+  return {mi: RP_MESO.length - 1, k: RP_MESO[RP_MESO.length - 1].wk, di: i % n, dl: true, gw};
+}
+const rpLift = (a, slot, def) => (a.swaps && a.swaps[slot]) || def;
+function buildRp(p, a){
+  const pos = rpPos(p, a.idx), M = RP_MESO[pos.mi], rows = RP_DAYS[p.id][pos.mi][pos.di], rir = RP_RIR[pos.k];
+  a.rm = a.rm || {}; a.est = a.est || {};
+  // Ny mesosyklus: 10RM regnes ut fra settene dine i forrige. Skjer her, så det også gjelder når en økt er hoppet over.
+  if (pos.mi > (a.mi || 0)) { Object.assign(a.rm, a.est); a.mi = pos.mi; }
+  const lifts = rows.map(([, , def], ri) => rpLift(a, pos.mi + '.' + pos.di + '.' + ri, def));
+  const ex = [];
+  rows.forEach(([cat, base, , fl = ''], ri) => {
+    const slot = pos.mi + '.' + pos.di + '.' + ri, L = lifts[ri], ss2 = fl.includes('S');
+    if (pos.dl && ss2) return;
+    const Lf = LIFTS[L] || {}, rm = a.rm[L] > 0 ? a.rm[L] : null, min = Lf.bar ? BAR() : 0;
+    const pct = (ss2 ? .6 : M.f) * RP_MULT[pos.dl ? 0 : pos.k] * (pos.dl && fl.includes('h') ? .5 : 1);
+    const last = lastW(L), w = rm ? Math.max(min, r25(rm * pct)) : Math.max(min, last == null ? 0 : last);
+    const n = pos.dl ? 2 : Math.max(1, (a.sets || {})[slot] || base);
+    const t = pos.dl ? Math.max(3, Math.round(((a.r1 || {})[slot] || rpReps(M.f, 0, RP_RIR[0])) / 2)) : rpReps(M.f, pos.k, rir);
+    const find = !rm && !Lf.bw && !pos.dl;
+    const hint = [
+      fl.includes('s') && !pos.dl ? 'Supersett med ' + liftName(lifts[ri + 1]).toLowerCase() + ': ta settene vekselvis, med kort pause mellom.' : '',
+      ss2 ? 'Andre øvelse i supersettet. Vekta er lavere fordi du er sliten fra den første.' : '',
+      find ? 'Finn vekta: velg en vekt du klarer ' + t + ' reps med og ' + rpRir(rir) + ', og juster med − og +. Appen regner ut 10RM fra settene dine.' : '',
+      pos.dl && !ex.length ? 'Deload: 2 lette sett per øvelse med halvparten av repsene fra uke 1. Ingen sett i nærheten av failure.' : ''
+    ].filter(Boolean).join(' ');
+    ex.push({key: 'rp.' + slot, lift: L, slot: L, rpSlot: slot, cat, rpPct: pct, rir: pos.dl ? null : rir, ss2: ss2 || undefined,
+      rest: Lf.bar ? 120 : 90, wu: ex.length ? 'short' : null, adj: true, hint,
+      tag: pos.dl ? 'Deload' + (fl.includes('h') ? ' · halv vekt' : '') : (fl.includes('s') || ss2 ? 'Supersett · ' : '') + rpRir(rir),
+      rpAsk: !pos.dl && pos.k < M.wk - 1 ? true : undefined, sets: mk(n, t, w)});
+  });
+  return {programId: p.id, day: RP_DAYN[p.id][pos.di], ex, started: Date.now(),
+    sub: 'Uke ' + (pos.gw + 1) + ' av ' + RP_WEEKS + ' · ' + M.n + (pos.dl ? ', deload' : ', uke ' + (pos.k + 1) + ' av ' + M.wk)};
+}
+function progressRp(p, a, s){
+  const pos = rpPos(p, a.idx), nx = rpPos(p, a.idx + 1), notes = [];
+  ['rm', 'est', 'sets', 'r1'].forEach(k => { a[k] = a[k] || {}; });
+  s.ex.forEach(e => {
+    if (!e.rpSlot) return;
+    const done = e.sets.filter(x => x.d > 0); if (!done.length) return;
+    if (!pos.dl && pos.k === 0) a.r1[e.rpSlot] = e.sets[0].d > 0 ? e.sets[0].d : done[0].d;
+    // Andre øvelse i supersettet er forhåndsslitt, så den gir ikke noe anslag
+    if (e.rir != null && !e.ss2) {
+      const est = Math.max(...done.map(x => rp10(x.w, x.d, e.rir)));
+      if (est > 0) {
+        a.est[e.lift] = Math.round(est * 2) / 2;
+        if (!(a.rm[e.lift] > 0)) { a.rm[e.lift] = a.est[e.lift]; notes.push({name: liftName(e.lift), text: '10RM anslått til ' + fmt(a.rm[e.lift]) + ' kg. Vektene framover regnes ut fra det.', kind: 'up'}); }
+      }
+    }
+    if (e.rpAsk) {
+      const old = e.sets.length, v = RP_QV[e.q] || 0, n = Math.min(8, Math.max(1, old + v));
+      a.sets[e.rpSlot] = n;
+      if (n !== old) notes.push({name: liftName(e.lift), text: old + ' → ' + n + ' sett neste uke', kind: n > old ? 'up' : 'down'});
+    }
+  });
+  if (a.idx + 1 < (p.total || 0)) {
+    if (nx.mi !== pos.mi) notes.push({name: RP_MESO[nx.mi].n, text: 'Ny mesosyklus fra neste økt. 10RM regnes ut fra settene dine.', kind: 'up'});
+    else if (nx.dl && !pos.dl) notes.push({name: 'Neste uke', text: 'Deload: 2 lette sett per øvelse', kind: 'same'});
+    else if (nx.k !== pos.k) notes.push({name: 'Neste uke', text: 'Vektene går opp, og du tar ' + rpRir(RP_RIR[nx.k]), kind: 'up'});
+  }
+  if (!notes.length && s.ex.some(e => e.sets.some(x => x.d != null))) notes.push({name: s.day, text: 'Vektene følger planen', kind: 'same'});
+  return notes;
+}
+// Programmet slik resten av appen leser det. Feltene på programsiden er 10RM i øvelsene i første mesosyklus.
+function rpProg(id, name, perWeek, summary){
+  const first = RP_DAYS[id][0], inputs = {};
+  first.flat().forEach(([, , L]) => { inputs[L] = 0; });
+  return {id, name, origin: 'Renaissance Periodization (RP)', level: 'Middels', perWeek, prog: 'rp', total: RP_WEEKS * first.length, summary,
+    rule: 'Vekta er prosent av 10RM i øvelsen: 85 % i uke 1 av Basis, 75 % i Metabolitt og 100 % i Resensitivisering. Uke 2, 3 og 4 er 5 %, 7,5 % og 10 % tyngre enn uke 1, og du stopper med 3, 3, 2 og 1 reps i reserve. Etter hver øvelse svarer du hvor støl du var fra sist og hvor tunge repsene var: lett gir ett sett mer neste uke, tungt gir ett mindre. Deloaduka har 2 sett med halve reps. Når en ny mesosyklus starter, regnes 10RM ut fra settene dine.',
+    days: RP_DAYN[id].map((n, di) => ({name: n, lines: first[di].map(([c, sets]) => [RP_CAT[c].n, sets + ' sett'])})),
+    inputs, inputLabel: '10RM'};
+}
+function vRpStart(p){
+  const a = S.active && S.active.programId === p.id ? S.active : null;
+  return `<h2 class="sec">10RM i øvelsene</h2><div class="box" style="gap:0">${Object.keys(p.inputs).map((l, i) => {
+      const v = a && a.rm && a.rm[l] > 0 ? a.rm[l] : S.maxes[l] > 0 ? r25(S.maxes[l] * .75) : null;
+      return `<div class="field"><label for="in-${i}">${esc(liftName(l))}</label>
+        <span class="inp"><input id="in-${i}" data-key="${l}" type="text" inputmode="decimal" placeholder="–" value="${v ? fmt(v) : ''}">kg</span></div>`; }).join('')}</div>
+    <p class="muted small">10RM er den tyngste vekta du klarer 10 reps med. Står et felt tomt, finner du vekta i første økt, og appen regner ut 10RM fra settene dine. Lagrede maksløft er regnet om til 10RM (75 % av 1RM).</p>`;
+}
+// Oppsett → Øvelser og bytter: plassene i mesosyklusen du er i, med alternativene fra arket
+const rpSlots = p => RP_DAYS[p.id].flatMap((m, mi) => m.flatMap((d, di) => d.map((r, ri) => mi + '.' + di + '.' + ri)));
+function rpSwapRows(p, a){
+  const pos = rpPos(p, Math.min(a.idx, p.total - 1)), M = RP_MESO[pos.mi];
+  return `<h2 class="sec">Øvelser i ${M.n}, mesosyklus ${pos.mi + 1} av ${RP_MESO.length}</h2>${RP_DAYS[p.id][pos.mi].map((rows, di) => `<div class="box" style="gap:0"><span class="lbl">${RP_DAYN[p.id][di]}</span>${rows.map(([cat, , def], ri) => {
+      const slot = pos.mi + '.' + di + '.' + ri, cur = rpLift(a, slot, def);
+      return `<div class="field"><label for="rpsw-${slot}">${RP_CAT[cat].n}</label>
+        <select id="rpsw-${slot}" data-rpswap="${slot}" data-def="${def}">${RP_CAT[cat].ex.map(l => `<option value="${l}"${l === cur ? ' selected' : ''}>${esc(liftName(l))}</option>`).join('')}</select></div>`; }).join('')}</div>`).join('')}
+    <p class="muted small">Byttet gjelder plassen ut mesosyklusen. Har du ikke 10RM i øvelsen, finner du vekta i økta.</p>`;
+}
+function rpSwap(slot, L, def){
+  const a = S.active; if (!a || !LIFTS[L]) return;
+  a.swaps = a.swaps || {};
+  if (L === def) delete a.swaps[slot]; else a.swaps[slot] = L;
+  const started = draftTouched();
+  if (!started) dropOwnDraft();
+  save(); render();
+  toast(liftName(L) + (started ? ' gjelder fra neste økt' : ' er lagt inn'));
+}
+const rpRate = (e, ei) => `<div class="rpe"><span>Hvor støl var du fra sist, og hvor tunge var repsene? Lett gir ett sett mer neste uke, tungt ett mindre.</span><div class="seg">${
+  RP_Q.map(([v, l]) => `<button data-a="q:${ei}:${v}" aria-pressed="${e.q === v}">${l}</button>`).join('')}</div></div>`;
 
 /* ---------- Muscle MetCon 12 uker (Jonas sitt Google-ark, inspirert av Coach Boski) ----------
    Tre økter i uka: Push (benk), Legs (knebøy), Pull & Power (power clean). Hver økt er
@@ -2514,7 +2742,7 @@ function refValue(p, a, L){
 const refLabel = p => ({linear:'Arbeidsvekt', gzclp:'T1-vekt', '531':'Treningsmaks', jugg:'Arbeidsmaks'})[p.prog] || '1RM';
 const ratio = L => LIFTS[L].r || 1;
 const estFor = (p, a, from, to) => r25(refValue(p, a, from) / ratio(from) * ratio(to));
-const slotsOf = p => p.prog === 'user' ? [] : [...new Set(p.days.flatMap(d => d.ex ? d.ex.map(e => e.lift) : [d.lift]))].filter(s => s && ALTS(s).length);
+const slotsOf = p => p.prog === 'user' ? [] : p.prog === 'rp' ? rpSlots(p) : [...new Set(p.days.flatMap(d => d.ex ? d.ex.map(e => e.lift) : [d.lift]))].filter(s => s && ALTS(s).length);
 
 function doSwap(slot){
   const a = S.active, p = prog(a.programId), A = sw(a, slot);
@@ -2559,6 +2787,7 @@ function libResHTML(q, slot){
     return `<button class="lib-hit" data-a="swlib:${slot}:${i}"><b>${esc(r[0])}</b><small>${esc(r[2])}${r[4] ? ' · ' + esc(r[4]) : ''}</small></button>`; }).join('');
 }
 function swapRows(p, a){
+  if (p.prog === 'rp') return rpSwapRows(p, a);
   const slots = slotsOf(p);
   if (!slots.length) return '';
   return `<h2 class="sec">Løft i programmet</h2><div class="box" style="gap:0">${slots.map(slot => {
@@ -2918,7 +3147,9 @@ const PROGRAMS = [
     days:[{name:'Økt 1', lines:[['Tre løft','E4MOM 16–20 min'],['Tilbehør','12 min'],['AMRAP','25 min']]},
           {name:'Økt 2', lines:[['Tre løft','E4MOM 16–20 min'],['Tilbehør','12 min'],['AMRAP','25 min']]},
           {name:'Økt 3', lines:[['Tre løft','E4MOM 16–20 min'],['Tilbehør','12 min'],['AMRAP','25 min']]}],
-    inputs:{bench:110, squat:135, deadlift:160, ohp:67.5}, inputLabel:'1RM' }
+    inputs:{bench:110, squat:135, deadlift:160, ohp:67.5}, inputLabel:'1RM' },
+  rpProg('rp3', 'RP Hypertrofi 3 dager', '3', 'Helkropp tre dager i uka: press, bein og trekk. Tre mesosykluser på til sammen 13 uker: Basis, Metabolitt med supersett, og Resensitivisering med tyngre vekter og færre sett. Hver mesosyklus ender med en deloaduke. Hvil 1–2 dager mellom øktene.'),
+  rpProg('nf5', 'RP Hypertrofi 5 dager', '5', 'Fem økter i uka: bryst og rygg, forside lår, rygg og bryst, sete og baksida lår, og skuldre og armer. Samme tre mesosykluser på 13 uker som 3-dagersprogrammet. Dag 1 og 2 tas på rad, så en hviledag, så dag 3, 4 og 5 på rad og en hviledag før neste uke.')
 ];
 
 /* ---------- Programguide ----------
@@ -3774,6 +4005,7 @@ function buildSession(p, a){
   if (p.prog === 'jugg') return buildJug(p, a);
   if (p.prog === 'athx') return buildAthx(p, a);
   if (p.prog === 'burg') return buildBurg(p, a);
+  if (p.prog === 'rp') return buildRp(p, a);
   if (p.prog === 'mmc') return withPw(buildMmc(p, a));
   if (p.prog === 'emc') return withPw(buildEmc(p, a));
   if (p.prog === 'cir') return withPw(buildCir(p, a));
@@ -3813,6 +4045,7 @@ function progress(p, a, s){
   if (p.prog === 'jugg') return progressJug(p, a, s);
   if (p.prog === 'athx') return progressAthx(p, a, s);
   if (p.prog === 'burg') return progressBurg(p, a, s);
+  if (p.prog === 'rp') return progressRp(p, a, s);
   if (['mmc','emc','cir','cbe'].includes(p.prog)) return progressMmc(p, a, s);
   const notes = [];
   const hit = x => x.d != null && x.d >= x.t;
@@ -3935,7 +4168,8 @@ function swapCands(s, e){
   const from = e.subOf ? e.subName : e.lift;
   const used = new Set(s.ex.map(x => x.lift).concat((s.rmEx || []).map(x => x.lift), [from]));
   const base = swFam(from);
-  const fam = ALTS(base).length ? [base, ...ALTS(base)].filter(l => !used.has(l) && !LIFTS[l].cx) : [];
+  const fam = e.cat ? RP_CAT[e.cat].ex.filter(l => !used.has(l) && LIFTS[l])
+    : ALTS(base).length ? [base, ...ALTS(base)].filter(l => !used.has(l) && !LIFTS[l].cx) : [];
   const row = libRow(from), m = row && row[4].split(',')[0].trim();
   const lib = !m ? [] : EXLIB.map((r, i) => ({r, i, k: libKey(r)}))
     .filter(x => x.r[4].split(',')[0].trim() === m && !used.has(x.k) && !fam.includes(x.k) && LIFTS[x.k] && !LIFTS[x.k].cx)
@@ -3946,6 +4180,7 @@ function swapCands(s, e){
 // Vekt i innbytteren: regnet om fra løftet du bytter når de hører sammen, ellers det du løftet sist, ellers tom
 function swapW(e, T){
   const top = Math.max(...e.sets.map(x => x.w)), from = e.subOf ? e.subName : e.lift;
+  if (e.cat && e.rpPct && S.active && S.active.rm && S.active.rm[T] > 0) return r25(S.active.rm[T] * e.rpPct);   // RP: fra 10RM i øvelsen
   if (top > 0 && swFam(from) === swFam(T) && !e.subOf) return r25(top / ratio(e.lift) * ratio(T));
   const l = lastW(T); if (l != null) return l;
   return LIFTS[T] && LIFTS[T].bw ? 0 : null;
@@ -3957,7 +4192,7 @@ function exSwap(ei, T, W){
   if (!e.subOf) { e.swapId = id; s.rmEx = (s.rmEx || []).concat(e); }   // byttes en innbytter, står originalen alt til side
   const top = Math.max(...e.sets.map(x => x.w)), min = LIFTS[T].bar ? BAR() : 0;
   s.ex[ei] = {key: 'sub.' + T, lift: T, slot: T, subOf: id, subName: from, tag: 'I stedet for ' + liftName(from).toLowerCase(),
-    rest: e.rest || 120, adj: true, o: e.o,
+    rest: e.rest || 120, adj: true, o: e.o, cat: e.cat, rpPct: e.rpPct,
     sets: e.sets.map(x => ({t: x.t, w: Math.max(min, top > 0 ? r25(x.w * W / top) : W), d: null}))};
   ui.exSw = null; ui.confirm = null; ui.exOpen = {}; ui.fresh = null; save(); render();
   toast(liftName(T) + ' er byttet inn i dag');
@@ -3984,7 +4219,7 @@ function exSwapBox(s, e, ei, touched){
     return h;
   }
   const c = swapCands(s, e);
-  if (c.fam.length) h += `<span class="lbl">Alternativer til ${esc(liftName(swFam(from)).toLowerCase())}</span>
+  if (c.fam.length) h += `<span class="lbl">${e.cat ? 'Alternativer i programmet: ' + esc(RP_CAT[e.cat].n.toLowerCase()) : 'Alternativer til ' + esc(liftName(swFam(from)).toLowerCase())}</span>
     <div class="lib-res">${c.fam.map(T => { const w = swapW(e, T); return hit(T, w != null && w > 0 ? 'Omtrent ' + fmt(w) + ' kg' : ''); }).join('')}</div>`;
   if (c.lib.length) h += `<span class="lbl">Samme muskel: ${esc(c.row[4].split(',')[0].trim())}</span>
     <div class="lib-res">${c.lib.map(i => { const r = EXLIB[i], l = lastW(libKey(r));
@@ -4228,8 +4463,8 @@ function vLogEdit(){
         <input data-le="${ei}:${si}:w" type="text" inputmode="decimal" value="${fmt(x.w)}" aria-label="${esc(liftName(e.lift))}, sett ${si + 1}: kg">
         <input data-le="${ei}:${si}:d" type="text" inputmode="numeric" value="${x.d == null ? '' : x.d}" placeholder="–" aria-label="${esc(liftName(e.lift))}, sett ${si + 1}: reps (tomt = ikke tatt)">
       </div>`).join('')}
-      ${leQual(e) ? `<div class="rpe"><span>Hvordan gikk løftene?</span><div class="seg" data-leg="q:${ei}">${
-        LE_Q.map(([v, l]) => `<button data-a="leq:${ei}:${v}" aria-pressed="${e.q === v}">${l}</button>`).join('')}</div></div>`
+      ${leQual(e) ? `<div class="rpe"><span>${RP_Q.some(([v]) => v === e.q) ? 'Vurdering' : 'Hvordan gikk løftene?'}</span><div class="seg" data-leg="q:${ei}">${
+        (RP_Q.some(([v]) => v === e.q) ? RP_Q : LE_Q).map(([v, l]) => `<button data-a="leq:${ei}:${v}" aria-pressed="${e.q === v}">${l}</button>`).join('')}</div></div>`
       : `<div class="rpe"><span>RPE</span><div class="seg num" data-leg="rpe:${ei}">${
         [6,7,7.5,8,8.5,9,9.5,10].map(v => `<button data-a="lerpe:${ei}:${v}" aria-pressed="${e.rpe === v}">${fmt(v)}</button>`).join('')}</div></div>`}
     </section>`).join('')}
@@ -4250,6 +4485,12 @@ const listNo = a => a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' og
 function newInstance(p){
   if (p.prog === 'athx') return axInstance(p);
   const a = {programId:p.id, startedAt:Date.now(), idx:0, lifts:{}, tm:{}};
+  // RP: 10RM i feltene som er fylt ut. Tomme felt finner du i økta.
+  if (p.prog === 'rp') {
+    Object.assign(a, {rm:{}, est:{}, sets:{}, r1:{}});
+    Object.keys(p.inputs).forEach((k, i) => { const v = parseFloat(String(($('#in-' + i) || {}).value || '').replace(',', '.')); if (v > 0) a.rm[k] = v; });
+    return a;
+  }
   if (p.prog === 'sp12' || p.prog === 'cube' || p.prog === 'burg' || ['mmc','emc','cir','cbe'].includes(p.prog)) { a.e1rm = {}; a.base = {}; }
   Object.keys(p.inputs).forEach((k,i) => {
     const el = $('#in-'+i); let v = parseFloat(String(el && el.value || '').replace(',', '.'));
@@ -4280,7 +4521,7 @@ function mmcSecInputs(p){
 function activate(id){
   const p = prog(id);
   // Tomme felt fylles ikke med standardtall: da ville noen andres maksløft blitt dine startvekter
-  const empty = p.prog === 'athx' ? [] : [...document.querySelectorAll('input[data-key]')].filter(inp => !(parseFloat(String(inp.value).replace(',', '.')) > 0) && !(inp.dataset.bw && !(parseFloat(String(inp.value).replace(',', '.')) < 0)));
+  const empty = p.prog === 'athx' || p.prog === 'rp' ? [] : [...document.querySelectorAll('input[data-key]')].filter(inp => !(parseFloat(String(inp.value).replace(',', '.')) > 0) && !(inp.dataset.bw && !(parseFloat(String(inp.value).replace(',', '.')) < 0)));
   if (empty.length) { fieldErr(empty[0], p.orm ? 'Velg hvor du starter, eller skriv inn startvektene' : 'Skriv inn 1RM eller et sett du klarte for alle løftene'); return; }
   const a = newInstance(p);
   if (!a) return;
@@ -4580,6 +4821,7 @@ const PLAN_NOTE = {
   jugg:'Arbeidsmaksen øker bare med reps over målet i testsettene. Planen viser vektene hvis du akkurat når målet, så de blir høyere hvis du tar flere reps.',
   cube:'Vektene er prosent av 1RM og endres ikke underveis. Uke 10 er test, og beste løft blir ny 1RM.',
   sp12:'Planen viser vektene hvis toppsett og backoff går på RPE 7 og clean er rask og ren. Da øker vekten 2,5 kg fra uke til uke. Ved RPE 7,5–9 står vekten stille. Når en ny fase starter, regnes vektene ut fra estimert 1RM.',
+  rp:'Vektene er prosent av 10RM-en din, 5 %, 7,5 % og 10 % over uke 1. Settene i planen er de fra arket. Vurderingen etter hver øvelse legger til eller trekker fra sett. Når en ny mesosyklus starter, regnes 10RM ut fra settene dine, så vektene der er et anslag.',
   burg:'Vektene er prosent av 1RM og endres ikke underveis. Uke 12, dag 4 er max out, og beste snatch og clean & jerk blir ny 1RM.',
   cbe:'Planen viser vektene hvis det tunge løftet går på RPE 7 hver gang. Da øker treningsmaksen 2,5 kg i benk og press og 5 kg i knebøy og markløft fra uka etter, så tallene framover er et tak. Hver uke har tre løft, og ett står over etter tur. Uke 12 bruker vektene fra uke 1, så retesten kan sammenlignes.',
   cir:'Planen viser vektene hvis benk og knebøy går på RPE 7 og clean er rask og ren hver uke. Da øker treningsmaksen 2,5 kg i benk og clean og 5 kg i knebøy per uke, så tallene framover er et tak. Uke 12 bruker vektene fra uke 1, så retesten kan sammenlignes. Hver økt viser kretsen med åtte stasjoner.',
@@ -4587,7 +4829,7 @@ const PLAN_NOTE = {
   mmc:'Planen viser vektene hvis siste sett går på RPE 7 og clean er rask og ren hver uke. Da øker treningsmaksen 2,5 kg i benk og clean og 5 kg i knebøy per uke. Ved RPE 7,5–9 står den stille, så tallene framover er et tak, ikke et løfte. Metconene står i hver økt, og uke 1, 6 og 12 har de samme tre benchmark-metconene.',
   athx:'Vektene er prosent av arbeidsmaksen din i dag, og fartene følger anslaget ditt. Begge oppdateres etter hver økt, så tallene framover endrer seg. Henger du etter kalenderen, hopper planen til første økt i denne uka.'
 };
-const planPer = (p, a) => p.prog === 'athx' ? a.ax.per : ['531','jugg','cube','sp12','burg','mmc','emc','cir','cbe'].includes(p.prog) ? p.days.length : (parseInt(p.perWeek) || 3);
+const planPer = (p, a) => p.prog === 'athx' ? a.ax.per : ['531','jugg','cube','sp12','burg','mmc','emc','cir','cbe','rp'].includes(p.prog) ? p.days.length : (parseInt(p.perWeek) || 3);
 function simulate(p, a0, n){
   const a = JSON.parse(JSON.stringify(a0)), out = [], tot = totalOf(p, a0);
   while (out.length < n && !(tot && a.idx >= tot)) {
@@ -4632,7 +4874,7 @@ function planWeeks(P, p, a, short){
   const weeks = [];
   rows.forEach(r => { const w = Math.floor(r.k / per); (weeks[w] = weeks[w] || []).push(r); });
   // Uka står i overskriften, så «Uke 9 av 12» trengs ikke på hver økt
-  const subOf = (r, w) => ax ? r.sub.replace(/^Uke \d+ av \d+ · /, '') : ['burg','mmc','emc','cir','cbe'].includes(p.prog) ? r.sub.replace(/^Uke \d+ av \d+( · )?/, '') : r.sub !== 'Uke ' + (w + 1) ? r.sub : '';
+  const subOf = (r, w) => ax ? r.sub.replace(/^Uke \d+ av \d+ · /, '') : ['burg','mmc','emc','cir','cbe','rp'].includes(p.prog) ? r.sub.replace(/^Uke \d+ av \d+( · )?/, '') : r.sub !== 'Uke ' + (w + 1) ? r.sub : '';
   const from = short ? Math.floor(Math.min(a.idx, N - 1) / per) : 0, to = short ? from + 2 : weeks.length;
   const inProgress = P.active && ownDraft() && ownDraft().ex.some(e => e.sets.some(x => x.d != null) || (e.wuDone || []).length);
   const exLine = r => r.ex.slice(0, 3).map(e => { const t = Math.max(...e.sets.map(x => x.w)); return liftName(e.lift) + (t > 0 ? ' ' + fmt(t) : ''); }).join(' · ') + (r.ex.length > 3 ? ' …' : '');
@@ -4995,7 +5237,8 @@ function vToday(){
   const touched = e => e.sets.some(x => x.d != null) || !!(e.wuDone && e.wuDone.length);
   // Strength & Power spør om RPE eller kvalitet når settene er gjort. Kortet holdes åpent til det er svart,
   // men neste øvelse blir den du holder på med, så pauseklokka står i den med en gang alle settene er krysset av.
-  const asks = e => e.sp && allDone(e) && ((e.part === 'extra' && e.rpe == null) || ((e.part === 'top' || e.part === 'back' || e.ask) && (e.slot === 'clean' ? e.q == null : e.rpe == null)));
+  const asks = e => (e.sp && allDone(e) && ((e.part === 'extra' && e.rpe == null) || ((e.part === 'top' || e.part === 'back' || e.ask) && (e.slot === 'clean' ? e.q == null : e.rpe == null))))
+    || (e.rpAsk && allDone(e) && e.q == null);   // RP: vurderingen styrer settene neste uke
   // Cube EMOM (s.rr): løftene tas runde for runde, så neste løft er det med færrest loggede sett
   const cur = todayCurrent(s);
   const setsLeft = s.ex.reduce((n, e) => n + e.sets.filter(x => x.d == null).length, 0);
@@ -5071,13 +5314,14 @@ function vToday(){
       }).join('')}</div></div>
       ${now ? `<section class="today-pause" id="todayRestControls" aria-label="Pause"><div class="today-rest-face"><span id="todayRestLabel">Pause</span><b id="todayRestTime" role="timer">—</b></div><button class="link" data-a="restadd:30" id="todayRestAdd" disabled aria-label="30 sekunder lengre pause">+30 s</button><button class="link" data-a="skip" id="todayRestSkip" disabled>Avslutt pause</button><span class="today-rest-rule" aria-hidden="true"><i></i></span></section>` : ''}
       ${wu.length ? `<details class="today-warmup" ${(ui.wuOpen?.[k] ?? warm) ? 'open' : ''}><summary data-a="wuopen:${k}" aria-controls="warmup-${ei}">Oppvarming · ${wu.filter(([w, r]) => wuDone.includes(w + 'x' + r)).length} av ${wu.length} gjort ${chev}</summary><div class="chip-grp wu-grp" id="warmup-${ei}">${vWarmup(e, ei, wu, wuNext, warm)}</div></details>` : ''}
-      ${e.hint || amIdx > -1 || (canNext && S.history.filter(x => !x.free && !x.skipped).length < 3) || e.sp || e.adj ? `<div class="today-ex-details">${e.hint ? `<p class="wu">${e.hint}</p>` : ''}
+      ${e.hint || amIdx > -1 || (canNext && S.history.filter(x => !x.free && !x.skipped).length < 3) || e.sp || e.adj || e.rpAsk ? `<div class="today-ex-details">${e.hint ? `<p class="wu">${e.hint}</p>` : ''}
       ${amIdx > -1 ? `<div class="amrap"><span>Siste sett, så mange du klarer</span>
         <button class="step" data-a="am:${ei}:${amIdx}:-1" aria-label="Én rep mindre">−</button>
         <b>${e.sets[amIdx].d}</b>
         <button class="step" data-a="am:${ei}:${amIdx}:1" aria-label="Én rep mer">+</button></div>` : ''}
       ${canNext && S.history.filter(x => !x.free && !x.skipped).length < 3 ? '<p class="chip-hint">Trykk på et registrert sett for én rep mindre.</p>' : ''}
       ${e.sp ? spExtras(e, ei) : ''}
+      ${e.rpAsk && allDone(e) ? rpRate(e, ei) : ''}
       ${e.adj ? `<div class="amrap"><span>Juster vekt etter dagsform</span>
         <button class="step" data-a="w:${ei}:-1" aria-label="2,5 kg lettere">−</button>
         <button class="step" data-a="w:${ei}:1" aria-label="2,5 kg tyngre">+</button></div>` : ''}</div>` : ''}
@@ -5274,7 +5518,8 @@ const PROG_WHAT = {
   cube:'Ett løft tungt, ett eksplosivt og ett på reps hver uke', sp12:'Benk, knebøy og power clean, med metcons ved siden av',
   athx27:'Forberedelse til ATHX-stevnet, regnet baklengs fra datoen', burg12:'Olympisk vektløfting: snatch og clean & jerk',
   mmc12:'Styrke, metcon og finisher i hver økt', emc12:'Styrke og EMOM-er med fire stasjoner',
-  cir12:'Styrke og kretser med en ny øvelse hvert minutt', cbe12:'Tre av fire baseløft per uke i rotasjon, med kondisjon'};
+  cir12:'Styrke og kretser med en ny øvelse hvert minutt', cbe12:'Tre av fire baseløft per uke i rotasjon, med kondisjon',
+  rp3:'Hypertrofi: helkropp tre dager, mesosykluser med deload', nf5:'Hypertrofi: fem dager delt på muskelgrupper, mesosykluser med deload'};
 // Dine egne programmer og de du har fått, øverst i biblioteket
 function vMine(act){
   const mine = Object.values(UP()).filter(u => !u.gone && u.id !== act).sort((a, b) => a.name.localeCompare(b.name, 'no'));
@@ -5357,8 +5602,8 @@ function vDetail(p){
       <div class="meta" style="margin-top:8px"><span class="pill">${p.level}</span><span class="pill">${p.perWeek} økter/uke</span></div></header>
     <p>${p.summary}</p>
     <div class="box"><h2 class="sec" style="margin:0">Slik øker vekten</h2><p class="small">${p.rule}</p></div>
-    ${p.prog === 'athx' ? axSetup(other, isActive) : `${p.prog === 'user' ? vUserStart(p) : vStart(p)}${['mmc','emc','cir'].includes(p.prog) ? mmcSecInputs(p) : ''}
-    <p class="muted small">${p.prog === 'user' ? 'Forslaget er den tyngste vekta du brukte sist i øvelsen, ellers tom stang. Endre det som ikke stemmer.' : p.orm ? p.ormNote || 'Start lett. Teknikken skal sitte før vekten blir tung.' : p.prog === '531' ? 'Appen regner ut treningsmaks som 90 % av dette.' : p.prog === 'jugg' ? 'Appen regner ut arbeidsmaks som 90 % av dette.' : p.prog === 'sp12' ? 'Startvektene regnes ut fra dette. Etter hvert styrer RPE-en din vektene.' : p.prog === 'cube' ? 'Alle vekter regnes ut som prosent av dette.' : p.prog === 'burg' ? 'Alle vekter regnes ut som prosent av dette. Trekk og shrugs ligger over 100 %, det er meningen.' : ['mmc','emc','cir','cbe'].includes(p.prog) ? 'Treningsmaksen starter på 90 % av dette, og RPE-en din flytter den etter hver uke. Bruk dagsaktuelle maksløft.' : 'Start lett. Teknikken skal sitte før vekten blir tung.'}
+    ${p.prog === 'athx' ? axSetup(other, isActive) : `${p.prog === 'user' ? vUserStart(p) : p.prog === 'rp' ? vRpStart(p) : vStart(p)}${['mmc','emc','cir'].includes(p.prog) ? mmcSecInputs(p) : ''}
+    <p class="muted small">${p.prog === 'user' ? 'Forslaget er den tyngste vekta du brukte sist i øvelsen, ellers tom stang. Endre det som ikke stemmer.' : p.orm ? p.ormNote || 'Start lett. Teknikken skal sitte før vekten blir tung.' : p.prog === '531' ? 'Appen regner ut treningsmaks som 90 % av dette.' : p.prog === 'jugg' ? 'Appen regner ut arbeidsmaks som 90 % av dette.' : p.prog === 'sp12' ? 'Startvektene regnes ut fra dette. Etter hvert styrer RPE-en din vektene.' : p.prog === 'cube' ? 'Alle vekter regnes ut som prosent av dette.' : p.prog === 'burg' ? 'Alle vekter regnes ut som prosent av dette. Trekk og shrugs ligger over 100 %, det er meningen.' : p.prog === 'rp' ? '' : ['mmc','emc','cir','cbe'].includes(p.prog) ? 'Treningsmaksen starter på 90 % av dette, og RPE-en din flytter den etter hver uke. Bruk dagsaktuelle maksløft.' : 'Start lett. Teknikken skal sitte før vekten blir tung.'}
       ${slotsOf(p).length ? ' Vil du bytte et løft, gjør du det under Program → Oppsett når programmet er aktivt.' : ''}
       ${other ? ' Dette erstatter '+other.name+'. Loggen din blir liggende.' : ''}${isActive ? ' Programmet er aktivt. Aktiverer du på nytt, starter det fra økt 1 med vektene over.' : ''}</p>`}
     <button class="btn" data-a="activate:${p.id}">${isActive ? 'Start på nytt' : 'Aktiver program'}</button>
@@ -5456,7 +5701,7 @@ function vLog(){
         const ws = [...new Set(e.sets.map(x => x.w))];
         const reps = e.sets.map(x => x.d == null ? '–' : x.d);
         const right = e.rm ? `<span class="muted">${e.sw ? 'Byttet ut' : 'Fjernet'}</span>` : ws.length === 1 ? reps.join(' ') + ' × ' + fmt(ws[0]) + ' kg' : e.sets.map(x => (x.d == null ? '–' : x.d) + '×' + fmt(x.w)).join(' · ');
-        const extra = [e.tag, e.rpe != null ? 'RPE ' + fmt(e.rpe) : e.q ? (LE_Q.find(([v]) => v === e.q) || [, e.q])[1].toLowerCase() : null].filter(Boolean).join(' · ');
+        const extra = [e.tag, e.rpe != null ? 'RPE ' + fmt(e.rpe) : e.q ? (LE_Q.concat(RP_Q).find(([v]) => v === e.q) || [, e.q])[1].toLowerCase() : null].filter(Boolean).join(' · ');
         return `<div class="ln"><span>${liftName(e.lift)}${extra ? ' <span class="muted">' + extra + '</span>' : ''}</span><span>${right}</span></div>`;
       }).join('')}
       ${noteH}`;
@@ -5557,6 +5802,7 @@ function pwLabel(p, grp, k){
   if (grp === 'tm') return 'Treningsmaks';
   if (grp === 'tmNext') return 'Treningsmaks fra neste uke';
   if (grp === 'e1rm') return p.prog === 'athx' ? 'Arbeidsmaks' : '1RM';
+  if (grp === 'rm') return '10RM';
   const parts = k.split('.'), rest = parts[0] === 'x' ? parts.slice(2) : parts.slice(1);
   if (!rest.length || parts[0] === 'x') return 'Arbeidsvekt';
   if (/^T\d$/.test(rest[0])) return rest[0] + '-vekt';
@@ -5579,7 +5825,7 @@ const pwPlan = (p, a, k) => { a = clone(a); a.idx = S.active.idx + k; const s = 
 function pwRows(p){
   const base = pwBase(p), plans = [...Array(PW_N)].map((_, k) => pwPlan(p, base, k));
   const cand = [];
-  ['tm','e1rm'].forEach(g => Object.keys(base[g] || {}).forEach(k => cand.push({path: [g, k], g, k})));
+  ['tm','e1rm','rm'].forEach(g => Object.keys(base[g] || {}).forEach(k => cand.push({path: [g, k], g, k})));
   Object.keys(base.lifts || {}).forEach(k => { if (typeof (base.lifts[k] || {}).w === 'number') cand.push({path: ['lifts', k, 'w'], g: 'lifts', k}); });
   if (base.tmNext && base.tmNext.tm) Object.keys(base.tmNext.tm).forEach(k => cand.push({path: ['tmNext', 'tm', k], g: 'tmNext', k}));
   const list = [];
@@ -8202,6 +8448,7 @@ document.addEventListener('change', ev => {
     else f.date = v;
     render(); return;
   }
+  const rs = ev.target.closest('[data-rpswap]'); if (rs) { rpSwap(rs.dataset.rpswap, rs.value, rs.dataset.def); return; }
   const s = ev.target.closest('[data-swap]'); if (!s) return;
   ui.swapSel = {slot: s.dataset.swap, lift: s.value}; render();
 });
