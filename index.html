@@ -924,7 +924,9 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .exercise-sheet .ex-acts [data-a^="confirm:exrm"],.exercise-sheet .ex-acts [data-a^="exrm"]{color:var(--red)}
 .today-ex .ex-hit{appearance:none;border:0;color:var(--ink);background:transparent;text-align:left;font:inherit;margin:0 -16px;padding:0 16px;gap:8px;border-radius:0;min-width:0}
 .today-ex .ex-hit:active{background:var(--press)}
-.today-stage{font:500 13px/18px var(--face);color:var(--ink-2)}
+.today-stage{font:500 13px/18px var(--face);color:var(--ink-2);display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:32px}
+.current-reps{display:inline-flex;align-items:baseline;gap:5px;font:800 32px/1 var(--face);font-stretch:75%;font-variant-numeric:tabular-nums;color:var(--ink);white-space:nowrap}
+.current-reps small{font:600 14px/1 var(--face);color:var(--ink-2)}
 .today-ex.now .kg{font-size:96px;height:88px;min-height:88px;margin:0;line-height:.9;align-items:center;min-width:0}
 .today-ex .rest-bar{height:5px;margin:0}
 .today-controls{display:flex;align-items:center;justify-content:flex-end;gap:8px;height:44px;min-height:44px}
@@ -1001,7 +1003,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 97;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 98;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -5036,8 +5038,8 @@ function vToday(){
     const [bigW, bigR] = warm ? wu[wuNext] : nextSi > -1 ? [e.sets[nextSi].w, e.sets[nextSi].c || e.sets[nextSi].t] : [top, 0];
     const bigAm = !warm && nextSi > -1 && e.sets[nextSi].am;
     const menuOpen = ui.exMenu === k;
-    const head = `${now ? `<p class="today-stage">${warm ? 'Oppvarming · ' + (wuNext + 1) + ' av ' + wu.length : nextSi > -1 ? 'Arbeidssett · ' + (nextSi + 1) + ' av ' + e.sets.length : 'Alle sett er registrert'}</p>` : ''}
-        ${now ? `<div class="kg"><span id="kgN" data-w="${fmt(bigW)}">${fmt(bigW)}</span><small id="kgU" data-u="kg${bigR ? ' × ' + bigR + (bigAm ? '+' : '') : ''}">kg${bigR ? ' × ' + bigR + (bigAm ? '+' : '') : ''}</small></div>
+    const head = `${now ? `<p class="today-stage"><span>${warm ? 'Oppvarming · ' + (wuNext + 1) + ' av ' + wu.length : nextSi > -1 ? 'Arbeidssett · ' + (nextSi + 1) + ' av ' + e.sets.length : 'Alle sett er registrert'}</span><strong class="current-reps">${bigR}${bigAm ? '+' : ''}<small>reps</small></strong></p>` : ''}
+        ${now ? `<div class="kg"><span id="kgN" data-w="${fmt(bigW)}">${fmt(bigW)}</span><small id="kgU" data-u="kg">kg</small></div>
         `
           : `<div class="kg">${fmt(bigW)}<small>kg${bigR ? ' × ' + bigR + (bigAm ? '+' : '') : ''}</small></div>`}
         `;
