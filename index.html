@@ -1001,7 +1001,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 96;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 97;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -5733,7 +5733,8 @@ function beep(){
 }
 function startRest(sec){
   if (ckOn()) return;   // metcon-klokka styrer tiden, for eksempel i en EMOM med løft
-  sec = Math.round((sec || 120) * (S.settings.restScale || 1)); unlockAudio();
+  // Rund etter skalering: for eksempel 150 s × 0,75 = 112,5 s → 110 s (1:50).
+  sec = Math.round((sec || 120) * (S.settings.restScale || 1) / 10) * 10; unlockAudio();
   ui.rest = {end: Date.now() + sec*1000, total: sec, done: false};
   updateRest();
 }

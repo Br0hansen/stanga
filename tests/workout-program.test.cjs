@@ -9,6 +9,8 @@ const app = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].at(-1)[1].s
 // Run the real app and click handler; only browser services are replaced.
 function fixture(program = 'sl5x5') {
   const listeners = {}, storage = new Map(), nodes = new Map(), followed = [];
+  let now = Date.now();
+  class Clock extends Date { constructor(...args) { super(...(args.length ? args : [now])); } static now() { return now; } }
   function node(selector) {
     return {dataset:{},style:{setProperty(){}},classList:{add(){},remove(){},toggle(){}},
       hidden:false,textContent:'',innerHTML:'',tagName:'SECTION',
@@ -16,7 +18,7 @@ function fixture(program = 'sl5x5') {
       scrollIntoView(){followed.push(selector);}};
   }
   for (const id of ['.stage','#rest','#restB','#restL','#restFlash','#toast','#exercise-0','#exercise-1','#exercise-2','#today-after']) nodes.set(id,node(id));
-  const c = vm.createContext({console,URL,URLSearchParams,Map,Set,Date,JSON,Math,Number,String,Promise,
+  const c = vm.createContext({console,URL,URLSearchParams,Map,Set,Date:Clock,JSON,Math,Number,String,Promise,
     setTimeout:()=>0,clearTimeout(){},setInterval:()=>0,clearInterval(){},addEventListener(){},
     localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},
     sessionStorage:{getItem:()=>null,setItem(){},removeItem(){}},
@@ -36,7 +38,7 @@ function fixture(program = 'sl5x5') {
   };
   const state = expression => JSON.parse(run(`JSON.stringify(${expression})`));
   const warm = () => run(`S.draft.ex.forEach((e,i)=>{const k=wuKind(S.draft,i);e.wuDone=k?warmups(e.slot,e.sets[0].w,e.sets[0].t,k).map(([w,r])=>w+'x'+r):[];});`);
-  return {run,click,state,warm,followed,storage,nodes};
+  return {run,click,state,warm,followed,storage,nodes,advance:ms=>{now+=ms;}};
 }
 
 test('one tap logs a set, starts the real program pause and persists it',()=>{
@@ -50,6 +52,41 @@ test('the same large action logs directly during an active pause',()=>{
   const f=fixture();f.warm();f.click('next:0');f.click('next:0');
   assert.deepEqual(f.state('S.draft.ex[0].sets.slice(0,2).map(x=>x.d)'),[5,5]);
   assert.deepEqual(f.followed,[]);
+});
+test('Strength & Power restarts the full backoff pause through both logging actions',()=>{
+  for(const action of ['next:1','set:1:1']){
+    const f=fixture('sp12');f.warm();
+    f.run('S.draft.ex[0].sets.forEach(x=>x.d=x.t)');
+    f.click('next:1');
+    const duration=f.state('S.draft.ex[1].rest'), end=f.state('ui.rest.end');
+    f.advance(45000);
+    assert.equal(f.state('(ui.rest.end-Date.now())/1000'),duration-45);
+    f.click(action);
+    assert.equal(f.state('(ui.rest.end-Date.now())/1000'),duration);
+    assert.equal(f.state('ui.rest.end'),end+45000);
+    assert.equal(f.state('S.draft.ex[1].sets[1].d'),5);
+  }
+});
+test('Strength & Power starts a fresh backoff pause after the previous pause expired',()=>{
+  const f=fixture('sp12');f.warm();f.run('S.draft.ex[0].sets.forEach(x=>x.d=x.t)');
+  f.click('next:1');f.advance(600000);f.click('next:1');
+  assert.equal(f.state('(ui.rest.end-Date.now())/1000'),f.state('S.draft.ex[1].rest'));
+});
+test('rest duration rounds to the nearest ten seconds after applying the selected scale',()=>{
+  const f=fixture();
+  for(const [seconds,scale,expected] of [[150,.75,110],[210,.75,160],[90,1.25,110],[60,.75,50],[150,1,150],[210,1.25,260]]){
+    f.run(`S.settings.restScale=${scale};startRest(${seconds})`);
+    assert.equal(f.state('ui.rest.total'),expected,`${seconds} × ${scale}`);
+    assert.equal(f.state('(ui.rest.end-Date.now())/1000'),expected);
+  }
+});
+test('Strength & Power clean sets restart with a rounded shorter pause',()=>{
+  const f=fixture('sp12');
+  f.run("S.active.idx=2;S.draft=buildSession(prog('sp12'),S.active);S.settings.restScale=.75");f.warm();
+  const current=f.state('todayCurrent(S.draft)');f.click('next:'+current);
+  assert.equal(f.state('ui.rest.total'),110);f.advance(23000);
+  f.click('next:'+f.state('todayCurrent(S.draft)'));
+  assert.equal(f.state('(ui.rest.end-Date.now())/1000'),110);
 });
 test('last set follows the next exercise, preserving the pause from the finished lift',()=>{
   const f=fixture();f.warm();f.run('S.draft.ex[0].sets.slice(0,-1).forEach(x=>x.d=x.t)');
