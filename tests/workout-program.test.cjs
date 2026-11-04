@@ -15,7 +15,7 @@ function fixture(program = 'sl5x5') {
       querySelector:()=>null,hasAttribute:()=>false,focus(){},
       scrollIntoView(){followed.push(selector);}};
   }
-  for (const id of ['.stage','#rest','#restB','#restL','#restFlash','#exercise-0','#exercise-1','#exercise-2','#today-after']) nodes.set(id,node(id));
+  for (const id of ['.stage','#rest','#restB','#restL','#restFlash','#toast','#exercise-0','#exercise-1','#exercise-2','#today-after']) nodes.set(id,node(id));
   const c = vm.createContext({console,URL,URLSearchParams,Map,Set,Date,JSON,Math,Number,String,Promise,
     setTimeout:()=>0,clearTimeout(){},setInterval:()=>0,clearInterval(){},addEventListener(){},
     localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},
@@ -36,7 +36,7 @@ function fixture(program = 'sl5x5') {
   };
   const state = expression => JSON.parse(run(`JSON.stringify(${expression})`));
   const warm = () => run(`S.draft.ex.forEach((e,i)=>{const k=wuKind(S.draft,i);e.wuDone=k?warmups(e.slot,e.sets[0].w,e.sets[0].t,k).map(([w,r])=>w+'x'+r):[];});`);
-  return {run,click,state,warm,followed,storage};
+  return {run,click,state,warm,followed,storage,nodes};
 }
 
 test('one tap logs a set, starts the real program pause and persists it',()=>{
@@ -155,4 +155,39 @@ test('custom programs retain the editor, sharing actions and their generated ses
   assert.match(f.run('vToday()'),/id="exercise-0"/);
   assert.match(f.run('vDetail(prog(S.active.programId))'),/pe:edit:/);
   assert.match(f.run('vDetail(prog(S.active.programId))'),/ps:pick:/);
+});
+test('workout removes the visual registration and automatic-pause hints but keeps accessible logging',()=>{
+  const f=fixture();f.warm();const view=f.run('vToday()');
+  assert.doesNotMatch(view,/today-log-label|Pausen starter automatisk|todayRestHint/);
+  assert.match(view,/aria-label="Registrer 5 reps/);
+  assert.match(view,/aria-haspopup="dialog" aria-controls="exerciseSheet"/);
+});
+test('exercise actions live in the dialog rather than below the workout card',()=>{
+  const f=fixture();f.click(f.run("'exmenu:'+S.draft.started+'-0'"));
+  assert.equal(f.state('exerciseMenuIndex()'),0);
+  assert.doesNotMatch(f.run('vToday()'),/data-a="exsw:|Fjern fra dagens økt/);
+  const menu=f.run('vExerciseOptions(S.draft,S.draft.ex[0],0)');
+  assert.match(menu,/Bytt i dag/);assert.match(menu,/Fjern fra dagens økt/);
+});
+test('removal confirmation stays in the exercise menu and cancel preserves all sets',()=>{
+  const f=fixture();f.warm();f.click('next:0');const before=f.state('S.draft');
+  f.click(f.run("'exmenu:'+S.draft.started+'-0'"));f.click('confirm:exrm:0');
+  assert.match(f.run('vExerciseOptions(S.draft,S.draft.ex[0],0)'),/Ja, fjern/);
+  f.click('cancel');assert.match(f.run('vExerciseOptions(S.draft,S.draft.ex[0],0)'),/Bytt i dag/);
+  f.click('exmenuclose');assert.equal(f.state('exerciseMenuIndex()'),-1);
+  assert.deepEqual(f.state('S.draft'),before);
+});
+test('closing the popup abandons an unconfirmed swap without changing the exercise',()=>{
+  const f=fixture();const before=f.state('S.draft');
+  f.click(f.run("'exmenu:'+S.draft.started+'-0'"));f.click('exsw:0');
+  assert.match(f.run('vExerciseOptions(S.draft,S.draft.ex[0],0)'),/Søk i øvelsesbiblioteket/);
+  f.click('exmenuclose');assert.equal(f.state('ui.exSw'),null);
+  assert.deepEqual(f.state('S.draft'),before);
+});
+test('confirmed removal closes the menu and keeps the removed lift recoverable',()=>{
+  const f=fixture();f.warm();f.click('next:0');
+  f.click(f.run("'exmenu:'+S.draft.started+'-0'"));f.click('confirm:exrm:0');f.click('exrm:0');
+  assert.equal(f.state('exerciseMenuIndex()'),-1);
+  assert.equal(f.state('S.draft.rmEx[0].sets[0].d'),5);
+  assert.equal(f.state('S.draft.ex.length'),2);
 });

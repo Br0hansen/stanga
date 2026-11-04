@@ -917,16 +917,19 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .today-ex .ex-head{align-items:center;min-height:44px}
 .today-ex .ex-head h2{font-size:21px}
 .today-menu{min-width:64px;min-height:44px;justify-content:flex-end;flex:none}
+.exercise-sheet{--chalk:var(--ink);--chalk-2:var(--ink-2);--chalk-3:var(--ink-3);--line:var(--rule);--iron:var(--field);--iron-2:var(--paper);--iron-3:var(--press);--accent:var(--pen);--miss:var(--red);background:var(--paper);color:var(--ink)}
+.exercise-sheet .ex-acts{display:grid;gap:0}
+.exercise-sheet .ex-acts .link{width:100%;min-height:52px;padding:12px 0;justify-content:flex-start;text-align:left;color:var(--ink);border-bottom:1px solid var(--rule)}
+.exercise-sheet .ex-acts .link:last-child{border-bottom:0}
+.exercise-sheet .ex-acts [data-a^="confirm:exrm"],.exercise-sheet .ex-acts [data-a^="exrm"]{color:var(--red)}
 .today-ex .ex-hit{appearance:none;border:0;color:var(--ink);background:transparent;text-align:left;font:inherit;margin:0 -16px;padding:0 16px;gap:8px;border-radius:0;min-width:0}
 .today-ex .ex-hit:active{background:var(--press)}
 .today-stage{font:500 13px/18px var(--face);color:var(--ink-2)}
 .today-ex.now .kg{font-size:96px;height:88px;min-height:88px;margin:0;line-height:.9;align-items:center;min-width:0}
-.today-ex .today-log-label{font:600 15px/20px var(--face);color:var(--ink);padding:4px 0}
 .today-ex .rest-bar{height:5px;margin:0}
 .today-controls{display:flex;align-items:center;justify-content:flex-end;gap:8px;height:44px;min-height:44px}
 .today-controls .link{min-height:44px;min-width:52px;padding:0 6px;color:var(--ink-2);justify-content:center;white-space:nowrap;font-size:14px}
 .today-controls [data-a="undoset"]{margin-right:auto;color:var(--pen)}
-.today-controls #todayRestHint{margin-right:auto}
 .stage.inline-rest #rest{display:none}
 .today-ex .platebox{padding:4px 0 10px;min-height:46px;gap:8px}
 .today-ex .platebox .plates{height:28px;transform:scale(.8);transform-origin:left center;margin-right:-5px}
@@ -942,8 +945,6 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .today-ex .chips>.chip-grp{width:100%;gap:8px}
 .today-ex .chips .cw{flex:0 0 50px;min-width:44px}
 .today-ex .chips .chip{width:100%;height:50px}
-.today-ex .today-options .link{min-height:44px}
-.today-options{border-top:1px solid var(--rule);padding-top:8px}
 .today-tail{display:grid;gap:14px;scroll-margin-top:12px;outline:none}
 .today-ex .step,.today-ex .seg button{min-height:44px;min-width:44px}
 .program-sections{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding:4px;border:1px solid var(--line);border-radius:4px}
@@ -1000,7 +1001,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 95;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 96;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -4841,6 +4842,81 @@ function undoSet(){
   (ui.exOpen = ui.exOpen || {})[S.draft.started + '-' + u.ei] = true;
   save(); render(); followExercise(u.ei); say('Siste registrering angret. ' + liftName(u.before.lift));
 }
+function vExerciseOptions(s, e, ei){
+  const touched = e.sets.some(x => x.d != null) || !!(e.wuDone && e.wuDone.length);
+  return `${ui.confirm === 'exrm:' + ei ? `<div class="skipbox ex-rm" aria-live="polite"><p class="small"><b>Fjerne ${esc(liftName(e.subOf ? e.subName : e.lift).toLowerCase())} fra dagens økt?</b>
+          Settene du har tatt i den, lagres ikke. Vekta står som den er til neste gang.</p>
+          <div class="row"><button class="btn danger sm" data-a="exrm:${ei}">Ja, fjern</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div></div>`
+        : ui.confirm === 'exun:' + ei ? `<div class="skipbox ex-rm" aria-live="polite"><p class="small"><b>Tilbake til ${esc(liftName(e.subName).toLowerCase())}?</b>
+          Settene du har tatt i ${esc(liftName(e.lift).toLowerCase())}, lagres ikke.</p>
+          <div class="row"><button class="btn sm" data-a="exun:${ei}">Ja, bytt tilbake</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div></div>`
+        : ui.exSw && ui.exSw.k === s.started && ui.exSw.ei === ei ? exSwapBox(s, e, ei, touched)
+        : `<div class="ex-acts"><button class="link ex-rm-l" data-a="exsw:${ei}">${e.subOf ? 'Bytt til en annen' : 'Bytt i dag'}</button>
+          ${e.subOf ? `<button class="link ex-rm-l" data-a="${touched ? 'confirm:exun:' + ei : 'exun:' + ei}">Tilbake til ${esc(liftName(e.subName).toLowerCase())}</button>` : ''}
+          <button class="link ex-rm-l" data-a="${touched ? 'confirm:exrm:' + ei : 'exrm:' + ei}">Fjern fra dagens økt</button></div>`}`;
+}
+function exerciseMenuIndex(){
+  const s = S.draft;
+  return s && ui.exMenuSession === s ? s.ex.findIndex((e, i) => ui.exMenu === s.started + '-' + i) : -1;
+}
+function exerciseMenuOpen(key){
+  const s = S.draft;
+  if (!s || !s.ex.some((e, i) => key === s.started + '-' + i)) return;
+  ui.exMenu = key; ui.exMenuSession = s; ui.exSw = null; ui.confirm = null;
+  render();
+}
+function exerciseMenuClear(){
+  ui.exMenu = null; ui.exMenuSession = null; ui.exSw = null;
+  if (/^ex(rm|un):/.test(ui.confirm || '')) ui.confirm = null;
+}
+function exerciseMenuClose(){ exerciseMenuClear(); render(); }
+// Et ekte modalt dialogark holder valgene synlige og fokuset inne i arket.
+function exerciseSheetPaint(){
+  let dialog = $('#exerciseSheet');
+  const ei = exerciseMenuIndex(), s = S.draft;
+  const show = ei > -1 && ui.tab === 'today' && !ui.detail && !ui.free && !ui.bank && !ui.summary && !ui.plan;
+  if (!show) {
+    if (dialog && dialog.open) {
+      dialog.close(); dialog._mode = ''; dialog._html = '';
+      if (ui.tab === 'today' && !ui.detail) {
+        const sc = $('#scroller'); if (sc) sc.scrollTop = dialog._scroll;
+        const target = document.querySelector(`[data-a="${CSS.escape(dialog._trigger)}"]`) || $('#view .now .today-menu') || $('#view h1');
+        if (target) target.focus({preventScroll:true});
+      }
+    }
+    exerciseMenuClear();
+    return;
+  }
+  if (!dialog) {
+    dialog = document.createElement('dialog'); dialog.id = 'exerciseSheet'; dialog.className = 'sx-sheet exercise-sheet';
+    dialog.setAttribute('aria-labelledby', 'exerciseSheetTitle');
+    dialog.innerHTML = '<div class="sx-sheet-handle" aria-hidden="true"></div><header class="sx-sheet-head"><h2 id="exerciseSheetTitle" tabindex="-1"></h2><button class="link" data-a="exmenuclose" aria-label="Lukk øvelsesvalg">Lukk ×</button></header><div class="sx-sheet-body" id="exerciseSheetBody"></div>';
+    document.querySelector('.app').append(dialog);
+    dialog.addEventListener('cancel', e => { e.preventDefault(); exerciseMenuClose(); });
+    dialog.addEventListener('click', e => {
+      const r = dialog.getBoundingClientRect();
+      if (e.target === dialog && (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom)) exerciseMenuClose();
+    });
+  }
+  const e = s.ex[ei], mode = ui.exMenu + '/' + (ui.confirm || (ui.exSw ? 'swap:' + (ui.exSw.T || '') : 'menu'));
+  const same = dialog._mode === mode, active = document.activeElement;
+  const key = same && dialog.contains(active) ? active.id ? '#' + CSS.escape(active.id) : active.dataset.a ? `[data-a="${CSS.escape(active.dataset.a)}"]` : null : null;
+  const selection = key && /^(INPUT|TEXTAREA)$/.test(active.tagName) && active.selectionStart != null ? [active.selectionStart, active.selectionEnd] : null;
+  const body = $('#exerciseSheetBody'), scroll = same ? body.scrollTop : 0;
+  const html = vExerciseOptions(s, e, ei);
+  $('#exerciseSheetTitle').textContent = 'Valg for ' + liftName(e.lift).toLowerCase();
+  if (dialog._html !== html) { body.innerHTML = html; dialog._html = html; }
+  dialog._mode = mode;
+  if (!dialog.open) {
+    dialog._trigger = 'exmenu:' + ui.exMenu; dialog._scroll = ($('#scroller') || {}).scrollTop || 0;
+    dialog.showModal();
+  }
+  body.scrollTop = scroll;
+  const target = key && dialog.querySelector(key);
+  if (target) { target.focus({preventScroll:true}); if (selection) try { target.setSelectionRange(...selection); } catch(e) {} }
+  else if (!same || !dialog.contains(document.activeElement)) $('#exerciseSheetTitle').focus({preventScroll:true});
+}
+
 function vToday(){
   if (ui.bank) return vBank();
   if (ui.free) return vFree();
@@ -4959,18 +5035,18 @@ function vToday(){
     // så kortet trenger ikke si «Oppvarming 2 av 3» eller «sett 2 av 5» i tillegg.
     const [bigW, bigR] = warm ? wu[wuNext] : nextSi > -1 ? [e.sets[nextSi].w, e.sets[nextSi].c || e.sets[nextSi].t] : [top, 0];
     const bigAm = !warm && nextSi > -1 && e.sets[nextSi].am;
-    const menuOpen = ui.exMenu === k || ui.confirm === 'exrm:' + ei || ui.confirm === 'exun:' + ei || (ui.exSw && ui.exSw.k === s.started && ui.exSw.ei === ei);
+    const menuOpen = ui.exMenu === k;
     const head = `${now ? `<p class="today-stage">${warm ? 'Oppvarming · ' + (wuNext + 1) + ' av ' + wu.length : nextSi > -1 ? 'Arbeidssett · ' + (nextSi + 1) + ' av ' + e.sets.length : 'Alle sett er registrert'}</p>` : ''}
         ${now ? `<div class="kg"><span id="kgN" data-w="${fmt(bigW)}">${fmt(bigW)}</span><small id="kgU" data-u="kg${bigR ? ' × ' + bigR + (bigAm ? '+' : '') : ''}">kg${bigR ? ' × ' + bigR + (bigAm ? '+' : '') : ''}</small></div>
         `
           : `<div class="kg">${fmt(bigW)}<small>kg${bigR ? ' × ' + bigR + (bigAm ? '+' : '') : ''}</small></div>`}
-        ${now ? `<span class="today-log-label">Registrer ${warm ? 'oppvarming' : 'sett'} · ${bigR}${bigAm ? '+' : ''} reps</span>` : ''}`;
+        `;
     // Vekt, pause og registrering deler én stor trykkflate; øvelsesvalgene står utenfor.
     const canNext = now && (warm || nextSi > -1);
     h += `<section class="ex today-ex ${now ? 'now' : ''}" id="exercise-${ei}">
-      <div class="ex-head"><div><h2>${liftName(e.lift)}</h2>${e.tag ? `<span class="tag">${e.tag}</span>` : ''}<p class="small muted">${setsLine(e)}</p></div><button class="link today-menu" data-a="exmenu:${k}" aria-expanded="${!!menuOpen}" aria-controls="exercise-options-${ei}" aria-label="Valg for ${esc(liftName(e.lift))}">Valg ${chev}</button></div>
+      <div class="ex-head"><div><h2>${liftName(e.lift)}</h2>${e.tag ? `<span class="tag">${e.tag}</span>` : ''}<p class="small muted">${setsLine(e)}</p></div><button class="link today-menu" data-a="exmenu:${k}" aria-expanded="${!!menuOpen}" aria-haspopup="dialog" aria-controls="exerciseSheet" aria-label="Valg for ${esc(liftName(e.lift))}">Valg ${chev}</button></div>
       ${canNext ? `<button class="ex-hit" data-a="next:${ei}" aria-label="Registrer ${bigR}${bigAm ? '+' : ''} reps på ${fmt(bigW)} kg${warm ? ', oppvarming' : ''}">${head}</button>` : head}
-      ${now ? `<div class="rest-bar" aria-hidden="true"><i></i></div><div class="today-controls" id="todayRestControls"><span id="todayRestHint" class="small muted">Pausen starter automatisk</span><button class="link" data-a="undoset" ${canUndoSet() ? '' : 'hidden'}>Angre</button><button class="link" data-a="restadd:30" id="todayRestAdd" hidden aria-label="30 sekunder lengre pause">+30 s</button><button class="link" data-a="skip" id="todayRestSkip" hidden>Avslutt pause</button></div>` : ''}
+      ${now ? `<div class="rest-bar" aria-hidden="true"><i></i></div><div class="today-controls" id="todayRestControls"><button class="link" data-a="undoset" ${canUndoSet() ? '' : 'hidden'}>Angre</button><button class="link" data-a="restadd:30" id="todayRestAdd" hidden aria-label="30 sekunder lengre pause">+30 s</button><button class="link" data-a="skip" id="todayRestSkip" hidden>Avslutt pause</button></div>` : ''}
       ${LIFTS[e.lift].bar ? `<div class="platesrow ${now ? 'platebox' : ''}">${plateHTML(bigW, now)}</div>` : ''}
       ${e.hint ? `<p class="wu">${e.hint}</p>` : ''}
       ${wu.length ? `<details class="today-warmup" ${(ui.wuOpen?.[k] ?? warm) ? 'open' : ''}><summary data-a="wuopen:${k}" aria-controls="warmup-${ei}">Oppvarming · ${wu.filter(([w, r]) => wuDone.includes(w + 'x' + r)).length} av ${wu.length} gjort ${chev}</summary><div class="chip-grp wu-grp" id="warmup-${ei}">${vWarmup(e, ei, wu, wuNext, warm)}</div></details>` : ''}
@@ -4990,16 +5066,7 @@ function vToday(){
       ${e.adj ? `<div class="amrap"><span>Juster vekt etter dagsform</span>
         <button class="step" data-a="w:${ei}:-1" aria-label="2,5 kg lettere">−</button>
         <button class="step" data-a="w:${ei}:1" aria-label="2,5 kg tyngre">+</button></div>` : ''}
-      <div class="today-options" id="exercise-options-${ei}" ${menuOpen ? '' : 'hidden'}>${ui.confirm === 'exrm:' + ei ? `<div class="skipbox ex-rm" aria-live="polite"><p class="small"><b>Fjerne ${esc(liftName(e.subOf ? e.subName : e.lift).toLowerCase())} fra dagens økt?</b>
-          Settene du har tatt i den, lagres ikke. Vekta står som den er til neste gang.</p>
-          <div class="row"><button class="btn danger sm" data-a="exrm:${ei}">Ja, fjern</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div></div>`
-        : ui.confirm === 'exun:' + ei ? `<div class="skipbox ex-rm" aria-live="polite"><p class="small"><b>Tilbake til ${esc(liftName(e.subName).toLowerCase())}?</b>
-          Settene du har tatt i ${esc(liftName(e.lift).toLowerCase())}, lagres ikke.</p>
-          <div class="row"><button class="btn sm" data-a="exun:${ei}">Ja, bytt tilbake</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div></div>`
-        : ui.exSw && ui.exSw.k === s.started && ui.exSw.ei === ei ? exSwapBox(s, e, ei, touched(e))
-        : `<div class="ex-acts"><button class="link ex-rm-l" data-a="exsw:${ei}">${e.subOf ? 'Bytt til en annen' : 'Bytt i dag'}</button>
-          ${e.subOf ? `<button class="link ex-rm-l" data-a="${touched(e) ? 'confirm:exun:' + ei : 'exun:' + ei}">Tilbake til ${esc(liftName(e.subName).toLowerCase())}</button>` : ''}
-          <button class="link ex-rm-l" data-a="${touched(e) ? 'confirm:exrm:' + ei : 'exrm:' + ei}">Fjern fra dagens økt</button></div>`}</div>
+
     </section>`;
   });
   h += `<section class="today-tail" id="today-after" tabindex="-1">${cur < 0 && canUndoSet() ? '<button class="link" data-a="undoset">Angre siste registrering</button>' : ''}`;
@@ -5635,6 +5702,7 @@ function render(){
   if (ui.whl && ui.whl.bi === 'pp') { if (ui.whl.at === ui.tab + '/' + ui.detail) h += whlHTML(); else ui.whl = null; }
   paint(h);
   sxSheetPaint();
+  exerciseSheetPaint();
   if (ui.whl && ui.whl.bi === 'pp') whlInit();
   const inChat = ui.tab === 'together' && /^c:/.test(ui.sxView || '');
   $('#view').classList.toggle('chat', inChat);
@@ -5685,16 +5753,13 @@ function sheetClock(t){
   if (t) { stage.dataset.clock = '1'; n.textContent = t; u.innerHTML = `<span class="nx-l">Neste</span><b>${n.dataset.w}</b><span>${u.dataset.u}</span>`; }
   else { delete stage.dataset.clock; n.textContent = n.dataset.w; u.textContent = u.dataset.u; }
 }
-function updateTodayRest(left){
+function updateTodayRest(){
   const controls = $('#todayRestControls'), stage = document.querySelector('.stage');
   stage.classList.toggle('inline-rest', !!controls);
   if (!controls) return;
   const resting = !!ui.rest;
   $('#todayRestAdd').hidden = !resting;
   $('#todayRestSkip').hidden = !resting;
-  const hint = $('#todayRestHint');
-  hint.hidden = resting || canUndoSet();
-  hint.textContent = left <= 0 ? 'Klar for neste sett' : 'Pausen starter automatisk';
 }
 function updateRest(){
   const el = $('#rest'), stage = document.querySelector('.stage');
@@ -5718,7 +5783,7 @@ function updateRest(){
   sheetClock(left > 0 ? mmss(Math.ceil(left)) : null);
   // Står klokka i arket, viser linjen nederst bare knappene, så tiden ikke står to steder
   $('#restL').textContent = left > 0 ? (stage.dataset.clock ? 'Pause' : 'av ' + mmss(ui.rest.total)) : 'Klar for neste sett';
-  updateTodayRest(left);
+  updateTodayRest();
 }
 setInterval(updateRest, 250);
 
@@ -7643,7 +7708,8 @@ document.addEventListener('click', ev => {
       (ui.stack = ui.stack || []).push(ui.detail); ui.detail = 'training'; ui.confirm = null;
       render(); toTop(); document.getElementById('training-' + r[0])?.scrollIntoView({block:'start',behavior:'instant'}); break;
     case 'undoset': undoSet(); break;
-    case 'exmenu': ui.exMenu = ui.exMenu === r[0] ? null : r[0]; render(); break;
+    case 'exmenu': exerciseMenuOpen(r[0]); break;
+    case 'exmenuclose': exerciseMenuClose(); break;
     case 'wuopen': {
       ev.preventDefault(); const o = ui.wuOpen = ui.wuOpen || {};
       o[r[0]] = !b.closest('details').open; render(); break;
@@ -7951,7 +8017,7 @@ document.addEventListener('click', ev => {
     }
     case 'chleave': sxDo(async () => { await rpc('chat_leave', {cid: r[0]}); ui.sxView = 'list'; CH.cid = null; }, 'Du har forlatt gruppen'); break;
     case 'restadd': if (ui.rest) { const now = Date.now(); ui.rest.end = Math.max(ui.rest.end, now) + (+r[0])*1000; ui.rest.total = Math.max(ui.rest.total, (ui.rest.end - now)/1000); ui.rest.done = false; updateRest(); } break;
-    case 'exrm': exRemove(+r[0]); break;
+    case 'exrm': exerciseMenuClear(); exRemove(+r[0]); break;
     case 'pe': peAct(r); break;
     case 'ps': psAct(r); break;
     case 'exback': exBack(+r[0]); break;
@@ -7961,8 +8027,8 @@ document.addEventListener('click', ev => {
     case 'exswgo': { const T = ui.exSw && ui.exSw.T, W = parseFloat(String(($('#exSwW') || {}).value || '').replace(',', '.'));
       if (!T) break;
       if (!(W >= 0) || (W === 0 && !LIFTS[T].bw && !LIFTS[T].bar)) { fieldErr($('#exSwW'), 'Skriv inn en vekt for ' + liftName(T).toLowerCase()); break; }
-      exSwap(+r[0], T, W); break; }
-    case 'exun': exUnswap(+r[0]); break;
+      exerciseMenuClear(); exSwap(+r[0], T, W); break; }
+    case 'exun': exerciseMenuClear(); exUnswap(+r[0]); break;
     case 'exopen': { const o = ui.exOpen = ui.exOpen || {}; o[r[0]] = !o[r[0]]; render(); break; }
     case 'restscale': S.settings.restScale = +r[0]; save(); render(); break;
     case 'sound': S.settings.sound = !S.settings.sound; save(); unlockAudio(); render(); if (S.settings.sound) { beep(); toast('Lyd er på'); } break;
