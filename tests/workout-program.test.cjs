@@ -3,7 +3,8 @@ const assert = require('node:assert/strict');
 const vm = require('node:vm');
 const fs = require('node:fs');
 const path = require('node:path');
-const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+// Git på Windows sjekker ut med CRLF. Uten dette finner ikke split under oppstarten, og hele appen kjører.
+const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8').replace(/\r\n/g, '\n');
 const app = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].at(-1)[1].split('\nrender();\nckRender();')[0];
 
 // Run the real app and click handler; only browser services are replaced.
