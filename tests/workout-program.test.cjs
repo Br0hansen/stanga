@@ -419,3 +419,29 @@ test('an exercise not started can be removed from today with one tap from its li
   f.run(`S.draft.ex[1].sets[0].d=5`);
   assert.doesNotMatch(f.run('vToday()'),/data-a="exrm:1"/);
 });
+test('a time in Sammen can run the next program session or something else',()=>{
+  const f=fixture();
+  f.run(`auth={user:{id:'me'}};const t=h=>new Date(Date.now()+h*3600e3).toISOString();
+    SX.sess=[{id:'A',owner:'me',kind:'fixed',starts_at:t(1),workout_kind:'none'},{id:'B',owner:'me',kind:'fixed',starts_at:t(26),workout_kind:'none'}];SX.part=[];`);
+  // Hver time får neste økt i programmet, i rekkefølge
+  assert.deepEqual(f.state('["A","B"].map(id=>mySessFor(SX.sess.find(s=>s.id===id)).day)'),['Økt A','Økt B']);
+  // Noe annet: timen bruker ikke av programmet, og neste økt går til timen etter
+  f.click('sxother:A:1');
+  assert.deepEqual(f.state('myUpcoming()'),['B']);
+  assert.equal(f.state('mySessFor(SX.sess[1]).day'),'Økt A');
+  assert.match(f.run('myBox(SX.sess[0])'),/Noe annet[\s\S]*data-a="sxother:A:0"/);
+  assert.match(f.run('myLine(SX.sess[0])'),/noe annet/);
+  // Eieren deler ingen økt på timen med noe annet, og vennene ser neste økt på timen etter
+  assert.equal(f.state('SX.sess[0].plan||null'),null);
+  assert.equal(f.state('SX.sess[1].plan.day'),'Økt A');
+  assert.deepEqual(f.state('S.sxOther'),{A:true});
+  // Tilbake til neste økt i programmet
+  f.click('sxother:A:0');
+  assert.deepEqual(f.state('myUpcoming()'),['A','B']);
+  assert.match(f.run('myBox(SX.sess[0])'),/data-a="sxother:A:1"/);
+  // Skjemaet for ny time har valget, og en time med noe annet åpnes med det valgt
+  f.run('sxFormInit()');
+  assert.match(f.run('vSxForm()'),/name="sxmine" data-sxf="mine" value="next" checked/);
+  f.run(`S.sxOther={B:true};sxFormInit(SX.sess[1])`);
+  assert.equal(f.state('ui.sxForm.mine'),'other');
+});

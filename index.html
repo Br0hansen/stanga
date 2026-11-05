@@ -1027,7 +1027,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 105;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 106;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -7640,10 +7640,20 @@ function myExtras(x){
   if ((x.note || '').trim()) out.push({k:'Notat', t:x.note.trim(), body:''});
   return out;
 }
+/* «Noe annet» på en time: den bruker ikke av øktene i programmet, så neste programøkt går til timen etter.
+   Valget er bare ditt og ligger i S.sxOther (id → true), så det følger med i skybackup. Eieren deler ingen økt da. */
+const sxOther = s => !!(S.sxOther && S.sxOther[s.id]);
+function sxSetOther(id, on){
+  S.sxOther = S.sxOther || {};
+  if (on) S.sxOther[id] = true; else delete S.sxOther[id];
+  // Rydd bort timer som er over
+  SX.sess.forEach(s => { if (S.sxOther[s.id] && sxEnd(s) <= Date.now()) delete S.sxOther[s.id]; });
+  save(); sxSyncPlans();
+}
 function myUpcoming(){
   const me = uid(), now = Date.now();
-  // Timer der du kjører samme økt som eieren, bruker ikke av øktene i programmet ditt
-  return SX.sess.filter(s => !s.cancelled_at && sxEnd(s) > now && !goesSame(s) &&
+  // Timer der du kjører samme økt som eieren eller noe annet, bruker ikke av øktene i programmet ditt
+  return SX.sess.filter(s => !s.cancelled_at && sxEnd(s) > now && !goesSame(s) && !sxOther(s) &&
     (s.owner === me || SX.part.some(p => p.session_id === s.id && p.user_id === me)))
     .sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at)).map(s => s.id);
 }
@@ -7657,6 +7667,7 @@ function mySessFor(s){
 }
 const exTop = e => Math.max(0, ...e.sets.map(x => x.w || 0));
 function myLine(s){
+  if (sxOther(s) && !goesSame(s)) return '<span class="sx-mine"><b>Din økt: noe annet</b></span>';
   const x = mySessFor(s);
   if (!x) return '';
   const parts = x.ex.map(e => liftName(e.lift) + (exTop(e) ? ' ' + fmt(exTop(e)) : ''))
@@ -7667,9 +7678,13 @@ function myLine(s){
 }
 const setsTxt = (n, t) => t.size === 1 ? n + '×' + [...t][0] : n + ' sett';
 function myBox(s){
+  const own = s.owner === uid(), hasProg = !!(S.active && prog(S.active.programId));
+  if (sxOther(s) && !goesSame(s)) return `<section class="box sx-mybox"><span class="lbl">Din økt · bare du ser denne</span>
+    <p><b>Noe annet</b></p><p class="muted small">Timen bruker ikke av øktene i programmet. Neste økt i programmet går til timen etter, eller venter til du tar den.</p>
+    ${hasProg ? `<button class="link" data-a="sxother:${s.id}:0">Kjør neste økt i programmet i stedet</button>` : ''}</section>`;
   const x = mySessFor(s);
   if (!x) return '';
-  const own = s.owner === uid(), miss = x.guest ? guestMissing(s) : [];
+  const miss = x.guest ? guestMissing(s) : [];
   const row = e => { const w = exTop(e), gap = x.guest && miss.length && s.plan.ex.some(g => g.l === e.lift && miss.includes(g.r));
     return `<div class="ln"><span>${esc(liftName(e.lift))}</span><span>${setsTxt(e.sets.length, new Set(e.sets.map(y => y.t)))}${gap ? ' · mangler 1RM' : w ? ' · ' + fmt(w) + ' kg' : ''}</span></div>`; };
   const today = x.guest && dayDiff(s.starts_at) === 0 && !(S.draft && S.draft.guest && S.draft.guest.sid === s.id);
@@ -7680,7 +7695,8 @@ function myBox(s){
     ${miss.length ? `<div class="sx-max"><p class="small"><b>Appen mangler 1RM i ${esc(listNo(miss.map(l => liftName(l).toLowerCase())))}.</b> Legg den inn, så regnes vektene ut. Den lagres under Maksløft.</p>
       ${miss.map(l => `<div class="field"><label for="gmax-${l}">${liftName(l)}</label><span class="inp"><input id="gmax-${l}" data-gmax="${l}" type="text" inputmode="decimal" placeholder="1RM">kg</span></div>`).join('')}</div>` : ''}
     ${myExtras(x).map(m => `<div class="sx-extra"><span class="lbl">${m.k}</span><p><b>${esc(m.t)}</b></p>${m.body ? `<pre class="wodtxt">${esc(m.body)}</pre>` : ''}</div>`).join('')}
-    ${today && !miss.length ? `<button class="btn" data-a="sxstart:${s.id}">Start samme økt</button>` : ''}</section>`;
+    ${today && !miss.length ? `<button class="btn" data-a="sxstart:${s.id}">Start samme økt</button>` : ''}
+    ${x.guest ? '' : `<button class="link" data-a="sxother:${s.id}:1">Kjør noe annet på denne timen</button>`}</section>`;
 }
 // Økta eieren har planlagt, slik vennene ser den: øvelser, sett og prosent av 1RM, ikke vektene
 function ownerBox(s){
@@ -7767,14 +7783,14 @@ function sxCard(s){
   const date = (ui.sxFilter || 'today') !== 'today' ? ' · ' + dayLabel(s.starts_at).toLowerCase() : '';
   const status = cancelled ? 'Avlyst' : s.kind === 'window' ? (own && props.length ? props.length + ' tidsforslag' : 'Tidsvindu')
     : names.length ? (names.length > 2 ? names.length + ' andre er med' : names.join(' og ') + ' er med') : 'Fast tid';
-  const x = !cancelled && (own || joined) ? mySessFor(s) : null;
+  const other = !cancelled && (own || joined) && sxOther(s) && !goesSame(s), x = !cancelled && (own || joined) && !other ? mySessFor(s) : null;
   return `<article class="sx-card sx-session${own ? ' own' : ''}${cancelled ? ' cancelled' : ''}">
     <div class="sx-top"><span class="tag">${esc(label + date)}</span><span class="sx-sub">${esc(status)}</span></div>
     <div class="sx-session-main"><span class="sx-time${s.kind === 'window' ? ' sm' : ''}">${sxTime(s)}</span>
       <div class="sx-session-copy"><b>${esc(s.place || (s.kind === 'window' ? 'Finn et tidspunkt som passer' : w.txt))}</b>
         ${s.place ? `<span class="sx-sub">${esc(s.kind === 'window' ? 'Finn et tidspunkt som passer' : w.txt)}</span>` : ''}</div>
       <button class="sx-session-open" data-a="sxopen:${s.id}" aria-label="${own ? 'Åpne din time' : 'Åpne timen til ' + esc(uname(s.owner))}">›</button></div>
-    ${cancelled ? '' : own || joined ? `<button class="sx-session-foot sx-private" data-a="sxopen:${s.id}">${DB_ICON}<span>${x ? 'Din økt · ' + esc(x.day) : 'Se timen og hvem som er med'}</span><span aria-hidden="true">›</span></button>`
+    ${cancelled ? '' : own || joined ? `<button class="sx-session-foot sx-private" data-a="sxopen:${s.id}">${DB_ICON}<span>${other ? 'Din økt · noe annet' : x ? 'Din økt · ' + esc(x.day) : 'Se timen og hvem som er med'}</span><span aria-hidden="true">›</span></button>`
       : `<div class="sx-session-foot"><span class="sx-sub">${esc(s.plan ? 'Velg samme økt eller din egen' : s.kind === 'window' ? 'Alle kan foreslå tid' : w.lbl)}</span>
         <button class="btn${s.kind === 'window' ? ' ghost' : ''} sm" data-a="sxopen:${s.id}">${myProp ? 'Ditt forslag: ' + hm(myProp.proposed_at) : s.kind === 'window' ? 'Foreslå tid' : 'Bli med'}</button></div>`}
     </article>`;
@@ -7859,8 +7875,8 @@ function sxFormInit(s){
   const next = () => { const d = new Date(Date.now() + 30 * 6e4); d.setMinutes(d.getMinutes() < 30 ? 30 : 60, 0, 0); return hm(d); };
   ui.sxForm = s
     ? {id:s.id, kind:s.kind, day: Math.max(0, dayDiff(s.starts_at)), from: hm(s.starts_at), to: s.ends_at ? hm(s.ends_at) : '',
-       place: s.place || '', wk: s.workout_kind, ref: s.workout_ref, text: s.workout_text || ''}
-    : {kind:'fixed', day:0, from: next(), to:'', place: S.settings.sxPlace || '', wk:'none', ref:null, text:''};
+       place: s.place || '', wk: s.workout_kind, ref: s.workout_ref, text: s.workout_text || '', mine: sxOther(s) ? 'other' : 'next'}
+    : {kind:'fixed', day:0, from: next(), to:'', place: S.settings.sxPlace || '', wk:'none', ref:null, text:'', mine:'next'};
   ui.sxMsg = '';
 }
 function vSxForm(sheet = false){
@@ -7886,6 +7902,10 @@ function vSxForm(sheet = false){
         <button class="btn ghost sm" data-a="sxbank">${w ? 'Velg en annen' : 'Velg fra øktbanken'}</button></div>` : ''}
       ${f.wk === 'text' ? `<label class="lbl">Økta<textarea class="txt" data-sxf="text" maxlength="300" placeholder="Hva skal dere kjøre?">${esc(f.text)}</textarea></label>` : ''}
       <p class="muted small">Synlig for vennene dine.</p>
+      ${S.active && prog(S.active.programId) ? `<fieldset class="sx-fs"><legend class="lbl">Din økt · bare du ser dette</legend><div class="sx-list">
+        ${[['next','Neste økt i programmet','Appen setter av neste økt til timen'],['other','Noe annet','Metcon, fri trening eller noe helt annet. Programmet venter til neste gang.']].map(([k, t, d]) =>
+          `<label class="sx-radio"><input type="radio" name="sxmine" data-sxf="mine" value="${k}" ${(f.mine || 'next') === k ? 'checked' : ''}><span><b>${t}</b><small>${d}</small></span></label>`).join('')}
+      </div></fieldset>` : ''}
       ${ui.sxMsg ? `<p class="small warn-t" role="alert">${esc(ui.sxMsg)}</p>` : ''}
       <button class="btn" data-a="sxsave" ${ui.sxBusy ? 'disabled' : ''}>${f.id ? 'Lagre endringer' : 'Legg ut time'}</button>
     </div>`;
@@ -7901,8 +7921,11 @@ async function sxSave(){
   if (f.wk === 'text' && !f.text.trim()) throw new Error('Skriv hva dere skal kjøre.');
   const body = {kind: f.kind, starts_at: start.toISOString(), ends_at: end ? end.toISOString() : null, place: f.place.trim() || null,
     workout_kind: f.wk, workout_ref: f.wk === 'bank' ? f.ref : null, workout_text: f.wk === 'text' ? f.text.trim() : null};
+  let id = f.id;
   if (f.id) await db('sessions', 'id=eq.' + f.id, {method:'PATCH', body});
-  else await db('sessions', '', {method:'POST', body});
+  else { const rows = await db('sessions', '', {method:'POST', body, headers:{Prefer:'return=representation'}}); id = rows && rows[0] && rows[0].id; }
+  // Din økt på timen: neste i programmet eller noe annet. Bare på telefonen din (og i skybackup).
+  if (id) { S.sxOther = S.sxOther || {}; if (f.mine === 'other') S.sxOther[id] = true; else delete S.sxOther[id]; }
   S.settings.sxPlace = body.place || ''; save();
   ui.sxView = f.id ? 's:' + f.id : 'list';
   if (!f.id) { ui.sxTab = 'timer'; ui.sxFilter = f.day === 0 ? 'today' : 'upcoming'; ui.sxUnder = 'list'; }
@@ -8569,6 +8592,7 @@ document.addEventListener('click', ev => {
         .finally(() => { ui.sxBusy = false; render(); });
       break;
     case 'sxjoin': sxDo(() => db('participants', '', {method:'POST', body:{session_id: r[0], plan: r[1] === 'same' ? 'same' : 'own'}}), r[1] === 'same' ? 'Du er med og kjører samme økt' : 'Du er med'); break;
+    case 'sxother': sxSetOther(r[0], r[1] === '1'); render(); toast(r[1] === '1' ? 'Du kjører noe annet på timen' : 'Du kjører neste økt i programmet'); break;
     case 'sxplan': sxDo(() => db('participants', 'session_id=eq.' + r[0] + '&user_id=eq.' + uid(), {method:'PATCH', body:{plan: r[1]}}), r[1] === 'same' ? 'Du kjører samme økt' : 'Du kjører din egen økt'); break;
     case 'sxstart': guestStart(r[0]); break;
     case 'sxgo': ui.tab = 'together'; ui.sxView = 's:' + r[0]; ui.confirm = null; sxOpen(); render(); toTop(); break;
@@ -8690,6 +8714,7 @@ document.addEventListener('keydown', ev => {
 document.addEventListener('change', ev => {
   const t = ev.target;
   if (t.dataset && t.dataset.sxf === 'wk' && ui.sxForm) { ui.sxForm.wk = t.value; render(); }
+  if (t.dataset && t.dataset.sxf === 'mine' && ui.sxForm) ui.sxForm.mine = t.value;
 });
 
 /* iOS gir av og til hjemskjerm-appen et vindu som slutter over skjermkanten.

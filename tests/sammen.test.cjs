@@ -22,7 +22,7 @@ function fixture(time = '2026-11-04T12:00:00+01:00') {
     sxWorkout:s=>({lbl:'Bare trene samtidig',txt:s.workout_text||'Bare trene samtidig',body:''}),
     mySessFor:()=>({day:'Privat økt'}), ownerBox:()=>'<div>Offentlige øvelser</div>', myBox:()=>'<div>Privat økt</div>', myPlan:()=> 'own',
     vSxFriends:()=>'<div>FRIENDS</div>',vSxChats:h=>h+'<div>CHATS</div>',vSxSignup:()=> 'SIGNUP',vSxNewPw:()=> 'PASSWORD',vSxUsername:()=> 'USERNAME',
-    vBank:()=> 'BANK',vSxChat:()=> 'CONVERSATION',vSxPick:()=> 'PICK', DB_ICON:'<svg></svg>', BANK:[]});
+    vBank:()=> 'BANK',vSxChat:()=> 'CONVERSATION',vSxPick:()=> 'PICK', DB_ICON:'<svg></svg>', BANK:[], sxOther:()=>false, goesSame:()=>false});
   vm.runInContext(code,ctx);
   return ctx;
 }
