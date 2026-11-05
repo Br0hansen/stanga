@@ -360,3 +360,62 @@ test('Brosesh swaps within the RP guide lists and shows the RP guide videos only
   f.run(`S.active=newInstance(prog('rp3'));`);
   assert.equal(f.state("vidOf('l_hack_squat')"),f.state("EXVID.l_hack_squat"));
 });
+test('Knebøy, benk og RP: heavy squat and bench day, then the RP press and pull days',()=>{
+  const f=fixture('rpkb');
+  f.run(`S.active.rm={squat:120,bench:90};S.draft=buildSession(prog('rpkb'),S.active);`);
+  // Dag 1: 3 × 5 med 3 reps i reserve. 10RM 120 gir 1RM 160, og 5 reps med 3 i reserve er 160 / (1 + 8/30).
+  assert.equal(f.state('S.draft.day'),'Dag 1 · Knebøy og benk');
+  assert.deepEqual(f.state('S.draft.ex.map(e=>[e.lift,e.sets.length,e.sets[0].t,e.sets[0].w,e.rest])'),[['squat',3,5,127.5,180],['bench',3,5,95,180]]);
+  assert.equal(f.state('S.draft.ex[1].tag'),'Tungt · 3 reps i reserve');
+  // Dag 2 og 3 er Press og Trekk fra RP 3 dager, med manualbenk og beinpress i stedet for benk og knebøy
+  const d2=f.state('buildSession(prog("rpkb"),Object.assign(clone(S.active),{idx:1}))'), d3=f.state('buildSession(prog("rpkb"),Object.assign(clone(S.active),{idx:2}))');
+  assert.equal(d2.day,'Dag 2 · Press');assert.equal(d3.day,'Dag 3 · Trekk');
+  assert.ok(d2.ex.some(e=>e.lift==='dbbench')&&d2.ex.some(e=>e.lift==='l_leg_press'));
+  assert.ok(![...d2.ex,...d3.ex].some(e=>e.lift==='bench'||e.lift==='squat'));
+  // Uke 4: 1 rep i reserve gir tyngre vekt. Deload: 2 sett med halve reps fra uke 1.
+  assert.equal(f.state('buildSession(prog("rpkb"),Object.assign(clone(S.active),{idx:9})).ex[0].sets[0].w'),132.5);
+  f.run(`S.draft.ex.forEach(e=>e.sets.forEach(x=>x.d=x.t));`);f.click('q:0:passe');f.click('q:1:passe');f.click('finish');
+  assert.equal(f.state('S.active.r1["0.0.0"]'),5);
+  assert.deepEqual(f.state('buildSession(prog("rpkb"),Object.assign(clone(S.active),{idx:12})).ex[0].sets.map(x=>x.t)'),[3,3]);
+  // Resensitivisering: 3 reps
+  assert.equal(f.state('buildSession(prog("rpkb"),Object.assign(clone(S.active),{idx:30})).ex[0].sets[0].t'),3);
+});
+test('an exercise can be added to today only, logged, and removed again',()=>{
+  const f=fixture();
+  f.click('exadd');
+  assert.match(f.run('vToday()'),/id="exAddQ"/);
+  assert.match(f.run('exAddRes("face pull")'),/data-a="exaddpick:l_face_pull"/);
+  f.click('exaddpick:l_face_pull');
+  assert.match(f.run('vToday()'),/id="exAddW"/);
+  f.run(`exAdd('l_face_pull',3,15,20)`);
+  assert.deepEqual(f.state('S.draft.ex.at(-1)').sets.map(x=>[x.t,x.w]),[[15,20],[15,20],[15,20]]);
+  assert.equal(f.state('S.draft.ex.at(-1).added'),true);
+  assert.equal(f.state('ui.exAdd'),null);
+  // Fjernes den, forsvinner den helt, og står ikke under «Fjernet fra dagens økt»
+  f.run(`exRemove(S.draft.ex.length-1)`);
+  assert.equal(f.state('S.draft.ex.some(e=>e.lift==="l_face_pull")'),false);
+  assert.equal(f.state('(S.draft.rmEx||[]).length'),0);
+  // Logget: med i loggen, men programmet ser den ikke
+  f.run(`exAdd('l_face_pull',2,12,15)`);
+  const before=f.state('S.active.lifts');
+  f.run(`S.draft.ex.forEach(e=>e.sets.forEach(x=>x.d=x.t));`);f.click('finish');
+  const h=f.state('S.history[0]');
+  assert.deepEqual(h.ex.at(-1),{lift:'l_face_pull',tag:'Lagt til i dag',sets:[{t:12,w:15,d:12},{t:12,w:15,d:12}],add:true});
+  assert.equal(f.state('lastW("l_face_pull")'),15);
+  assert.deepEqual(Object.keys(f.state('S.active.lifts')),Object.keys(before));
+  // Neste økt foreslår den under «Nylig brukt», med sett og reps fra sist
+  f.click('dismiss');f.run(`S.draft=buildSession(prog(S.active.programId),S.active);`);f.click('exadd');
+  assert.match(f.run('vToday()'),/exaddpick:l_face_pull/);
+  assert.deepEqual(f.state('exAddDef("l_face_pull")'),{n:2,r:12,w:15});
+});
+test('an exercise not started can be removed from today with one tap from its line',()=>{
+  const f=fixture();f.click('next:0');
+  const html=f.run('vToday()');
+  assert.match(html,/data-a="exrm:1"/);
+  f.click('exrm:1');
+  assert.equal(f.state('S.draft.ex.length'),2);
+  assert.equal(f.state('S.draft.rmEx.length'),1);
+  // En øvelse med loggede sett får ikke ett-trykksknappen
+  f.run(`S.draft.ex[1].sets[0].d=5`);
+  assert.doesNotMatch(f.run('vToday()'),/data-a="exrm:1"/);
+});
