@@ -941,12 +941,11 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .stage[data-rest="warn"] #todayRestTime{color:var(--red)}
 .stage[data-rest="warn"] .today-rest-rule i{background:var(--red)}
 .stage.inline-rest #rest{display:none}
-.today-warmup{padding:0}
-.today-warmup summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;min-height:46px;padding:0 16px;color:var(--ink-2);font-size:12px}
-.today-warmup summary::-webkit-details-marker{display:none}
-.today-warmup[open] summary .chev{transform:rotate(90deg)}
-.today-warmup .wu-grp{padding:4px 16px 14px}
+/* Oppvarmingen står åpen rett over arbeidssettene: først det du gjør først, ingenting å trykke opp */
+.today-warmup{padding:4px 16px 10px}
+.today-warmup .wu-grp{gap:8px 6px}
 .today-warmup .chip.sm{width:44px;min-height:44px}
+.today-grp-lbl{flex:0 0 100%;margin:0 0 6px;font-size:12px;color:var(--ink-2)}
 .today-ex-details{display:grid;gap:10px;padding:12px 16px 14px}
 .today-ex-details .step,.today-ex-details .seg button{min-height:44px;min-width:44px}
 .today-ex:not(.now)>.kg,.today-ex:not(.now)>.platesrow{margin:0 16px 14px}
@@ -984,7 +983,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
   .today-pause{padding-inline:12px;column-gap:8px}
   .today-rest-face b{font-size:72px}
   .today-pause .link{font-size:11px;min-width:84px}
-  .today-warmup summary{padding-inline:12px}
+  .today-warmup{padding-inline:12px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -1021,7 +1020,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 102;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 103;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -5378,14 +5377,14 @@ function vToday(){
     h += `<section class="ex today-ex ${now ? 'now' : ''}" id="exercise-${ei}">
       <div class="ex-head"><div class="today-ex-title"><h2>${liftName(e.lift)}</h2>${e.tag ? `<span class="tag">${e.tag}</span>` : ''}<p class="small muted">${setsLine(e)}</p></div><div class="today-ex-actions">${now ? `<button class="link today-undo" data-a="undoset" ${canUndoSet() ? '' : 'disabled'}>Angre</button>` : ''}${EXVID[e.lift] ? `<button class="link today-video" data-a="video:${e.lift}" aria-haspopup="dialog" aria-label="Video av ${esc(liftName(e.lift).toLowerCase())}">Video</button>` : ''}<button class="link today-menu" data-a="exmenu:${k}" aria-expanded="${!!menuOpen}" aria-haspopup="dialog" aria-controls="exerciseSheet" aria-label="Valg for ${esc(liftName(e.lift))}">Valg ${chev}</button></div></div>
       ${canNext ? `<button class="ex-hit" data-a="next:${ei}" aria-label="Registrer ${bigR}${bigAm ? '+' : ''} reps på ${fmt(bigW)} kg${warm ? ', oppvarming' : ''}">${head}</button>` : head}
-      <div class="chips" role="group" aria-label="Arbeidssett"><div class="chip-grp" style="--sets-per-row:${Math.min(5, e.sets.length)}">${e.sets.map((x,si) => {
+      ${wu.length ? `<div class="today-warmup" role="group" aria-label="Oppvarming"><p class="today-grp-lbl" aria-hidden="true">Oppvarming</p><div class="chip-grp wu-grp">${vWarmup(e, ei, wu, wuNext, warm)}</div></div>` : ''}
+      <div class="chips" role="group" aria-label="Arbeidssett">${wu.length ? '<p class="today-grp-lbl" aria-hidden="true">Arbeidssett</p>' : ''}<div class="chip-grp" style="--sets-per-row:${Math.min(5, e.sets.length)}">${e.sets.map((x,si) => {
         const st = x.d == null ? (si === nextSi ? 'next' : '') : (x.d >= x.t ? 'ok' : 'miss');
         const fr = x.d != null && ui.fresh === ei + ':' + si ? ' fresh' : '';
         const lbl = 'Sett '+(si+1)+': '+(x.d == null ? 'ikke gjort, mål '+(x.c || x.t)+' reps' : x.d+' reps')+(x.am ? ', så mange du klarer' : '');
         return `<div class="cw"><small class="set-number" aria-hidden="true">${si+1}</small><button class="chip ${st} ${x.am?'am':''}${fr}" data-a="set:${ei}:${si}" aria-label="${lbl}">${x.c && (x.d == null || x.d === x.t) ? x.c : x.d == null ? x.t : x.d}${x.am ? '<sup>+</sup>' : ''}</button>${varies ? `<small>${fmt(x.w)}</small>` : ''}</div>`;
       }).join('')}</div></div>
       ${now ? `<section class="today-pause" id="todayRestControls" aria-label="Pause"><div class="today-rest-face"><span id="todayRestLabel">Pause</span><b id="todayRestTime" role="timer">—</b></div><button class="link" data-a="restadd:30" id="todayRestAdd" disabled aria-label="30 sekunder lengre pause">+30 s</button><button class="link" data-a="skip" id="todayRestSkip" disabled>Avslutt pause</button><span class="today-rest-rule" aria-hidden="true"><i></i></span></section>` : ''}
-      ${wu.length ? `<details class="today-warmup" ${(ui.wuOpen?.[k] ?? warm) ? 'open' : ''}><summary data-a="wuopen:${k}" aria-controls="warmup-${ei}">Oppvarming · ${wu.filter(([w, r]) => wuDone.includes(w + 'x' + r)).length} av ${wu.length} gjort ${chev}</summary><div class="chip-grp wu-grp" id="warmup-${ei}">${vWarmup(e, ei, wu, wuNext, warm)}</div></details>` : ''}
       ${e.hint || amIdx > -1 || (canNext && S.history.filter(x => !x.free && !x.skipped).length < 3) || e.sp || e.adj || e.rpAsk ? `<div class="today-ex-details">${e.hint ? `<p class="wu">${e.hint}</p>` : ''}
       ${amIdx > -1 ? `<div class="amrap"><span>Siste sett, så mange du klarer</span>
         <button class="step" data-a="am:${ei}:${amIdx}:-1" aria-label="Én rep mindre">−</button>
@@ -8038,10 +8037,6 @@ document.addEventListener('click', ev => {
     case 'exmenuclose': exerciseMenuClose(); break;
     case 'video': videoOpen(r[0]); break;
     case 'videoclose': videoClose(); break;
-    case 'wuopen': {
-      ev.preventDefault(); const o = ui.wuOpen = ui.wuOpen || {};
-      o[r[0]] = !b.closest('details').open; render(); break;
-    }
     case 'set': {
       if (!S.draft || !S.draft.ex[+r[0]]?.sets[+r[1]]) break;
       const before = rememberSet(+r[0]), previous = todayCurrent(S.draft);
