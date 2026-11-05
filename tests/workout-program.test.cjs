@@ -283,7 +283,7 @@ test('RP programs follow the sheet: 10RM percentages, reps in reserve, ratings a
 });
 test('RP slots swap within the sheet categories, and the new exercises are in the library',()=>{
   const f=fixture('nf5');
-  assert.equal(f.state("EXLIB.length"),431);
+  assert.equal(f.state("EXLIB.length"),449);
   assert.ok(f.state("RP_CAT.vtri.ex.every(l=>LIFTS[l])"));
   assert.ok(f.state("Object.values(RP_CAT).flatMap(c=>c.ex).every(l=>EXLIB.some(r=>libKey(r)===l))"));
   // Oppsett: plassen får en øvelse fra kategorien, og økta bygges på nytt
@@ -301,4 +301,62 @@ test('exercises from the RP sheets have a video button, and other exercises do n
   assert.match(f.run('vToday()'),/data-a="video:bench"/);
   f.run(`S.active=newInstance(prog('burg12'));S.draft=buildSession(prog('burg12'),S.active);`);
   assert.doesNotMatch(f.run('vToday()'),/data-a="video:snatch"/);
+});
+test('Brosesh: one more rep per set, heavier when every set reaches the top, sets follow the ratings',()=>{
+  const f=fixture('bro');
+  // Uke 1, økt A: forsiktig forslag, toppen av repområdet som mål, 3 reps i reserve
+  assert.equal(f.state('S.draft.sub'),'Uke 1 av 12 · 3 reps i reserve');
+  assert.equal(f.state('S.draft.ex.length'),7);
+  assert.equal(f.state('S.draft.ex[0].lift'),'l_leg_press');
+  assert.deepEqual(f.state('S.draft.ex[0].sets.map(x=>[x.t,x.w])'),[[12,60],[12,60],[12,60]]);
+  assert.equal(f.state('S.draft.ex[0].tag'),'8–12 reps · 3 reps i reserve');
+  assert.equal(f.state('S.draft.ex[0].rest'),150);
+  assert.equal(f.state('S.draft.ex[3].rest'),90);
+  f.run(`S.draft.ex.forEach(e=>e.sets.forEach(x=>x.d=x.t));[12,10,9].forEach((d,i)=>S.draft.ex[0].sets[i].d=d);`);
+  assert.match(f.run('vToday()'),/Lett to uker på rad gir ett sett mer/);
+  f.click('q:0:lett');f.click('finish');
+  // Uke 2: én rep mer i hvert sett, samme vekt. Brystpressen nådde toppen og går opp 2,5 kg.
+  f.run(`S.active.idx=3;S.draft=buildSession(prog('bro'),S.active);`);
+  assert.deepEqual(f.state('S.draft.ex[0].sets.map(x=>[x.t,x.w])'),[[12,60],[11,60],[10,60]]);
+  assert.match(f.state('S.draft.ex[0].hint'),/Sist: 12, 10 og 9 reps på 60 kg/);
+  assert.deepEqual(f.state('S.draft.ex[1].sets.map(x=>[x.t,x.w])'),[[10,32.5],[10,32.5],[10,32.5]]);
+  // Lett to uker på rad gir fire sett, tungt tar ett bort igjen
+  f.run(`S.draft.ex.forEach(e=>e.sets.forEach(x=>x.d=x.t));`);f.click('q:0:lett');f.click('finish');
+  f.run(`S.active.idx=6;S.draft=buildSession(prog('bro'),S.active);`);
+  assert.equal(f.state('S.draft.ex[0].sets.length'),4);
+  f.run(`S.draft.ex.forEach(e=>e.sets.forEach(x=>x.d=x.t));`);f.click('q:0:tungt');f.click('finish');
+  f.run(`S.active.idx=9;S.draft=buildSession(prog('bro'),S.active);`);
+  assert.equal(f.state('S.draft.ex[0].sets.length'),3);
+  // Uke 5, økt B: rumensk markløft holdes på 2, isolasjon kan gå til 0–1, og vurderingen spørres ikke
+  f.run(`S.active.idx=13;S.draft=buildSession(prog('bro'),S.active);`);
+  assert.deepEqual(f.state('S.draft.ex.map(e=>e.tag)').slice(0,4),['8–12 reps · 2 reps i reserve','8–12 reps · 1–2 reps i reserve','8–12 reps · 1–2 reps i reserve','10–15 reps · 0–1 reps i reserve']);
+  assert.equal(f.state('S.draft.ex[0].rpAsk===undefined'),true);
+  // Deload i uke 6: 80 % av vekta, 2 sett der det står 3, 1 der det står 2, bunnen av repområdet
+  f.run(`S.active.idx=15;S.draft=buildSession(prog('bro'),S.active);`);
+  assert.equal(f.state('S.draft.sub'),'Uke 6 av 12 · deload');
+  assert.deepEqual(f.state('S.draft.ex[0].sets.map(x=>[x.t,x.w])'),[[8,47.5],[8,47.5]]);
+  assert.equal(f.state('S.draft.ex[3].sets.length'),1);
+  // Uke 7: ny blokk med like mange sett som i uke 1, vektene står
+  f.run(`S.active.sets["0.0"]=4;S.active.idx=18;S.draft=buildSession(prog('bro'),S.active);`);
+  assert.equal(f.state('S.draft.ex[0].sets.length'),3);
+  assert.equal(f.state('S.draft.ex[0].sets[0].w'),60);
+  assert.equal(f.state('S.draft.sub'),'Uke 7 av 12 · 3 reps i reserve');
+});
+test('Brosesh swaps within the RP guide lists and shows the RP guide videos only in Brosesh',()=>{
+  const f=fixture('bro');
+  assert.ok(f.state("Object.values(BRO_CAT).flatMap(c=>c.ex).every(l=>LIFTS[l]&&/^[A-Za-z0-9_-]{11}$/.test(BRO_VID[l]))"));
+  assert.ok(f.state("BRO_DAYS.flat().every(r=>BRO_CAT[r[0]].ex.includes(r[4]))"));
+  // Oppsett: plassen får en øvelse fra lista, og økta bygges på nytt
+  assert.match(f.run('swapRows(prog("bro"),S.active)'),/data-rpswap="0\.0"/);
+  f.run(`rpSwap('0.0','l_hack_squat','l_leg_press');`);
+  assert.equal(f.state('buildSession(prog("bro"),S.active).ex[0].lift'),'l_hack_squat');
+  // Bytt i dag: alternativene er lista fra RP-guiden for muskelen
+  f.run(`S.draft=buildSession(prog('bro'),S.active);`);
+  const c=f.state('swapCands(S.draft,S.draft.ex[1]).fam');
+  assert.ok(c.includes('dbbench')&&c.every(l=>f.state(`BRO_CAT.bro_hpress.ex.includes(${JSON.stringify(l)})`)));
+  // Videoen er fra RP-guiden i Brosesh, og fra arket i RP-programmene
+  assert.match(f.run('vToday()'),/data-a="video:l_hack_squat"/);
+  assert.equal(f.state("vidOf('l_hack_squat')"),'rYgNArpwE7E');
+  f.run(`S.active=newInstance(prog('rp3'));`);
+  assert.equal(f.state("vidOf('l_hack_squat')"),f.state("EXVID.l_hack_squat"));
 });

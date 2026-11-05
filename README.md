@@ -1,6 +1,6 @@
 # Stanga – treningsapp på hjemskjermen
 
-Styrkeprogrammer (StrongLifts 5×5, Starting Strength, GZCLP, 5/3/1 FSL og BBB, Juggernaut, Cube Method og Strength & Power), Burgener 12 uker for olympisk vektløfting, Muscle MetCon 12 uker (styrke, metcon og finisher i hver økt, sekundærløft styrt av RPE), EMOM Capacity 12 uker (styrke som E2MOM og 4-stasjons EMOM-er), Circuit EMOM 12 uker (kretser med åtte stasjoner), Cube EMOM 12 uker (tre baseløft i E4MOM hver økt), RP Hypertrofi på 3 og 5 dager (13 uker i tre mesosykluser), et konkurranseprogram for ATHX 2027, øktbank med metcons, egne metcons, metcon-klokke og treningslogg. Alle data lagres lokalt på telefonen.
+Styrkeprogrammer (StrongLifts 5×5, Starting Strength, GZCLP, 5/3/1 FSL og BBB, Juggernaut, Cube Method og Strength & Power), Burgener 12 uker for olympisk vektløfting, Muscle MetCon 12 uker (styrke, metcon og finisher i hver økt, sekundærløft styrt av RPE), EMOM Capacity 12 uker (styrke som E2MOM og 4-stasjons EMOM-er), Circuit EMOM 12 uker (kretser med åtte stasjoner), Cube EMOM 12 uker (tre baseløft i E4MOM hver økt), RP Hypertrofi på 3 og 5 dager (13 uker i tre mesosykluser), Brosesh (12 uker med tre helkroppsøkter, bygd på RP Strengths hypertrofiguide), et konkurranseprogram for ATHX 2027, øktbank med metcons, egne metcons, metcon-klokke og treningslogg. Alle data lagres lokalt på telefonen.
 
 ## Utseende: Treningsboka
 
@@ -115,7 +115,7 @@ Under **Program → Bibliotek** står **Dine programmer** øverst, med **+ Lag e
 
 ## Øvelsesbiblioteket
 
-431 øvelser med norske navn, utstyr, kategori og hovedmuskler. 365 er valgt ut fra [Free Exercise DB](https://github.com/yuhonas/free-exercise-db) (Unlicense, fri bruk), og 66 som manglet er lagt til: wall balls, burpees, kettlebell swing, thruster, bokshopp, toes-to-bar, romaskin, SkiErg og flere, pluss 38 alternativer fra RP-arkene (for eksempel nedtrekk med bredt grep, lav skrå DB-benk, tricepspress over hodet med EZ-stang og foroverbøyd skuldertrekk). Øvelser appen har fra før, peker til sin egen versjon, så det blir ett navn og én vekt. Søket virker på norsk og engelsk, og på utstyr og muskler. Biblioteket brukes i **Lag eget program** og under **Program → Oppsett → Øvelser og bytter → + Egen øvelse**. Ligger i `EXLIB` i `index.html`.
+449 øvelser med norske navn, utstyr, kategori og hovedmuskler. 365 er valgt ut fra [Free Exercise DB](https://github.com/yuhonas/free-exercise-db) (Unlicense, fri bruk), og 84 som manglet er lagt til: wall balls, burpees, kettlebell swing, thruster, bokshopp, toes-to-bar, romaskin, SkiErg og flere, pluss 38 alternativer fra RP-arkene (for eksempel nedtrekk med bredt grep, lav skrå DB-benk, tricepspress over hodet med EZ-stang og foroverbøyd skuldertrekk) og 18 fra RP Strength sine muskelguider til Brosesh (for eksempel belt squat, seal row, sidehev i maskin og triceps pushdown i maskin). Øvelser appen har fra før, peker til sin egen versjon, så det blir ett navn og én vekt. Søket virker på norsk og engelsk, og på utstyr og muskler. Biblioteket brukes i **Lag eget program** og under **Program → Oppsett → Øvelser og bytter → + Egen øvelse**. Ligger i `EXLIB` i `index.html`.
 
 ## RP Hypertrofi 3 og 5 dager
 
@@ -127,8 +127,20 @@ Under **Program → Bibliotek** står **Dine programmer** øverst, med **+ Lag e
 - **Reps i reserve:** 3, 3, 2 og 1. Målet for reps er regnet baklengs fra 10RM, for eksempel 14 reps i uke 1 av Basis.
 - **Vurdering:** Etter hver øvelse svarer du hvor støl du var fra sist og hvor tunge repsene var. Lett gir ett sett mer neste uke, passe like mange og tungt ett mindre, som 1, 0 og −1 i arket. Vurderingen spørres ikke i uka før deload.
 - **Deload:** 2 sett med halve reps fra uke 1. De siste dagene i uka er vekta også halvert, som i arket. Andre øvelse i et supersett står over.
-- **Video:** Alle øvelsene fra arkene har en **Video**-knapp i øvelseskortet. Den åpner instruksjonsvideoen fra RP i et ark over økta, fra youtube-nocookie.com, så YouTube ikke setter sporingskaker før du spiller av. Lukk, Escape eller trykk utenfor stopper videoen. Under videoen står en lenke til YouTube, hvis den ikke kan spilles i appen. Lenkene ligger i `EXVID`, og knappen vises i alle programmer som bruker øvelsene, for eksempel benkpress i StrongLifts.
+- **Video:** Alle øvelsene fra arkene har en **Video**-knapp i øvelseskortet. Den åpner instruksjonsvideoen fra RP i et ark over økta, fra youtube-nocookie.com, så YouTube ikke setter sporingskaker før du spiller av. Lukk, Escape eller trykk utenfor stopper videoen. Under videoen står en lenke til YouTube, hvis den ikke kan spilles i appen. Lenkene ligger i `EXVID`, og knappen vises i alle programmer som bruker øvelsene, for eksempel benkpress i StrongLifts. Unntaket er Brosesh, som viser videoene fra RP-guidene (se under).
 - **Teknisk:** `RP_CAT` (kategoriene med alternativer), `RP_DAYS` (øktene), `buildRp` og `progressRp` i `index.html`. Instansen har `rm` (10RM), `est` (siste anslag), `sets` (sett neste uke per plass), `r1` (reps i uke 1) og `swaps` (valgt øvelse per plass). En plass heter «meso.dag.rad».
+
+## Brosesh
+
+**Program under Program → Bibliotek.** Eget 12-ukersprogram med tre helkroppsøkter i uka (A, B og C), bygd på [RP Strengths hypertrofiguide](https://rpstrength.com/blogs/articles/complete-hypertrophy-training-guide). Samme økter hele veien, så det er lett å se fremgang.
+
+- **Øktene:** A: beinpress, brystpress i maskin, bryststøttet roing, sittende lårcurl, sidehev, bicepscurl i kabel og stående tåhev. B: rumensk markløft med manualer, skrå DB-benk, nedtrekk, beinspark, lenende sidehev i kabel, vekslende bicepscurl og kabelcrunch. C: hack squat, sittende kabelroing, butterfly, sittende lårcurl, sidehev, triceps pushdown og stående tåhev. De store øvelsene har 3 × 8–12 og 2,5 min pause, de små 2 × 10–15 eller 12–20 og 90 s pause.
+- **Uke for uke:** To blokker på fem uker pluss deload. Reps i reserve er 3, 3, 2, 2 og 1–2. I uke 5 og 11 holdes rumensk markløft og hack squat på 2, og isolasjonsøvelsene kan gå til 0–1.
+- **Progresjon:** Målet er én rep mer enn sist i hvert sett, opp til toppen av repområdet. Når alle settene når toppen, går vekta opp 2,5 kg, og du starter to reps over bunnen. Første gang står det et forslag (vekta du brukte sist, ellers et forsiktig anslag), og du justerer med − og +.
+- **Sett:** Etter hver øvelse svarer du lett, passe eller tungt. Tungt gir ett sett mindre neste gang, lett to uker på rad gir ett sett mer, mellom 1 og 4 sett. Vurderingen spørres ikke i uke 5 og 11. I uke 7 starter du med like mange sett som i uke 1.
+- **Deload (uke 6 og 12):** 80 % av vekta rundet ned til nærmeste 2,5 kg, bunnen av repområdet, 2 sett der det står 3 og 1 der det står 2.
+- **Bytter og video:** Hver plass har alternativene fra RP Strength sine muskelguider (bryst, rygg, forside lår, baksida lår, sideskulder, biceps, triceps, legger og mage), 122 øvelser i alt. De kan velges under **Program → Oppsett → Øvelser og bytter** eller med **Valg → Bytt i dag**. Hver øvelse har videoen fra guiden. Videoene vises bare i Brosesh, og de andre programmene beholder videoene fra arket.
+- **Teknisk:** `BRO_CAT` (alternativene), `BRO_VID` (videoene), `BRO_DAYS` (øktene), `buildBro` og `progressBro` i `index.html`. Instansen har `bro` (vekt og reps per plass og øvelse), `sets` (sett neste gang), `lett` (lett på rad), `blk` (blokka) og `swaps`. En plass heter «dag.rad».
 
 ## Pete Plan
 
