@@ -689,6 +689,8 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .sx-form input[type=time]{font:800 26px/1 var(--face);font-stretch:68%;-webkit-appearance:none;appearance:none}
 .sx-form .txt:focus,.sx-form input[type=time]:focus{border-color:var(--accent);outline:none}
 .sx-form textarea.txt{min-height:90px}
+.sx-mybox textarea.txt{width:100%;box-sizing:border-box;min-height:76px;background:var(--iron);border:1px solid var(--line);border-radius:3px;color:var(--chalk);font:16px/1.45 var(--face);padding:10px 12px}
+.sx-mybox textarea.txt:focus{border-color:var(--accent);outline:none}
 .sx-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .sx-fs{border:0;margin:0;padding:0;min-width:0}
 .sx-fs legend{padding:0;margin-bottom:8px}
@@ -1027,7 +1029,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 106;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 107;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -7641,11 +7643,14 @@ function myExtras(x){
   return out;
 }
 /* «Noe annet» på en time: den bruker ikke av øktene i programmet, så neste programøkt går til timen etter.
-   Valget er bare ditt og ligger i S.sxOther (id → true), så det følger med i skybackup. Eieren deler ingen økt da. */
+   Valget er bare ditt og ligger i S.sxOther (id → {t: hva du skal trene}), så det følger med i skybackup.
+   Eieren deler ingen økt da. */
 const sxOther = s => !!(S.sxOther && S.sxOther[s.id]);
-function sxSetOther(id, on){
+const sxOtherTxt = s => { const o = S.sxOther && S.sxOther[s.id]; return o && typeof o.t === 'string' ? o.t : ''; };
+const sxClean = t => String(t || '').replace(/[<>`]/g, '').slice(0, 300);
+function sxSetOther(id, on, txt){
   S.sxOther = S.sxOther || {};
-  if (on) S.sxOther[id] = true; else delete S.sxOther[id];
+  if (on) S.sxOther[id] = {t: sxClean(txt != null ? txt : sxOtherTxt({id}))}; else delete S.sxOther[id];
   // Rydd bort timer som er over
   SX.sess.forEach(s => { if (S.sxOther[s.id] && sxEnd(s) <= Date.now()) delete S.sxOther[s.id]; });
   save(); sxSyncPlans();
@@ -7667,7 +7672,7 @@ function mySessFor(s){
 }
 const exTop = e => Math.max(0, ...e.sets.map(x => x.w || 0));
 function myLine(s){
-  if (sxOther(s) && !goesSame(s)) return '<span class="sx-mine"><b>Din økt: noe annet</b></span>';
+  if (sxOther(s) && !goesSame(s)) return `<span class="sx-mine"><b>Din økt: ${esc(sxOtherTxt(s).trim().split('\n')[0] || 'noe annet')}</b></span>`;
   const x = mySessFor(s);
   if (!x) return '';
   const parts = x.ex.map(e => liftName(e.lift) + (exTop(e) ? ' ' + fmt(exTop(e)) : ''))
@@ -7680,7 +7685,9 @@ const setsTxt = (n, t) => t.size === 1 ? n + '×' + [...t][0] : n + ' sett';
 function myBox(s){
   const own = s.owner === uid(), hasProg = !!(S.active && prog(S.active.programId));
   if (sxOther(s) && !goesSame(s)) return `<section class="box sx-mybox"><span class="lbl">Din økt · bare du ser denne</span>
-    <p><b>Noe annet</b></p><p class="muted small">Timen bruker ikke av øktene i programmet. Neste økt i programmet går til timen etter, eller venter til du tar den.</p>
+    <p><b>Noe annet</b></p><label class="lbl" for="sxot-${s.id}">Hva skal du trene?</label>
+    <textarea id="sxot-${s.id}" class="txt" data-sxother="${s.id}" maxlength="300" rows="3" placeholder="For eksempel metcon med Ola, eller lett jogg og mobilitet">${esc(sxOtherTxt(s))}</textarea>
+    <p class="muted small">Timen bruker ikke av øktene i programmet. Neste økt i programmet går til timen etter, eller venter til du tar den.</p>
     ${hasProg ? `<button class="link" data-a="sxother:${s.id}:0">Kjør neste økt i programmet i stedet</button>` : ''}</section>`;
   const x = mySessFor(s);
   if (!x) return '';
@@ -7790,7 +7797,7 @@ function sxCard(s){
       <div class="sx-session-copy"><b>${esc(s.place || (s.kind === 'window' ? 'Finn et tidspunkt som passer' : w.txt))}</b>
         ${s.place ? `<span class="sx-sub">${esc(s.kind === 'window' ? 'Finn et tidspunkt som passer' : w.txt)}</span>` : ''}</div>
       <button class="sx-session-open" data-a="sxopen:${s.id}" aria-label="${own ? 'Åpne din time' : 'Åpne timen til ' + esc(uname(s.owner))}">›</button></div>
-    ${cancelled ? '' : own || joined ? `<button class="sx-session-foot sx-private" data-a="sxopen:${s.id}">${DB_ICON}<span>${other ? 'Din økt · noe annet' : x ? 'Din økt · ' + esc(x.day) : 'Se timen og hvem som er med'}</span><span aria-hidden="true">›</span></button>`
+    ${cancelled ? '' : own || joined ? `<button class="sx-session-foot sx-private" data-a="sxopen:${s.id}">${DB_ICON}<span>${other ? 'Din økt · ' + esc(sxOtherTxt(s).trim().split('\n')[0].slice(0, 60) || 'noe annet') : x ? 'Din økt · ' + esc(x.day) : 'Se timen og hvem som er med'}</span><span aria-hidden="true">›</span></button>`
       : `<div class="sx-session-foot"><span class="sx-sub">${esc(s.plan ? 'Velg samme økt eller din egen' : s.kind === 'window' ? 'Alle kan foreslå tid' : w.lbl)}</span>
         <button class="btn${s.kind === 'window' ? ' ghost' : ''} sm" data-a="sxopen:${s.id}">${myProp ? 'Ditt forslag: ' + hm(myProp.proposed_at) : s.kind === 'window' ? 'Foreslå tid' : 'Bli med'}</button></div>`}
     </article>`;
@@ -7875,8 +7882,8 @@ function sxFormInit(s){
   const next = () => { const d = new Date(Date.now() + 30 * 6e4); d.setMinutes(d.getMinutes() < 30 ? 30 : 60, 0, 0); return hm(d); };
   ui.sxForm = s
     ? {id:s.id, kind:s.kind, day: Math.max(0, dayDiff(s.starts_at)), from: hm(s.starts_at), to: s.ends_at ? hm(s.ends_at) : '',
-       place: s.place || '', wk: s.workout_kind, ref: s.workout_ref, text: s.workout_text || '', mine: sxOther(s) ? 'other' : 'next'}
-    : {kind:'fixed', day:0, from: next(), to:'', place: S.settings.sxPlace || '', wk:'none', ref:null, text:'', mine:'next'};
+       place: s.place || '', wk: s.workout_kind, ref: s.workout_ref, text: s.workout_text || '', mine: sxOther(s) ? 'other' : 'next', mineTxt: sxOtherTxt(s)}
+    : {kind:'fixed', day:0, from: next(), to:'', place: S.settings.sxPlace || '', wk:'none', ref:null, text:'', mine:'next', mineTxt:''};
   ui.sxMsg = '';
 }
 function vSxForm(sheet = false){
@@ -7905,7 +7912,8 @@ function vSxForm(sheet = false){
       ${S.active && prog(S.active.programId) ? `<fieldset class="sx-fs"><legend class="lbl">Din økt · bare du ser dette</legend><div class="sx-list">
         ${[['next','Neste økt i programmet','Appen setter av neste økt til timen'],['other','Noe annet','Metcon, fri trening eller noe helt annet. Programmet venter til neste gang.']].map(([k, t, d]) =>
           `<label class="sx-radio"><input type="radio" name="sxmine" data-sxf="mine" value="${k}" ${(f.mine || 'next') === k ? 'checked' : ''}><span><b>${t}</b><small>${d}</small></span></label>`).join('')}
-      </div></fieldset>` : ''}
+      </div></fieldset>
+      ${f.mine === 'other' ? `<label class="lbl">Hva skal du trene?<textarea class="txt" data-sxf="mineTxt" maxlength="300" placeholder="For eksempel metcon med Ola, eller lett jogg og mobilitet">${esc(f.mineTxt || '')}</textarea></label>` : ''}` : ''}
       ${ui.sxMsg ? `<p class="small warn-t" role="alert">${esc(ui.sxMsg)}</p>` : ''}
       <button class="btn" data-a="sxsave" ${ui.sxBusy ? 'disabled' : ''}>${f.id ? 'Lagre endringer' : 'Legg ut time'}</button>
     </div>`;
@@ -7925,7 +7933,7 @@ async function sxSave(){
   if (f.id) await db('sessions', 'id=eq.' + f.id, {method:'PATCH', body});
   else { const rows = await db('sessions', '', {method:'POST', body, headers:{Prefer:'return=representation'}}); id = rows && rows[0] && rows[0].id; }
   // Din økt på timen: neste i programmet eller noe annet. Bare på telefonen din (og i skybackup).
-  if (id) { S.sxOther = S.sxOther || {}; if (f.mine === 'other') S.sxOther[id] = true; else delete S.sxOther[id]; }
+  if (id) { S.sxOther = S.sxOther || {}; if (f.mine === 'other') S.sxOther[id] = {t: sxClean(f.mineTxt)}; else delete S.sxOther[id]; }
   S.settings.sxPlace = body.place || ''; save();
   ui.sxView = f.id ? 's:' + f.id : 'list';
   if (!f.id) { ui.sxTab = 'timer'; ui.sxFilter = f.day === 0 ? 'today' : 'upcoming'; ui.sxUnder = 'list'; }
@@ -8714,7 +8722,7 @@ document.addEventListener('keydown', ev => {
 document.addEventListener('change', ev => {
   const t = ev.target;
   if (t.dataset && t.dataset.sxf === 'wk' && ui.sxForm) { ui.sxForm.wk = t.value; render(); }
-  if (t.dataset && t.dataset.sxf === 'mine' && ui.sxForm) ui.sxForm.mine = t.value;
+  if (t.dataset && t.dataset.sxf === 'mine' && ui.sxForm) { ui.sxForm.mine = t.value; render(); }
 });
 
 /* iOS gir av og til hjemskjerm-appen et vindu som slutter over skjermkanten.
@@ -8777,6 +8785,8 @@ document.addEventListener('input', ev => {
     return;
   }
   else if (ev.target.id === 'peQ' && ui.pe) { ui.pe.q = ev.target.value; const r = $('#peRes'); if (r) r.innerHTML = peResHTML(ev.target.value, ev.target.dataset.peq); return; }
+  else if (ev.target.dataset && ev.target.dataset.sxother) { const id = ev.target.dataset.sxother;
+    if (S.sxOther && S.sxOther[id]) { S.sxOther[id] = {t: sxClean(ev.target.value)}; save(); } return; }
   else if (ev.target.id === 'exAddQ') { const r = $('#exAddRes'); if (r) r.innerHTML = exAddRes(ev.target.value); return; }
   else if (ev.target.id === 'exSwQ') { const r = $('#exSwRes'); if (r) r.innerHTML = exSwRes(ev.target.value, +ev.target.dataset.exsw); return; }
   else if (ev.target.id === 'swLib') { const r = $('#swLibRes'); if (r) r.innerHTML = libResHTML(ev.target.value, ev.target.dataset.swlib); return; }

@@ -434,7 +434,7 @@ test('a time in Sammen can run the next program session or something else',()=>{
   // Eieren deler ingen økt på timen med noe annet, og vennene ser neste økt på timen etter
   assert.equal(f.state('SX.sess[0].plan||null'),null);
   assert.equal(f.state('SX.sess[1].plan.day'),'Økt A');
-  assert.deepEqual(f.state('S.sxOther'),{A:true});
+  assert.deepEqual(f.state('S.sxOther'),{A:{t:''}});
   // Tilbake til neste økt i programmet
   f.click('sxother:A:0');
   assert.deepEqual(f.state('myUpcoming()'),['A','B']);
@@ -444,4 +444,28 @@ test('a time in Sammen can run the next program session or something else',()=>{
   assert.match(f.run('vSxForm()'),/name="sxmine" data-sxf="mine" value="next" checked/);
   f.run(`S.sxOther={B:true};sxFormInit(SX.sess[1])`);
   assert.equal(f.state('ui.sxForm.mine'),'other');
+});
+test('something else on a time has a private free-text field for what you will train',()=>{
+  const f=fixture();
+  f.run(`auth={user:{id:'me'}};SX.sess=[{id:'A',owner:'me',kind:'fixed',starts_at:new Date(Date.now()+3600e3).toISOString(),workout_kind:'none'}];SX.part=[];`);
+  // Skjemaet: feltet kommer når du velger noe annet
+  f.run('sxFormInit()');
+  assert.doesNotMatch(f.run('vSxForm()'),/data-sxf="mineTxt"/);
+  f.run(`ui.sxForm.mine='other';ui.sxForm.mineTxt='Metcon med Ola <b>';`);
+  assert.match(f.run('vSxForm()'),/data-sxf="mineTxt"/);
+  // Lagret på timen: teksten står i lista og på timen, og kan endres der
+  f.run(`S.sxOther={A:{t:sxClean(ui.sxForm.mineTxt)}};`);
+  assert.equal(f.state('sxOtherTxt(SX.sess[0])'),'Metcon med Ola b');
+  assert.match(f.run('myLine(SX.sess[0])'),/Din økt: Metcon med Ola b/);
+  assert.match(f.run('myBox(SX.sess[0])'),/data-sxother="A"[^>]*>Metcon med Ola b<\/textarea>/);
+  assert.equal(f.state('(sxFormInit(SX.sess[0]),ui.sxForm.mineTxt)'),'Metcon med Ola b');
+  // Tidligere valg uten tekst (true) virker fortsatt
+  f.run(`S.sxOther={A:true};`);
+  assert.equal(f.state('sxOtherTxt(SX.sess[0])'),'');
+  assert.match(f.run('myLine(SX.sess[0])'),/Din økt: noe annet/);
+  // Bytter du til noe annet på timen, beholdes teksten du skrev
+  f.run(`S.sxOther={A:{t:'Lett jogg'}};sxSetOther('A',false);sxSetOther('A',true);`);
+  assert.equal(f.state('sxOtherTxt(SX.sess[0])'),'');
+  f.run(`sxSetOther('A',true,'Lett jogg');sxSetOther('A',true);`);
+  assert.equal(f.state('sxOtherTxt(SX.sess[0])'),'Lett jogg');
 });
