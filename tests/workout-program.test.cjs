@@ -273,7 +273,8 @@ test('RP programs follow the sheet: 10RM percentages, reps in reserve, ratings a
   f.run(`S.active.idx=12;S.draft=buildSession(prog('rp3'),S.active);`);
   assert.equal(f.state('S.draft.sub'),'Uke 5 av 13 · Basis, deload');
   assert.equal(f.state('S.draft.ex[0].sets.length'),2);
-  assert.equal(f.state('S.draft.ex[0].sets[0].t'),Math.round(f.state('S.active.r1["0.0.0"]')/2));
+  // Halvparten av hvert sett fra uke 1, rundet ned (RP)
+  assert.deepEqual(f.state('S.draft.ex[0].sets.map(x=>x.t)'),f.state('S.active.r1["0.0.0"]').slice(0,2).map(r=>Math.floor(r/2)));
   // Ny mesosyklus: 10RM fra settene dine, 75 % i uke 1
   f.run(`S.active.est.bench=90;S.active.idx=15;S.draft=buildSession(prog('rp3'),S.active);`);
   assert.equal(f.state('S.active.rm.bench'),90);
@@ -375,7 +376,7 @@ test('Knebøy, benk og RP: heavy squat and bench day, then the RP press and pull
   // Uke 4: 1 rep i reserve gir tyngre vekt. Deload: 2 sett med halve reps fra uke 1.
   assert.equal(f.state('buildSession(prog("rpkb"),Object.assign(clone(S.active),{idx:9})).ex[0].sets[0].w'),132.5);
   f.run(`S.draft.ex.forEach(e=>e.sets.forEach(x=>x.d=x.t));`);f.click('q:0:passe');f.click('q:1:passe');f.click('finish');
-  assert.equal(f.state('S.active.r1["0.0.0"]'),5);
+  assert.deepEqual(f.state('S.active.r1["0.0.0"]'),[5,5,5]);
   assert.deepEqual(f.state('buildSession(prog("rpkb"),Object.assign(clone(S.active),{idx:12})).ex[0].sets.map(x=>x.t)'),[3,3]);
   // Resensitivisering: 3 reps
   assert.equal(f.state('buildSession(prog("rpkb"),Object.assign(clone(S.active),{idx:30})).ex[0].sets[0].t'),3);
@@ -468,4 +469,96 @@ test('something else on a time has a private free-text field for what you will t
   assert.equal(f.state('sxOtherTxt(SX.sess[0])'),'');
   f.run(`sxSetOther('A',true,'Lett jogg');sxSetOther('A',true);`);
   assert.equal(f.state('sxOtherTxt(SX.sess[0])'),'Lett jogg');
+});
+test('RP reps follow the how-to: no target, the suggestion is the middle of the range and then your own reps',()=>{
+  const f=fixture('rp3');
+  f.run(`S.active.rm={bench:80};`);
+  const b=i=>f.state(`buildSession(prog('rp3'),Object.assign(clone(S.active),{idx:${i}}))`);
+  // Første gang: midt i RP sitt område for første sett i hver mesosyklus, og settene er frie (ingen mål)
+  assert.deepEqual(b(0).ex[0].sets.map(x=>x.t),[13,13,13]);
+  assert.equal(b(0).ex[0].rpFree,true);
+  assert.deepEqual(b(0).ex[0].rpRange,[7,19]);
+  assert.equal(b(15).ex[0].sets[0].t,20);assert.deepEqual(b(15).ex[0].rpRange,[11,29]);
+  assert.equal(b(30).ex[0].sets[0].t,8);assert.deepEqual(b(30).ex[0].rpRange,[4,11]);
+  // Uka etter foreslår det du tok, sett for sett
+  f.run(`S.draft=buildSession(prog('rp3'),S.active);S.draft.ex.forEach(e=>e.sets.forEach(x=>x.d=x.t));const e=S.draft.ex[0];[17,15,12].forEach((d,i)=>e.sets[i].d=d);`);
+  f.click('finish');
+  assert.deepEqual(f.state('S.active.last["0.0.0"]'),[17,15,12]);
+  assert.deepEqual(f.state('S.active.r1["0.0.0"]'),[17,15,12]);
+  assert.deepEqual(b(3).ex[0].sets.map(x=>x.t),[17,15,12]);
+  // Andre øvelse i et supersett har ikke kontrollområdet (forhåndsslitt)
+  const m2=b(15).ex;
+  assert.ok(m2.some(e=>e.ss2));
+  assert.ok(m2.filter(e=>e.ss2).every(e=>e.rpFree&&e.rpRange===undefined));
+});
+test('RP deload is half of each week-1 set, rounded down, never zero',()=>{
+  const f=fixture('rp3');
+  f.run(`S.active.rm={bench:80};S.active.r1={"0.0.0":[9,8,7],"0.0.1":[1,1,1]};`);
+  const dl=f.state(`buildSession(prog('rp3'),Object.assign(clone(S.active),{idx:12}))`);
+  assert.equal(dl.sub,'Uke 5 av 13 · Basis, deload');
+  assert.deepEqual(dl.ex[0].sets.map(x=>x.t),[4,4]);
+  assert.deepEqual(dl.ex[1].sets.map(x=>x.t),[1,1]);
+  assert.equal(dl.ex[0].rpFree,undefined);
+  // Eldre programmer med bare første sett lagret som tall
+  f.run(`S.active.r1={"0.0.0":7};`);
+  assert.deepEqual(f.state(`buildSession(prog('rp3'),Object.assign(clone(S.active),{idx:12})).ex[0].sets.map(x=>x.t)`),[3,3]);
+});
+test('first-set check: outside the RP range, an accepted change moves 10RM 10 % from next time',()=>{
+  const run=(d,cal)=>{
+    const f=fixture('rp3');
+    f.run(`S.active.rm={bench:35};S.draft=buildSession(prog('rp3'),S.active);S.draft.ex.forEach(e=>e.sets.forEach(x=>x.d=x.t));S.draft.ex[0].sets[0].d=${d};S.draft.ex[0].cal=${JSON.stringify(cal)};`);
+    f.click('finish');return f;
+  };
+  // 22 reps er over 19: OK gir 10RM 35 → 38,5, og vekta neste uke følger (85 % × 1,05)
+  let f=run(22,'up');
+  assert.equal(f.state('S.active.rm.bench'),38.5);
+  assert.ok(f.state('ui.summary.notes').some(n=>/35 → 38,5/.test(n.text)));
+  assert.equal(f.state(`buildSession(prog('rp3'),Object.assign(clone(S.active),{idx:3})).ex[0].sets[0].w`),f.state('r25(38.5*.85*1.05)'));
+  // 5 reps er under 7: ned 10 %
+  f=run(5,'down');assert.equal(f.state('S.active.rm.bench'),31.5);
+  // Ja sagt, men første sett er innenfor området: ingenting endres. Feil retning endrer heller ikke.
+  f=run(15,'up');assert.equal(f.state('S.active.rm.bench'),35);
+  f=run(22,'down');assert.equal(f.state('S.active.rm.bench'),35);
+  // La være (eller ikke svart): ingenting endres
+  f=run(22,'no');assert.equal(f.state('S.active.rm.bench'),35);
+  f=run(22,null);assert.equal(f.state('S.active.rm.bench'),35);
+});
+test('the heavy squat and bench sets in Knebøy, benk og RP keep their fixed 5 reps',()=>{
+  const f=fixture('rpkb');
+  f.run(`S.active.rm={squat:120,bench:90};`);
+  const d1=f.state(`buildSession(prog('rpkb'),S.active)`);
+  assert.ok(d1.ex.every(e=>!e.rpFree&&e.rpRange===undefined));
+  assert.deepEqual(d1.ex.map(e=>e.sets.map(x=>x.t)),[[5,5,5],[5,5,5]]);
+  const d2=f.state(`buildSession(prog('rpkb'),Object.assign(clone(S.active),{idx:1}))`);
+  assert.ok(d2.ex.every(e=>e.rpFree));
+});
+test('RP sets log the reps you took with + and −, never show a miss, and offer the first-set check',()=>{
+  const f=fixture('rp3');
+  f.run(`S.active.rm={bench:80};S.draft=buildSession(prog('rp3'),S.active);S.draft.ex[0].wuDone=warmups(S.draft.ex[0].slot,S.draft.ex[0].sets[0].w,S.draft.ex[0].sets[0].t,'full').map(([w,r])=>w+'x'+r);`);
+  // Infofeltet om første sett og stepperen står i kortet
+  const html=f.run('vToday()');
+  assert.match(html,/Første sett: 7–19 reps/);
+  assert.match(html,/data-a="rpp:0:1"/);
+  assert.doesNotMatch(html,/3×13/);
+  // Forslaget er 13 første gang. + ni ganger gir 22, og settet logges med det.
+  for(let i=0;i<9;i++) f.click('rpp:0:1');
+  f.click('next:0');
+  assert.equal(f.state('S.draft.ex[0].sets[0].d'),22);
+  assert.equal(f.state('S.draft.ex[0].pend===undefined'),true);
+  // Neste sett foreslår det du nettopp tok. − to ganger gir 20.
+  f.click('rpp:0:-1');f.click('rpp:0:-1');f.click('next:0');
+  assert.equal(f.state('S.draft.ex[0].sets[1].d'),20);
+  // Færre reps i et senere sett er ikke bom
+  f.click('rpp:0:-1');f.click('rpp:0:-1');f.click('rpp:0:-1');f.click('rpp:0:-1');f.click('rpp:0:-1');f.click('next:0');
+  assert.equal(f.state('S.draft.ex[0].sets[2].d'),15);
+  assert.doesNotMatch(f.run('vToday()'),/chip miss/);
+  // 22 er over 19: appen foreslår 10 % opp, og OK gir høyere 10RM fra neste gang
+  assert.match(f.run('vToday()'),/data-a="rpcal:0:up"/);
+  f.click('rpcal:0:up');
+  assert.match(f.run('vToday()'),/Vektene går opp 10 %/);
+  f.run(`S.draft.ex.slice(1).forEach(e=>e.sets.forEach(x=>x.d=x.t));`);
+  f.click('finish');
+  assert.equal(f.state('S.active.rm.bench'),88);
+  assert.equal(f.state('S.history[0].ex[0].cal'),'up');
+  assert.deepEqual(f.state('S.active.last["0.0.0"]'),[22,20,15]);
 });

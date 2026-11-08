@@ -513,6 +513,11 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .ex-add-f{display:flex;flex-wrap:wrap;gap:8px 16px}
 .ex-add-f>div{display:grid;gap:4px}
 .ex-line-wrap{position:relative}
+/* RP i økta: infofeltet om første sett og kontrollen av 10RM */
+.rp-info,.rp-cal{display:grid;gap:4px;padding:10px 12px;border-radius:4px;background:var(--field);color:var(--chalk)}
+.rp-info b{font:600 15px/1.3 var(--face)}
+.rp-info span,.rp-cal>span{font-size:13px;line-height:1.4;color:var(--chalk-2)}
+.rp-cal{gap:8px}.rp-cal .row{gap:8px;flex-wrap:wrap}.rp-cal .link{justify-self:start}
 .ex-line-wrap>.ex-row{padding-right:76px}
 .ex-line-rm{position:absolute;top:0;right:0;bottom:0;min-width:64px;padding:0 14px;color:var(--chalk-2);font-size:14px}
 /* Pete Plan */
@@ -1029,7 +1034,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 107;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 108;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -1888,6 +1893,17 @@ const RP_WEEKS = RP_MESO.reduce((n, m) => n + m.wk + 1, 0);
 const RP_Q = [['lett', 'Lett'], ['passe', 'Passe'], ['tungt', 'Tungt']];
 const RP_QV = {lett: 1, passe: 0, tungt: -1};
 const rpRir = n => n + (n === 1 ? ' rep' : ' reps') + ' i reserve';
+/* Reps etter RP (how-to og FAQ): det finnes ikke noe repsmål. Hvert sett tas til du har 3, 3, 2 eller 1 rep igjen,
+   og repsene blir det de blir. Bare første sett sjekkes, mot et område per mesosyklus (FAQ 19). Er det utenfor,
+   er 10RM feil. Senere sett kan ha alle reps. RP_MID er forslaget første gang, midt i området. */
+const RP_RANGE = [[7, 19], [11, 29], [4, 11]];
+const RP_MID = [13, 20, 8];
+const RP_FEEL = {3: 'stanga går merkbart tregere mot slutten, men det er ikke veldig tungt', 2: 'du anstrenger deg og kan skjelve, og det føles veldig tungt', 1: 'nesten alt du har, med god teknikk'};
+// Forslaget til reps i settet du skal ta: det du har justert til, ellers settet før, ellers forslaget i settet
+const rpPend = (e, si) => e.pend != null ? e.pend : si > 0 && e.sets[si - 1].d > 0 ? e.sets[si - 1].d : e.sets[si].t;
+// Første sett utenfor RP sitt område: 'up' (for lett, 10RM opp) eller 'down' (for tungt)
+const rpCalDir = e => { const f = e.rpRange && e.sets[0] && e.sets[0].d; if (f == null) return null;
+  return f > e.rpRange[1] ? 'up' : f < e.rpRange[0] ? 'down' : null; };
 // Mål for reps: Epley baklengs fra 10RM, minus reps i reserve. Uke 1 i Basis gir 14, i Metabolitt 20, i Resensitivisering 7.
 const rpReps = (f, k, rir) => Math.max(5, Math.min(30, Math.round(30 * (4 / 3 / (f * RP_MULT[k]) - 1) - rir)));
 // 10RM anslått fra et sett: Epley med reps + reps i reserve gir 1RM, og 10RM er 75 % av det
@@ -1919,29 +1935,45 @@ function buildRp(p, a){
       : (ss2 ? .6 : M.f) * RP_MULT[pos.dl ? 0 : pos.k] * (pos.dl && fl.includes('h') ? .5 : 1);
     const last = lastW(L), w = rm ? Math.max(min, r25(rm * pct)) : Math.max(min, last == null ? 0 : last);
     const n = pos.dl ? 2 : Math.max(1, (a.sets || {})[slot] || base);
-    const t = pos.dl ? Math.max(3, Math.round(((a.r1 || {})[slot] || (hv ? tr : rpReps(M.f, 0, RP_RIR[0]))) / 2)) : hv ? tr : rpReps(M.f, pos.k, rir);
+    // Repsene fra uke 1 (alle settene). Eldre programmer har bare første sett lagret som et tall.
+    const r1 = (a.r1 || {})[slot], w1 = Array.isArray(r1) ? r1 : r1 > 0 ? [r1] : [];
+    const free = !hv && !pos.dl, prev = ((a.last || {})[slot]) || [], range = free && !ss2 ? RP_RANGE[pos.mi] : null;
+    // Tunge sett har fast mål. Deload: halvparten av hvert sett fra uke 1, rundet ned (RP). Ellers er tallet bare et forslag.
+    const reps = i => hv ? (pos.dl ? Math.max(3, Math.round((w1[0] || tr) / 2)) : tr)
+      : pos.dl ? Math.max(1, Math.floor((w1[i] || w1[0] || RP_MID[pos.mi]) / 2))
+      : prev[i] || prev[0] || RP_MID[pos.mi];
     const find = !rm && !Lf.bw && !pos.dl;
     const hint = [
+      free ? rpRir(rir) + ': ' + RP_FEEL[rir] + '. Før inn repsene du faktisk tok.' : '',
       fl.includes('s') && !pos.dl ? 'Supersett med ' + liftName(lifts[ri + 1]).toLowerCase() + ': ta settene vekselvis, med kort pause mellom.' : '',
       ss2 ? 'Andre øvelse i supersettet. Vekta er lavere fordi du er sliten fra den første.' : '',
-      find ? 'Finn vekta: velg en vekt du klarer ' + t + ' reps med og ' + rpRir(rir) + ', og juster med − og +. Appen regner ut 10RM fra settene dine.' : '',
+      find ? 'Finn vekta: velg en vekt der første sett blir ' + (range ? range[0] + '–' + range[1] + ' reps' : 'mange reps') + ' med ' + rpRir(rir) + ', og juster med − og +. Appen regner ut 10RM fra settene dine.' : '',
       pos.dl && !ex.length ? 'Deload: 2 lette sett per øvelse med halvparten av repsene fra uke 1. Ingen sett i nærheten av failure.' : ''
     ].filter(Boolean).join(' ');
     ex.push({key: 'rp.' + slot, lift: L, slot: L, rpSlot: slot, cat, rpPct: pct, rir: pos.dl ? null : rir, ss2: ss2 || undefined,
       rest: hv ? 180 : Lf.bar ? 120 : 90, wu: hv || !ex.length ? null : 'short', adj: true, hint,
       tag: pos.dl ? 'Deload' + (fl.includes('h') ? ' · halv vekt' : '') : (hv ? 'Tungt · ' : fl.includes('s') || ss2 ? 'Supersett · ' : '') + rpRir(rir),
-      rpAsk: !pos.dl && pos.k < M.wk - 1 ? true : undefined, sets: mk(n, t, w)});
+      rpAsk: !pos.dl && pos.k < M.wk - 1 ? true : undefined, rpFree: free || undefined, rpRange: range || undefined,
+      sets: Array.from({length: n}, (_, i) => ({t: reps(i), w, am: false, d: null}))});
   });
   return {programId: p.id, day: RP_DAYN[p.id][pos.di], ex, started: Date.now(),
     sub: 'Uke ' + (pos.gw + 1) + ' av ' + RP_WEEKS + ' · ' + M.n + (pos.dl ? ', deload' : ', uke ' + (pos.k + 1) + ' av ' + M.wk)};
 }
 function progressRp(p, a, s){
   const pos = rpPos(p, a.idx), nx = rpPos(p, a.idx + 1), notes = [];
-  ['rm', 'est', 'sets', 'r1'].forEach(k => { a[k] = a[k] || {}; });
+  ['rm', 'est', 'sets', 'r1', 'last'].forEach(k => { a[k] = a[k] || {}; });
   s.ex.forEach(e => {
     if (!e.rpSlot) return;
     const done = e.sets.filter(x => x.d > 0); if (!done.length) return;
-    if (!pos.dl && pos.k === 0) a.r1[e.rpSlot] = e.sets[0].d > 0 ? e.sets[0].d : done[0].d;
+    // Repsene i alle settene i uke 1 (deload er halvparten av hvert), og det du tok sist (forslaget neste gang)
+    if (!pos.dl && pos.k === 0) a.r1[e.rpSlot] = e.sets.map(x => x.d > 0 ? x.d : done[0].d);
+    if (e.rpFree) a.last[e.rpSlot] = done.map(x => x.d);
+    // Første sett utenfor RP sitt område, og du sa ja: 10RM 10 % opp eller ned. Vektene endres fra neste gang.
+    const dir = rpCalDir(e);
+    if (dir && e.cal === dir && a.rm[e.lift] > 0) {
+      const old = a.rm[e.lift]; a.rm[e.lift] = Math.round(old * (dir === 'up' ? 1.1 : .9) * 2) / 2;
+      notes.push({name: liftName(e.lift), text: '10RM ' + fmt(old) + ' → ' + fmt(a.rm[e.lift]) + ' kg. Vektene går ' + (dir === 'up' ? 'opp' : 'ned') + ' 10 % fra neste gang.', kind: dir === 'up' ? 'up' : 'down'});
+    }
     // Andre øvelse i supersettet er forhåndsslitt, så den gir ikke noe anslag
     if (e.rir != null && !e.ss2) {
       const est = Math.max(...done.map(x => rp10(x.w, x.d, e.rir)));
@@ -4362,7 +4394,7 @@ function finish(){
     wod: s.wod ? {id:s.wod.id, navn:s.wod.navn, tekst:s.wod.tekst, resultat:(s.wod.resultat||'').trim()} : undefined,
     pete: s.pete ? peteDone(s.pete) : undefined, idx: g ? undefined : S.active.idx,
     cond: s.cond ? {title:s.cond.title, lines:s.cond.lines, res:s.cond.res || {}} : undefined,
-    ex: all.map(e => Object.assign({lift:e.lift, tag:e.tag, rpe: e.rm ? undefined : e.rpe, q: e.rm ? undefined : e.q, sets:e.sets.map(x => Object.assign({t:x.t, w:x.w, d:x.d}, x.c ? {c:x.c} : {}))}, e.rm ? {rm:true} : {}, e.rm && e.swapId ? {sw:true} : {}, e.subOf ? {sub:e.subName} : {}, e.added ? {add:true} : {})), undo});
+    ex: all.map(e => Object.assign({lift:e.lift, tag:e.tag, rpe: e.rm ? undefined : e.rpe, q: e.rm ? undefined : e.q, sets:e.sets.map(x => Object.assign({t:x.t, w:x.w, d:x.d}, x.c ? {c:x.c} : {}))}, e.rm ? {rm:true} : {}, e.rm && e.swapId ? {sw:true} : {}, e.subOf ? {sub:e.subName} : {}, e.added ? {add:true} : {}, e.cal && !e.rm ? {cal:e.cal} : {})), undo});
   if (g) { S.draft = S.parked || null; delete S.parked; }   // din egen økt kommer tilbake slik du forlot den
   else { keepOneUndo(); S.active.idx++; S.draft = null; }
   ui.summary = {day:s.day, notes, vol, prs};
@@ -4595,10 +4627,10 @@ function leRun(p, x, ex, a){
   ex = ex.filter(e => !e.add);   // øvelser lagt til i dagens økt er ikke med i programmet
   a = clone(a); const s = buildSession(p, a);
   if (s.ex.length !== ex.length || s.ex.some((e, i) => e.lift !== ex[i].lift)) return null;
-  const plan = s.ex.map(e => JSON.stringify(e.sets.map(y => [y.t, y.w])));
+  const plan = s.ex.map(e => JSON.stringify(e.sets.map(y => [e.rpFree ? 0 : y.t, y.w])));
   s.ex.forEach((e, i) => { const y = ex[i];
     e.sets = y.sets.map((z, k) => Object.assign({}, e.sets[Math.min(k, e.sets.length - 1)], z));
-    e.rpe = y.rpe == null ? null : y.rpe; e.q = y.q == null ? null : y.q; });
+    e.rpe = y.rpe == null ? null : y.rpe; e.q = y.q == null ? null : y.q; e.cal = y.cal; });
   if (s.cond && x.cond) s.cond.res = clone(x.cond.res || {});
   // Progresjonen ble regnet før økta kom i loggen, så verken den eller nyere økter skal være med nå heller
   const all = S.history; S.history = all.slice(all.indexOf(x) + 1);
@@ -5164,6 +5196,14 @@ function simulate(p, a0, n){
 }
 // Sett med lik vekt og reps slås sammen: «5×5 · 80 kg». Fullførte sett viser repsene du faktisk tok hvis de avvek.
 function setsLine(e, done){
+  // RP: reps er ikke et mål, så linjen viser antall sett og vekt, eller repsene du tok
+  if (e.rpFree) {
+    const gr = [];
+    e.sets.forEach(x => { const l = gr[gr.length - 1]; if (l && l.w === x.w) { l.n++; l.d.push(x.d); } else gr.push({w: x.w, n: 1, d: [x.d]}); });
+    return gr.map(x => done || x.d.some(d => d != null)
+      ? x.d.map(d => d == null ? '–' : d).join(', ') + ' × ' + fmt(x.w) + ' kg'
+      : x.n + ' sett · ' + fmt(x.w) + ' kg').join(' + ');
+  }
   const g = [];
   e.sets.forEach(x => { const l = g[g.length-1];
     if (l && l.w === x.w && l.t === x.t && l.c === x.c && !!l.am === !!x.am) { l.n++; l.d.push(x.d); } else g.push({w:x.w, t:x.t, c:x.c, am:x.am, n:1, d:[x.d]}); });
@@ -5422,6 +5462,27 @@ function undoSet(){
   (ui.exOpen = ui.exOpen || {})[S.draft.started + '-' + u.ei] = true;
   save(); render(); followExercise(u.ei); say('Siste registrering angret. ' + liftName(u.before.lift));
 }
+/* RP i økta: infofeltet om første sett, retting av siste sett og kontrollen av første sett (FAQ 19) */
+function rpInfo(e){
+  return `<div class="rp-info">${e.rpRange ? `<b>Første sett: ${e.rpRange[0]}–${e.rpRange[1]} reps</b>` : ''}
+    <span>Fortsett til du har ${e.rir} igjen. Senere sett kan bli færre – det er helt greit.</span></div>`;
+}
+function rpFix(e, ei){
+  let li = -1; e.sets.forEach((x, i) => { if (x.d != null) li = i; });
+  return li < 0 ? '' : `<div class="amrap"><span>Sett ${li + 1}: ${e.sets[li].d} reps</span>
+    <button class="step" data-a="am:${ei}:${li}:-1" aria-label="Én rep færre i sett ${li + 1}">−</button>
+    <b>${e.sets[li].d}</b>
+    <button class="step" data-a="am:${ei}:${li}:1" aria-label="Én rep mer i sett ${li + 1}">+</button></div>`;
+}
+function rpCal(e, ei){
+  const dir = rpCalDir(e);
+  if (!dir || !(S.active && S.active.rm && S.active.rm[e.lift] > 0) || e.cal === 'no') return '';
+  const f = e.sets[0].d, up = dir === 'up';
+  if (e.cal === dir) return `<div class="rp-cal" aria-live="polite"><span>Vektene går ${up ? 'opp' : 'ned'} 10 % fra neste gang.</span>
+    <button class="link" data-a="rpcal:${ei}:">Angre</button></div>`;
+  return `<div class="rp-cal" aria-live="polite"><span>${f} reps i første sett er ${up ? 'over ' + e.rpRange[1] : 'under ' + e.rpRange[0]}. Ifølge RP er 10RM da for ${up ? 'lav' : 'høy'}.</span>
+    <div class="row"><button class="btn sm" data-a="rpcal:${ei}:${dir}">${up ? 'Øk' : 'Senk'} vektene 10 %</button><button class="btn ghost sm" data-a="rpcal:${ei}:no">La være</button></div></div>`;
+}
 function vExerciseOptions(s, e, ei){
   const touched = e.sets.some(x => x.d != null) || !!(e.wuDone && e.wuDone.length);
   return `${ui.confirm === 'exrm:' + ei ? `<div class="skipbox ex-rm" aria-live="polite"><p class="small"><b>Fjerne ${esc(liftName(e.subOf ? e.subName : e.lift).toLowerCase())} fra dagens økt?</b>
@@ -5623,7 +5684,7 @@ function vToday(){
     const wk = wuKind(s, ei), wu = wk ? warmups(e.slot, e.sets[0].w, e.sets[0].t, wk) : [];
     // Ferdig øvelse blir én linje med en gang. Vurderinger og AMRAP er fortsatt tilgjengelige.
     if (!opened && cur !== ei && allDone(e) && !asks(e) && !e.sets.some(x => x.am)) {
-      const hit = e.sets.every(x => x.d >= x.t);
+      const hit = e.sets.every(x => e.rpFree ? x.d > 0 : x.d >= x.t);
       h += `<button class="ex-row" data-a="exopen:${k}" aria-label="${liftName(e.lift)}, ferdig: ${setsLine(e, true)}. Trykk for å åpne">
         <span class="ck ${hit ? '' : 'miss'}" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="${hit ? 'M5 12l5 5L20 7' : 'M12 7v6M12 17v.01'}"/></svg></span>
         <b>${liftName(e.lift)}</b><span>${setsLine(e, true)}</span></button>`;
@@ -5647,7 +5708,7 @@ function vToday(){
     const amIdx = e.sets.findIndex(x => x.am && x.d != null);
     // Ett tall om gangen: det store tallet er alltid neste sett. Den markerte ruta viser hvor i rekka du er,
     // så kortet trenger ikke si «Oppvarming 2 av 3» eller «sett 2 av 5» i tillegg.
-    const [bigW, bigR] = warm ? wu[wuNext] : nextSi > -1 ? [e.sets[nextSi].w, e.sets[nextSi].c || e.sets[nextSi].t] : [top, 0];
+    const [bigW, bigR] = warm ? wu[wuNext] : nextSi > -1 ? [e.sets[nextSi].w, e.rpFree ? rpPend(e, nextSi) : e.sets[nextSi].c || e.sets[nextSi].t] : [top, 0];
     const bigAm = !warm && nextSi > -1 && e.sets[nextSi].am;
     const menuOpen = ui.exMenu === k;
     const plates = LIFTS[e.lift].bar ? `<div class="platesrow ${now ? 'platebox' : ''}">${plateHTML(bigW, now)}</div>` : '';
@@ -5659,15 +5720,21 @@ function vToday(){
     h += `<section class="ex today-ex ${now ? 'now' : ''}" id="exercise-${ei}">
       <div class="ex-head"><div class="today-ex-title"><h2>${liftName(e.lift)}</h2>${e.tag ? `<span class="tag">${e.tag}</span>` : ''}<p class="small muted">${setsLine(e)}</p></div><div class="today-ex-actions">${now ? `<button class="link today-undo" data-a="undoset" ${canUndoSet() ? '' : 'disabled'}>Angre</button>` : ''}${vidOf(e.lift) ? `<button class="link today-video" data-a="video:${e.lift}" aria-haspopup="dialog" aria-label="Video av ${esc(liftName(e.lift).toLowerCase())}">Video</button>` : ''}<button class="link today-menu" data-a="exmenu:${k}" aria-expanded="${!!menuOpen}" aria-haspopup="dialog" aria-controls="exerciseSheet" aria-label="Valg for ${esc(liftName(e.lift))}">Valg ${chev}</button></div></div>
       ${canNext ? `<button class="ex-hit" data-a="next:${ei}" aria-label="Registrer ${bigR}${bigAm ? '+' : ''} reps på ${fmt(bigW)} kg${warm ? ', oppvarming' : ''}">${head}</button>` : head}
+      ${e.rpFree && now && !warm && nextSi > -1 ? `<div class="amrap rp-step"><span>Juster reps før du trykker</span>
+        <button class="step" data-a="rpp:${ei}:-1" aria-label="Én rep færre">−</button>
+        <button class="step" data-a="rpp:${ei}:1" aria-label="Én rep mer">+</button></div>` : ''}
       ${wu.length ? `<div class="today-warmup" role="group" aria-label="Oppvarming"><p class="today-grp-lbl" aria-hidden="true">Oppvarming</p><div class="chip-grp wu-grp">${vWarmup(e, ei, wu, wuNext, warm)}</div></div>` : ''}
       <div class="chips" role="group" aria-label="Arbeidssett">${wu.length ? '<p class="today-grp-lbl" aria-hidden="true">Arbeidssett</p>' : ''}<div class="chip-grp" style="--sets-per-row:${Math.min(5, e.sets.length)}">${e.sets.map((x,si) => {
-        const st = x.d == null ? (si === nextSi ? 'next' : '') : (x.d >= x.t ? 'ok' : 'miss');
+        // RP: ingen bom. Alle reps teller som gjort, bare 0 reps er rødt. Ikke tatt: «–», bortsett fra neste sett (forslaget).
+        const st = x.d == null ? (si === nextSi ? 'next' : '') : (e.rpFree ? (x.d > 0 ? 'ok' : 'miss') : x.d >= x.t ? 'ok' : 'miss');
         const fr = x.d != null && ui.fresh === ei + ':' + si ? ' fresh' : '';
-        const lbl = 'Sett '+(si+1)+': '+(x.d == null ? 'ikke gjort, mål '+(x.c || x.t)+' reps' : x.d+' reps')+(x.am ? ', så mange du klarer' : '');
-        return `<div class="cw"><small class="set-number" aria-hidden="true">${si+1}</small><button class="chip ${st} ${x.am?'am':''}${fr}" data-a="set:${ei}:${si}" aria-label="${lbl}">${x.c && (x.d == null || x.d === x.t) ? x.c : x.d == null ? x.t : x.d}${x.am ? '<sup>+</sup>' : ''}</button>${varies ? `<small>${fmt(x.w)}</small>` : ''}</div>`;
+        const lbl = 'Sett '+(si+1)+': '+(x.d == null ? (e.rpFree ? 'ikke gjort, til '+e.rir+' i reserve' : 'ikke gjort, mål '+(x.c || x.t)+' reps') : x.d+' reps')+(x.am ? ', så mange du klarer' : '');
+        const face = e.rpFree && x.d == null ? (si === nextSi ? rpPend(e, si) : '–') : x.c && (x.d == null || x.d === x.t) ? x.c : x.d == null ? x.t : x.d;
+        return `<div class="cw"><small class="set-number" aria-hidden="true">${si+1}</small><button class="chip ${st} ${x.am?'am':''}${fr}" data-a="set:${ei}:${si}" aria-label="${lbl}">${face}${x.am ? '<sup>+</sup>' : ''}</button>${varies ? `<small>${fmt(x.w)}</small>` : ''}</div>`;
       }).join('')}</div></div>
       ${now ? `<section class="today-pause" id="todayRestControls" aria-label="Pause"><div class="today-rest-face"><span id="todayRestLabel">Pause</span><b id="todayRestTime" role="timer">—</b></div><button class="link" data-a="restadd:30" id="todayRestAdd" disabled aria-label="30 sekunder lengre pause">+30 s</button><button class="link" data-a="skip" id="todayRestSkip" disabled>Avslutt pause</button><span class="today-rest-rule" aria-hidden="true"><i></i></span></section>` : ''}
-      ${e.hint || amIdx > -1 || (canNext && S.history.filter(x => !x.free && !x.skipped).length < 3) || e.sp || e.adj || e.rpAsk ? `<div class="today-ex-details">${e.hint ? `<p class="wu">${e.hint}</p>` : ''}
+      ${e.hint || amIdx > -1 || (canNext && S.history.filter(x => !x.free && !x.skipped).length < 3) || e.sp || e.adj || e.rpAsk || e.rpFree ? `<div class="today-ex-details">${e.rpFree ? rpInfo(e) : ''}${e.hint ? `<p class="wu">${e.hint}</p>` : ''}
+      ${e.rpFree ? rpFix(e, ei) + (g ? '' : rpCal(e, ei)) : ''}
       ${amIdx > -1 ? `<div class="amrap"><span>Siste sett, så mange du klarer</span>
         <button class="step" data-a="am:${ei}:${amIdx}:-1" aria-label="Én rep mindre">−</button>
         <b>${e.sets[amIdx].d}</b>
@@ -7577,6 +7644,7 @@ function sharePlan(x){
   return {prog: p ? p.name : '', day: x.day, sub: x.sub || '', acc: x.acc || '', ex: x.ex.map(e => {
     const r = rmOf(e.lift) ? e.lift : e.slot && rmOf(e.slot) ? e.slot : null;
     return {l: e.lift, n: liftName(e.lift), b: LIFTS[e.lift] && LIFTS[e.lift].bar ? 1 : 0, tag: e.tag || '', rest: e.rest || 120, wu: e.wu || null, r,
+      rir: e.rpFree ? e.rir : undefined,   // RP: reps er ikke et mål, sett tas til så mange i reserve
       s: e.sets.map(y => Object.assign({t: y.t, f: !y.w ? 0 : r ? Math.round(y.w / rmOf(r) * 1000) / 1000 : null}, y.am ? {am: 1} : {}, y.c ? {c: y.c} : {}))};
   })};
 }
@@ -7605,7 +7673,7 @@ function guestSess(s){
       // En øvelse appen din ikke har (en venns egen), blir din egen med samme navn
       if (!LIFTS[e.l] && /^c_[a-z0-9_]{1,40}$/.test(e.l)) { S.custom = S.custom || {}; S.custom[e.l] = {n: String(e.n || 'Øvelse').replace(/[<>&"`]/g, '').slice(0, 40), bar: e.b ? 1 : 0}; mergeCustom(); save(); }
       const rm = e.r ? rmOf(e.r) : null, bar = LIFTS[e.l] && LIFTS[e.l].bar ? BAR() : 0;
-      return {key: e.l, lift: e.l, slot: e.l, tag: e.tag, rest: e.rest, wu: e.wu, adj: true,
+      return {key: e.l, lift: e.l, slot: e.l, tag: e.tag, rest: e.rest, wu: e.wu, adj: true, rpFree: e.rir != null || undefined, rir: e.rir,
         hint: e.s.some(y => y.f == null) ? 'Appen kunne ikke regne ut vekten, så velg den selv med − og +.' : '',
         sets: e.s.map(y => Object.assign({t: y.t, w: y.f == null ? bar : y.f ? Math.max(bar, r25(y.f * rm)) : 0, am: !!y.am, d: null}, y.c ? {c: y.c} : {}))};
     })};
@@ -7693,7 +7761,7 @@ function myBox(s){
   if (!x) return '';
   const miss = x.guest ? guestMissing(s) : [];
   const row = e => { const w = exTop(e), gap = x.guest && miss.length && s.plan.ex.some(g => g.l === e.lift && miss.includes(g.r));
-    return `<div class="ln"><span>${esc(liftName(e.lift))}</span><span>${setsTxt(e.sets.length, new Set(e.sets.map(y => y.t)))}${gap ? ' · mangler 1RM' : w ? ' · ' + fmt(w) + ' kg' : ''}</span></div>`; };
+    return `<div class="ln"><span>${esc(liftName(e.lift))}</span><span>${e.rpFree ? e.sets.length + ' sett · ' + e.rir + ' i reserve' : setsTxt(e.sets.length, new Set(e.sets.map(y => y.t)))}${gap ? ' · mangler 1RM' : w ? ' · ' + fmt(w) + ' kg' : ''}</span></div>`; };
   const today = x.guest && dayDiff(s.starts_at) === 0 && !(S.draft && S.draft.guest && S.draft.guest.sid === s.id);
   return `<section class="box sx-mybox"><span class="lbl">${x.guest ? 'Din økt · samme som ' + esc(uname(s.owner)) + ', med dine vekter' : own ? 'Din økt · vennene ser øvelsene, ikke vektene' : 'Din økt · bare du ser denne'}</span>
     <p><b>${esc(x.day)}</b> <span class="muted small">${esc(x.guest ? s.plan.prog : prog(S.active.programId).name)}</span></p>${x.ex.map(row).join('')}
@@ -7713,7 +7781,7 @@ function ownerBox(s){
     return !f.length ? '' : ' · ' + (f.length === 1 ? f[0] : Math.min(...f) + '–' + Math.max(...f)) + ' %'; };
   return `<section class="box sx-mybox"><span class="lbl">${esc(uname(s.owner))} kjører</span>
     <p><b>${esc(P.day)}</b> <span class="muted small">${esc(P.prog)}${P.sub ? ' · ' + esc(P.sub) : ''}</span></p>
-    ${P.ex.map(e => `<div class="ln"><span>${esc(liftName(e.l))}${e.tag ? ` <span class="muted">${esc(e.tag)}</span>` : ''}</span><span>${setsTxt(e.s.length, new Set(e.s.map(y => y.c || y.t)))}${pct(e)}</span></div>`).join('')}
+    ${P.ex.map(e => `<div class="ln"><span>${esc(liftName(e.l))}${e.tag ? ` <span class="muted">${esc(e.tag)}</span>` : ''}</span><span>${e.rir != null ? e.s.length + ' sett · ' + e.rir + ' i reserve' : setsTxt(e.s.length, new Set(e.s.map(y => y.c || y.t)))}${pct(e)}</span></div>`).join('')}
     ${P.acc ? `<p class="small muted">${esc(P.acc)}</p>` : ''}</section>`;
 }
 
@@ -8356,6 +8424,7 @@ document.addEventListener('click', ev => {
       const before = rememberSet(+r[0]), previous = todayCurrent(S.draft);
       const ex = S.draft.ex[+r[0]], x = ex.sets[+r[1]], was = x.d;
       if (x.am) x.d = x.d == null ? x.t : null;
+      else if (ex.rpFree && x.d == null) { x.d = rpPend(ex, +r[1]); delete ex.pend; }
       else x.d = x.d == null ? x.t : (x.d > 0 ? x.d - 1 : null);
       // Å rette reps på et sett som er gjort, starter ikke pausen på nytt
       if (was == null && x.d != null) restAfter(ex.rest);
@@ -8375,12 +8444,15 @@ document.addEventListener('click', ev => {
         startRest(wi === wu.length - 1 ? REST.warmupLast : REST.warmup);
       } else {
         const si = e.sets.findIndex(x => x.d == null); if (si < 0) break;
-        e.sets[si].d = e.sets[si].t; ui.fresh = ei + ':' + si;
+        e.sets[si].d = e.rpFree ? rpPend(e, si) : e.sets[si].t; delete e.pend; ui.fresh = ei + ':' + si;
         restAfter(e.rest);
       }
       registeredSet(before, previous, liftName(e.lift) + (wi > -1 ? ', oppvarming registrert' : ', sett registrert')); break;
     }
     case 'am': { const x = S.draft.ex[+r[0]].sets[+r[1]]; x.d = Math.max(0, Math.min(99, x.d + (+r[2]))); save(); render(); break; }
+    case 'rpp': { const e = S.draft && S.draft.ex[+r[0]]; if (!e) break; const si = e.sets.findIndex(x => x.d == null); if (si < 0) break;
+      e.pend = Math.max(1, Math.min(60, rpPend(e, si) + (+r[1]))); save(); render(); break; }
+    case 'rpcal': { const e = S.draft && S.draft.ex[+r[0]]; if (!e) break; e.cal = r[1] || undefined; save(); render(); break; }
     case 'rpe': S.draft.ex[+r[0]].rpe = +r[1]; save(); render(); break;
     case 'q': S.draft.ex[+r[0]].q = r[1]; save(); render(); break;
     case 'w': { const e = S.draft.ex[+r[0]], min = LIFTS[e.lift] && LIFTS[e.lift].bar ? BAR() : LIFTS[e.lift] && LIFTS[e.lift].bw ? 0 : 2.5;
