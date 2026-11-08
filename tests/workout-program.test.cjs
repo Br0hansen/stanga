@@ -562,3 +562,19 @@ test('RP sets log the reps you took with + and −, never show a miss, and offer
   assert.equal(f.state('S.history[0].ex[0].cal'),'up');
   assert.deepEqual(f.state('S.active.last["0.0.0"]'),[22,20,15]);
 });
+test('dumbbells round to 1 kg up to 12 kg, then 12.5 kg and 2.5 kg steps',()=>{
+  const f=fixture('rp3');
+  assert.equal(f.state('LIFTS.dbbench.db'),1);
+  assert.equal(f.state('LIFTS.l_side_lateral_raise.db'),1);
+  assert.equal(f.state('!!LIFTS.bench.db'),false);
+  assert.deepEqual(f.state('[10.4,10.7,12.2,12.3,13.6,14,33.7].map(rDB)'),[10,11,12,12.5,12.5,15,32.5]);
+  assert.deepEqual(f.state('[[11,1],[12,1],[12.5,1],[15,1],[15,-1],[12.5,-1],[12,-1],[1,-1]].map(([w,d])=>dbStep(w,d))'),[12,12.5,15,17.5,12.5,12,11,1]);
+  // RP: sidehev med 10RM 14 gir 12 / 12,5 / 12,5 / 12,5 kg i Basis, ikke 12,5 / 12,5 / 12,5 / 12,5
+  f.run(`S.active.rm={l_side_lateral_raise:14};`);
+  assert.deepEqual(f.state(`[0,3,6,9].map(i=>buildSession(prog('rp3'),Object.assign(clone(S.active),{idx:i})).ex[3].sets[0].w)`),[12,12.5,12.5,12.5]);
+  // Juster vekt går til neste manual
+  f.run(`S.draft=buildSession(prog('rp3'),S.active);`);
+  f.click('w:3:1');assert.equal(f.state('S.draft.ex[3].sets[0].w'),12.5);
+  f.click('w:3:1');assert.equal(f.state('S.draft.ex[3].sets[0].w'),15);
+  f.click('w:3:-1');f.click('w:3:-1');assert.equal(f.state('S.draft.ex[3].sets[0].w'),12);
+});

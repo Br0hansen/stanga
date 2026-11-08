@@ -1034,7 +1034,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 108;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 109;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -1569,7 +1569,8 @@ const EXVID = {
   sumo:'xp1IeyTOB4U', trapbar:'f-_q_3tN6Yo'
 };
 const libKey = r => r[6] || 'l_' + r[7].toLowerCase().replace(/[^a-z0-9]+/g, '_');
-EXLIB.forEach(r => { if (!r[6]) LIFTS[libKey(r)] = {n: r[0], bar: r[5], bw: r[2] === 'Kroppsvekt' ? 1 : 0, lib: 1}; });
+EXLIB.forEach(r => { if (!r[6]) LIFTS[libKey(r)] = {n: r[0], bar: r[5], bw: r[2] === 'Kroppsvekt' ? 1 : 0, lib: 1};
+  if (r[2] === 'Manualer' && LIFTS[libKey(r)]) LIFTS[libKey(r)].db = 1; });   // manualer: egen avrunding (rW)
 // Søk på norsk eller engelsk, i navn, utstyr og muskler. Alle ordene må treffe. Navn som starter med søket, kommer først.
 const exNorm = t => String(t || '').toLowerCase().replace(/[-,.()/]/g, ' ');
 function exSearch(q, n){
@@ -1933,7 +1934,7 @@ function buildRp(p, a){
     // Tunge sett: andel av 10RM som gir tr reps med reps i reserve (Epley, 1RM = 10RM / 0,75). Deload bruker uke 1.
     const pct = hv ? 4 / 3 / (1 + (tr + (pos.dl ? RP_RIR[0] : rir)) / 30)
       : (ss2 ? .6 : M.f) * RP_MULT[pos.dl ? 0 : pos.k] * (pos.dl && fl.includes('h') ? .5 : 1);
-    const last = lastW(L), w = rm ? Math.max(min, r25(rm * pct)) : Math.max(min, last == null ? 0 : last);
+    const last = lastW(L), w = rm ? Math.max(min, rW(L, rm * pct)) : Math.max(min, last == null ? 0 : last);
     const n = pos.dl ? 2 : Math.max(1, (a.sets || {})[slot] || base);
     // Repsene fra uke 1 (alle settene). Eldre programmer har bare første sett lagret som et tall.
     const r1 = (a.r1 || {})[slot], w1 = Array.isArray(r1) ? r1 : r1 > 0 ? [r1] : [];
@@ -3784,6 +3785,12 @@ const GUIDE = {
 /* ---------- Hjelpere ---------- */
 const $ = s => document.querySelector(s);
 const r25 = x => Math.round(x/2.5)*2.5;
+/* Manualer finnes i hakk på 1 kg opp til 12 kg, så 12,5 kg, og deretter 2,5 kg (15, 17,5, 20 …).
+   rW runder en vekt til det som finnes for øvelsen. dbStep er neste manual opp (d = 1) eller ned (d = −1). */
+const rDB = x => x < 12.25 ? Math.max(1, Math.round(x)) : r25(x);
+const rW = (L, x) => LIFTS[L] && LIFTS[L].db ? rDB(x) : r25(x);
+const dbStep = (w, d) => d > 0 ? (w < 12 ? Math.floor(w) + 1 : w < 12.5 ? 12.5 : r25(w) + 2.5)
+  : (w > 15 ? r25(w) - 2.5 : w > 12.5 ? 12.5 : w > 12 ? 12 : Math.max(1, Math.ceil(w) - 1));
 const fmt = n => (Math.round(n*100)/100).toLocaleString('nb-NO');
 const prog = id => PROGRAMS.find(p => p.id === id) || (() => { try { const u = S.userProgs && S.userProgs[id]; return u ? userDef(u) : undefined; } catch(e) { return undefined; } })();
 const inc = (p, lift) => (p.inc && p.inc[lift]) || 2.5;
@@ -4469,7 +4476,7 @@ function swapCands(s, e){
 // Vekt i innbytteren: regnet om fra løftet du bytter når de hører sammen, ellers det du løftet sist, ellers tom
 function swapW(e, T){
   const top = Math.max(...e.sets.map(x => x.w)), from = e.subOf ? e.subName : e.lift;
-  if (e.cat && e.rpPct && S.active && S.active.rm && S.active.rm[T] > 0) return r25(S.active.rm[T] * e.rpPct);   // RP: fra 10RM i øvelsen
+  if (e.cat && e.rpPct && S.active && S.active.rm && S.active.rm[T] > 0) return rW(T, S.active.rm[T] * e.rpPct);   // RP: fra 10RM i øvelsen
   if (top > 0 && swFam(from) === swFam(T) && !e.subOf) return r25(top / ratio(e.lift) * ratio(T));
   const l = lastW(T); if (l != null) return l;
   return LIFTS[T] && LIFTS[T].bw ? 0 : null;
@@ -5743,8 +5750,8 @@ function vToday(){
       ${e.sp ? spExtras(e, ei) : ''}
       ${e.rpAsk && allDone(e) ? rpRate(e, ei) : ''}
       ${e.adj ? `<div class="amrap"><span>Juster vekt etter dagsform</span>
-        <button class="step" data-a="w:${ei}:-1" aria-label="2,5 kg lettere">−</button>
-        <button class="step" data-a="w:${ei}:1" aria-label="2,5 kg tyngre">+</button></div>` : ''}</div>` : ''}
+        <button class="step" data-a="w:${ei}:-1" aria-label="${LIFTS[e.lift] && LIFTS[e.lift].db ? 'Lettere manual' : '2,5 kg lettere'}">−</button>
+        <button class="step" data-a="w:${ei}:1" aria-label="${LIFTS[e.lift] && LIFTS[e.lift].db ? 'Tyngre manual' : '2,5 kg tyngre'}">+</button></div>` : ''}</div>` : ''}
     </section>`;
   });
   h += `<section class="today-tail" id="today-after" tabindex="-1">${cur < 0 && canUndoSet() ? '<button class="link" data-a="undoset">Angre siste registrering</button>' : ''}`;
@@ -8455,8 +8462,9 @@ document.addEventListener('click', ev => {
     case 'rpcal': { const e = S.draft && S.draft.ex[+r[0]]; if (!e) break; e.cal = r[1] || undefined; save(); render(); break; }
     case 'rpe': S.draft.ex[+r[0]].rpe = +r[1]; save(); render(); break;
     case 'q': S.draft.ex[+r[0]].q = r[1]; save(); render(); break;
-    case 'w': { const e = S.draft.ex[+r[0]], min = LIFTS[e.lift] && LIFTS[e.lift].bar ? BAR() : LIFTS[e.lift] && LIFTS[e.lift].bw ? 0 : 2.5;
-      e.sets.forEach(x => { if (!(e.adj && x.d != null)) x.w = Math.max(min, x.w + 2.5*(+r[1])); }); save(); render(); break; }
+    case 'w': { const e = S.draft.ex[+r[0]], L = LIFTS[e.lift] || {}, min = L.bar ? BAR() : L.bw ? 0 : 2.5;
+      // Manualer går til neste manual som finnes (1 kg opp til 12,5, så 2,5 kg)
+      e.sets.forEach(x => { if (!(e.adj && x.d != null)) x.w = L.db ? dbStep(x.w, +r[1]) : Math.max(min, x.w + 2.5*(+r[1])); }); save(); render(); break; }
     case 'wu': {
       if (!S.draft || !S.draft.ex[+r[0]]) break;
       const before = rememberSet(+r[0]), previous = todayCurrent(S.draft);
