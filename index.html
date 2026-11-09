@@ -1034,7 +1034,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 109;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 110;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -1951,7 +1951,8 @@ function buildRp(p, a){
       find ? 'Finn vekta: velg en vekt der første sett blir ' + (range ? range[0] + '–' + range[1] + ' reps' : 'mange reps') + ' med ' + rpRir(rir) + ', og juster med − og +. Appen regner ut 10RM fra settene dine.' : '',
       pos.dl && !ex.length ? 'Deload: 2 lette sett per øvelse med halvparten av repsene fra uke 1. Ingen sett i nærheten av failure.' : ''
     ].filter(Boolean).join(' ');
-    ex.push({key: 'rp.' + slot, lift: L, slot: L, rpSlot: slot, cat, rpPct: pct, rir: pos.dl ? null : rir, ss2: ss2 || undefined,
+    // rpW er vekta planen ga. Endrer du den med − og +, regnes 10RM ut fra vekta du endte på (progressRp).
+    ex.push({key: 'rp.' + slot, lift: L, slot: L, rpSlot: slot, cat, rpPct: pct, rpW: rm ? w : undefined, rir: pos.dl ? null : rir, ss2: ss2 || undefined,
       rest: hv ? 180 : Lf.bar ? 120 : 90, wu: hv || !ex.length ? null : 'short', adj: true, hint,
       tag: pos.dl ? 'Deload' + (fl.includes('h') ? ' · halv vekt' : '') : (hv ? 'Tungt · ' : fl.includes('s') || ss2 ? 'Supersett · ' : '') + rpRir(rir),
       rpAsk: !pos.dl && pos.k < M.wk - 1 ? true : undefined, rpFree: free || undefined, rpRange: range || undefined,
@@ -1969,6 +1970,12 @@ function progressRp(p, a, s){
     // Repsene i alle settene i uke 1 (deload er halvparten av hvert), og det du tok sist (forslaget neste gang)
     if (!pos.dl && pos.k === 0) a.r1[e.rpSlot] = e.sets.map(x => x.d > 0 ? x.d : done[0].d);
     if (e.rpFree) a.last[e.rpSlot] = done.map(x => x.d);
+    // Du endret vekta i økta: 10RM regnes ut fra vekta du endte på, så neste økt bygger på den
+    const used = done[done.length - 1].w;
+    if (e.rpW > 0 && e.rpPct > 0 && a.rm[e.lift] > 0 && Math.abs(used - e.rpW) > .01) {
+      const old = a.rm[e.lift]; a.rm[e.lift] = Math.round(used / e.rpPct * 2) / 2;
+      if (a.rm[e.lift] !== old) notes.push({name: liftName(e.lift), text: 'Du endret vekta til ' + fmt(used) + ' kg. 10RM ' + fmt(old) + ' → ' + fmt(a.rm[e.lift]) + ' kg, og neste økt bygger på det.', kind: a.rm[e.lift] > old ? 'up' : 'down'});
+    }
     // Første sett utenfor RP sitt område, og du sa ja: 10RM 10 % opp eller ned. Vektene endres fra neste gang.
     const dir = rpCalDir(e);
     if (dir && e.cal === dir && a.rm[e.lift] > 0) {
@@ -8462,9 +8469,16 @@ document.addEventListener('click', ev => {
     case 'rpcal': { const e = S.draft && S.draft.ex[+r[0]]; if (!e) break; e.cal = r[1] || undefined; save(); render(); break; }
     case 'rpe': S.draft.ex[+r[0]].rpe = +r[1]; save(); render(); break;
     case 'q': S.draft.ex[+r[0]].q = r[1]; save(); render(); break;
-    case 'w': { const e = S.draft.ex[+r[0]], L = LIFTS[e.lift] || {}, min = L.bar ? BAR() : L.bw ? 0 : 2.5;
+    case 'w': { const ei = +r[0], e = S.draft && S.draft.ex[ei]; if (!e) break;
+      const L = LIFTS[e.lift] || {}, min = L.bar ? BAR() : L.bw ? 0 : 2.5;
+      // Oppvarmingen er regnet ut fra vekta, og gjorte sett huskes som «vekt x reps». Antallet gjorte sett
+      // beholdes, så ingen ruter mister haken når vekta endres. Var oppvarmingen ferdig, er den ferdig også etterpå.
+      const wk = wuKind(S.draft, ei), wuOf = () => wk ? warmups(e.slot, e.sets[0].w, e.sets[0].t, wk) : [];
+      const wu0 = wuOf(), wuN = wu0.filter(([w, n]) => (e.wuDone || []).includes(w + 'x' + n)).length, wuAll = wuN && wuN === wu0.length;
       // Manualer går til neste manual som finnes (1 kg opp til 12,5, så 2,5 kg)
-      e.sets.forEach(x => { if (!(e.adj && x.d != null)) x.w = L.db ? dbStep(x.w, +r[1]) : Math.max(min, x.w + 2.5*(+r[1])); }); save(); render(); break; }
+      e.sets.forEach(x => { if (!(e.adj && x.d != null)) x.w = L.db ? dbStep(x.w, +r[1]) : Math.max(min, x.w + 2.5*(+r[1])); });
+      if (wuN) e.wuDone = wuOf().slice(0, wuAll ? undefined : wuN).map(([w, n]) => w + 'x' + n);
+      save(); render(); break; }
     case 'wu': {
       if (!S.draft || !S.draft.ex[+r[0]]) break;
       const before = rememberSet(+r[0]), previous = todayCurrent(S.draft);

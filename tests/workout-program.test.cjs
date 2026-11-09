@@ -578,3 +578,34 @@ test('dumbbells round to 1 kg up to 12 kg, then 12.5 kg and 2.5 kg steps',()=>{
   f.click('w:3:1');assert.equal(f.state('S.draft.ex[3].sets[0].w'),15);
   f.click('w:3:-1');f.click('w:3:-1');assert.equal(f.state('S.draft.ex[3].sets[0].w'),12);
 });
+test('changing the weight with − and + keeps the warmup sets you have done',()=>{
+  const f=fixture('rpkb');
+  f.run(`S.active.rm={squat:120,bench:90};S.draft=buildSession(prog('rpkb'),S.active);`);
+  const wu=f.state('warmups(S.draft.ex[0].slot,S.draft.ex[0].sets[0].w,S.draft.ex[0].sets[0].t,wuKind(S.draft,0))');
+  f.click('next:0');f.click('next:0');
+  assert.equal(f.state('S.draft.ex[0].wuDone.length'),2);
+  f.click('w:0:1');
+  assert.equal(f.state('S.draft.ex[0].sets[0].w'),130);
+  assert.equal(f.state('S.draft.ex[0].wuDone.length'),2);
+  // Ferdig oppvarming står som ferdig, også om den nye vekta gir et sett mer
+  f.run('S.draft.ex[0].wuDone=warmups(S.draft.ex[0].slot,S.draft.ex[0].sets[0].w,S.draft.ex[0].sets[0].t,"full").map(([w,r])=>w+"x"+r)');
+  for(let i=0;i<4;i++) f.click('w:0:1');
+  const left=f.state('warmups(S.draft.ex[0].slot,S.draft.ex[0].sets[0].w,S.draft.ex[0].sets[0].t,"full").filter(([w,r])=>!S.draft.ex[0].wuDone.includes(w+"x"+r)).length');
+  assert.equal(left,0);
+  assert.ok(wu.length>0);
+});
+test('RP: a weight changed in the session carries over to the next session',()=>{
+  const f=fixture('rp3');
+  f.run(`S.active.rm={bench:80};S.draft=buildSession(prog('rp3'),S.active);`);
+  assert.equal(f.state('S.draft.ex[0].sets[0].w'),67.5);
+  f.click('w:0:1');f.click('w:0:1');
+  assert.equal(f.state('S.draft.ex[0].sets[0].w'),72.5);
+  f.run(`S.draft.ex.forEach(e=>e.sets.forEach(x=>x.d=x.t));`);f.click('q:0:passe');f.click('finish');
+  // 72,5 kg er 85 % av 10RM, så 10RM blir 85,5 kg
+  assert.equal(f.state('S.active.rm.bench'),85.5);
+  assert.equal(f.state('buildSession(prog("rp3"),Object.assign(clone(S.active),{idx:3})).ex[0].sets[0].w'),f.state('r25(85.5*.85*1.05)'));
+  // Uten endring står 10RM
+  f.run(`S.active.rm={bench:80};S.active.idx=0;S.draft=buildSession(prog('rp3'),S.active);S.draft.ex.forEach(e=>e.sets.forEach(x=>x.d=x.t));`);
+  f.click('q:0:passe');f.click('finish');
+  assert.equal(f.state('S.active.rm.bench'),80);
+});
