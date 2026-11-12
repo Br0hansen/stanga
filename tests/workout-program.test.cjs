@@ -578,3 +578,39 @@ test('dumbbells round to 1 kg up to 12 kg, then 12.5 kg and 2.5 kg steps',()=>{
   f.click('w:3:1');assert.equal(f.state('S.draft.ex[3].sets[0].w'),15);
   f.click('w:3:-1');f.click('w:3:-1');assert.equal(f.state('S.draft.ex[3].sets[0].w'),12);
 });
+test('Hybrid Hypertrophy: percent of 10RM per week, HPC by its own plan, 10RM re-estimated after week 4 and 8',()=>{
+  const f=fixture('hh12');
+  // Uten 10RM finner du vekta i første økt. Med 10RM 80 kg i benk: 90 % = 72,5 kg i uke 1.
+  f.run(`S.active.rm={bench:80,l_seated_cable_rows:60};S.active.hpc=60;S.draft=buildSession(prog('hh12'),S.active);`);
+  assert.equal(f.state('S.draft.sub'),'Uke 1 av 12 · 4 × 12 på 90 % av 10RM');
+  assert.deepEqual(f.state('S.draft.ex.map(e=>e.lift)'),['bench','l_seated_cable_rows','hangclean']);
+  assert.deepEqual(f.state('S.draft.ex[0].sets.map(x=>[x.t,x.w])'),[[12,72.5],[12,72.5],[12,72.5],[12,72.5]]);
+  assert.deepEqual(f.state('S.draft.ex[2].sets.map(x=>[x.t,x.w])'),[[5,60],[5,60],[5,60],[5,60]]);
+  assert.equal(f.state('S.draft.ex[0].rest'),150);
+  assert.match(f.state('S.draft.wod.tekst'),/^20–30 min på RPE 8\nEksempel: RowErg/);
+  // Arbeidsvektene i programmet: 72,5 75 75 77,5 77,5 80 80 82,5 82,5 85 85 85
+  assert.deepEqual(f.state(`HH_WEEKS.map(([,pc])=>r25(80*pc/100))`),[72.5,75,75,77.5,77.5,80,80,82.5,82.5,85,85,85]);
+  // HPC: raske og rene gir 2,5 kg mer
+  f.run(`S.draft.ex.forEach(e=>e.sets.forEach(x=>x.d=x.t));`);
+  assert.match(f.run('vToday()'),/data-a="q:2:god"/);
+  f.click('q:2:god');f.click('finish');
+  assert.equal(f.state('S.active.hpc'),62.5);
+  f.run(`S.draft=buildSession(prog('hh12'),S.active);`);
+  // Dag 2: beinspark har kortere pause, og uten 10RM står det «finn vekta»
+  assert.equal(f.state('S.draft.day'),'Dag 2 · Bryst, rygg og quadriceps');
+  assert.equal(f.state('S.draft.ex[2].rest'),90);
+  assert.match(f.state('S.draft.ex[0].hint'),/Finn vekta/);
+  f.run(`S.draft.ex.forEach(e=>e.sets.forEach(x=>{x.w=30;x.d=x.t;}));`);f.click('finish');
+  assert.ok(f.state('S.active.rm.inclinedb')>0);
+  // Uke 5: 10RM regnes ut fra settene, HPC går til 4 × 4
+  f.run(`S.active.est.bench=90;S.active.idx=12;S.draft=buildSession(prog('hh12'),S.active);`);
+  assert.equal(f.state('S.active.rm.bench'),90);
+  assert.deepEqual(f.state('S.draft.ex[0].sets.map(x=>[x.t,x.w])')[0],[8,87.5]);
+  assert.equal(f.state('S.draft.ex[2].sets[0].t'),4);
+  // Uke 12: 4 × 6 på 107,5 %, HPC 4 × 3
+  f.run(`S.active.idx=33;S.draft=buildSession(prog('hh12'),S.active);`);
+  assert.equal(f.state('S.draft.sub'),'Uke 12 av 12 · 4 × 6 på 107,5 % av 10RM');
+  assert.equal(f.state('S.draft.ex[2].sets[0].t'),3);
+  // Planen kan regnes ut for hele programmet
+  assert.equal(f.state(`simulate(prog('hh12'),newInstance(prog('hh12')),36).length`),36);
+});

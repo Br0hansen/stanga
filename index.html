@@ -1034,7 +1034,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 109;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 110;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -2035,7 +2035,7 @@ function rpSwap(slot, L, def){
   toast(liftName(L) + (started ? ' gjelder fra neste økt' : ' er lagt inn'));
 }
 const rpRate = (e, ei) => `<div class="rpe"><span>${e.qTxt || 'Hvor støl var du fra sist, og hvor tunge var repsene? Lett gir ett sett mer neste uke, tungt ett mindre.'}</span><div class="seg">${
-  RP_Q.map(([v, l]) => `<button data-a="q:${ei}:${v}" aria-pressed="${e.q === v}">${l}</button>`).join('')}</div></div>`;
+  (e.qOpts || RP_Q).map(([v, l]) => `<button data-a="q:${ei}:${v}" aria-pressed="${e.q === v}">${l}</button>`).join('')}</div></div>`;
 
 /* ---------- Brosesh (eget program, bygd på RP Strengths hypertrofiguide) ----------
    Tre helkroppsøkter i uka, A, B og C, i 12 uker. To blokker på fem uker pluss deload (uke 6 og 12).
@@ -2200,6 +2200,104 @@ const broSwapRows = (p, a) => `<h2 class="sec">Øvelser i Brosesh</h2>${BRO_DAYS
     return `<div class="field"><label for="rpsw-${slot}">${BRO_CAT[cat].n}</label>
       <select id="rpsw-${slot}" data-rpswap="${slot}" data-def="${def}">${BRO_CAT[cat].ex.map(l => `<option value="${l}"${l === cur ? ' selected' : ''}>${esc(liftName(l))}</option>`).join('')}</select></div>`; }).join('')}</div>`).join('')}
   <p class="muted small">Byttet gjelder plassen ut programmet. Alternativene og videoene er fra RP Strength sine guider for hver muskel. Første gang i en ny øvelse finner du vekta i økta.</p>`;
+
+/* ---------- Hybrid Hypertrophy 12 uker (Jonas sitt program) ----------
+   Muskelvekst, styrke og CrossFit-kapasitet. Tre økter i uka med tre styrkeøvelser à 4 sett (36 sett i uka)
+   og en metcon på 20–30 minutter etter styrken.
+   Vanlige øvelser: reps og prosent av 10RM per uke (HH_WEEKS), 1–2 reps i reserve.
+   Hang power clean: 4 × 5, 4 × 4 og 4 × 3 i uke 1–4, 5–8 og 9–12, med større margin til failure.
+   Etter HPC svarer du hvordan løftene gikk: raske og rene gir 2,5 kg mer neste gang, tregere samme vekt,
+   og teknikk som svikter eller reps som mangler gir 2,5 kg mindre.
+   10RM vurderes på nytt etter uke 4 og 8: anslaget fra settene dine (a.est) blir ny 10RM, uten makstester.
+   Instansen: a.rm[løft] = 10RM, a.est[løft] = siste anslag, a.hpc = arbeidsvekt i HPC, a.blk = blokka du er i (0–2). */
+const HH_WEEKS = [[12,90],[12,92.5],[10,95],[10,97.5],[8,97.5],[8,100],[8,100],[8,102.5],[6,102.5],[6,105],[6,105],[6,107.5]];
+const HH_HPC = [[5,'Teknikk og eksplosivitet'],[4,'Økende belastning'],[3,'Eksplosiv styrke']];
+const HH_DAYS = [
+  {n:'Dag 1 · Bryst, rygg og eksplosivitet', ex:['bench','l_seated_cable_rows','hangclean'], rpe:'8',
+   mc:'Eksempel: RowErg, SkiErg, burpees og wall balls.\nUnngå mye tungt hoftehingearbeid etter HPC.'},
+  {n:'Dag 2 · Bryst, rygg og quadriceps', ex:['inclinedb','pulldown','l_leg_extensions'], rpe:'6–7',
+   mc:'Eksempel: BikeErg, SkiErg, shuttle runs og lette hanteløvelser.'},
+  {n:'Dag 3 · Skuldre, bryst og bein', ex:['l_arnold_dumbbell_press','l_decline_dumbbell_bench_press','l_leg_press'], rpe:'8',
+   mc:'Eksempel: DB snatches, lette barbell-komplekser, box jumps, burpees og ergometre.'}
+];
+// Hvor i programmet økt nummer i ligger: uke (0–11), økt og blokk (uke 1–4, 5–8 og 9–12)
+const hhPos = i => { const w = Math.min(11, Math.floor(i / 3)); return {w, di: i % 3, b: Math.floor(w / 4)}; };
+function buildHh(p, a){
+  const pos = hhPos(a.idx), D = HH_DAYS[pos.di], [reps, pct] = HH_WEEKS[pos.w], [hr, focus] = HH_HPC[pos.b];
+  a.rm = a.rm || {}; a.est = a.est || {};
+  // Etter uke 4 og 8: 10RM regnes ut fra settene dine. Skjer her, så det også gjelder når en økt er hoppet over.
+  if (pos.b > (a.blk || 0)) { Object.assign(a.rm, a.est); a.blk = pos.b; }
+  const ex = D.ex.map((L, ri) => {
+    const Lf = LIFTS[L] || {}, min = Lf.bar ? BAR() : 0, last = lastW(L), wu = ri ? 'short' : null;
+    if (L === 'hangclean') {
+      const w = Math.max(min, a.hpc > 0 ? a.hpc : last != null ? last : min), find = !(a.hpc > 0) && last == null;
+      return {key: 'hh.hpc', lift: L, slot: L, hpc: 1, rest: 150, wu, adj: true,
+        tag: '4 × ' + hr + ' · ' + focus.toLowerCase(),
+        hint: [find ? 'Finn vekta: start lett og øk så lenge alle løftene er raske og rene.' : '',
+          'Siste styrkeøvelse før metconen, så hold god margin til failure. Hold 2–3 minutters pause, og avslutt settene hvis farten eller teknikken faller tydelig.'].filter(Boolean).join(' '),
+        rpAsk: true, qOpts: LE_Q, qTxt: 'Hvordan gikk løftene? Raske og rene gir 2,5 kg mer neste gang, tregere samme vekt, og teknikk som svikter 2,5 kg mindre.',
+        sets: mk(4, hr, w)};
+    }
+    const rm = a.rm[L] > 0 ? a.rm[L] : null, w = rm ? Math.max(min, rW(L, rm * pct / 100)) : Math.max(min, last == null ? 0 : last);
+    const find = !rm && !Lf.bw, row = libRow(L), perDb = row && row[2] === 'Manualer';
+    const hint = [find ? 'Finn vekta: velg en vekt du klarer ' + reps + ' reps med og har 1–2 reps igjen, og juster med − og +. Appen regner ut 10RM fra settene dine.' : '',
+      perDb ? 'Vekta er per manual.' : ''].filter(Boolean).join(' ');
+    return {key: 'hh.' + pos.di + '.' + ri, lift: L, slot: L, hhLift: 1, rest: L === 'l_leg_extensions' ? 90 : 150, wu, adj: true, hint,
+      tag: fmt(pct) + ' % av 10RM · 1–2 reps i reserve', sets: mk(4, reps, w)};
+  });
+  const wk = pos.w + 1;
+  return {programId: p.id, day: D.n, ex, sub: 'Uke ' + wk + ' av 12 · 4 × ' + reps + ' på ' + fmt(pct) + ' % av 10RM',
+    wod: {id: 'hh-' + wk + '-' + pos.di, navn: 'Metcon · ' + D.n.split(' · ')[0], tekst: '20–30 min på RPE ' + D.rpe + '\n' + D.mc, resultat: ''},
+    metcon: true, mc: {type: mcGuess(D.mc), min: 25, rpe: null, auto: 1}, started: Date.now()};
+}
+function progressHh(p, a, s){
+  const pos = hhPos(a.idx), nx = hhPos(a.idx + 1), notes = [];
+  a.rm = a.rm || {}; a.est = a.est || {};
+  s.ex.forEach(e => {
+    const done = e.sets.filter(x => x.d > 0); if (!done.length) return;
+    const name = liftName(e.lift);
+    if (e.hpc) {
+      const used = done[done.length - 1].w, hit = e.sets.every(x => x.d != null && x.d >= x.t);
+      let w = used, why;
+      if (!hit) { w = used - 2.5; why = 'reps mangler'; }
+      else if (e.q === 'god') { w = used + 2.5; why = 'raske og rene'; }
+      else if (e.q === 'teknisk') { w = used - 2.5; why = 'teknikken sviktet'; }
+      else why = e.q === 'treg' ? 'tregere' : 'ingen vurdering';
+      a.hpc = Math.max(BAR(), w);
+      notes.push({name, text: (a.hpc === used ? 'Står på ' + fmt(used) : fmt(used) + ' → ' + fmt(a.hpc)) + ' kg neste gang (' + why + ')', kind: a.hpc > used ? 'up' : a.hpc < used ? 'down' : 'same'});
+      return;
+    }
+    if (!e.hhLift) return;
+    const est = Math.max(...done.map(x => rp10(x.w, x.d, 1.5)));
+    if (est > 0) {
+      a.est[e.lift] = Math.round(est * 2) / 2;
+      if (!(a.rm[e.lift] > 0)) { a.rm[e.lift] = a.est[e.lift]; notes.push({name, text: '10RM anslått til ' + fmt(a.rm[e.lift]) + ' kg. Vektene framover regnes ut fra det.', kind: 'up'}); }
+    }
+  });
+  if (a.idx + 1 < (p.total || 0)) {
+    if (nx.b > pos.b) notes.push({name: 'Uke ' + (nx.w + 1), text: '10RM regnes ut fra settene dine fra neste økt, og HPC går til 4 × ' + HH_HPC[nx.b][0], kind: 'up'});
+    else if (nx.w > pos.w) { const [r, pc] = HH_WEEKS[nx.w]; notes.push({name: 'Neste uke', text: '4 × ' + r + ' på ' + fmt(pc) + ' % av 10RM', kind: pc > HH_WEEKS[pos.w][1] ? 'up' : 'same'}); }
+  }
+  if (pos.di === 2 && [3, 7, 11].includes(pos.w)) notes.push({name: 'Evaluering', text: 'Se på arbeidsvektene, kroppsvekta, muskelveksten, metconene og restitusjonen de siste fire ukene', kind: 'same'});
+  if (!notes.length && s.ex.some(e => e.sets.some(x => x.d != null))) notes.push({name: s.day, text: 'Vektene følger planen', kind: 'same'});
+  return notes;
+}
+function hhProg(){
+  const inputs = {};
+  HH_DAYS.forEach(d => d.ex.forEach(L => { if (L !== 'hangclean') inputs[L] = 0; }));
+  return {id: 'hh12', name: 'Hybrid Hypertrophy 12 uker', origin: 'Eget program', level: 'Middels', perWeek: '3', prog: 'hh', total: 36,
+    summary: 'Muskelvekst, styrke og CrossFit-kapasitet i samme program. Tre økter i uka med tre styrkeøvelser à 4 sett, 36 styrkesett i uka, og en metcon på 20–30 minutter etter styrken. Brystet får 12 direkte sett i uka, fordi metconene gir lite målrettet brysttrening. Vektene blir gradvis tyngre gjennom 12 uker.',
+    rule: 'Vekta er prosent av 10RM, den tyngste vekta du klarer 10 reps med. Uke 1–2: 4 × 12 på 90 og 92,5 %. Uke 3–4: 4 × 10 på 95 og 97,5 %. Uke 5–8: 4 × 8 på 97,5, 100, 100 og 102,5 %. Uke 9–12: 4 × 6 på 102,5, 105, 105 og 107,5 %. Stopp med 1–2 reps i reserve, og juster med − og + hvis vekta er for tung eller lett for repsmålet. Etter uke 4 og 8 regnes 10RM ut fra settene dine, uten makstester. Hang power clean går 4 × 5, 4 × 4 og 4 × 3 med større margin til failure: raske og rene løft gir 2,5 kg mer neste gang, tregere samme vekt, og teknikk som svikter 2,5 kg mindre. Pause 2–3 minutter, 1–2 minutter på beinspark. Ta en lettere uke ved behov, for eksempel halvt styrkevolum og roligere metcons.',
+    days: HH_DAYS.map(d => ({name: d.n, lines: d.ex.map(L => [LIFTS[L].n, L === 'hangclean' ? '4 × 5–3' : '4 × 12–6']).concat([['Metcon', '20–30 min, RPE ' + d.rpe]])})),
+    inputs, inputLabel: '10RM'};
+}
+// Programsiden: 10RM i de åtte øvelsene, og arbeidsvekta i HPC
+function vHhStart(p){
+  const a = S.active && S.active.programId === p.id ? S.active : null, v = a && a.hpc > 0 ? a.hpc : lastW('hangclean');
+  return vRpStart(p) + `<h2 class="sec">Hang power clean</h2><div class="box" style="gap:0"><div class="field"><label for="in-hpc">Arbeidsvekt</label>
+    <span class="inp"><input id="in-hpc" type="text" inputmode="decimal" placeholder="–" value="${v > 0 ? fmt(v) : ''}">kg</span></div></div>
+    <p class="muted small">Vekta du klarer 4 × 5 med, raske og rene. Står feltet tomt, finner du vekta i første økt.</p>`;
+}
 
 /* ---------- Muscle MetCon 12 uker (Jonas sitt Google-ark, inspirert av Coach Boski) ----------
    Tre økter i uka: Push (benk), Legs (knebøy), Pull & Power (power clean). Hver økt er
@@ -3434,7 +3532,8 @@ const PROGRAMS = [
   rpProg('rpkb', 'Knebøy, benk og RP', '3', 'Tre dager i uka. Dag 1 er knebøy og benk med tunge sett. Dag 2 og 3 er press- og trekkdagen fra RP Hypertrofi 3 dager, med manualbenk og beinpress i stedet for benk og knebøy, så de tunge løftene får hvile. Samme tre mesosykluser på 13 uker som RP, med deload til slutt i hver.',
     {origin: 'Eget program, med to dager fra RP Hypertrofi 3 dager',
      rule: 'Knebøy og benk på dag 1 går med 5 reps i Basis og Metabolitt og 3 reps i Resensitivisering. Vekta regnes fra 10RM, så den passer med repsene og reps i reserve.'}),
-  broProg()
+  broProg(),
+  hhProg()
 ];
 
 /* ---------- Programguide ----------
@@ -3779,6 +3878,28 @@ const GUIDE = {
     metcon:'AMRAP-en ligger i hver økt som dagens metcon, med klokke og resultatfelt. Økt 1, 2 og 3 har hver sin AMRAP hele programmet, så forrige resultat vises hver gang.',
     metconRefs:['eddens','schumann'],
     watch:'Blir det tunge løftet tyngre enn RPE 8, ta av vekt samme dag. Skaler volumet hvis skuldre eller albuer protesterer.'
+  },
+  hh12: {
+    focus:'Muskelvekst, særlig i brystet, sammen med styrke og CrossFit-kapasitet. Tre styrkeøvelser og en metcon i hver økt.',
+    fits:'Deg som trener CrossFit eller metcons og vil bygge mer muskler uten å miste kondisjonen, med tre økter i uka og tilgang til maskiner, manualer og ergometre.',
+    notFor:'Deg som vil maksimere 1RM i de store løftene, eller trenger mye direkte trening for baksida lår. HPC erstatter ikke rumensk markløft fullt ut.',
+    how:'Hver økt har tre styrkeøvelser à 4 sett og en metcon på 20–30 minutter etter styrken. Repsene går ned fra 12 til 6 over 12 uker mens vekta, regnet som prosent av 10RM, går opp. Etter uke 4 og 8 regnes 10RM ut fra settene dine. Hang power clean kommer sist på dag 1 og har sin egen plan med 5, 4 og 3 reps.',
+    science:[
+      ['6–12 reps nær failure gir effektiv muskelstimulering.','H',[]],
+      ['Du trenger ikke gå helt til failure. Programmet holder 1–2 reps i reserve, og HPC har større margin.','A',['grgic','robinson']],
+      ['Mer volum gir mer muskler, men hvert ekstra sett gir mindre. Brystet får 12 direkte sett fordi metconene gir lite målrettet brysttrening. Rygg og bein får færre, fordi metconene belaster dem.','A',['schoen','pelland']],
+      ['Periodisert trening med færre reps og tyngre vekter over tid gir mer styrke enn trening uten plan.','B',['williams']],
+      ['Olympiske løft som HPC gir eksplosivitet og høyere hopp enn vanlig styrketrening.','B',['hackett']],
+      ['Styrke før kondisjon i samme økt gir mer beinstyrke enn omvendt. Programmet tar alltid styrken først.','B',['eddens']],
+      ['Selve programmet er ikke testet i studier.','H',[]]
+    ],
+    expect:[
+      ['Folk responderer svært ulikt på samme trening. Sammenlign deg med deg selv.','B',['hubal']],
+      ['Rask styrkeutvikling betyr ikke at sener og ledd tilpasser seg like raskt. Behold de 36 settene og tre metconene så lenge du har fremgang, og juster etter prestasjon, ikke bare kalenderen.','H',[]]
+    ],
+    metcon:'Metconen ligger i hver økt som dagens metcon, med klokke og resultatfelt. Metconer regnes ikke som hypertrofisett, men de teller i totalbelastningen og påvirker restitusjonen. Dag 1 og 3 går på RPE 8, dag 2 på RPE 6–7. Unngå mye tungt hoftehingearbeid etter HPC.',
+    metconRefs:['eddens','schumann'],
+    watch:'Evaluer etter uke 4, 8 og 12: arbeidsvekter, kroppsvekt, muskelvekst, metconer og restitusjon. Faller eksplosiviteten eller teknikken i HPC, avslutt settene. Ta en lettere uke ved behov, for eksempel halvt styrkevolum og roligere metcons.'
   }
 };
 
@@ -4298,6 +4419,7 @@ function buildSession(p, a){
   if (p.prog === 'burg') return buildBurg(p, a);
   if (p.prog === 'rp') return buildRp(p, a);
   if (p.prog === 'bro') return buildBro(p, a);
+  if (p.prog === 'hh') return buildHh(p, a);
   if (p.prog === 'mmc') return withPw(buildMmc(p, a));
   if (p.prog === 'emc') return withPw(buildEmc(p, a));
   if (p.prog === 'cir') return withPw(buildCir(p, a));
@@ -4339,6 +4461,7 @@ function progress(p, a, s){
   if (p.prog === 'burg') return progressBurg(p, a, s);
   if (p.prog === 'rp') return progressRp(p, a, s);
   if (p.prog === 'bro') return progressBro(p, a, s);
+  if (p.prog === 'hh') return progressHh(p, a, s);
   if (['mmc','emc','cir','cbe'].includes(p.prog)) return progressMmc(p, a, s);
   const notes = [];
   const hit = x => x.d != null && x.d >= x.t;
@@ -4844,6 +4967,14 @@ function newInstance(p){
   const a = {programId:p.id, startedAt:Date.now(), idx:0, lifts:{}, tm:{}};
   // Brosesh: ingen felt. Vektene finner du i økta, og appen husker dem.
   if (p.prog === 'bro') { Object.assign(a, {bro:{}, sets:{}, lett:{}, blk:0}); return a; }
+  // Hybrid Hypertrophy: 10RM i feltene som er fylt ut, og arbeidsvekta i HPC. Tomme felt finner du i økta.
+  if (p.prog === 'hh') {
+    const num = el => parseFloat(String(el && el.value || '').replace(',', '.'));
+    Object.assign(a, {rm:{}, est:{}, blk:0});
+    Object.keys(p.inputs).forEach((k, i) => { const v = num($('#in-' + i)); if (v > 0) a.rm[k] = v; });
+    const h = num($('#in-hpc')); if (h > 0) a.hpc = h;
+    return a;
+  }
   // RP: 10RM i feltene som er fylt ut. Tomme felt finner du i økta.
   if (p.prog === 'rp') {
     Object.assign(a, {rm:{}, est:{}, sets:{}, r1:{}});
@@ -4880,7 +5011,7 @@ function mmcSecInputs(p){
 function activate(id){
   const p = prog(id);
   // Tomme felt fylles ikke med standardtall: da ville noen andres maksløft blitt dine startvekter
-  const empty = p.prog === 'athx' || p.prog === 'rp' || p.prog === 'bro' ? [] :[...document.querySelectorAll('input[data-key]')].filter(inp => !(parseFloat(String(inp.value).replace(',', '.')) > 0) && !(inp.dataset.bw && !(parseFloat(String(inp.value).replace(',', '.')) < 0)));
+  const empty = ['athx','rp','bro','hh'].includes(p.prog) ? [] :[...document.querySelectorAll('input[data-key]')].filter(inp => !(parseFloat(String(inp.value).replace(',', '.')) > 0) && !(inp.dataset.bw && !(parseFloat(String(inp.value).replace(',', '.')) < 0)));
   if (empty.length) { fieldErr(empty[0], p.orm ? 'Velg hvor du starter, eller skriv inn startvektene' : 'Skriv inn 1RM eller et sett du klarte for alle løftene'); return; }
   const a = newInstance(p);
   if (!a) return;
@@ -5180,6 +5311,7 @@ const PLAN_NOTE = {
   jugg:'Arbeidsmaksen øker bare med reps over målet i testsettene. Planen viser vektene hvis du akkurat når målet, så de blir høyere hvis du tar flere reps.',
   cube:'Vektene er prosent av 1RM og endres ikke underveis. Uke 10 er test, og beste løft blir ny 1RM.',
   sp12:'Planen viser vektene hvis toppsett og backoff går på RPE 7 og clean er rask og ren. Da øker vekten 2,5 kg fra uke til uke. Ved RPE 7,5–9 står vekten stille. Når en ny fase starter, regnes vektene ut fra estimert 1RM.',
+  hh:'Vektene er prosent av 10RM-en din. Etter uke 4 og 8 regnes 10RM ut fra settene dine, så vektene der er et anslag. Hang power clean viser vekta hvis alle løftene er raske og rene, så den er et tak.',
   rp:'Vektene er prosent av 10RM-en din, 5 %, 7,5 % og 10 % over uke 1. Settene i planen er de fra arket. Vurderingen etter hver øvelse legger til eller trekker fra sett. Når en ny mesosyklus starter, regnes 10RM ut fra settene dine, så vektene der er et anslag.',
   burg:'Vektene er prosent av 1RM og endres ikke underveis. Uke 12, dag 4 er max out, og beste snatch og clean & jerk blir ny 1RM.',
   cbe:'Planen viser vektene hvis det tunge løftet går på RPE 7 hver gang. Da øker treningsmaksen 2,5 kg i benk og press og 5 kg i knebøy og markløft fra uka etter, så tallene framover er et tak. Hver uke har tre løft, og ett står over etter tur. Uke 12 bruker vektene fra uke 1, så retesten kan sammenlignes.',
@@ -5188,7 +5320,7 @@ const PLAN_NOTE = {
   mmc:'Planen viser vektene hvis siste sett går på RPE 7 og clean er rask og ren hver uke. Da øker treningsmaksen 2,5 kg i benk og clean og 5 kg i knebøy per uke. Ved RPE 7,5–9 står den stille, så tallene framover er et tak, ikke et løfte. Metconene står i hver økt, og uke 1, 6 og 12 har de samme tre benchmark-metconene.',
   athx:'Vektene er prosent av arbeidsmaksen din i dag, og fartene følger anslaget ditt. Begge oppdateres etter hver økt, så tallene framover endrer seg. Henger du etter kalenderen, hopper planen til første økt i denne uka.'
 };
-const planPer = (p, a) => p.prog === 'athx' ? a.ax.per : ['531','jugg','cube','sp12','burg','mmc','emc','cir','cbe','rp','bro'].includes(p.prog) ? p.days.length : (parseInt(p.perWeek) || 3);
+const planPer = (p, a) => p.prog === 'athx' ? a.ax.per : ['531','jugg','cube','sp12','burg','mmc','emc','cir','cbe','rp','bro','hh'].includes(p.prog) ? p.days.length : (parseInt(p.perWeek) || 3);
 function simulate(p, a0, n){
   const a = JSON.parse(JSON.stringify(a0)), out = [], tot = totalOf(p, a0);
   while (out.length < n && !(tot && a.idx >= tot)) {
@@ -5241,7 +5373,7 @@ function planWeeks(P, p, a, short){
   const weeks = [];
   rows.forEach(r => { const w = Math.floor(r.k / per); (weeks[w] = weeks[w] || []).push(r); });
   // Uka står i overskriften, så «Uke 9 av 12» trengs ikke på hver økt
-  const subOf = (r, w) => ax ? r.sub.replace(/^Uke \d+ av \d+ · /, '') : ['burg','mmc','emc','cir','cbe','rp','bro'].includes(p.prog) ? r.sub.replace(/^Uke \d+ av \d+( · )?/, '') : r.sub !== 'Uke ' + (w + 1) ? r.sub : '';
+  const subOf = (r, w) => ax ? r.sub.replace(/^Uke \d+ av \d+ · /, '') : ['burg','mmc','emc','cir','cbe','rp','bro','hh'].includes(p.prog) ? r.sub.replace(/^Uke \d+ av \d+( · )?/, '') : r.sub !== 'Uke ' + (w + 1) ? r.sub : '';
   const from = short ? Math.floor(Math.min(a.idx, N - 1) / per) : 0, to = short ? from + 2 : weeks.length;
   const inProgress = P.active && ownDraft() && ownDraft().ex.some(e => e.sets.some(x => x.d != null) || (e.wuDone || []).length);
   const exLine = r => r.ex.slice(0, 3).map(e => { const t = Math.max(...e.sets.map(x => x.w)); return liftName(e.lift) + (t > 0 ? ' ' + fmt(t) : ''); }).join(' · ') + (r.ex.length > 3 ? ' …' : '');
@@ -5949,6 +6081,7 @@ const PROG_WHAT = {
   mmc12:'Styrke, metcon og finisher i hver økt', emc12:'Styrke og EMOM-er med fire stasjoner',
   cir12:'Styrke og kretser med en ny øvelse hvert minutt', cbe12:'Tre av fire baseløft per uke i rotasjon, med kondisjon',
   bro:'Muskelvekst: tre helkroppsøkter, deload i uke 6 og 12',
+  hh12:'Muskelvekst, styrke og metcon i hver økt, 36 styrkesett i uka',
   rp3:'Hypertrofi: helkropp tre dager, mesosykluser med deload', rpkb:'Tung knebøy og benk én dag, to RP-dager med volum', nf5:'Hypertrofi: fem dager delt på muskelgrupper, mesosykluser med deload'};
 // Dine egne programmer og de du har fått, øverst i biblioteket
 function vMine(act){
@@ -6032,8 +6165,8 @@ function vDetail(p){
       <div class="meta" style="margin-top:8px"><span class="pill">${p.level}</span><span class="pill">${p.perWeek} økter/uke</span></div></header>
     <p>${p.summary}</p>
     <div class="box"><h2 class="sec" style="margin:0">Slik øker vekten</h2><p class="small">${p.rule}</p></div>
-    ${p.prog === 'athx' ? axSetup(other, isActive) : `${p.prog === 'user' ? vUserStart(p) : p.prog === 'rp' ? vRpStart(p) : p.prog === 'bro' ? vBroStart() : vStart(p)}${['mmc','emc','cir'].includes(p.prog) ? mmcSecInputs(p) : ''}
-    <p class="muted small">${p.prog === 'user' ? 'Forslaget er den tyngste vekta du brukte sist i øvelsen, ellers tom stang. Endre det som ikke stemmer.' : p.orm ? p.ormNote || 'Start lett. Teknikken skal sitte før vekten blir tung.' : p.prog === '531' ? 'Appen regner ut treningsmaks som 90 % av dette.' : p.prog === 'jugg' ? 'Appen regner ut arbeidsmaks som 90 % av dette.' : p.prog === 'sp12' ? 'Startvektene regnes ut fra dette. Etter hvert styrer RPE-en din vektene.' : p.prog === 'cube' ? 'Alle vekter regnes ut som prosent av dette.' : p.prog === 'burg' ? 'Alle vekter regnes ut som prosent av dette. Trekk og shrugs ligger over 100 %, det er meningen.' : p.prog === 'rp' || p.prog === 'bro' ? '' :['mmc','emc','cir','cbe'].includes(p.prog) ? 'Treningsmaksen starter på 90 % av dette, og RPE-en din flytter den etter hver uke. Bruk dagsaktuelle maksløft.' : 'Start lett. Teknikken skal sitte før vekten blir tung.'}
+    ${p.prog === 'athx' ? axSetup(other, isActive) : `${p.prog === 'user' ? vUserStart(p) : p.prog === 'rp' ? vRpStart(p) : p.prog === 'bro' ? vBroStart() : p.prog === 'hh' ? vHhStart(p) : vStart(p)}${['mmc','emc','cir'].includes(p.prog) ? mmcSecInputs(p) : ''}
+    <p class="muted small">${p.prog === 'user' ? 'Forslaget er den tyngste vekta du brukte sist i øvelsen, ellers tom stang. Endre det som ikke stemmer.' : p.orm ? p.ormNote || 'Start lett. Teknikken skal sitte før vekten blir tung.' : p.prog === '531' ? 'Appen regner ut treningsmaks som 90 % av dette.' : p.prog === 'jugg' ? 'Appen regner ut arbeidsmaks som 90 % av dette.' : p.prog === 'sp12' ? 'Startvektene regnes ut fra dette. Etter hvert styrer RPE-en din vektene.' : p.prog === 'cube' ? 'Alle vekter regnes ut som prosent av dette.' : p.prog === 'burg' ? 'Alle vekter regnes ut som prosent av dette. Trekk og shrugs ligger over 100 %, det er meningen.' : ['rp','bro','hh'].includes(p.prog) ? '' :['mmc','emc','cir','cbe'].includes(p.prog) ? 'Treningsmaksen starter på 90 % av dette, og RPE-en din flytter den etter hver uke. Bruk dagsaktuelle maksløft.' : 'Start lett. Teknikken skal sitte før vekten blir tung.'}
       ${slotsOf(p).length ? ' Vil du bytte et løft, gjør du det under Program → Oppsett når programmet er aktivt.' : ''}
       ${other ? ' Dette erstatter '+other.name+'. Loggen din blir liggende.' : ''}${isActive ? ' Programmet er aktivt. Aktiverer du på nytt, starter det fra økt 1 med vektene over.' : ''}</p>`}
     <button class="btn" data-a="activate:${p.id}">${isActive ? 'Start på nytt' : 'Aktiver program'}</button>

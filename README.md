@@ -1,6 +1,6 @@
 # Stanga – treningsapp på hjemskjermen
 
-Styrkeprogrammer (StrongLifts 5×5, Starting Strength, GZCLP, 5/3/1 FSL og BBB, Juggernaut, Cube Method og Strength & Power), Burgener 12 uker for olympisk vektløfting, Muscle MetCon 12 uker (styrke, metcon og finisher i hver økt, sekundærløft styrt av RPE), EMOM Capacity 12 uker (styrke som E2MOM og 4-stasjons EMOM-er), Circuit EMOM 12 uker (kretser med åtte stasjoner), Cube EMOM 12 uker (tre baseløft i E4MOM hver økt), RP Hypertrofi på 3 og 5 dager (13 uker i tre mesosykluser), Knebøy, benk og RP (en tung dag med knebøy og benk og to RP-dager), Brosesh (12 uker med tre helkroppsøkter, bygd på RP Strengths hypertrofiguide), et konkurranseprogram for ATHX 2027, øktbank med metcons, egne metcons, metcon-klokke og treningslogg. Alle data lagres lokalt på telefonen.
+Styrkeprogrammer (StrongLifts 5×5, Starting Strength, GZCLP, 5/3/1 FSL og BBB, Juggernaut, Cube Method og Strength & Power), Burgener 12 uker for olympisk vektløfting, Muscle MetCon 12 uker (styrke, metcon og finisher i hver økt, sekundærløft styrt av RPE), EMOM Capacity 12 uker (styrke som E2MOM og 4-stasjons EMOM-er), Circuit EMOM 12 uker (kretser med åtte stasjoner), Cube EMOM 12 uker (tre baseløft i E4MOM hver økt), RP Hypertrofi på 3 og 5 dager (13 uker i tre mesosykluser), Knebøy, benk og RP (en tung dag med knebøy og benk og to RP-dager), Brosesh (12 uker med tre helkroppsøkter, bygd på RP Strengths hypertrofiguide), Hybrid Hypertrophy 12 uker (tre styrkeøvelser og en metcon i hver økt), et konkurranseprogram for ATHX 2027, øktbank med metcons, egne metcons, metcon-klokke og treningslogg. Alle data lagres lokalt på telefonen.
 
 ## Utseende: Treningsboka
 
@@ -146,6 +146,17 @@ Under **Program → Bibliotek** står **Dine programmer** øverst, med **+ Lag e
 - **Deload (uke 6 og 12):** 80 % av vekta rundet ned til nærmeste 2,5 kg, bunnen av repområdet, 2 sett der det står 3 og 1 der det står 2.
 - **Bytter og video:** Hver plass har alternativene fra RP Strength sine muskelguider (bryst, rygg, forside lår, baksida lår, sideskulder, biceps, triceps, legger og mage), 122 øvelser i alt. De kan velges under **Program → Oppsett → Øvelser og bytter** eller med **Valg → Bytt i dag**. Hver øvelse har videoen fra guiden. Videoene vises bare i Brosesh, og de andre programmene beholder videoene fra arket.
 - **Teknisk:** `BRO_CAT` (alternativene), `BRO_VID` (videoene), `BRO_DAYS` (øktene), `buildBro` og `progressBro` i `index.html`. Instansen har `bro` (vekt og reps per plass og øvelse), `sets` (sett neste gang), `lett` (lett på rad), `blk` (blokka) og `swaps`. En plass heter «dag.rad».
+
+## Hybrid Hypertrophy 12 uker
+
+**Program under Program → Bibliotek.** Muskelvekst, styrke og CrossFit-kapasitet i samme program. Tre økter i uka med tre styrkeøvelser à 4 sett (36 styrkesett i uka) og en metcon på 20–30 minutter etter styrken.
+
+- **Øktene:** Dag 1: benkpress, sittende kabelroing og hang power clean, metcon på RPE 8. Dag 2: skrå DB-benk, nedtrekk og beinspark, metcon på RPE 6–7. Dag 3: Arnold press, nedoverskrå manualbenk og beinpress, metcon på RPE 8. Metconen står som dagens metcon med eksempler, klokke og resultatfelt.
+- **Vekter:** Prosent av 10RM i øvelsen. Uke 1–2: 4 × 12 på 90 og 92,5 %. Uke 3–4: 4 × 10 på 95 og 97,5 %. Uke 5–8: 4 × 8 på 97,5, 100, 100 og 102,5 %. Uke 9–12: 4 × 6 på 102,5, 105, 105 og 107,5 %. Rundet til nærmeste 2,5 kg. 1–2 reps i reserve, og vekta kan justeres med − og + i økta.
+- **10RM:** Skrives inn på programsiden. Tomme felt finner du i første økt, og appen regner ut 10RM fra settene. Etter uke 4 og 8 blir 10RM regnet ut på nytt fra settene dine, uten makstester.
+- **Hang power clean:** 4 × 5, 4 × 4 og 4 × 3 i uke 1–4, 5–8 og 9–12. Etter øvelsen svarer du hvordan løftene gikk: raske og rene gir 2,5 kg mer neste gang, tregere samme vekt, og teknikk som svikter eller reps som mangler gir 2,5 kg mindre.
+- **Pauser og evaluering:** 2,5 min pause, 90 s på beinspark. Etter uke 4, 8 og 12 minner appen deg om å evaluere arbeidsvekter, kroppsvekt, muskelvekst, metconer og restitusjon. Deload er ikke lagt inn, men tas ved behov.
+- **Teknisk:** `HH_WEEKS`, `HH_HPC`, `HH_DAYS`, `buildHh` og `progressHh` i `index.html`. Instansen har `rm` (10RM), `est` (siste anslag), `hpc` (arbeidsvekt i HPC) og `blk` (blokka, 0–2).
 
 ## Pete Plan
 
