@@ -83,7 +83,7 @@ test('rest duration rounds to the nearest ten seconds after applying the selecte
 });
 test('the inline pause updates independently of the displayed weight and reps',()=>{
   const f=fixture();
-  for(const id of ['#todayRestControls','#todayRestAdd','#todayRestSkip','#todayRestLabel','#todayRestTime','#kgN','.current-reps'])f.nodes.set(id,{textContent:'',disabled:false});
+  for(const id of ['#todayRestControls','#todayRestAdd','#todayRestSkip','#todayRestLabel','#todayRestTime','#kgN','.current-reps'])f.nodes.set(id,{textContent:'',disabled:false,classList:{toggle(){}},dataset:{}});
   f.nodes.get('#kgN').textContent='100';f.nodes.get('.current-reps').textContent='5 reps';
   f.run('updateRest()');
   assert.equal(f.nodes.get('#todayRestTime').textContent,'—');
@@ -99,7 +99,7 @@ test('the inline pause updates independently of the displayed weight and reps',(
 });
 test('the inline pause shows overtime after expiry and restarts on the next set',()=>{
   const f=fixture();
-  for(const id of ['#todayRestControls','#todayRestAdd','#todayRestSkip','#todayRestLabel','#todayRestTime'])f.nodes.set(id,{textContent:'',disabled:false});
+  for(const id of ['#todayRestControls','#todayRestAdd','#todayRestSkip','#todayRestLabel','#todayRestTime'])f.nodes.set(id,{textContent:'',disabled:false,classList:{toggle(){}},dataset:{}});
   f.warm();f.click('next:0');f.advance(185000);f.run('updateRest()');
   assert.equal(f.nodes.get('#todayRestLabel').textContent,'Klar');
   assert.equal(f.nodes.get('#todayRestTime').textContent,'+0:05');
@@ -629,4 +629,23 @@ test('the overview with Start økt shows before the session is started, and logg
   // En økt med et logget sett åpnes rett i økta, også uten go (eldre utkast)
   const g=fixture();g.run('delete S.draft.go;S.draft.ex[0].sets[0].d=5;');
   assert.match(g.run('vToday()'),/id="exercise-0"/);
+});
+test('reps are set with − and + before logging, for every program, and the button says what is saved',()=>{
+  const f=fixture();f.warm();
+  f.click('rpp:0:-1');f.click('rpp:0:-1');
+  const view=f.run('vToday()');
+  assert.match(view,/>Registrer 3 reps</);
+  assert.match(view,/Målet er 5 reps\./);
+  assert.ok(view.indexOf('id="todayRestControls"')<view.indexOf('aria-label="Arbeidssett"'),'pausen står over settene');
+  assert.match(view,/>Endre øvelse /);
+  f.click('next:0');
+  assert.equal(f.state('S.draft.ex[0].sets[0].d'),3);
+  assert.equal(f.state('S.draft.ex[0].pend??null'),null);
+  assert.match(f.run('vToday()'),/>Registrer 5 reps</);
+  // Neste rute fører inn det rettede tallet
+  f.click('rpp:0:1');f.click('set:0:1');
+  assert.equal(f.state('S.draft.ex[0].sets[1].d'),6);
+  // Under oppvarming er det ingen − og +
+  const g=fixture();assert.match(g.run('vToday()'),/>Registrer oppvarming</);
+  assert.doesNotMatch(g.run('vToday()'),/data-a="rpp:0:/);
 });

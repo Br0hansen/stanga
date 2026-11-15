@@ -142,8 +142,6 @@ p{margin:0}
 
 /* Øvelsen: navnet, det store tallet og skivene er én trykkflate som fører inn neste sett */
 .ex{padding:14px 16px 16px;display:grid;gap:12px}
-.ex-hit{display:grid;gap:4px;margin:-14px -16px 0;padding:14px 16px 0;border-radius:3px 3px 0 0;cursor:pointer;-webkit-user-select:none;user-select:none}
-.ex-hit:active{background:var(--press)}
 .ex-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
 .ex-head>div{min-width:0}
 .ex-head h2{font-size:19px}
@@ -919,20 +917,26 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .today-ex .ex-head .tag{white-space:normal;margin-top:3px}
 .today-ex .ex-head p{font-size:12px;margin-top:3px}
 .today-ex-actions{display:flex;align-items:center;gap:4px;flex:none}
-.today-menu,.today-undo,.today-video{min-width:48px;min-height:44px;justify-content:center;font-size:12px;padding:0 4px}
-.today-menu .chev{width:14px;height:14px}
+.today-undo{min-width:48px;min-height:44px;justify-content:center;font-size:12px;padding:0 4px}
 .today-undo{color:var(--pen)}
 .today-undo:disabled{opacity:.3;cursor:default}
-.today-ex .ex-hit{appearance:none;display:grid;border:0;color:var(--ink);background:transparent;text-align:left;font:inherit;margin:0;padding:0 16px 13px;gap:0;border-radius:0;min-width:0;width:100%}
-.today-ex .ex-hit:active{background:var(--press)}
 .today-stage{font:500 12px/18px var(--face);color:var(--ink-2);margin-bottom:9px}
-.today-metrics{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);align-items:center;gap:16px;height:85px}
-.today-weight,.current-reps{display:flex;align-items:baseline;gap:6px;min-width:0;white-space:nowrap}
-.today-weight b,.current-reps b{font:800 79px/.95 var(--face);font-stretch:62%;font-variant-numeric:tabular-nums;letter-spacing:-.025em}
-.today-weight small,.current-reps small{font:500 14px/1 var(--face);color:var(--ink-2)}
-.current-reps{padding-left:20px;border-left:1px solid var(--rule)}
-.current-reps b{font-size:65px}
-.current-reps.range b{font-size:40px}
+.today-main{display:grid;padding:0 16px 14px}
+.today-weight{display:flex;align-items:baseline;gap:6px;min-width:0;white-space:nowrap}
+.today-weight b{font:800 79px/.95 var(--face);font-stretch:62%;font-variant-numeric:tabular-nums;letter-spacing:-.025em}
+.today-weight small{font:500 14px/1 var(--face);color:var(--ink-2)}
+/* Reps med − og + før du registrerer. Raden har samme høyde under oppvarming, så knappen ikke flytter seg. */
+.today-reps{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;min-height:56px}
+.today-reps-lbl{font:600 17px/1 var(--face)}
+.today-step{display:flex;align-items:center;gap:8px}
+.today-step .step{width:52px;height:52px;font-size:28px}
+.today-step .step:disabled{opacity:.3;cursor:default}
+.today-reps-n{min-width:60px;text-align:center;font:800 56px/1 var(--face);font-stretch:62%;font-variant-numeric:tabular-nums}
+.today-goal{margin:6px 0 0;min-height:18px;font-size:13px;color:var(--ink-2)}
+.today-log{margin-top:10px;width:100%}
+.today-tools{display:flex;justify-content:flex-end;gap:4px;padding:0 12px 4px;border-top:1px solid var(--rule)}
+.today-tools .link{min-height:44px;padding:0 8px;font-size:13px}
+.today-tools .chev{width:14px;height:14px}
 .today-ex .platebox{padding:0;min-height:30px;border:0;gap:8px;margin-top:13px}
 .today-ex .platebox .plates{height:28px;transform:scale(.8);transform-origin:left center;margin-right:-5px}
 .today-ex .platebox .pl-txt{font-size:12px;font-weight:600}
@@ -942,7 +946,8 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .today-ex .chips .cw{flex:0 0 calc((100% - (var(--sets-per-row) - 1)*8px)/var(--sets-per-row));max-width:68px;min-width:44px;gap:5px}
 .today-ex .chips .set-number{font:500 10px/13px var(--face);color:var(--ink-3)}
 .today-ex .chips .chip{width:100%;height:49px;font-size:25px}
-.today-pause{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:1fr 1fr;align-items:center;gap:4px 12px;position:relative;background:var(--field);height:132px;padding:12px 16px;border-block:1px solid var(--rule)}
+.today-pause{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:1fr 1fr;align-items:center;gap:4px 12px;position:relative;background:var(--field);height:132px;padding:12px 16px;border-bottom:1px solid var(--rule)}
+.today-pause.idle .today-rest-face b{font-size:30px;line-height:1.2;color:var(--ink-2)}
 .today-rest-face{grid-column:1;grid-row:1/3;min-width:0}
 .today-rest-face span{display:block;font-size:12px;color:var(--ink-2);margin-bottom:4px}
 .today-rest-face b{font:800 88px/.9 var(--face);font-stretch:62%;font-variant-numeric:tabular-nums;letter-spacing:-.02em;white-space:nowrap}
@@ -998,14 +1003,12 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 @media(max-width:359px){
   .today-ex .ex-head{padding:12px;gap:4px}
   .today-ex .ex-head h2{font-size:20px}
-  .today-menu,.today-undo,.today-video{font-size:11px;min-width:44px}
-  .today-ex .ex-hit{padding:0 12px 12px}
-  .today-metrics{gap:10px;height:78px}
+  .today-undo{font-size:11px;min-width:44px}
+  .today-main{padding:0 12px 12px}
   .today-weight b{font-size:72px}
-  .current-reps{padding-left:14px}
-  .current-reps b{font-size:58px}
-  .current-reps.range b{font-size:34px}
-  .today-weight small,.current-reps small{font-size:12px}
+  .today-weight small{font-size:12px}
+  .today-reps-n{font-size:48px;min-width:48px}
+  .today-step .step{width:48px;height:48px}
   .today-ex .chips{padding-inline:12px}
   .today-pause{padding-inline:12px;column-gap:8px}
   .today-rest-face b{font-size:72px}
@@ -1047,7 +1050,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 111;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 112;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -1915,6 +1918,8 @@ const RP_MID = [13, 20, 8];
 const RP_FEEL = {3: 'stanga går merkbart tregere mot slutten, men det er ikke veldig tungt', 2: 'du anstrenger deg og kan skjelve, og det føles veldig tungt', 1: 'nesten alt du har, med god teknikk'};
 // Forslaget til reps i settet du skal ta: det du har justert til, ellers settet før, ellers forslaget i settet
 const rpPend = (e, si) => e.pend != null ? e.pend : si > 0 && e.sets[si - 1].d > 0 ? e.sets[si - 1].d : e.sets[si].t;
+// Reps i feltet før du registrerer: det du har rettet med − og +, ellers forslaget i RP, ellers målet
+const pendReps = (e, si) => e.rpFree ? rpPend(e, si) : e.pend != null ? e.pend : e.sets[si].t;
 // Første sett utenfor RP sitt område: 'up' (for lett, 10RM opp) eller 'down' (for tungt)
 const rpCalDir = e => { const f = e.rpRange && e.sets[0] && e.sets[0].d; if (f == null) return null;
   return f > e.rpRange[1] ? 'up' : f < e.rpRange[0] ? 'down' : null; };
@@ -5595,7 +5600,7 @@ function followExercise(ei){
   const target = $(ei < 0 ? '#today-after' : '#exercise-' + ei);
   if (!target) return;
   target.scrollIntoView({block:'start', behavior:'instant'});
-  const focus = target.querySelector('.ex-hit') || target.querySelector('h2') || target;
+  const focus = target.querySelector('.today-log') || target.querySelector('h2') || target;
   if (!focus.hasAttribute('tabindex') && focus.tagName !== 'BUTTON') focus.tabIndex = -1;
   focus.focus({preventScroll:true});
 }
@@ -5727,7 +5732,7 @@ function exerciseSheetPaint(){
   const selection = key && /^(INPUT|TEXTAREA)$/.test(active.tagName) && active.selectionStart != null ? [active.selectionStart, active.selectionEnd] : null;
   const body = $('#exerciseSheetBody'), scroll = same ? body.scrollTop : 0;
   const html = vExerciseOptions(s, e, ei);
-  $('#exerciseSheetTitle').textContent = 'Valg for ' + liftName(e.lift).toLowerCase();
+  $('#exerciseSheetTitle').textContent = 'Endre ' + liftName(e.lift).toLowerCase();
   if (dialog._html !== html) { body.innerHTML = html; dialog._html = html; }
   dialog._mode = mode;
   if (!dialog.open) {
@@ -5883,7 +5888,7 @@ function vToday(){
   h += `<header class="head">
       <p class="eyebrow">${p.name} · ${s.sub}</p>
       <div class="h-row"><h1>${s.day}</h1>${topBtns()}</div>
-      <div class="today-progress"><span>${s.ex.reduce((n, e) => n + e.sets.length, 0) - setsLeft} av ${s.ex.reduce((n, e) => n + e.sets.length, 0)} arbeidssett</span><span>${anyTouched ? mins + ' min i gang' : 'Klar når du er'}</span></div>
+      <div class="today-progress"><span>Tid <b id="todayElapsed" data-t0="${s.go || s.started}">${mmss((Date.now() - (s.go || s.started)) / 1000)}</b></span></div>
       <div class="prog" aria-label="${cur < 0 ? 'Alle øvelser er gjort' : 'Øvelse ' + (cur+1) + ' av ' + s.ex.length}">${s.ex.map(e => {
         const d = e.sets.filter(x => x.d != null).length;
         return `<i class="${d === e.sets.length ? 'full' : ''}"><b style="width:${Math.round(d / e.sets.length * 100)}%"></b></i>`; }).join('')}</div>
@@ -5917,45 +5922,50 @@ function vToday(){
     const nextSi = now && !warm ? e.sets.findIndex(x => x.d == null) : -1;
     const varies = new Set(e.sets.map(x => x.w)).size > 1;
     const amIdx = e.sets.findIndex(x => x.am && x.d != null);
-    // Ett tall om gangen: det store tallet er alltid neste sett. Den markerte ruta viser hvor i rekka du er,
-    // så kortet trenger ikke si «Oppvarming 2 av 3» eller «sett 2 av 5» i tillegg.
-    const [bigW, bigR] = warm ? wu[wuNext] : nextSi > -1 ? [e.sets[nextSi].w, e.rpFree ? rpPend(e, nextSi) : e.sets[nextSi].c || e.sets[nextSi].t] : [top, 0];
-    const bigAm = !warm && nextSi > -1 && e.sets[nextSi].am;
+    // Ett tall om gangen: det store tallet er alltid neste sett. Repsene står med − og + rett under,
+    // så du fører inn det du faktisk tok. Den markerte ruta viser hvor i rekka du er.
+    const nx = nextSi > -1 ? e.sets[nextSi] : null;
+    const [bigW, bigR] = warm ? wu[wuNext] : nx ? [nx.w, pendReps(e, nextSi)] : [top, 0];
     const menuOpen = ui.exMenu === k;
     const plates = LIFTS[e.lift].bar ? `<div class="platesrow ${now ? 'platebox' : ''}">${plateHTML(bigW, now)}</div>` : '';
-    const head = now ? `<p class="today-stage">${warm ? 'Oppvarming · ' + (wuNext + 1) + ' av ' + wu.length : 'Arbeidssett · ' + (nextSi + 1) + ' av ' + e.sets.length}</p>
-      <div class="today-metrics"><span class="today-weight"><b id="kgN">${fmt(bigW)}</b><small>kg</small></span><span class="current-reps${String(bigR).length > 2 ? ' range' : ''}"><b>${esc(bigR)}${bigAm ? '+' : ''}</b><small>reps</small></span></div>${plates}`
-      : `<div class="kg">${fmt(bigW)}<small>kg</small></div>${plates}`;
-    // Vekt, reps og skiver er én stor trykkflate. Pausen får en egen, stabil rad under settene.
     const canNext = now && (warm || nextSi > -1);
+    const head = now ? `<p class="today-stage">${warm ? 'Oppvarming · ' + (wuNext + 1) + ' av ' + wu.length : nx ? 'Arbeidssett · ' + (nextSi + 1) + ' av ' + e.sets.length : 'Alle sett er gjort'}</p>
+      <div class="today-weight"><b id="kgN">${fmt(bigW)}</b><small>kg${LIFTS[e.lift].db ? ' per manual' : ''}</small></div>${plates}`
+      : `<div class="kg">${fmt(bigW)}<small>kg</small></div>${plates}`;
+    // Målet står som tekst bare når det ikke er tallet i feltet: AMRAP, RP, komplekser og når du har endret repsene
+    const goal = !canNext || warm ? '' : nx.am ? 'Så mange du klarer, minst ' + nx.t + '.' : e.rpFree ? (e.rir != null ? 'Til ' + e.rir + ' i reserve.' : '')
+      : nx.c ? 'Mål ' + nx.c + ' reps.' : bigR !== nx.t ? 'Målet er ' + nx.t + ' reps.' : '';
+    const log = canNext ? `<div class="today-reps"><span class="today-reps-lbl" id="repsL-${ei}">Reps</span>${warm ? `<b class="today-reps-n">${bigR}</b>`
+      : `<div class="today-step" role="group" aria-labelledby="repsL-${ei}"><button class="step" data-a="rpp:${ei}:-1" aria-label="Én rep færre" ${bigR > 0 ? '' : 'disabled'}>−</button><b class="today-reps-n" aria-live="polite">${bigR}</b><button class="step" data-a="rpp:${ei}:1" aria-label="Én rep mer">+</button></div>`}</div>
+      <p class="today-goal">${goal}</p>
+      <button class="btn today-log" data-a="next:${ei}" aria-label="Registrer ${bigR} reps på ${fmt(bigW)} kg${warm ? ', oppvarming' : ''}">${warm ? 'Registrer oppvarming' : 'Registrer ' + bigR + (bigR === 1 ? ' rep' : ' reps')}</button>` : '';
+    const idle = warm ? 'Klar for oppvarming' : nx ? 'Klar for sett ' + (nextSi + 1) : '—';
     h += `<section class="ex today-ex ${now ? 'now' : ''}" id="exercise-${ei}">
-      <div class="ex-head"><div class="today-ex-title"><h2>${liftName(e.lift)}</h2>${e.tag ? `<span class="tag">${e.tag}</span>` : ''}<p class="small muted">${setsLine(e)}</p></div><div class="today-ex-actions">${now ? `<button class="link today-undo" data-a="undoset" ${canUndoSet() ? '' : 'disabled'}>Angre</button>` : ''}${vidOf(e.lift) ? `<button class="link today-video" data-a="video:${e.lift}" aria-haspopup="dialog" aria-label="Video av ${esc(liftName(e.lift).toLowerCase())}">Video</button>` : ''}<button class="link today-menu" data-a="exmenu:${k}" aria-expanded="${!!menuOpen}" aria-haspopup="dialog" aria-controls="exerciseSheet" aria-label="Valg for ${esc(liftName(e.lift))}">Valg ${chev}</button></div></div>
-      ${canNext ? `<button class="ex-hit" data-a="next:${ei}" aria-label="Registrer ${bigR}${bigAm ? '+' : ''} reps på ${fmt(bigW)} kg${warm ? ', oppvarming' : ''}">${head}</button>` : head}
-      ${e.rpFree && now && !warm && nextSi > -1 ? `<div class="amrap rp-step"><span>Juster reps før du trykker</span>
-        <button class="step" data-a="rpp:${ei}:-1" aria-label="Én rep færre">−</button>
-        <button class="step" data-a="rpp:${ei}:1" aria-label="Én rep mer">+</button></div>` : ''}
+      ${now ? `<section class="today-pause" id="todayRestControls" aria-label="Pause" data-idle="${idle}"><div class="today-rest-face"><span id="todayRestLabel">Pause</span><b id="todayRestTime" role="timer">—</b></div><button class="link" data-a="restadd:30" id="todayRestAdd" disabled aria-label="30 sekunder lengre pause">+30 s</button><button class="link" data-a="skip" id="todayRestSkip" disabled>Avslutt pause</button><span class="today-rest-rule" aria-hidden="true"><i></i></span></section>` : ''}
+      <div class="ex-head"><div class="today-ex-title"><h2>${liftName(e.lift)}</h2>${e.tag ? `<span class="tag">${e.tag}</span>` : ''}<p class="small muted">${setsLine(e)}</p></div>${now ? `<div class="today-ex-actions"><button class="link today-undo" data-a="undoset" ${canUndoSet() ? '' : 'disabled'}>Angre</button></div>` : ''}</div>
+      <div class="today-main">${head}${log}</div>
       ${wu.length ? `<div class="today-warmup" role="group" aria-label="Oppvarming"><p class="today-grp-lbl" aria-hidden="true">Oppvarming</p><div class="chip-grp wu-grp">${vWarmup(e, ei, wu, wuNext, warm)}</div></div>` : ''}
       <div class="chips" role="group" aria-label="Arbeidssett">${wu.length ? '<p class="today-grp-lbl" aria-hidden="true">Arbeidssett</p>' : ''}<div class="chip-grp" style="--sets-per-row:${Math.min(5, e.sets.length)}">${e.sets.map((x,si) => {
         // RP: ingen bom. Alle reps teller som gjort, bare 0 reps er rødt. Ikke tatt: «–», bortsett fra neste sett (forslaget).
         const st = x.d == null ? (si === nextSi ? 'next' : '') : (e.rpFree ? (x.d > 0 ? 'ok' : 'miss') : x.d >= x.t ? 'ok' : 'miss');
         const fr = x.d != null && ui.fresh === ei + ':' + si ? ' fresh' : '';
         const lbl = 'Sett '+(si+1)+': '+(x.d == null ? (e.rpFree ? 'ikke gjort, til '+e.rir+' i reserve' : 'ikke gjort, mål '+(x.c || x.t)+' reps') : x.d+' reps')+(x.am ? ', så mange du klarer' : '');
-        const face = e.rpFree && x.d == null ? (si === nextSi ? rpPend(e, si) : '–') : x.c && (x.d == null || x.d === x.t) ? x.c : x.d == null ? x.t : x.d;
+        const face = e.rpFree && x.d == null ? (si === nextSi ? rpPend(e, si) : '–') : x.d == null && si === nextSi && e.pend != null ? e.pend : x.c && (x.d == null || x.d === x.t) ? x.c : x.d == null ? x.t : x.d;
         return `<div class="cw"><small class="set-number" aria-hidden="true">${si+1}</small><button class="chip ${st} ${x.am?'am':''}${fr}" data-a="set:${ei}:${si}" aria-label="${lbl}">${face}${x.am ? '<sup>+</sup>' : ''}</button>${varies ? `<small>${fmt(x.w)}</small>` : ''}</div>`;
       }).join('')}</div></div>
-      ${now ? `<section class="today-pause" id="todayRestControls" aria-label="Pause"><div class="today-rest-face"><span id="todayRestLabel">Pause</span><b id="todayRestTime" role="timer">—</b></div><button class="link" data-a="restadd:30" id="todayRestAdd" disabled aria-label="30 sekunder lengre pause">+30 s</button><button class="link" data-a="skip" id="todayRestSkip" disabled>Avslutt pause</button><span class="today-rest-rule" aria-hidden="true"><i></i></span></section>` : ''}
       ${e.hint || amIdx > -1 || (canNext && S.history.filter(x => !x.free && !x.skipped).length < 3) || e.sp || e.adj || e.rpAsk || e.rpFree ? `<div class="today-ex-details">${e.rpFree ? rpInfo(e) : ''}${e.hint ? `<p class="wu">${e.hint}</p>` : ''}
       ${e.rpFree ? rpFix(e, ei) + (g ? '' : rpCal(e, ei)) : ''}
       ${amIdx > -1 ? `<div class="amrap"><span>Siste sett, så mange du klarer</span>
         <button class="step" data-a="am:${ei}:${amIdx}:-1" aria-label="Én rep mindre">−</button>
         <b>${e.sets[amIdx].d}</b>
         <button class="step" data-a="am:${ei}:${amIdx}:1" aria-label="Én rep mer">+</button></div>` : ''}
-      ${canNext && S.history.filter(x => !x.free && !x.skipped).length < 3 ? '<p class="chip-hint">Trykk på et registrert sett for én rep mindre.</p>' : ''}
+      ${canNext && S.history.filter(x => !x.free && !x.skipped).length < 3 ? '<p class="chip-hint">Trykk på et ferdig sett for å rette det.</p>' : ''}
       ${e.sp ? spExtras(e, ei) : ''}
       ${e.rpAsk && allDone(e) ? rpRate(e, ei) : ''}
       ${e.adj ? `<div class="amrap"><span>Juster vekt etter dagsform</span>
         <button class="step" data-a="w:${ei}:-1" aria-label="${LIFTS[e.lift] && LIFTS[e.lift].db ? 'Lettere manual' : '2,5 kg lettere'}">−</button>
         <button class="step" data-a="w:${ei}:1" aria-label="${LIFTS[e.lift] && LIFTS[e.lift].db ? 'Tyngre manual' : '2,5 kg tyngre'}">+</button></div>` : ''}</div>` : ''}
+      <div class="today-tools">${vidOf(e.lift) ? `<button class="link" data-a="video:${e.lift}" aria-haspopup="dialog" aria-label="Video av ${esc(liftName(e.lift).toLowerCase())}">Video</button>` : ''}<button class="link today-menu" data-a="exmenu:${k}" aria-expanded="${!!menuOpen}" aria-haspopup="dialog" aria-controls="exerciseSheet" aria-label="Endre øvelse: ${esc(liftName(e.lift))}">Endre øvelse ${chev}</button></div>
     </section>`;
   });
   h += `<section class="today-tail" id="today-after" tabindex="-1">${cur < 0 && canUndoSet() ? '<button class="link" data-a="undoset">Angre siste registrering</button>' : ''}`;
@@ -6633,10 +6643,12 @@ function updateTodayRest(left){
   const resting = !!ui.rest;
   $('#todayRestAdd').disabled = !resting;
   $('#todayRestSkip').disabled = !resting;
+  controls.classList.toggle('idle', !resting);
   $('#todayRestLabel').textContent = resting && left <= 0 ? 'Klar' : 'Pause';
-  $('#todayRestTime').textContent = !resting ? '—' : left > 0 ? mmss(Math.ceil(left)) : '+' + mmss(-left);
+  $('#todayRestTime').textContent = !resting ? controls.dataset.idle || '—' : left > 0 ? mmss(Math.ceil(left)) : '+' + mmss(-left);
 }
 function updateRest(){
+  const te = $('#todayElapsed'); if (te) te.textContent = mmss((Date.now() - +te.dataset.t0) / 1000);
   const el = $('#rest'), stage = document.querySelector('.stage');
   if (!ui.rest) { el.hidden = true; delete stage.dataset.rest; stage.style.setProperty('--lvl','0%'); updateTodayRest(); return; }
   const left = (ui.rest.end - Date.now()) / 1000;
@@ -8619,7 +8631,9 @@ document.addEventListener('click', ev => {
       if (!S.draft || !S.draft.ex[+r[0]]?.sets[+r[1]]) break;
       const before = rememberSet(+r[0]), previous = todayCurrent(S.draft);
       const ex = S.draft.ex[+r[0]], x = ex.sets[+r[1]], was = x.d;
-      if (x.am) x.d = x.d == null ? x.t : null;
+      // Neste sett med reps rettet med − og +: ruta fører inn det tallet
+      if (x.d == null && ex.pend != null && +r[1] === ex.sets.findIndex(y => y.d == null)) { x.d = ex.pend; delete ex.pend; }
+      else if (x.am) x.d = x.d == null ? x.t : null;
       else if (ex.rpFree && x.d == null) { x.d = rpPend(ex, +r[1]); delete ex.pend; }
       else x.d = x.d == null ? x.t : (x.d > 0 ? x.d - 1 : null);
       // Å rette reps på et sett som er gjort, starter ikke pausen på nytt
@@ -8640,14 +8654,14 @@ document.addEventListener('click', ev => {
         startRest(wi === wu.length - 1 ? REST.warmupLast : REST.warmup);
       } else {
         const si = e.sets.findIndex(x => x.d == null); if (si < 0) break;
-        e.sets[si].d = e.rpFree ? rpPend(e, si) : e.sets[si].t; delete e.pend; ui.fresh = ei + ':' + si;
+        e.sets[si].d = pendReps(e, si); delete e.pend; ui.fresh = ei + ':' + si;
         restAfter(e.rest);
       }
       registeredSet(before, previous, liftName(e.lift) + (wi > -1 ? ', oppvarming registrert' : ', sett registrert')); break;
     }
     case 'am': { const x = S.draft.ex[+r[0]].sets[+r[1]]; x.d = Math.max(0, Math.min(99, x.d + (+r[2]))); save(); render(); break; }
     case 'rpp': { const e = S.draft && S.draft.ex[+r[0]]; if (!e) break; const si = e.sets.findIndex(x => x.d == null); if (si < 0) break;
-      e.pend = Math.max(1, Math.min(60, rpPend(e, si) + (+r[1]))); save(); render(); break; }
+      e.pend = Math.max(0, Math.min(60, pendReps(e, si) + (+r[1]))); save(); render(); break; }
     case 'rpcal': { const e = S.draft && S.draft.ex[+r[0]]; if (!e) break; e.cal = r[1] || undefined; save(); render(); break; }
     case 'rpe': S.draft.ex[+r[0]].rpe = +r[1]; save(); render(); break;
     case 'q': S.draft.ex[+r[0]].q = r[1]; save(); render(); break;
