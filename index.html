@@ -7,8 +7,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Stanga">
-<meta name="theme-color" content="#0E0F12">
-<script>try{var t=localStorage.getItem('stanga.theme');if(t&&t!=='kveld')document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="theme-color" content="#0B0D10">
+<script>try{var t=localStorage.getItem('stanga.theme')||'ny';if(t!=='kveld')document.documentElement.dataset.theme=t}catch(e){}</script>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
@@ -23,7 +23,7 @@
    Blyant (ink) = planlagt, blå penn (pen) = det du har gjort, rød penn (red) = avvik: bom, hoppet over, tiden er ute.
    Skivefargene brukes bare i skivetegningen. Én skriftfamilie, hierarki med størrelse og bredde.
    Utenfor arket (bildet, fanelinja, pausen) gjelder de mørke verdiene. Inne i arket byttes de samme navnene til papirets. */
-/* Temaer (Innstillinger → Utseende). Kveldsark er standard. Hvert tema setter de samme navnene:
+/* Temaer (Innstillinger → Utseende). Redesign er standard. Kveldsark er grunnverdiene under. Hvert tema setter de samme navnene:
    edge = kanten på settrutene (minst 3:1 mot arket), kond = kondisjon, rekord = ringen rundt en rekord.
    All tekst har minst 4,5:1 mot arket. */
 :root{
@@ -74,6 +74,26 @@
   --paper:#F3F2EE; --ink:#22252A; --ink-2:#5B6068; --ink-3:#686D75; --rule:#D5D7DA; --edge:#878C94;
   --pen:#2343C4; --red:#C9301F; --field:#FBFBF9; --press:#E7E6E1; --kond:#0B7A6C; --rekord:var(--pen)}
 
+/* Redesign: flate mørke kort uten bildet bak, blå hovedknapp, grønt for gjort og gul pause */
+:root[data-theme="ny"]{
+  --iron:#0B0D10; --iron-2:#111519; --iron-3:#1A1F25; --line:rgba(238,241,243,.16);
+  --chalk:#EEF1F3; --chalk-2:#AAB2BB; --chalk-3:#8F98A2; --accent:#6CB6E6; --accent-ink:#0B0D10; --miss:#FF6B5B;
+  --paper:#1A1F25; --ink:#EEF1F3; --ink-2:#AAB2BB; --ink-3:#8F98A2; --rule:#2F363E; --edge:#6A737D;
+  --pen:#4CB36A; --red:#FF6B5B; --field:#12161B; --press:#262D35; --kond:#5CC8E6; --rekord:#F2C94C; --lift:none}
+:root[data-theme="ny"] .app{background:var(--iron)}
+:root[data-theme="ny"] :is(.ex,.ex-row,.card,.box,.sess,.done,.day,.plist,.bankitem,.sx-card,.sx-news,.sx-list,.act-card,.guide-row,.warn,.ch-msg){border:1px solid var(--rule);border-radius:14px}
+:root[data-theme="ny"] .btn:not(.ghost):not(.danger):not(.list>.btn){background:#2775AA;color:#FFFFFF;border-radius:14px}
+:root[data-theme="ny"] .chip{border-radius:10px}
+:root[data-theme="ny"] .chip.ok{background:#24492F;color:var(--ink);border-color:var(--pen)}
+:root[data-theme="ny"] .chip.ok::after{border-color:var(--pen)}
+:root[data-theme="ny"] .step{border-radius:12px}
+/* Grønt er bare for det du har gjort. Angre, videolenker og metcon-klokka er handlinger, og får blått. */
+:root[data-theme="ny"] :is(.today-undo,.video-sheet a,.ck-n){color:#6CB6E6}
+:root[data-theme="ny"] .today-pause{background:#2A2615;border-bottom-color:#5C5022}
+:root[data-theme="ny"] .today-rest-face span,:root[data-theme="ny"] .today-rest-face b{color:#F2C94C}
+:root[data-theme="ny"] .today-rest-rule i{background:#F2C94C}
+:root[data-theme="ny"] .today-pause.idle{background:var(--field);border-bottom-color:var(--rule)}
+:root[data-theme="ny"] .today-pause.idle .today-rest-face span,:root[data-theme="ny"] .today-pause.idle .today-rest-face b{color:var(--ink-2)}
 /* App-skall: bare innholdet scroller. Fanelinjen er en fast del av oppsettet, ikke position:fixed,
    så iOS ikke kan flytte den når sidehøyden endrer seg mellom faner. */
 html{height:100%;box-sizing:border-box}
@@ -1055,7 +1075,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 113;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 114;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -1607,13 +1627,14 @@ const BAR = () => S.settings.bar === 15 ? 15 : 20;
 // Temaene under Innstillinger → Utseende: id, navn, forklaring, fire fargeprøver fra temaet og fargen bak bildet.
 // Fargene i temaene står i CSS-en øverst (:root[data-theme]).
 const LOOKS = [
+  ['ny', 'Redesign', 'Flate kort, blå knapp, grønt gjort, gul pause', ['#1A1F25','#4CB36A','#F2C94C','#2775AA'], '#0B0D10'],
   ['kveld', 'Kveldsark', 'Blå penn på mørkt ark', ['#22252B','#9AACFF','#FF6A55','#5CCFBE'], '#0E0F12'],
   ['dommer', 'Dommerlys', 'Ferdige sett lyser hvitt', ['#1C1C1E','#FFFFFF','#FF5B4A','#F0B13C'], '#0B0B0C'],
   ['skive', 'Skivefarger', 'Fargene fra vektskivene', ['#1B1F2A','#6AA5FF','#FFD23F','#41C985'], '#0C0E14'],
   ['blaa', 'Monokrom blå', 'Blått overalt, gull på knappene', ['#16233F','#8AB4F8','#7FD8F5','#F2C14E'], '#070D1A'],
   ['gronn', 'Grønn ro', 'Grønt, blått og blågrønt', ['#12302A','#4ADE80','#60A5FA','#2DD4BF'], '#07120F'],
   ['lys', 'Lyst ark', 'Blå penn på lyst papir', ['#F3F2EE','#2343C4','#C9301F','#0B7A6C'], '#0E0F12']];
-const look = () => LOOKS.some(t => t[0] === S.settings.theme) ? S.settings.theme : 'kveld';
+const look = () => LOOKS.some(t => t[0] === S.settings.theme) ? S.settings.theme : 'ny';
 function applyLook(){
   const t = look(), root = document.documentElement;
   const m = document.querySelector('meta[name="theme-color"]'), bg = LOOKS.find(x => x[0] === t)[4];

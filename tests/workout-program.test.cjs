@@ -666,3 +666,9 @@ test('after the strength: planned parts are open, the rest is added, and Fjern t
   assert.match(f.run('vToday()'),/data-a="after:cond">\+ Kondisjon</);
   f.click('after:cond');assert.ok(f.state('!!S.draft.pete'));
 });
+test('Redesign is the default look, and a theme chosen earlier is kept',()=>{
+  const f=fixture();
+  assert.equal(f.state('look()'),'ny');
+  assert.equal(f.state('LOOKS[0][0]'),'ny');
+  f.click('look:kveld');assert.equal(f.state('look()'),'kveld');
+});

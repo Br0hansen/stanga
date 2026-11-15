@@ -14,11 +14,12 @@ Appen ser ut som en treningsbok. Programmet står trykt på et ark over bildet a
 
 Skriften er Archivo, en familie i flere bredder.
 
-**Tema** velges under **Innstillinger → Utseende**. Arket er mørkt som standard:
+**Tema** velges under **Innstillinger → Utseende**. Standard er **Redesign**: flate mørke kort uten bildet bak, blå hovedknapp, fylte grønne ruter for ferdige sett og gul pauseklokke. Angre, videolenker og metcon-klokka er blå, så grønt bare betyr noe du har gjort. Har du valgt et annet tema før, beholdes det.
 
 | Tema | Gjort | Rekord | Kondisjon |
 |---|---|---|---|
-| **Kveldsark** (standard) | Blå penn | Blå ring | Grønnblå |
+| **Redesign** (standard) | Fylt grønn rute | Gul ring | Lys blå |
+| **Kveldsark** | Blå penn | Blå ring | Grønnblå |
 | **Dommerlys** | Fylt hvit rute, som et godkjent løft | Hvit ring | Rav |
 | **Skivefarger** | Blå (20 kg-skiva) | Gul (15 kg) | Grønn (10 kg) |
 | **Monokrom blå** | Lys blå, hovedknappene i gull | Gull ring | Isblå |
