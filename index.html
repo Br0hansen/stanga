@@ -74,11 +74,12 @@
   --paper:#F3F2EE; --ink:#22252A; --ink-2:#5B6068; --ink-3:#686D75; --rule:#D5D7DA; --edge:#878C94;
   --pen:#2343C4; --red:#C9301F; --field:#FBFBF9; --press:#E7E6E1; --kond:#0B7A6C; --rekord:var(--pen)}
 
-/* Redesign: flate mørke kort uten bildet bak, blå hovedknapp, grønt for gjort og gul pause */
+/* Redesign: flate mørke kort uten bildet bak, blå hovedknapp, grønt for gjort og gul pause.
+   Teksten i fokus (vekt, reps, navn, overskrifter) er helt hvit. Forklaringer står i grått under. */
 :root[data-theme="ny"]{
-  --iron:#0B0D10; --iron-2:#111519; --iron-3:#1A1F25; --line:rgba(238,241,243,.16);
-  --chalk:#EEF1F3; --chalk-2:#AAB2BB; --chalk-3:#8F98A2; --accent:#6CB6E6; --accent-ink:#0B0D10; --miss:#FF6B5B;
-  --paper:#1A1F25; --ink:#EEF1F3; --ink-2:#AAB2BB; --ink-3:#8F98A2; --rule:#2F363E; --edge:#6A737D;
+  --iron:#0B0D10; --iron-2:#111519; --iron-3:#1A1F25; --line:rgba(255,255,255,.16);
+  --chalk:#FFFFFF; --chalk-2:#AAB2BB; --chalk-3:#8F98A2; --accent:#6CB6E6; --accent-ink:#0B0D10; --miss:#FF6B5B;
+  --paper:#1A1F25; --ink:#FFFFFF; --ink-2:#AAB2BB; --ink-3:#8F98A2; --rule:#2F363E; --edge:#6A737D;
   --pen:#4CB36A; --red:#FF6B5B; --field:#12161B; --press:#262D35; --kond:#5CC8E6; --rekord:#F2C94C; --lift:none}
 :root[data-theme="ny"] .app{background:var(--iron)}
 :root[data-theme="ny"] :is(.ex,.ex-row,.card,.box,.sess,.done,.day,.plist,.bankitem,.sx-card,.sx-news,.sx-list,.act-card,.guide-row,.warn,.ch-msg){border:1px solid var(--rule);border-radius:14px}
@@ -1075,7 +1076,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 114;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 115;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
