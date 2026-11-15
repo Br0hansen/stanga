@@ -32,7 +32,7 @@ function fixture(program = 'sl5x5') {
   const run = code => vm.runInContext(code,c);
   run(`render=()=>{};wake=()=>{};say=()=>{};toTop=()=>{};
     S=fresh(); S.settings.pete.on=false; S.active=newInstance(prog(${JSON.stringify(program)}));
-    S.draft=buildSession(prog(S.active.programId),S.active);`);
+    S.draft=buildSession(prog(S.active.programId),S.active);S.draft.go=Date.now();`);
   const click = action => {
     const b={dataset:{a:action},type:'button',disabled:false};
     for(const fn of listeners.click) fn({target:{closest:()=>b},preventDefault(){}});
@@ -201,20 +201,20 @@ test('full completion still saves the workout and applies the original progressi
 test('all standard strength programs render working sets and the new sections',()=>{
   const f=fixture();const programs=f.state("PROGRAMS.filter(p=>p.prog!=='athx').map(p=>p.id)");
   for(const id of programs){
-    f.run(`S=fresh();S.settings.pete.on=false;S.active=newInstance(prog(${JSON.stringify(id)}));S.draft=buildSession(prog(S.active.programId),S.active);ui.summary=null;ui.detail=null;ui.setUndo=null;`);
+    f.run(`S=fresh();S.settings.pete.on=false;S.active=newInstance(prog(${JSON.stringify(id)}));S.draft=buildSession(prog(S.active.programId),S.active);S.draft.go=Date.now();ui.summary=null;ui.detail=null;ui.setUndo=null;`);
     assert.match(f.run('vToday()'),/id="exercise-0"/,id);
     assert.match(f.run('vPlanTab()'),/programsection:setup/,id);
   }
 });
 test('ATHX keeps its conditioning content and calendar plan',()=>{
   const f=fixture();
-  f.run(`S=fresh();ui.ax=axFormInit();ui.ax.date=new Date(Date.now()+84*86400000).toISOString().slice(0,10);S.active=newInstance(prog('athx27'));S.draft=buildSession(prog('athx27'),S.active);`);
+  f.run(`S=fresh();ui.ax=axFormInit();ui.ax.date=new Date(Date.now()+84*86400000).toISOString().slice(0,10);S.active=newInstance(prog('athx27'));S.draft=buildSession(prog('athx27'),S.active);S.draft.go=Date.now();`);
   assert.match(f.run('vToday()'),/id="today-after"/);
   assert.match(f.run('vPlanTab()'),/programsection:setup/);
 });
 test('custom programs retain the editor, sharing actions and their generated sessions',()=>{
   const f=fixture();
-  f.run(`const own=copyOf(prog('sl5x5'));S.userProgs={[own.id]:own};S.active=newInstance(userDef(own));S.draft=buildSession(userDef(own),S.active);`);
+  f.run(`const own=copyOf(prog('sl5x5'));S.userProgs={[own.id]:own};S.active=newInstance(userDef(own));S.draft=buildSession(userDef(own),S.active);S.draft.go=Date.now();`);
   assert.match(f.run('vToday()'),/id="exercise-0"/);
   assert.match(f.run('vDetail(prog(S.active.programId))'),/pe:edit:/);
   assert.match(f.run('vDetail(prog(S.active.programId))'),/ps:pick:/);
@@ -300,7 +300,7 @@ test('exercises from the RP sheets have a video button, and other exercises do n
   const f=fixture('rp3');
   assert.ok(f.state("Object.values(RP_CAT).flatMap(c=>c.ex).every(l=>/^[A-Za-z0-9_-]{11}$/.test(EXVID[l]))"));
   assert.match(f.run('vToday()'),/data-a="video:bench"/);
-  f.run(`S.active=newInstance(prog('burg12'));S.draft=buildSession(prog('burg12'),S.active);`);
+  f.run(`S.active=newInstance(prog('burg12'));S.draft=buildSession(prog('burg12'),S.active);S.draft.go=Date.now();`);
   assert.doesNotMatch(f.run('vToday()'),/data-a="video:snatch"/);
 });
 test('Brosesh: one more rep per set, heavier when every set reaches the top, sets follow the ratings',()=>{
@@ -352,7 +352,7 @@ test('Brosesh swaps within the RP guide lists and shows the RP guide videos only
   f.run(`rpSwap('0.0','l_hack_squat','l_leg_press');`);
   assert.equal(f.state('buildSession(prog("bro"),S.active).ex[0].lift'),'l_hack_squat');
   // Bytt i dag: alternativene er lista fra RP-guiden for muskelen
-  f.run(`S.draft=buildSession(prog('bro'),S.active);`);
+  f.run(`S.draft=buildSession(prog('bro'),S.active);S.draft.go=Date.now();`);
   const c=f.state('swapCands(S.draft,S.draft.ex[1]).fam');
   assert.ok(c.includes('dbbench')&&c.every(l=>f.state(`BRO_CAT.bro_hpress.ex.includes(${JSON.stringify(l)})`)));
   // Videoen er fra RP-guiden i Brosesh, og fra arket i RP-programmene
@@ -405,7 +405,7 @@ test('an exercise can be added to today only, logged, and removed again',()=>{
   assert.equal(f.state('lastW("l_face_pull")'),15);
   assert.deepEqual(Object.keys(f.state('S.active.lifts')),Object.keys(before));
   // Neste økt foreslår den under «Nylig brukt», med sett og reps fra sist
-  f.click('dismiss');f.run(`S.draft=buildSession(prog(S.active.programId),S.active);`);f.click('exadd');
+  f.click('dismiss');f.run(`S.draft=buildSession(prog(S.active.programId),S.active);`);f.click('startday');f.click('exadd');
   assert.match(f.run('vToday()'),/exaddpick:l_face_pull/);
   assert.deepEqual(f.state('exAddDef("l_face_pull")'),{n:2,r:12,w:15});
 });
@@ -613,4 +613,20 @@ test('Hybrid Hypertrophy: percent of 10RM per week, HPC by its own plan, 10RM re
   assert.equal(f.state('S.draft.ex[2].sets[0].t'),3);
   // Planen kan regnes ut for hele programmet
   assert.equal(f.state(`simulate(prog('hh12'),newInstance(prog('hh12')),36).length`),36);
+});
+
+test('the overview with Start økt shows before the session is started, and logged sets skip it',()=>{
+  const f=fixture();
+  f.run('S.history=[{date:1,ex:[{lift:"squat",sets:[{w:97.5,t:5,d:5}]}]}];delete S.draft.go;');
+  const view=f.run('vToday()');
+  assert.match(view,/data-a="startday"/);
+  assert.match(view,/Resten av økta/);
+  assert.doesNotMatch(view,/id="exercise-0"|data-a="next:0"/);
+  assert.match(view,new RegExp(f.state('fmt(Math.abs(S.draft.ex[0].sets[0].w-97.5))')+' kg ned siden sist'));
+  f.click('startday');
+  assert.ok(f.state('S.draft.go')>0);
+  assert.match(f.run('vToday()'),/id="exercise-0"/);
+  // En økt med et logget sett åpnes rett i økta, også uten go (eldre utkast)
+  const g=fixture();g.run('delete S.draft.go;S.draft.ex[0].sets[0].d=5;');
+  assert.match(g.run('vToday()'),/id="exercise-0"/);
 });

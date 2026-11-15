@@ -955,6 +955,19 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .stage[data-rest="warn"] #todayRestTime{color:var(--red)}
 .stage[data-rest="warn"] .today-rest-rule i{background:var(--red)}
 .stage.inline-rest #rest{display:none}
+/* Oversikten før økta: ett kort med første løft og «Start økt», resten som korte linjer */
+.start-card{gap:8px}
+.start-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.start-top h2{font-size:24px;overflow-wrap:anywhere}
+.start-kg{font-size:72px;margin-top:4px}
+.start-kg small{font-size:22px}
+.start-why{margin:2px 0 6px;font-size:14px;color:var(--ink-2)}
+.start-list{gap:0}
+.start-list .lbl{margin-bottom:4px}
+.start-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--rule)}
+.start-row:last-of-type{border-bottom:0}
+.start-row span{color:var(--ink-2);font-size:14px;text-align:right}
+.start-list .small{margin-top:8px}
 /* Oppvarmingen står åpen rett over arbeidssettene: først det du gjør først, ingenting å trykke opp */
 .today-warmup{padding:4px 16px 10px}
 .today-warmup .wu-grp{gap:8px 6px}
@@ -1034,7 +1047,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 110;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 111;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -5727,6 +5740,73 @@ function exerciseSheetPaint(){
   else if (!same || !dialog.contains(document.activeElement)) $('#exerciseSheetTitle').focus({preventScroll:true});
 }
 
+// Det som må sies før økta starter: hviledag, metcon nylig og valget om lett uke
+function vTodayBefore(p, s){
+  let h = '';
+  if (s.calT && s.calT > day0(Date.now())) h += `<div class="box rest-day"><b>Hviledag i dag</b>
+      <p class="small">Neste økt er ${esc(s.sub.toLowerCase())}. Vil du trene i dag, tar du den nå. Da blir neste økt den som kommer etter.</p></div>`;
+  if (p.prog === 'sp12') {
+    const c = s.ex[0] && mcRecentConflict(s.ex[0].slot);
+    if (c) h += `<div class="warn">Du logget en ${MC[c.mc.type].n.toLowerCase()} metcon for ${Math.max(1, Math.round((Date.now() - c.date)/3600e3))} timer siden. Forvent høyere RPE i dag, og kutt gjerne ett backoff-sett.</div>`;
+    if ((s.ph === 'd4' || s.ph === 'd8') && ui.keepDl !== s.ph) h += vDeloadChoice(s.ph);
+  }
+  if (p.prog === 'burg') {
+    const c = s.ex[0] && mcRecentConflict(s.ex[0].slot);
+    if (c) h += `<div class="warn">Du logget en ${MC[c.mc.type].n.toLowerCase()} metcon for ${Math.max(1, Math.round((Date.now() - c.date)/3600e3))} timer siden. Forvent tyngre løft i dag, og stopp ved prosentene der teknikken holder.</div>`;
+  }
+  return h;
+}
+// Hopp over økta, eller avbryt en engangsøkt med en venn
+function vTodayLeave(p, s, g, tot, anyTouched){
+  let h = '';
+  if (ui.confirm === 'skipday') {
+    const a1 = JSON.parse(JSON.stringify(S.active)); a1.idx++;
+    const next = tot && a1.idx >= tot ? null : buildSession(p, a1);
+    const lifts = [...new Set(exAll(s).map(e => liftName(e.lift)))].map((n, i) => i ? n.toLowerCase() : n);
+    h += `<section class="box skipbox" aria-live="polite"><p><b>Hoppe over ${esc(s.day)}?</b></p>
+      <p class="small">${lifts.length ? listNo(lifts) + ' får ingen økning denne gangen, og vektene står som de er.' : 'Økta lagres som hoppet over.'}${anyTouched ? ' Settene du har tatt i dag, lagres ikke.' : ''}${s.wod || s.pete ? ' Metconen du har valgt, lagres heller ikke.' : ''}
+        ${next ? 'Neste økt blir ' + esc(next.day) + (next.sub && next.sub !== s.sub ? ' (' + esc(next.sub) + ')' : '') + '.' : 'Dette var siste økt i programmet.'}</p>
+      <div class="row"><button class="btn danger sm" data-a="skipday">Ja, hopp over</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div></section>`;
+  }
+  // Engangsøkta kan avbrytes. Da kommer din egen økt tilbake, med settene du hadde ført.
+  if (g) h += ui.confirm === 'guestquit'
+    ? `<section class="box skipbox" aria-live="polite"><p><b>Avbryte økta med ${esc(g.who)}?</b></p>
+      <p class="small">${anyTouched ? 'Settene du har tatt, lagres ikke. ' : ''}${S.parked ? 'Din egen økt kommer tilbake slik du forlot den.' : 'Neste økt i programmet ditt står klar.'}</p>
+      <div class="row"><button class="btn danger sm" data-a="guestquit">Ja, avbryt</button><button class="btn ghost sm" data-a="cancel">Fortsett økta</button></div></section>`
+    : `<div class="links"><button class="link" data-a="confirm:guestquit">Avbryt økta</button></div>`;
+  // Planen ligger under Program og fri økt under Fremgang, så her står bare det som gjelder dagens økt
+  else if (ui.confirm !== 'skipday') h += `<div class="links"><button class="link" data-a="confirm:skipday">Hopp over økta</button></div>`;
+  return h;
+}
+// Oversikten før økta: første løft med vekt og endring siden sist, resten av økta og det som er planlagt etterpå.
+// Ingen sett kan trykkes her. «Start økt» åpner økta.
+function vTodayStart(p, s, g, tot, info){
+  const top = e => Math.max(...e.sets.map(x => x.w));
+  const [e0, ...rest] = s.ex;
+  let h = `<header class="head"><p class="eyebrow">${p.name} · ${s.sub}</p>
+      <div class="h-row"><h1>${s.day}</h1>${topBtns()}</div>${info}</header>${vTodayBefore(p, s)}`;
+  const start = '<button class="btn" data-a="startday">Start økt</button>';
+  if (e0) {
+    const w = top(e0), last = w > 0 ? lastW(e0.lift) : null, d = last == null ? null : Math.round((w - last) * 100) / 100;
+    const why = d == null ? '' : d > 0 ? fmt(d) + ' kg opp siden sist' : d < 0 ? fmt(-d) + ' kg ned siden sist' : 'Samme vekt som sist';
+    h += `<section class="ex start-card">
+      <div class="start-top"><h2>${liftName(e0.lift)}</h2>${e0.tag ? `<span class="tag">${e0.tag}</span>` : ''}</div>
+      <p class="small muted">${setsLine(e0)}</p>
+      ${w > 0 ? `<div class="kg start-kg">${fmt(w)}<small>kg</small></div>` : ''}
+      ${w > 0 && LIFTS[e0.lift].bar ? `<div class="platesrow">${plateHTML(w)}</div>` : ''}
+      ${why ? `<p class="start-why">${why}</p>` : ''}
+      ${start}</section>`;
+  } else h += start;
+  if (rest.length) h += `<section class="box start-list"><span class="lbl">Resten av økta</span>
+      ${rest.map(e => `<div class="start-row"><b>${liftName(e.lift)}</b><span>${setsLine(e)}</span></div>`).join('')}</section>`;
+  // Etter styrken: bare det som er planlagt. Metcon og notat legges til når styrken er ferdig.
+  const after = [s.cond ? s.cond.title || 'Kondisjon' : '', peteOn() || s.pete ? 'Kondisjon · Pete Plan' : '',
+    s.wod ? 'Metcon · ' + esc(s.wod.navn) : s.metcon ? 'Metcon' : '', ...(s.boxes || []).map(b => esc(b[0])), s.acc ? 'Til slutt, uten vekt' : ''].filter(Boolean);
+  h += `<section class="box start-list"><span class="lbl">${s.ex.length ? 'Etter styrken' : 'I økta'}</span>
+      ${after.map(n => `<div class="start-row"><b>${n}</b></div>`).join('')}
+      <p class="small muted">${after.length ? 'Metcon og notat kan du også legge til når styrken er ferdig.' : 'Metcon og notat kan du legge til når styrken er ferdig.'}</p></section>`;
+  return h + vTodayLeave(p, s, g, tot, false) + '</section>';
+}
 function vToday(){
   if (ui.bank) return vBank();
   if (ui.free) return vFree();
@@ -5794,6 +5874,12 @@ function vToday(){
   const setsLeft = s.ex.reduce((n, e) => n + e.sets.filter(x => x.d == null).length, 0);
   const mins = Math.floor((Date.now() - s.started) / 60000);
   if (!g) h += guestToday();
+  const info = p.prog === 'athx' ? axStatus(S.active, s)
+    : g ? `<p class="muted small">Vektene er regnet ut fra dine makser. Programmet ditt står der det står.</p>`
+    : ['mmc','emc','cir','cbe'].includes(p.prog) && s.ex[0] && S.active.e1rm[s.ex[0].lift] ? `<p class="muted small">Treningsmaks ${liftName(s.ex[0].lift).toLowerCase()}: ${fmt(Math.round((s.ex[0].cbeWk ? cbeTm(S.active, s.ex[0].lift, s.ex[0].cbeWk) : mmcTm(S.active, s.ex[0].lift)) * 2) / 2)} kg</p>`
+    : S.active.e1rm && s.ex[0] && S.active.e1rm[s.ex[0].lift] ? `<p class="muted small">${p.prog === 'sp12' ? 'Estimert 1RM' : '1RM'} ${liftName(s.ex[0].lift).toLowerCase()}: ${fmt(Math.round(S.active.e1rm[s.ex[0].lift]*2)/2)} kg</p>` : '';
+  // Før økta er startet, står oversikten. En økt med loggede sett eller oppvarming åpnes rett i økta.
+  if (!s.go && !s.ex.some(touched)) return h + vTodayStart(p, s, g, tot, info);
   h += `<header class="head">
       <p class="eyebrow">${p.name} · ${s.sub}</p>
       <div class="h-row"><h1>${s.day}</h1>${topBtns()}</div>
@@ -5801,22 +5887,8 @@ function vToday(){
       <div class="prog" aria-label="${cur < 0 ? 'Alle øvelser er gjort' : 'Øvelse ' + (cur+1) + ' av ' + s.ex.length}">${s.ex.map(e => {
         const d = e.sets.filter(x => x.d != null).length;
         return `<i class="${d === e.sets.length ? 'full' : ''}"><b style="width:${Math.round(d / e.sets.length * 100)}%"></b></i>`; }).join('')}</div>
-      ${p.prog === 'athx' ? axStatus(S.active, s)
-        : g ? `<p class="muted small">Vektene er regnet ut fra dine makser. Programmet ditt står der det står.</p>`
-        : ['mmc','emc','cir','cbe'].includes(p.prog) && s.ex[0] && S.active.e1rm[s.ex[0].lift] ? `<p class="muted small">Treningsmaks ${liftName(s.ex[0].lift).toLowerCase()}: ${fmt(Math.round((s.ex[0].cbeWk ? cbeTm(S.active, s.ex[0].lift, s.ex[0].cbeWk) : mmcTm(S.active, s.ex[0].lift)) * 2) / 2)} kg</p>`
-        : S.active.e1rm && s.ex[0] && S.active.e1rm[s.ex[0].lift] ? `<p class="muted small">${p.prog === 'sp12' ? 'Estimert 1RM' : '1RM'} ${liftName(s.ex[0].lift).toLowerCase()}: ${fmt(Math.round(S.active.e1rm[s.ex[0].lift]*2)/2)} kg</p>` : ''}
+      ${info}
     </header>`;
-  if (s.calT && s.calT > day0(Date.now()) && !anyTouched) h += `<div class="box rest-day"><b>Hviledag i dag</b>
-      <p class="small">Neste økt er ${esc(s.sub.toLowerCase())}. Vil du trene i dag, tar du den nå. Da blir neste økt den som kommer etter.</p></div>`;
-  if (p.prog === 'sp12') {
-    const c = s.ex[0] && mcRecentConflict(s.ex[0].slot);
-    if (c && !anyTouched) h += `<div class="warn">Du logget en ${MC[c.mc.type].n.toLowerCase()} metcon for ${Math.max(1, Math.round((Date.now() - c.date)/3600e3))} timer siden. Forvent høyere RPE i dag, og kutt gjerne ett backoff-sett.</div>`;
-    if ((s.ph === 'd4' || s.ph === 'd8') && !anyTouched && ui.keepDl !== s.ph) h += vDeloadChoice(s.ph);
-  }
-  if (p.prog === 'burg') {
-    const c = s.ex[0] && mcRecentConflict(s.ex[0].slot);
-    if (c && !anyTouched) h += `<div class="warn">Du logget en ${MC[c.mc.type].n.toLowerCase()} metcon for ${Math.max(1, Math.round((Date.now() - c.date)/3600e3))} timer siden. Forvent tyngre løft i dag, og stopp ved prosentene der teknikken holder.</div>`;
-  }
   s.ex.forEach((e,ei) => {
     const top = Math.max(...e.sets.map(x => x.w));
     const k = s.started + '-' + ei, opened = !!(ui.exOpen && ui.exOpen[k]);
@@ -5934,23 +6006,7 @@ function vToday(){
       <p class="small">Ikke logget: ${esc(listNo(missing))}. ${esc(why)}</p>
       <div class="row"><button class="btn sm" data-a="finish">Fullfør likevel</button><button class="btn ghost sm" data-a="cancel">Fortsett økta</button></div></section>`;
   } else h += `<button class="btn${setsLeft ? ' ghost' : ''}" data-a="${setsLeft ? 'confirm:finish' : 'finish'}" ${anyTouched || s.cond ? '' : 'disabled'}>Fullfør økt</button>`;
-  if (ui.confirm === 'skipday') {
-    const a1 = JSON.parse(JSON.stringify(S.active)); a1.idx++;
-    const next = tot && a1.idx >= tot ? null : buildSession(p, a1);
-    const lifts = [...new Set(exAll(s).map(e => liftName(e.lift)))].map((n, i) => i ? n.toLowerCase() : n);
-    h += `<section class="box skipbox" aria-live="polite"><p><b>Hoppe over ${esc(s.day)}?</b></p>
-      <p class="small">${lifts.length ? listNo(lifts) + ' får ingen økning denne gangen, og vektene står som de er.' : 'Økta lagres som hoppet over.'}${anyTouched ? ' Settene du har tatt i dag, lagres ikke.' : ''}${s.wod || s.pete ? ' Metconen du har valgt, lagres heller ikke.' : ''}
-        ${next ? 'Neste økt blir ' + esc(next.day) + (next.sub && next.sub !== s.sub ? ' (' + esc(next.sub) + ')' : '') + '.' : 'Dette var siste økt i programmet.'}</p>
-      <div class="row"><button class="btn danger sm" data-a="skipday">Ja, hopp over</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div></section>`;
-  }
-  // Engangsøkta kan avbrytes. Da kommer din egen økt tilbake, med settene du hadde ført.
-  if (g) h += ui.confirm === 'guestquit'
-    ? `<section class="box skipbox" aria-live="polite"><p><b>Avbryte økta med ${esc(g.who)}?</b></p>
-      <p class="small">${anyTouched ? 'Settene du har tatt, lagres ikke. ' : ''}${S.parked ? 'Din egen økt kommer tilbake slik du forlot den.' : 'Neste økt i programmet ditt står klar.'}</p>
-      <div class="row"><button class="btn danger sm" data-a="guestquit">Ja, avbryt</button><button class="btn ghost sm" data-a="cancel">Fortsett økta</button></div></section>`
-    : `<div class="links"><button class="link" data-a="confirm:guestquit">Avbryt økta</button></div>`;
-  // Planen ligger under Program og fri økt under Fremgang, så her står bare det som gjelder dagens økt
-  else if (ui.confirm !== 'skipday') h += `<div class="links"><button class="link" data-a="confirm:skipday">Hopp over økta</button></div>`;
+  h += vTodayLeave(p, s, g, tot, anyTouched);
   ui.fresh = null;   // blekket tegnes bare én gang, på settet du nettopp førte inn
   return h + '</section>';
 }
@@ -8786,6 +8842,7 @@ document.addEventListener('click', ev => {
     case 'finish': ui.confirm = null; finish(); break;
     case 'skipday': if (S.active && S.draft) skipSession(); break;
     case 'dismiss': ui.summary = null; render(); break;
+    case 'startday': if (S.draft) { S.draft.go = Date.now(); ui.confirm = null; save(); render(); followExercise(todayCurrent(S.draft)); } break;
     case 'skip': ui.rest = null; updateRest(); break;
     case 'sxmode': ui.sxMode = r[0]; ui.sxMsg = ''; ui.sxForgotSent = false; render(); break;
     case 'sxlogin': sxAuth('login'); break;
