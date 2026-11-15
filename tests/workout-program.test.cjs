@@ -649,3 +649,20 @@ test('reps are set with − and + before logging, for every program, and the but
   const g=fixture();assert.match(g.run('vToday()'),/>Registrer oppvarming</);
   assert.doesNotMatch(g.run('vToday()'),/data-a="rpp:0:/);
 });
+test('after the strength: planned parts are open, the rest is added, and Fjern takes a part out of the session',()=>{
+  const f=fixture();f.run('S.settings.pete.on=true;');
+  let view=f.run('vToday()');
+  assert.match(view,/<h2>Etter styrken<\/h2><p class="small muted">Alt her er valgfritt\.<\/p>/);
+  assert.match(view,/<h3>Kondisjon<\/h3><button class="link" data-a="after:cond"/);
+  assert.match(view,/data-a="after:mc">\+ Metcon</);
+  assert.match(view,/data-a="after:note">\+ Notat</);
+  f.click('after:mc');view=f.run('vToday()');
+  assert.match(view,/<h3>Metcon<\/h3>/);
+  assert.doesNotMatch(view,/data-a="after:mc">\+ Metcon</);
+  // Valgt Pete Plan: Fjern i tittelraden tar den ut, og + henter den tilbake slik den var
+  f.click('pp:pick:session');assert.ok(f.state('!!S.draft.pete'));
+  assert.doesNotMatch(f.run('vToday()'),/data-a="pp:rm:session"/);
+  f.click('after:cond');assert.equal(f.state('!!S.draft.pete'),false);
+  assert.match(f.run('vToday()'),/data-a="after:cond">\+ Kondisjon</);
+  f.click('after:cond');assert.ok(f.state('!!S.draft.pete'));
+});

@@ -551,13 +551,18 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .ex-row b{flex:1 1 auto;font:700 16px/1.1 var(--face);min-width:0}
 .ex-row span{font-size:14px;color:var(--pen);text-align:right;font-variant-numeric:tabular-nums}
 .ex-row>span:last-child{margin-left:auto}
-.notebox .lbl,.pp-top .lbl,.after .lbl{font:600 14px/1.2 var(--face);color:var(--chalk-2)}
+.notebox .lbl,.pp-top .lbl{font:600 14px/1.2 var(--face);color:var(--chalk-2)}
 .ex-line{min-height:52px}
 .ex-line small{flex:none;width:4.4em;font:600 13px/1 var(--face);color:var(--chalk-2)}
 .ex-line span{font:700 18px/1 var(--face);font-stretch:75%;color:var(--chalk)}
-.after-add{display:flex;flex-wrap:wrap;gap:8px}
+.after-head{margin-top:14px}
+.after-head h2{font:800 26px/1.1 var(--face)}
+.after-head p{margin-top:4px}
+.after-top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:-6px}
+.after-top h3{font:700 19px/1.2 var(--face)}
+.after-top .link{min-height:44px;padding:0 4px}
+.after-add{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .after-add .tog{min-height:44px}
-.after-add .tog[aria-pressed="true"]{background:var(--press);border-color:var(--ink-3);color:var(--ink)}
 .links{display:flex;flex-wrap:wrap;justify-content:center;gap:0 20px}
 .links .link{min-height:44px}
 
@@ -1050,7 +1055,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 112;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 113;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -4869,9 +4874,11 @@ function leSet(grp, obj, key, v){
 }
 // Kondisjon, Metcon og Notat under styrken: av skjuler delen. Metcon og Pete Plan tas da ut av økta, så de ikke
 // lagres eller teller i budsjettet, og et nytt trykk henter dem tilbake slik de var. Notatet skjules bare.
+// En del av Etter styrken står åpen når den er planlagt eller har innhold: Pete Plan når den er på, programmets metcon, et notat
+const afterHas = s => ({cond: !!s.pete || peteOn(), mc: !!(s.wod || s.metcon), note: !!(s.note || '').trim()});
 function afterToggle(k){
   const s = S.draft, af = ui.after && ui.after.k === s.started ? ui.after : (ui.after = {k: s.started}), off = s.off = s.off || {};
-  const has = {cond: !!s.pete, mc: !!(s.wod || s.metcon), note: !!(s.note || '').trim()};
+  const has = afterHas(s);
   const on = !(af[k] != null ? af[k] : has[k]);
   af[k] = on;
   if (k === 'mc') {
@@ -5224,7 +5231,7 @@ function vBank(){
 }
 function wodBox(w, ctx){
   return `<section class="box wodbox">
-      <div class="top"><span class="lbl">Dagens metcon</span><button class="link" data-a="wodrm:${ctx}">Fjern</button></div>
+      <div class="top"><span class="lbl">Dagens metcon</span>${ctx === 'session' ? '' : `<button class="link" data-a="wodrm:${ctx}">Fjern</button>`}</div>
       <h2>${esc(w.navn)}</h2>
       <pre class="wodtxt">${esc(w.tekst)}</pre>
       ${ckOn() ? `<button class="btn ghost" data-a="ck:show">Klokka går · åpne den</button>`
@@ -5526,7 +5533,7 @@ function peteBox(ctx, picked){
   const example = unit === 'drag' ? (dt ? splitTxt(dt) : '7:40') : (t.sec ? (ss.bike ? splitTxt(t.sec*2) : splitTxt(t.sec)) : '1:55');
   return `<section class="box pp-card${picked ? ' pp-picked' : ''}">
     <div class="pp-top"><span class="lbl">${picked ? 'Dagens Pete Plan' : 'Fortsett Pete Plan'}</span>
-      ${picked ? `<button class="link" data-a="pp:rm:${ctx}">Fjern</button>` : `<span class="small muted">Runde ${round} · uke ${wk} · økt ${day} av 6</span>`}</div>
+      ${picked ? (ctx === 'session' ? '' : `<button class="link" data-a="pp:rm:${ctx}">Fjern</button>`) : `<span class="small muted">Runde ${round} · uke ${wk} · økt ${day} av 6</span>`}</div>
     <div class="pp-mach" role="group" aria-label="Apparat">${Object.entries(PETE_MACH).map(([k,v]) => `<button data-a="pp:mach:${k}${picked ? ':' + ctx : ''}" aria-pressed="${mach === k}">${v}</button>`).join('')}</div>
     <div><p class="small muted">${PETE_KIND[ss.kind]}${ss.restTxt ? ' · ' + ss.restTxt : ''}${picked ? ' · ' + PETE_MACH[mach] : ''}${ver === 'str' && (ss.kind === 'steady' || ss.kind === 'hard') ? ' · tilpasset styrke' : ''}</p><h2>${ss.name}</h2></div>
     <div class="pp-facts">
@@ -5977,31 +5984,35 @@ function vToday(){
       ${s.rmEx.map((e, i) => e.swapId ? '' : `<div class="rm-row"><span>${esc(liftName(e.lift))}${e.tag ? ` <span class="muted small">${esc(e.tag)}</span>` : ''}</span>
         <button class="link" data-a="exback:${i}">Ta tilbake</button></div>`).join('')}
       <p class="small muted">Vekta står som den er til neste gang.</p></section>`;
+  // Etter styrken: alt under her er valgfritt, også det programmet har satt opp
+  h += `<header class="after-head"><h2>${s.ex.length ? 'Etter styrken' : 'Mer i økta'}</h2><p class="small muted">Alt her er valgfritt.</p></header>`;
   // Burgener: kroppsvektøvelsene står som en påminnelse og logges ikke
   if (s.acc) h += `<section class="box"><span class="lbl">Til slutt, uten vekt</span><p class="small">${esc(s.acc)}</p></section>`;
   // Muscle MetCon: sekundærløft og finisher står som tekst og logges ikke
   (s.boxes || []).forEach(([l, t]) => { h += `<section class="box"><span class="lbl">${esc(l)}</span><p class="small" style="white-space:pre-line">${esc(t)}</p></section>`; });
   if (s.cond) h += axCondBox(s);
-  // Etter styrken: kondisjon, metcon og notat ligger bak én rad. En del med innhold står alltid åpen.
-  const af =ui.after && ui.after.k === s.started ? ui.after : (ui.after = {k: s.started});
-  const has = {cond: !!s.pete, mc: !!(s.wod || s.metcon), note: !!(s.note || '').trim()};
-  const show = k => af[k] != null ? af[k] : has[k];   // et trykk overstyrer, ellers står en del med innhold åpen
+  // Kondisjon, metcon og notat: det som er planlagt står åpent, resten legges til nederst.
+  // Hver del har tittel og Fjern på samme sted. Fjern kan angres med «+» igjen.
+  const af = ui.after && ui.after.k === s.started ? ui.after : (ui.after = {k: s.started});
+  const has = afterHas(s);
+  const show = k => af[k] != null ? af[k] : has[k];   // et trykk overstyrer
   const parts = [peteOn() || s.pete ? ['cond', 'Kondisjon'] : null, ['mc', 'Metcon'], ['note', 'Notat']].filter(Boolean);
-  h += `<section class="box after"><span class="lbl">${s.ex.length ? 'Etter styrken' : 'Mer i økta'}</span>
-      <div class="after-add">${parts.map(([k, n]) => `<button class="tog" data-a="after:${k}" aria-pressed="${show(k)}">${show(k) ? n : '+ ' + n}</button>`).join('')}</div></section>`;
-  if (show('cond')) h += peteBox('session', s.pete);
+  const top = (k, n) => `<div class="after-top"><h3>${n}</h3><button class="link" data-a="after:${k}" aria-label="${k === 'note' ? 'Skjul notatet' : 'Fjern ' + n.toLowerCase() + ' fra økta'}">${k === 'note' ? 'Skjul' : 'Fjern'}</button></div>`;
+  if (show('cond')) h += top('cond', 'Kondisjon') + peteBox('session', s.pete);
   if (show('mc')) {
-    h += vMetconBudget(p, s);
+    h += top('mc', 'Metcon') + vMetconBudget(p, s);
     if (s.wod) h += wodBox(s.wod, 'session') + `<section class="box">${mcFields('session', s.mc)}</section>`;
     else {
       h += `<section class="box">${switchRow('metcon', 'Logg en metcon jeg tok', s.metcon)}${s.metcon ? mcFields('session', s.mc) : ''}</section>`;
       if (!s.pete) h += quickPick('session', false);
     }
   }
-  if (show('note')) h += `<section class="box notebox">
-      <label for="note" class="lbl">Notat</label>
+  if (show('note')) h += top('note', 'Notat') + `<section class="box notebox">
+      <label for="note" class="sr-only">Notat</label>
       <textarea id="note" placeholder="For eksempel dagsform eller en teknikkdetalj">${esc(s.note)}</textarea>
     </section>`;
+  const add = parts.filter(([k]) => !show(k));
+  if (add.length) h += `<div class="after-add"><span class="small muted">Legg til</span>${add.map(([k, n]) => `<button class="tog" data-a="after:${k}">+ ${n}</button>`).join('')}</div>`;
   // Mangler det sett, sier appen hva som skjer med dem før økta lukkes
   if (ui.confirm === 'finish' && setsLeft) {
     const left = e => e.sets.filter(x => x.d == null).length;
