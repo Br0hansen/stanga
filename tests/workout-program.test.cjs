@@ -580,16 +580,16 @@ test('dumbbells round to 1 kg up to 12 kg, then 12.5 kg and 2.5 kg steps',()=>{
 });
 test('Hybrid Hypertrophy: percent of 10RM per week, HPC by its own plan, 10RM re-estimated after week 4 and 8',()=>{
   const f=fixture('hh12');
-  // Uten 10RM finner du vekta i første økt. Med 10RM 80 kg i benk: 90 % = 72,5 kg i uke 1.
+  // Uten 10RM finner du vekta i første økt. Med 10RM 80 kg i benk: 80 % = 64, rundet til 65 kg i uke 1.
   f.run(`S.active.rm={bench:80,l_seated_cable_rows:60};S.active.hpc=60;S.draft=buildSession(prog('hh12'),S.active);`);
-  assert.equal(f.state('S.draft.sub'),'Uke 1 av 12 · 4 × 12 på 90 % av 10RM');
+  assert.equal(f.state('S.draft.sub'),'Uke 1 av 12 · 4 × 12 på 80 % av 10RM');
   assert.deepEqual(f.state('S.draft.ex.map(e=>e.lift)'),['bench','l_seated_cable_rows','hangclean']);
-  assert.deepEqual(f.state('S.draft.ex[0].sets.map(x=>[x.t,x.w])'),[[12,72.5],[12,72.5],[12,72.5],[12,72.5]]);
+  assert.deepEqual(f.state('S.draft.ex[0].sets.map(x=>[x.t,x.w])'),[[12,65],[12,65],[12,65],[12,65]]);
   assert.deepEqual(f.state('S.draft.ex[2].sets.map(x=>[x.t,x.w])'),[[5,60],[5,60],[5,60],[5,60]]);
   assert.equal(f.state('S.draft.ex[0].rest'),150);
   assert.match(f.state('S.draft.wod.tekst'),/^20–30 min på RPE 8\nEksempel: RowErg/);
-  // Arbeidsvektene i programmet: 72,5 75 75 77,5 77,5 80 80 82,5 82,5 85 85 85
-  assert.deepEqual(f.state(`HH_WEEKS.map(([,pc])=>r25(80*pc/100))`),[72.5,75,75,77.5,77.5,80,80,82.5,82.5,85,85,85]);
+  // Arbeidsvektene i programmet med 10RM 80 kg
+  assert.deepEqual(f.state(`HH_WEEKS.map(([,pc])=>r25(80*pc/100))`),[65,65,67.5,70,70,72.5,72.5,75,75,75,75,77.5]);
   // HPC: raske og rene gir 2,5 kg mer
   f.run(`S.draft.ex.forEach(e=>e.sets.forEach(x=>x.d=x.t));`);
   assert.match(f.run('vToday()'),/data-a="q:2:god"/);
@@ -605,11 +605,11 @@ test('Hybrid Hypertrophy: percent of 10RM per week, HPC by its own plan, 10RM re
   // Uke 5: 10RM regnes ut fra settene, HPC går til 4 × 4
   f.run(`S.active.est.bench=90;S.active.idx=12;S.draft=buildSession(prog('hh12'),S.active);`);
   assert.equal(f.state('S.active.rm.bench'),90);
-  assert.deepEqual(f.state('S.draft.ex[0].sets.map(x=>[x.t,x.w])')[0],[8,87.5]);
+  assert.deepEqual(f.state('S.draft.ex[0].sets.map(x=>[x.t,x.w])')[0],[8,80]);
   assert.equal(f.state('S.draft.ex[2].sets[0].t'),4);
   // Uke 12: 4 × 6 på 107,5 %, HPC 4 × 3
   f.run(`S.active.idx=33;S.draft=buildSession(prog('hh12'),S.active);`);
-  assert.equal(f.state('S.draft.sub'),'Uke 12 av 12 · 4 × 6 på 107,5 % av 10RM');
+  assert.equal(f.state('S.draft.sub'),'Uke 12 av 12 · 4 × 6 på 97,5 % av 10RM');
   assert.equal(f.state('S.draft.ex[2].sets[0].t'),3);
   // Planen kan regnes ut for hele programmet
   assert.equal(f.state(`simulate(prog('hh12'),newInstance(prog('hh12')),36).length`),36);
@@ -722,4 +722,23 @@ test('deling beholder lett uke og de nye reglene, og GZCLP-kopien bruker Trinn',
   assert.equal(c.deload,true);assert.deepEqual(c.days[0].ex.map(e=>e.rule),['stage','wave']);
   assert.equal(f.run(`cleanProg({name:'X',deload:'ja',days:[{ex:[{lift:'squat'}]}]}).deload`),undefined);
   assert.deepEqual(f.state(`copyOf(prog('gzclp')).days[0].ex.map(e=>e.rule)`),['stage','stage','double']);
+});
+
+test('Hybrid Hypertrophy: 10RM står når du følger planen, går opp med flere reps og ned med en gang du tar av vekt',()=>{
+  const f=fixture('hh12');
+  const one=sets=>{f.run(`S.active=newInstance(prog('hh12'));S.active.rm={bench:100,l_seated_cable_rows:60};S.active.hpc=60;
+    S.draft=buildSession(prog('hh12'),S.active);S.draft.ex.forEach((e,i)=>e.sets.forEach(x=>x.d=x.t));
+    S.draft.ex[0].sets=${JSON.stringify(sets)};globalThis.hhNotes=progress(prog('hh12'),S.active,S.draft);`);
+    return {rm:f.state('S.active.rm.bench'),est:f.state('S.active.est.bench'),notes:f.state('hhNotes')};};
+  // Planen: 4 × 12 på 80 kg
+  let r=one([{t:12,w:80,d:12},{t:12,w:80,d:12},{t:12,w:80,d:12},{t:12,w:80,d:12}]);
+  assert.equal(r.rm,100);assert.equal(r.est,100);
+  // To reps ekstra i siste sett: høyere anslag, som brukes etter blokka
+  r=one([{t:12,w:80,d:12},{t:12,w:80,d:12},{t:12,w:80,d:12},{t:12,w:80,d:14}]);
+  assert.equal(r.rm,100);assert.ok(r.est>100);
+  // 90 kg i første sett, så ned til 75: 10RM går ned med en gang
+  r=one([{t:12,w:90,d:12},{t:12,w:75,d:12},{t:12,w:75,d:12},{t:12,w:75,d:12}]);
+  assert.equal(r.rm,93.5);assert.match(r.notes.map(n=>n.text).join(' '),/Du tok av vekt, så 10RM går ned fra 100 til 93,5 kg/);
+  f.run(`S.active.idx=3;S.draft=buildSession(prog('hh12'),S.active);`);
+  assert.equal(f.state('S.draft.ex[0].sets[0].w'),77.5);
 });
