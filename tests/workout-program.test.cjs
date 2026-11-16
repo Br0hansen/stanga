@@ -672,3 +672,54 @@ test('Redesign is the default look, and a theme chosen earlier is kept',()=>{
   assert.equal(f.state('LOOKS[0][0]'),'ny');
   f.click('look:kveld');assert.equal(f.state('look()'),'kveld');
 });
+
+// Egne programmer med Trinn, Bølge og lett uke. Én økt i uka, så økt nummer i er uke i.
+function ownProgram(f, ex, extra = '') {
+  f.run(`const up=Object.assign({id:'u_t',name:'Test',sched:{mode:'rot',per:1,wd:defaultWd(1,1)},days:[{name:'A',ex:${JSON.stringify(ex)}}]}${extra});
+    S.userProgs={u_t:up};UDEF.clear();S.active=newInstance(userDef(up));
+    globalThis.runOwn=(miss)=>{const p=prog('u_t'),s=buildSession(p,S.active);s.ex.forEach(e=>e.sets.forEach(x=>x.d=miss?x.t-1:x.t));const n=progress(p,S.active,s);S.active.idx++;return {s,n};};`);
+}
+const sw = s => s.ex.map(e => e.sets.map(x => x.t + 'x' + x.w).join(' '));
+test('Trinn deler opp repsene ved bom og starter på 85 % etter siste trinn',()=>{
+  const f=fixture();
+  ownProgram(f,[{lift:'squat',sets:5,reps:3,hi:7,rule:'stage',inc:2.5,rest:180}]);
+  f.run(`S.active.lifts['squat.s3']={w:100,fails:0}`);
+  assert.deepEqual(f.state('('+sw+')(runOwn(false).s)'),['3x100 3x100 3x100 3x100 3x100']);
+  assert.equal(f.state(`S.active.lifts['squat.s3'].w`),102.5);
+  f.run('runOwn(true)');
+  assert.deepEqual(f.state('('+sw+')(runOwn(true).s)'),['2x102.5 2x102.5 2x102.5 2x102.5 2x102.5 2x102.5']);
+  const third=f.state('('+sw+')(runOwn(true).s)');
+  assert.equal(third[0].split(' ').length,10);assert.match(third[0],/^1x102.5/);
+  assert.equal(f.state(`S.active.lifts['squat.s3'].w`),87.5);assert.equal(f.state(`S.active.lifts['squat.s3'].stage`),0);
+});
+test('Bølge følger 5/3/1-ukene og øker treningsmaksen etter den lette uka',()=>{
+  const f=fixture();
+  ownProgram(f,[{lift:'bench',sets:3,reps:5,hi:9,rule:'wave',inc:2.5,rest:180}]);
+  f.run(`S.active.lifts['bench.w']={w:100,fails:0}`);
+  assert.deepEqual(f.state('('+sw+')(runOwn(false).s)'),['5x65 5x75 5x85']);
+  assert.deepEqual(f.state('('+sw+')(runOwn(false).s)'),['3x70 3x80 3x90']);
+  assert.equal(f.state('runOwn(false).s.ex[0].sets[2].am'),true);
+  assert.equal(f.state('S.active.lifts["bench.w"].w'),100);
+  const wk4=f.state('runOwn(false)');
+  assert.equal(wk4.s.ex[0].tag,'Lett uke');assert.equal(f.state('S.active.lifts["bench.w"].w'),102.5);
+  // Under målet i et siste sett: maksen står etter neste syklus
+  f.run('runOwn(true)');f.run('runOwn(false)');f.run('runOwn(false)');f.run('runOwn(false)');
+  assert.equal(f.state('S.active.lifts["bench.w"].w'),102.5);
+});
+test('Lett uke hver 4. uke halverer settene, tar 10 % av vekta og lar progresjonen stå',()=>{
+  const f=fixture();
+  ownProgram(f,[{lift:'squat',sets:3,reps:5,hi:9,rule:'linear',inc:2.5,rest:180}],',{deload:true}');
+  f.run(`S.active.lifts['squat.l5']={w:100,fails:0};runOwn(false);runOwn(false);runOwn(false);`);
+  assert.equal(f.state(`S.active.lifts['squat.l5'].w`),107.5);
+  const r=f.state('runOwn(false)');
+  assert.match(r.s.sub,/Lett uke/);assert.equal(r.s.ex[0].sets.length,2);assert.equal(r.s.ex[0].sets[0].w,97.5);
+  assert.equal(f.state(`S.active.lifts['squat.l5'].w`),107.5);
+  assert.equal(f.state('runOwn(false).s.ex[0].sets[0].w'),107.5);
+});
+test('deling beholder lett uke og de nye reglene, og GZCLP-kopien bruker Trinn',()=>{
+  const f=fixture();
+  const c=f.state(`cleanProg({name:'X',deload:true,sched:{mode:'rot',per:2},days:[{name:'A',ex:[{lift:'squat',sets:5,reps:3,rule:'stage'},{lift:'bench',sets:3,reps:5,rule:'wave'}]}]})`);
+  assert.equal(c.deload,true);assert.deepEqual(c.days[0].ex.map(e=>e.rule),['stage','wave']);
+  assert.equal(f.run(`cleanProg({name:'X',deload:'ja',days:[{ex:[{lift:'squat'}]}]}).deload`),undefined);
+  assert.deepEqual(f.state(`copyOf(prog('gzclp')).days[0].ex.map(e=>e.rule)`),['stage','stage','double']);
+});

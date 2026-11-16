@@ -1076,7 +1076,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 115;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 116;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -4008,13 +4008,22 @@ const myMax = (lift, dflt) => (S.maxes && S.maxes[lift] > 0) ? S.maxes[lift] : d
    Samme løft med samme opplegg i flere økter deler vekt (knebøy i økt A og B), et annet opplegg får sin egen.
    Slettede programmer merkes gone, så loggen fortsatt finner navnet. */
 const UP = () => (S && S.userProgs) || (S.userProgs = {});
-const ukey = e => e.lift + '.' + (e.rule === 'double' ? 'd' + e.reps + '-' + e.hi : (e.rule === 'fixed' ? 'f' : 'l') + e.reps);
-const ukeyTxt = t => { const m = /^[fld](\d+)(?:-(\d+))?$/.exec(t); return m ? (m[2] ? m[1] + '–' + m[2] : m[1]) + ' reps' : t; };
-const isUkey = t => /^[fld]\d+(-\d+)?$/.test(t || '');
+// Nøkkelen til vekta: løft + regel + reps. Bølge har én treningsmaks per løft, uansett sett og reps.
+const ukey = e => e.lift + '.' + (e.rule === 'double' ? 'd' + e.reps + '-' + e.hi : e.rule === 'wave' ? 'w' : ({fixed:'f', stage:'s'}[e.rule] || 'l') + e.reps);
+const ukeyTxt = t => { if (t === 'w') return 'bølge'; const m = /^[flds](\d+)(?:-(\d+))?$/.exec(t); return m ? (m[2] ? m[1] + '–' + m[2] : m[1]) + ' reps' : t; };
+const isUkey = t => /^([flds]\d+(-\d+)?|w)$/.test(t || '');
 
 /* Progresjonsreglene. En ny regel (for eksempel RPE-styrt) er ett nytt felt her:
    n og d er navn og forklaring i redigeringen, range = bruker spennet reps–hi, inc = bruker økningen i kg,
-   reps(e, st) = målet i dag, next(e, st, x, hit) = hva som skjer etter økta, med teksten til oppsummeringen. */
+   reps(e, st) = målet i dag, next(e, st, x, hit, wk) = hva som skjer etter økta, med teksten til oppsummeringen.
+   Valgfritt: sets(e, st, wk) = settene i dag når de ikke er like (wk = uke i programmet, fra 0), tag(e, st, wk) = merket
+   på øvelsen, scheme = regelen bestemmer sett og reps selv, light = regelen har egen lett uke (se lett uke i buildUser). */
+const userLight = up => !!up.deload;   // lett uke hver 4. uke
+const isLightWk = (up, wk) => userLight(up) && wk % 4 === 3;
+// Trinn som i GZCLP. Få reps (5 eller færre): flere sett med færre reps, 5×3 → 6×2 → 10×1. Flere reps: 3×10 → 3×8 → 3×6.
+const stageOf = (e, i) => !i ? [e.sets, e.reps] : e.reps <= 5 ? [i === 1 ? e.sets + 1 : e.sets * 2, Math.max(1, e.reps - i)] : [e.sets, Math.max(1, e.reps - 2 * i)];
+const minW = L => LIFTS[L] && LIFTS[L].bar ? BAR() : 0;
+const addInc = (w, e) => Math.round((w + e.inc) * 100) / 100;
 const RULES = {
   linear: {n:'Lineær', d:'Tar du alle reps i alle settene, går vekta opp neste gang. Bommer du tre økter på rad, går den ned 10 %.', inc:true,
     reps: e => e.reps,
@@ -4038,9 +4047,37 @@ const RULES = {
     next(e, st, x){
       const old = st.w; st.w = x.sets[x.sets.length - 1].w;
       return st.w === old ? {text:'Samme vekt neste gang, ' + fmt(old) + ' kg', kind:'same'} : {text: fmt(old) + ' → ' + fmt(st.w) + ' kg, som du endret i økta', kind: st.w > old ? 'up' : 'down'};
+    }},
+  stage: {n:'Trinn', d:'Som i GZCLP. Tar du alle reps, går vekta opp. Bommer du, beholder du vekta og deler opp repsene, for eksempel 5×3, så 6×2, så 10×1. Bommer du på siste trinn, starter du på nytt på 85 % av vekta.', inc:true,
+    reps: e => e.reps,
+    sets: (e, st) => { const [n, r] = stageOf(e, st.stage || 0); return mk(n, r, st.w); },
+    tag: (e, st) => st.stage ? 'Trinn ' + (st.stage + 1) + ' av 3' : '',
+    next(e, st, x, hit){
+      const old = st.w, i = st.stage || 0;
+      if (hit) { st.w = addInc(old, e); return {text: fmt(old) + ' → ' + fmt(st.w) + ' kg', kind:'up'}; }
+      if (i < 2) { st.stage = i + 1; const [n, r] = stageOf(e, st.stage); return {text:'Neste trinn: ' + n + '×' + r + ' på ' + fmt(old) + ' kg', kind:'stage'}; }
+      st.stage = 0; st.w = Math.max(minW(x.lift), r25(old * .85));
+      return {text:'Ny runde: ' + e.sets + '×' + e.reps + ' på ' + fmt(st.w) + ' kg', kind:'down'};
+    }},
+  wave: {n:'Bølge', d:'Som i 5/3/1. Vekta du legger inn, er treningsmaksen, omtrent 90 % av 1RM. Ukene går 5-ere, 3-ere, 5/3/1 og en lett uke, og i siste sett tar du så mange reps du klarer. Etter hver fjerde uke går treningsmaksen opp med økningen. Klarer du ikke målet i et siste sett, står den en syklus til.',
+    inc:true, scheme:true, light:true,
+    reps: () => 5,
+    sets: (e, st, wk) => W531[wk % 4].map(([pc, r, am]) => ({t:r, w: Math.max(minW(e.lift), r25(st.w * pc)), am: !!am, d:null})),
+    tag: (e, st, wk) => ['5-ere', '3-ere', '5/3/1', 'Lett uke'][wk % 4],
+    next(e, st, x, hit, wk){
+      const cy = Math.floor(wk / 4), am = x.sets.find(y => y.am);
+      if (wk % 4 < 3) {
+        if (am && am.d != null && am.d < am.t) st.miss = 1;
+        return am && am.d != null ? {text: am.d + ' reps på ' + fmt(am.w) + ' kg i siste sett', kind: am.d >= am.t ? 'up' : 'same'}
+          : {text:'Treningsmaks ' + fmt(st.w) + ' kg', kind:'same'};
+      }
+      if (st.cy === cy) return {text:'Treningsmaks ' + fmt(st.w) + ' kg', kind:'same'};   // løftet to ganger i den lette uka
+      const old = st.w; st.cy = cy;
+      if (st.miss) { st.miss = 0; return {text:'Treningsmaksen står på ' + fmt(old) + ' kg, fordi et siste sett var under målet', kind:'same'}; }
+      st.w = addInc(old, e); return {text:'Treningsmaks ' + fmt(old) + ' → ' + fmt(st.w) + ' kg', kind:'up'};
     }}
 };
-const RULE_ORDER = ['linear', 'double', 'fixed'];
+const RULE_ORDER = ['linear', 'stage', 'wave', 'double', 'fixed'];
 const WD = ['Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag', 'Søndag'];
 const wdOf = t => (new Date(t).getDay() + 6) % 7;   // 0 = mandag
 const day0 = t => { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); };
@@ -4075,7 +4112,7 @@ function userGuess(a, e){
   return LIFTS[e.lift] && LIFTS[e.lift].bar ? BAR() : 0;
 }
 const userExs = up => up.days.flatMap(d => d.ex);
-const exLine = e => e.sets + ' × ' + (RULES[e.rule] && RULES[e.rule].range ? e.reps + '–' + e.hi : e.reps);
+const exLine = e => RULES[e.rule] && RULES[e.rule].scheme ? '5/3/1' : e.sets + ' × ' + (RULES[e.rule] && RULES[e.rule].range ? e.reps + '–' + e.hi : e.reps);
 const userPer = up => up.sched.mode === 'week' ? up.sched.wd.filter(x => x != null).length || 1 : up.sched.per || up.days.length;
 const userWhat = up => up.days.length + (up.days.length === 1 ? ' økt' : ' økter') + ' · ' +
   (up.sched.mode === 'week' ? up.sched.wd.map((x, i) => x != null ? WD[i].slice(0, 3).toLowerCase() : '').filter(Boolean).join(', ') : 'i rotasjon');
@@ -4091,7 +4128,7 @@ function userDef(up){
     summary: (up.days.length === 1 ? 'Én økt' : up.days.length + ' økter') + (up.sched.mode === 'week'
       ? ' på faste ukedager: ' + esc(up.sched.wd.map((x, i) => x != null ? WD[i].toLowerCase() : '').filter(Boolean).join(', ')) + '.'
       : ' som går i rotasjon. Når du har tatt den siste, starter du på den første igjen.'),
-    rule: rules.join(' ')};
+    rule: rules.join(' ') + (userLight(up) ? ' Lett uke hver 4. uke: halvparten av settene og 10 % lettere vekt, og vektene står den uka.' : '')};
   UDEF.set(up.id, {up, p}); return p;
 }
 function buildUser(p, a){
@@ -4099,24 +4136,28 @@ function buildUser(p, a){
   let di, sub, calT;
   if (wk) { calT = userDate(up, a); di = up.sched.wd[wdOf(calT)]; sub = dateTxt(calT); }
   else { di = a.idx % up.days.length; sub = 'Uke ' + (Math.floor(a.idx / userPer(up)) + 1); }
-  const d = up.days[di] || up.days[0];
+  const d = up.days[di] || up.days[0], uw = Math.floor(a.idx / userPer(up)), light = isLightWk(up, uw);
+  if (light) sub += ' · Lett uke';
   a.lifts = a.lifts || {};
   const ex = d.ex.map(e => {
     const k = ukey(e), R = RULES[e.rule] || RULES.fixed, st = a.lifts[k] || (a.lifts[k] = {w: userGuess(a, e), fails: 0});
-    return {key: k, lift: e.lift, slot: e.lift, tag: R.range ? e.reps + '–' + e.hi + ' reps' : '', rest: e.rest || 120, adj: R.adj || undefined,
-      sets: mk(e.sets, R.reps(e, st), st.w)};
+    let sets = R.sets ? R.sets(e, st, uw) : mk(e.sets, R.reps(e, st), st.w), tag = R.tag ? R.tag(e, st, uw) : R.range ? e.reps + '–' + e.hi + ' reps' : '';
+    // Lett uke: halvparten av settene og 10 % lettere. Bølge har sin egen lette uke.
+    if (light && !R.light) { sets = sets.slice(0, Math.ceil(sets.length / 2)).map(x => Object.assign(x, {w: x.w > 0 ? Math.max(minW(e.lift), r25(x.w * .9)) : x.w})); tag = 'Lett uke'; }
+    return {key: k, lift: e.lift, slot: e.lift, tag, rest: e.rest || 120, adj: R.adj || undefined, sets};
   });
-  return {programId: p.id, day: esc(d.name), sub, ex, started: Date.now(), calT};
+  return {programId: p.id, day: esc(d.name), sub, ex, started: Date.now(), calT, uw, light};
 }
 function progressUser(p, a, s){
-  const notes = [], seen = new Set(), defs = userExs(p.user);
+  const notes = [], seen = new Set(), defs = userExs(p.user), uw = s.uw != null ? s.uw : Math.floor(a.idx / userPer(p.user));
   s.ex.forEach(x => {
     if (seen.has(x.key) || !x.sets.some(y => y.d != null)) return;
     seen.add(x.key);
     const e = defs.find(d => ukey(d) === x.key); if (!e) return;
     a.lifts = a.lifts || {};
-    const st = a.lifts[x.key] || (a.lifts[x.key] = {w: x.sets[0].w, fails: 0}), hit = x.sets.every(y => y.d != null && y.d >= y.t);
-    notes.push(Object.assign({name: liftName(x.lift)}, (RULES[e.rule] || RULES.fixed).next(e, st, x, hit)));
+    const R = RULES[e.rule] || RULES.fixed, st = a.lifts[x.key] || (a.lifts[x.key] = {w: x.sets[0].w, fails: 0}), hit = x.sets.every(y => y.d != null && y.d >= y.t);
+    if (s.light && !R.light) { notes.push({name: liftName(x.lift), text:'Lett uke. Vekta står på ' + fmt(st.w) + ' kg', kind:'same'}); return; }
+    notes.push(Object.assign({name: liftName(x.lift)}, R.next(e, st, x, hit, uw)));
   });
   userAdvance(p, a, s);
   return notes;
@@ -4127,8 +4168,8 @@ function userAdvance(p, a, s){
   delete a.wkDay; delete a.wkIdx;
 }
 
-/* Kopiere et program. StrongLifts og Starting Strength blir lineære. GZCLP: T1 5×3 og T2 3×10 lineært,
-   T3 3×15–25 med dobbel progresjon (de skifter ikke trinn ved bom, slik GZCLP gjør). Er programmet aktivt, tas byttene dine med. */
+/* Kopiere et program. StrongLifts og Starting Strength blir lineære. GZCLP: T1 5×3 og T2 3×10 med Trinn,
+   T3 3×15–25 med dobbel progresjon. Er programmet aktivt, tas byttene dine med. */
 const COPYABLE = p => p && (p.prog === 'user' || p.prog === 'linear' || p.prog === 'gzclp');
 const defaultWd = (n, per) => { const k = Math.min(7, Math.max(1, per || n)), at = [[0],[0,3],[0,2,4],[0,1,3,4],[0,1,2,3,4],[0,1,2,3,4,5],[0,1,2,3,4,5,6]][k - 1];
   const wd = Array(7).fill(null); at.forEach((d, i) => { wd[d] = i % n; }); return wd; };
@@ -4138,8 +4179,8 @@ function copyOf(p){
   const ex = (lift, sets, reps, rule, iv, rest, hi) => ({lift: L(lift), sets, reps, hi: hi || reps + 4, rule, inc: iv, rest});
   let days;
   if (p.prog === 'linear') days = p.days.map(d => ({name: d.name, ex: d.ex.map(e => ex(e.lift, e.sets, e.reps, 'linear', inc(p, e.lift), linearRest(p, e.lift)))}));
-  else if (p.prog === 'gzclp') days = p.days.map(d => ({name: d.name, ex: d.ex.map(e => e.tier === 'T1' ? ex(e.lift, 5, 3, 'linear', inc(p, e.lift), 180)
-    : e.tier === 'T2' ? ex(e.lift, 3, 10, 'linear', inc(p, e.lift), 120) : ex(e.lift, 3, 15, 'double', 2.5, 90, 25))}));
+  else if (p.prog === 'gzclp') days = p.days.map(d => ({name: d.name, ex: d.ex.map(e => e.tier === 'T1' ? ex(e.lift, 5, 3, 'stage', inc(p, e.lift), 180)
+    : e.tier === 'T2' ? ex(e.lift, 3, 10, 'stage', inc(p, e.lift), 120) : ex(e.lift, 3, 15, 'double', 2.5, 90, 25))}));
   else return null;
   const per = parseInt(p.perWeek) || 3;
   return {name: (p.name + ' (kopi)').slice(0, 40), sched: {mode:'rot', per, wd: defaultWd(days.length, per)}, days, from: p.id};
@@ -4151,7 +4192,7 @@ const BASE_LIFTS = new Set(Object.keys(LIFTS).filter(k => !k.startsWith('c_') &&
 function exportProg(up){
   const lifts = {};
   userExs(up).forEach(e => { const L = LIFTS[e.lift]; if (L && !BASE_LIFTS.has(e.lift)) lifts[e.lift] = {n: L.n, bar: L.bar ? 1 : 0, bw: L.bw ? 1 : 0}; });
-  return {v: 1, name: up.name, sched: up.sched, days: up.days, lifts};
+  return Object.assign({v: 1, name: up.name, sched: up.sched, days: up.days, lifts}, up.deload ? {deload: true} : {});
 }
 function cleanProg(o){
   const str = (v, n) => String(v == null ? '' : v).replace(/[<>&"`]/g, '').replace(/\s+/g, ' ').trim().slice(0, n);
@@ -4171,7 +4212,7 @@ function cleanProg(o){
   const s = o.sched && typeof o.sched === 'object' ? o.sched : {};
   const wd = Array.from({length: 7}, (_, i) => { const v = Array.isArray(s.wd) ? s.wd[i] : null; return Number.isInteger(v) && v >= 0 && v < days.length ? v : null; });
   const mode = s.mode === 'week' && wd.some(x => x != null) ? 'week' : 'rot';
-  return {name: str(o.name, 40) || 'Program', sched: {mode, per: Math.round(num(s.per, 1, 7, days.length)), wd: wd.some(x => x != null) ? wd : defaultWd(days.length)}, days, lifts};
+  return Object.assign({name: str(o.name, 40) || 'Program', sched: {mode, per: Math.round(num(s.per, 1, 7, days.length)), wd: wd.some(x => x != null) ? wd : defaultWd(days.length)}, days, lifts}, o.deload === true ? {deload: true} : {});
 }
 const newId = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 // Legger et vasket program inn hos deg. Egne øvelser fra den andre får nye nøkler hvis du har en med samme nøkkel og et annet navn.
@@ -4220,12 +4261,12 @@ function vProgEdit(){
     const sum = exLine(e) + ' · ' + R.n + (R.inc ? ' +' + fmt(e.inc) + ' kg' : '') + ' · ' + mmss(e.rest) + ' pause';
     if (!open) return `<button class="pe-ex" data-a="pe:exopen:${k}" aria-expanded="false"><b>${esc(liftName(e.lift))}</b><small>${esc(sum)}</small></button>`;
     return `<div class="pe-ex open"><button class="pe-ex-h" data-a="pe:exopen:${k}" aria-expanded="true"><b>${esc(liftName(e.lift))}</b><small>${esc(sum)}</small></button>
-      <div class="pe-f"><span>Sett</span>${step('pe:sets:' + k, e.sets, 'Sett')}</div>
-      <div class="pe-f"><span>${R.range ? 'Reps fra' : 'Reps'}</span>${step('pe:reps:' + k, e.reps, R.range ? 'Reps fra' : 'Reps')}</div>
+      ${R.scheme ? '' : `<div class="pe-f"><span>Sett</span>${step('pe:sets:' + k, e.sets, 'Sett')}</div>
+      <div class="pe-f"><span>${R.range ? 'Reps fra' : 'Reps'}</span>${step('pe:reps:' + k, e.reps, R.range ? 'Reps fra' : 'Reps')}</div>`}
       ${R.range ? `<div class="pe-f"><span>Reps til</span>${step('pe:hi:' + k, e.hi, 'Reps til')}</div>` : ''}
-      <div class="pe-f col"><span>Progresjon</span><div class="seg" role="group" aria-label="Progresjon">${RULE_ORDER.map(r =>
+      <div class="pe-f col"><span>Progresjon</span><div class="seg wrap" role="group" aria-label="Progresjon">${RULE_ORDER.map(r =>
         `<button data-a="pe:rule:${k}:${r}" aria-pressed="${e.rule === r}">${RULES[r].n}</button>`).join('')}</div><small class="muted">${R.d}</small></div>
-      ${R.inc ? `<div class="pe-f col"><span>Økning</span><div class="seg" role="group" aria-label="Økning">${INC_OPTS.map(v =>
+      ${R.inc ? `<div class="pe-f col"><span>${R.scheme ? 'Økning per syklus' : 'Økning'}</span><div class="seg" role="group" aria-label="Økning">${INC_OPTS.map(v =>
         `<button data-a="pe:inc:${k}:${v}" aria-pressed="${e.inc === v}">+${fmt(v)} kg</button>`).join('')}</div></div>` : ''}
       <div class="pe-f col"><span>Pause</span><div class="seg wrap" role="group" aria-label="Pause">${REST_OPTS.map(v =>
         `<button data-a="pe:rest:${k}:${v}" aria-pressed="${e.rest === v}">${mmss(v)}</button>`).join('')}</div></div>
@@ -4248,6 +4289,8 @@ function vProgEdit(){
       : `<p class="small muted">Du tar øktene etter tur når det passer deg: ${esc(names.join(', '))}, og så den første igjen.</p>
         <div class="pe-f"><span>Økter per uke</span>${step('pe:per', d.sched.per, 'Økter per uke')}</div>
         <p class="small muted">Brukes til uke-nummeret i planen.</p>`}</div>
+    <div class="box"><label class="chk"><input type="checkbox" data-pedl="1"${d.deload ? ' checked' : ''}> Lett uke hver 4. uke</label>
+      <p class="small muted">Halvparten av settene og 10 % lettere vekt. Vektene står den uka, og etterpå fortsetter du der du var. Øvelser med Bølge har sin egen lette uke i samme uke.</p></div>
     <h2 class="sec">Øktene</h2>
     ${d.days.map((day, di) => `<section class="box pe-day">
       <div class="pe-dh"><label class="sr-only" for="peDay-${di}">Navn på økt ${di + 1}</label>
@@ -4341,7 +4384,7 @@ function vUserStart(p){
     return LIFTS[L] && LIFTS[L].bar ? BAR() : LIFTS[L] && LIFTS[L].bw ? 0 : null; };
   return `<h2 class="sec">Startvekter</h2>
     <div class="box" style="gap:0">${Object.keys(p.inputs).map((k, i) => { const v = sug(k); return `
-      <div class="field"><label for="in-${i}">${esc(keyLabel(k))}${p.bw[k] ? '<small class="muted">Ekstra vekt. 0 = bare kroppen</small>' : ''}</label>
+      <div class="field"><label for="in-${i}">${esc(keyLabel(k))}${k.endsWith('.w') ? '<small class="muted">Treningsmaks, omtrent 90 % av 1RM</small>' : p.bw[k] ? '<small class="muted">Ekstra vekt. 0 = bare kroppen</small>' : ''}</label>
         <span class="inp"><input id="in-${i}" data-key="${esc(k)}"${p.bw[k] ? ' data-bw="1"' : ''} type="text" inputmode="decimal" placeholder="–" value="${v != null ? fmt(v) : ''}">kg</span></div>`; }).join('')}</div>`;
 }
 // Knappene på programsiden til et eget program, og kopiering av de andre
@@ -5365,6 +5408,7 @@ const PLAN_NOTE = {
   cir:'Planen viser vektene hvis benk og knebøy går på RPE 7 og clean er rask og ren hver uke. Da øker treningsmaksen 2,5 kg i benk og clean og 5 kg i knebøy per uke, så tallene framover er et tak. Uke 12 bruker vektene fra uke 1, så retesten kan sammenlignes. Hver økt viser kretsen med åtte stasjoner.',
   emc:'Planen viser vektene hvis benk og knebøy går en halv RPE under målet og clean er rask og ren hver uke. Da øker treningsmaksen 2,5 kg i benk og clean og 5 kg i knebøy per uke, så tallene framover er et tak. Uke 12 bruker vektene fra uke 1, så retesten kan sammenlignes. Hver økt viser 4-stasjons EMOM-en.',
   mmc:'Planen viser vektene hvis siste sett går på RPE 7 og clean er rask og ren hver uke. Da øker treningsmaksen 2,5 kg i benk og clean og 5 kg i knebøy per uke. Ved RPE 7,5–9 står den stille, så tallene framover er et tak, ikke et løfte. Metconene står i hver økt, og uke 1, 6 og 12 har de samme tre benchmark-metconene.',
+  user:'Planen viser vektene hvis du klarer alle reps hver gang. Med Bølge går treningsmaksen opp etter hver fjerde uke. Med Trinn går du til neste trinn med samme vekt hvis du bommer.',
   athx:'Vektene er prosent av arbeidsmaksen din i dag, og fartene følger anslaget ditt. Begge oppdateres etter hver økt, så tallene framover endrer seg. Henger du etter kalenderen, hopper planen til første økt i denne uka.'
 };
 const planPer = (p, a) => p.prog === 'athx' ? a.ax.per : ['531','jugg','cube','sp12','burg','mmc','emc','cir','cbe','rp','bro','hh'].includes(p.prog) ? p.days.length : (parseInt(p.perWeek) || 3);
@@ -6468,6 +6512,7 @@ function pwLabel(p, grp, k){
   const parts = k.split('.'), rest = parts[0] === 'x' ? parts.slice(2) : parts.slice(1);
   if (!rest.length || parts[0] === 'x') return 'Arbeidsvekt';
   if (/^T\d$/.test(rest[0])) return rest[0] + '-vekt';
+  if (rest[0] === 'w') return 'Treningsmaks';
   if (isUkey(rest[0])) return 'Arbeidsvekt (' + ukeyTxt(rest[0]) + ')';
   const last = rest[rest.length - 1];
   return last === 'top' ? 'Toppsett' : last === 'back' ? 'Backoff' : 'Arbeidsvekt (' + rest.join(' ') + ')';
@@ -9146,6 +9191,7 @@ document.addEventListener('change', ev => {
   if (ev.target.dataset && ev.target.dataset.ckf) { ckField(ev.target); return; }
   if (ev.target.dataset && ev.target.dataset.pw) { pwSave(ev.target); return; }
   if (ev.target.dataset && ev.target.dataset.pewd != null && ui.pe) { const v = ev.target.value; ui.pe.d.sched.wd[+ev.target.dataset.pewd] = v === '' ? null : +v; ui.pe.err = ''; return; }
+  if (ev.target.dataset && ev.target.dataset.pedl && ui.pe) { if (ev.target.checked) ui.pe.d.deload = true; else delete ui.pe.d.deload; return; }
   if (ev.target.dataset && ev.target.dataset.pebar && S.custom && S.custom[ev.target.dataset.pebar]) {
     S.custom[ev.target.dataset.pebar].bar = ev.target.checked ? 1 : 0; mergeCustom(); save(); return; }
   if (ev.target.dataset && ev.target.dataset.max) {
