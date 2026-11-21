@@ -363,6 +363,9 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .themes{display:flex;flex-wrap:wrap;gap:8px}
 .randlbl{font:600 13px/1.2 var(--face);color:var(--chalk-2);margin:0}
 .quick2 .btn{font-size:16px}
+.quick3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.quick3 .btn{font-size:16px;padding-left:6px;padding-right:6px}
+.wodbox textarea.txt{min-height:120px;resize:vertical;font-weight:400;line-height:1.5}
 .selrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .selrow select{width:100%;max-width:none;font-size:16px;padding:10px 8px}
 .bankctl .txt,.wodbox .txt{width:100%;background:var(--iron);border:1px solid var(--line);border-radius:3px;color:var(--chalk);font:500 16px var(--face);padding:11px 12px}
@@ -475,11 +478,29 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 /* Hele planen: gjort i blått, hoppet over strøket i rødt, neste markert med blå strek */
 .plan-s summary{align-items:flex-start}
 .ps{display:grid;gap:3px;min-width:0;flex:1}
-.ps-top{display:flex;align-items:center;gap:8px}
-.ps-top b{font:700 16px/1.15 var(--face)}
-.ps>span:not(.ps-top){font:400 14px/1.35 var(--face)}
-.ps .pill{font:600 12px/1 var(--face)}
-.plan-s.done-s .ps>span:last-child{color:var(--pen)}
+.ps-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.ps-top b{font:700 16px/1.2 var(--face)}
+.ps-name{display:grid;gap:3px;min-width:0}
+.ps-name small{font:600 12px/1.2 var(--face);color:var(--chalk-2)}
+.ps .pill{font:600 12px/1 var(--face);flex:none}
+.ps-sub{font:400 14px/1.35 var(--face);color:var(--chalk-2)}
+/* Øvelsene som rader: navn til venstre, vekt til høyre i faste tall, så kolonnen kan leses nedover */
+.ps-ex{display:grid;gap:5px;margin-top:8px}
+.ps-ln{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font:400 15px/1.35 var(--face)}
+.ps-ln>span:first-child{min-width:0}
+.ps-w{flex:none;max-width:60%;text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+.ps-full,.ps-tag{display:none}
+.plan-s[open] .ps-short{display:none}
+.plan-s[open] .ps-full{display:inline;font-weight:400;font-size:14px;color:var(--chalk-2)}
+.plan-s[open] .ps-tag{display:block;font-size:13px;color:var(--chalk-2)}
+.plan-s[open] .ps-ln+.ps-ln{padding-top:5px;border-top:1px solid var(--line)}
+.ps-mc{margin-top:8px;padding-top:8px;border-top:1px solid var(--line);font:400 14px/1.35 var(--face);color:var(--chalk-2)}
+.plan-s[open] .ps-mc{display:none}
+.plan-s:not([open]){gap:0}
+.plan-s.done-s .ps-w,.plan-s.done-s .ps-full{color:var(--pen)}
+.plan-wk{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:14px 0 -2px}
+.plan-wk h2.sec{margin:0;font:700 17px/1.2 var(--face);color:var(--chalk)}
+.plan-wk span{font:400 13px/1.3 var(--face);color:var(--chalk-2);text-align:right}
 .plan-s.done-s .ps-top .pill{color:var(--pen);box-shadow:none;padding-left:0}
 /* Hoppet over er et valg, ikke et avvik: strøket over i grå blyant. Rødt er bare for bom. */
 .plan-s.skip-s .ps-top b{text-decoration:line-through;text-decoration-color:var(--ink-3);text-decoration-thickness:1.5px;color:var(--ink-2)}
@@ -1076,7 +1097,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 117;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 118;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -2299,7 +2320,8 @@ function buildHh(p, a){
   });
   const wk = pos.w + 1;
   return {programId: p.id, day: D.n, ex, sub: 'Uke ' + wk + ' av 12 · 4 × ' + reps + ' på ' + fmt(pct) + ' % av 10RM',
-    wod: {id: 'hh-' + wk + '-' + pos.di, navn: 'Metcon · ' + D.n.split(' · ')[0], tekst: '20–30 min på RPE ' + D.rpe + '\n' + D.mc, resultat: ''},
+    // Metconen er en ramme, ikke en fast økt: du skriver inn din egen eller velger fra øktbanken i økta
+    mcPlan: '20–30 min på RPE ' + D.rpe + '\n' + D.mc,
     metcon: true, mc: {type: mcGuess(D.mc), min: 25, rpe: null, auto: 1}, started: Date.now()};
 }
 function progressHh(p, a, s){
@@ -5307,9 +5329,12 @@ function vBank(){
 }
 function wodBox(w, ctx){
   return `<section class="box wodbox">
-      <div class="top"><span class="lbl">Dagens metcon</span>${ctx === 'session' ? '' : `<button class="link" data-a="wodrm:${ctx}">Fjern</button>`}</div>
+      <div class="top"><span class="lbl">Dagens metcon</span>${ctx !== 'session' ? `<button class="link" data-a="wodrm:${ctx}">Fjern</button>`
+        : w.pick ? `<button class="link" data-a="wodrm:session" aria-label="Bytt metcon">Bytt</button>` : ''}</div>
       <h2>${esc(w.navn)}</h2>
-      <pre class="wodtxt">${esc(w.tekst)}</pre>
+      ${w.edit ? `<label for="wodTxt" class="sr-only">Metconen</label>
+      <textarea id="wodTxt" class="txt" rows="4" placeholder="For eksempel: AMRAP 20 min&#10;10 wall balls&#10;10 burpees&#10;200 m løp">${esc(w.tekst)}</textarea>`
+        : `<pre class="wodtxt">${esc(w.tekst)}</pre>`}
       ${ckOn() ? `<button class="btn ghost" data-a="ck:show">Klokka går · åpne den</button>`
         : `<div class="ck-go"><button class="btn" data-a="ck:wod:${ctx}">${playSVG}Start klokke</button><button class="btn ghost" data-a="ck:edit:${ctx}">Endre</button>
         <p class="small muted">${esc(ckDesc(ckFromWod(w)))}${ckCd() ? ' · ' + ckCd() + ' s nedtelling' : ''}</p></div>`}
@@ -5320,6 +5345,11 @@ function wodBox(w, ctx){
 }
 // clock: false der klokkeikonet allerede står i toppen av skjermen, så klokka ikke har to knapper
 function quickPick(ctx, clock = true){
+  // I økta kan du også skrive inn metconen selv
+  if (ctx === 'session') return `<div class="quick3">
+      <button class="btn ghost" data-a="wodown">Skriv inn</button>
+      <button class="btn ghost" data-a="bank:session">Øktbank</button>
+      <button class="btn ghost" data-a="qr:session">Tilfeldig</button></div>`;
   return `<div class="row quick2">
       <button class="btn ghost" data-a="qr:${ctx}">Gi meg en metcon</button>
       <button class="btn ghost" data-a="bank:${ctx}">Øktbank</button>
@@ -5467,10 +5497,10 @@ function planWeeks(P, p, a, short){
   const N = tot || Math.max(12 * per, a.idx + 4 * per);
   const doneH = P.active ? S.history.filter(h => h.programId === p.id && !h.free && h.date >= a.startedAt).reverse().slice(-a.idx) : [];
   // ATHX kan hoppe fram i kalenderen, så økta husker sin egen plass (idx)
-  const rows = doneH.map((h, k) => ({k: ax && h.idx != null ? h.idx : k, done:!h.skipped, skipped:!!h.skipped, day:h.day, sub:h.sub, ex:h.ex, cond:h.cond, wod:h.wod}));
+  const rows = doneH.map((h, k) => ({k: ax && h.idx != null ? h.idx : k, done:!h.skipped, skipped:!!h.skipped, day:h.day, sub:h.sub, ex:h.ex, cond:h.cond, wod:h.wod, mcPlan:h.mcPlan}));
   simulate(p, a, N - a.idx).forEach(f => {
     const s = P.active && f.idx === a.idx && ownDraft() ? ownDraft() : f.s;
-    rows.push({k: f.idx, done:false, next: P.active && f.idx === a.idx, day:s.day, sub:s.sub, ex:s.ex, cond:s.cond, wod:s.wod, boxes:s.boxes});
+    rows.push({k: f.idx, done:false, next: P.active && f.idx === a.idx, day:s.day, sub:s.sub, ex:s.ex, cond:s.cond, wod:s.wod, mcPlan:s.mcPlan, boxes:s.boxes});
   });
   const weeks = [];
   rows.forEach(r => { const w = Math.floor(r.k / per); (weeks[w] = weeks[w] || []).push(r); });
@@ -5478,24 +5508,35 @@ function planWeeks(P, p, a, short){
   const subOf = (r, w) => ax ? r.sub.replace(/^Uke \d+ av \d+ · /, '') : ['burg','mmc','emc','cir','cbe','rp','bro','hh'].includes(p.prog) ? r.sub.replace(/^Uke \d+ av \d+( · )?/, '') : r.sub !== 'Uke ' + (w + 1) ? r.sub : '';
   const from = short ? Math.floor(Math.min(a.idx, N - 1) / per) : 0, to = short ? from + 2 : weeks.length;
   const inProgress = P.active && ownDraft() && ownDraft().ex.some(e => e.sets.some(x => x.d != null) || (e.wuDone || []).length);
-  const exLine = r => r.ex.slice(0, 3).map(e => { const t = Math.max(...e.sets.map(x => x.w)); return liftName(e.lift) + (t > 0 ? ' ' + fmt(t) : ''); }).join(' · ') + (r.ex.length > 3 ? ' …' : '');
+  // «Dag 1 · Bryst, rygg og eksplosivitet»: dagen som liten etikett over navnet, så navnet får plass på én linje
+  const dayParts = d => { const i = d.indexOf(' · '); return i > 0 && i <= 8 ? [d.slice(0, i), d.slice(i + 3)] : ['', d]; };
+  // Lukket: navn og tyngste vekt på hver sin side. Åpen: notatet under navnet og alle settene (CSS bytter).
+  const exRow = (e, done) => { const t = Math.max(...e.sets.map(x => x.w));
+    return `<span class="ps-ln"><span>${esc(liftName(e.lift))}${e.tag ? `<span class="ps-tag">${esc(e.tag)}</span>` : ''}</span>
+      <span class="ps-w"><span class="ps-short">${t > 0 ? fmt(t) + ' kg' : ''}</span><span class="ps-full">${setsLine(e, done)}</span></span></span>`; };
+  const mcFirst = r => r.wod ? r.wod.tekst.split('\n')[0].replace(/:$/, '') + (r.done && r.wod.resultat ? ' · ' + r.wod.resultat : '') : r.mcPlan ? r.mcPlan.split('\n')[0] : '';
   const more = P.active && weeks.length > 2 ? `<button class="btn ghost" data-a="planall">${short ? 'Vis alle ' + weeks.length + ' uker' : 'Vis bare denne og neste uke'}</button>` : '';
   return `${ax ? axScore(a) : ''}
-    ${weeks.map((list, w) => list && w >= from && w < to ? `<h2 class="sec">Uke ${w + 1}${ax && a.ax.weeks[w] ? ' · ' + AX_PH[a.ax.weeks[w].ph] : ''}</h2><div class="list">${list.map(r => {
-      const m = r.ex[0], sub = r.sub ? subOf(r, w) : '';
+    ${weeks.map((list, w) => { if (!list || w < from || w >= to) return '';
+      // Er undertittelen lik for alle øktene i uka (som «4 × 12 på 80 % av 10RM»), står den én gang ved uka
+      const subs = list.map(r => r.sub ? subOf(r, w) : ''), common = subs[0] && subs.every(x => x === subs[0]) ? subs[0] : '';
+      return `<div class="plan-wk"><h2 class="sec">Uke ${w + 1}${ax && a.ax.weeks[w] ? ' · ' + AX_PH[a.ax.weeks[w].ph] : ''}</h2>${common ? `<span>${esc(common)}</span>` : ''}</div>
+      <div class="list">${list.map((r, i) => {
+      const sub = common ? '' : subs[i], [dl, dn] = dayParts(r.day), mc = mcFirst(r);
       return `<details class="box acc plan-s${r.done ? ' done-s' : ''}${r.skipped ? ' skip-s' : ''}${r.next ? ' next-s' : ''}"${r.next ? ' open' : ''}>
-        <summary><span class="ps"><span class="ps-top"><b>${esc(r.day)}</b>${r.done ? '<span class="pill">Gjort</span>' : r.skipped ? '<span class="pill">Hoppet over</span>' : r.next ? `<span class="pill on">${inProgress ? 'Pågår' : 'Neste'}</span>` : ''}</span>
-          ${sub ? `<span class="small muted">${esc(sub)}</span>` : ''}
-          <span class="small">${m ? exLine(r) : r.cond ? esc(r.cond.title) : ''}</span>
-          ${r.wod ? `<span class="small muted">Metcon · ${esc(r.wod.tekst.split('\n')[0].replace(/:$/, ''))}${r.done && r.wod.resultat ? ' · ' + esc(r.wod.resultat) : ''}</span>` : ''}</span></summary>
-        <div class="plan-ex">${r.ex.map(e => `<div class="ln"><span>${liftName(e.lift)}${e.tag ? ` <span class="muted">${e.tag}</span>` : ''}</span><span>${setsLine(e, r.done)}</span></div>`).join('')}
-          ${r.cond ? `<div class="ln"><span><b>${esc(r.cond.title)}</b></span><span>${r.done ? esc(axResTxt(r.cond)) : ''}</span></div>
-            ${r.cond.lines ? `<ul class="ax-lines small">${r.cond.lines.map(l => `<li>${esc(l)}</li>`).join('')}</ul>` : ''}` : ''}
+        <summary><span class="ps"><span class="ps-top"><span class="ps-name">${dl ? `<small>${esc(dl)}</small>` : ''}<b>${esc(dn)}</b></span>${r.done ? '<span class="pill">Gjort</span>' : r.skipped ? '<span class="pill">Hoppet over</span>' : r.next ? `<span class="pill on">${inProgress ? 'Pågår' : 'Neste'}</span>` : ''}</span>
+          ${sub ? `<span class="ps-sub">${esc(sub)}</span>` : ''}
+          ${r.ex.length ? `<span class="ps-ex">${r.ex.map(e => exRow(e, r.done)).join('')}</span>` : r.cond ? `<span class="ps-ex"><span class="ps-ln"><span>${esc(r.cond.title)}</span></span></span>` : ''}
+          ${mc ? `<span class="ps-mc">Metcon · ${esc(mc)}</span>` : ''}</span></summary>
+        <div class="plan-ex">
+          ${r.cond && r.ex.length ? `<div class="ln"><span><b>${esc(r.cond.title)}</b></span><span>${r.done ? esc(axResTxt(r.cond)) : ''}</span></div>` : r.cond && r.done ? `<div class="ln"><span></span><span>${esc(axResTxt(r.cond))}</span></div>` : ''}
+          ${r.cond && r.cond.lines ? `<ul class="ax-lines small">${r.cond.lines.map(l => `<li>${esc(l)}</li>`).join('')}</ul>` : ''}
           ${r.wod ? `<div class="plan-mc"><div class="ln"><span><b>${esc(r.wod.navn)}</b></span><span>${r.done ? esc(r.wod.resultat || '') : ''}</span></div>
-            <pre class="wodtxt small">${esc(r.wod.tekst)}</pre></div>` : ''}
+            <pre class="wodtxt small">${esc(r.wod.tekst)}</pre></div>`
+            : r.mcPlan ? `<div class="plan-mc"><span class="lbl">Metcon etter styrken</span><p class="small" style="white-space:pre-line;margin:0">${esc(r.mcPlan)}</p></div>` : ''}
           ${(r.boxes || []).map(([l, t]) => `<div class="plan-mc"><span class="lbl">${esc(l)}</span><p class="small" style="white-space:pre-line;margin:0">${esc(t)}</p></div>`).join('')}
           ${r.next ? `<button class="btn" data-a="tab:today">${inProgress ? 'Fortsett dagens økt' : 'Gå til dagens økt'}</button>` : ''}</div>
-      </details>`; }).join('')}</div>` : '').join('')}
+      </details>`; }).join('')}</div>`; }).join('')}
     ${more}`;
 }
 
@@ -6078,10 +6119,12 @@ function vToday(){
   if (show('cond')) h += top('cond', 'Kondisjon') + peteBox('session', s.pete);
   if (show('mc')) {
     h += top('mc', 'Metcon') + vMetconBudget(p, s);
+    // Hybrid Hypertrophy: rammen fra planen står over metconen du velger
+    if (s.mcPlan) h += `<section class="box"><span class="lbl">Planen for metconen</span><p class="small" style="white-space:pre-line;margin:0">${esc(s.mcPlan)}</p></section>`;
     if (s.wod) h += wodBox(s.wod, 'session') + `<section class="box">${mcFields('session', s.mc)}</section>`;
     else {
-      h += `<section class="box">${switchRow('metcon', 'Logg en metcon jeg tok', s.metcon)}${s.metcon ? mcFields('session', s.mc) : ''}</section>`;
       if (!s.pete) h += quickPick('session', false);
+      h += `<section class="box">${switchRow('metcon', 'Logg en metcon jeg tok', s.metcon)}${s.metcon ? mcFields('session', s.mc) : ''}</section>`;
     }
   }
   if (show('note')) h += top('note', 'Notat') + `<section class="box notebox">
@@ -6506,7 +6549,7 @@ function vPlanTab(){
     </div>
     ${ui.confirm === 'quit' ? `<div class="box skipbox"><p><b>Avslutte ${esc(p.name)}?</b></p><p class="small">Treningsloggen blir liggende.</p><div class="row"><button class="btn danger sm" data-a="quit">Ja, avslutt</button><button class="btn ghost sm" data-a="cancel">Behold programmet</button></div></div>` : '<button class="btn danger" data-a="confirm:quit">Avslutt program</button>'}</section>`;
   return h + `<section class="program-plan" id="program-content">${vActiveCard()}
-    <p class="muted small">${PLAN_NOTE[p.prog] || ''}${totalOf(p, S.active) ? '' : ' Programmet har ingen fast slutt, så planen viser 12 uker.'}</p>
+    ${PLAN_NOTE[p.prog] || !totalOf(p, S.active) ? `<details class="about"><summary>Slik regnes vektene</summary><p class="muted small about-in">${PLAN_NOTE[p.prog] || ''}${totalOf(p, S.active) ? '' : ' Programmet har ingen fast slutt, så planen viser 12 uker.'}</p></details>` : ''}
     ${planWeeks({id:p.id, active:true}, p, S.active, !ui.planAll)}</section>`;
 }
 
@@ -8901,7 +8944,8 @@ document.addEventListener('click', ev => {
       const guess = {type: mcGuess(w.x + ' ' + (w.n || '')), min: w.m || ''};   // forslag, kan endres
       // Vennene har ikke dine egne metcons, så de går til timen som tekst
       if (ui.bankFor === 'sx' && ui.sxForm) { if (w.mine) { ui.sxForm.wk = 'text'; ui.sxForm.text = (wodTitle(w) + '\n' + w.x).slice(0, 300); } else { ui.sxForm.wk = 'bank'; ui.sxForm.ref = w.i; } }
-      else if (ui.bankFor === 'session' && S.draft) { S.draft.wod = pick; S.draft.metcon = true; S.draft.mc = Object.assign(guess, S.draft.mc && S.draft.mc.min ? S.draft.mc : {}); save(); }
+      // pick: valgt i økta, så den kan byttes. Minuttene planen fylte inn (auto), viker for forslaget fra økta.
+      else if (ui.bankFor === 'session' && S.draft) { S.draft.wod = Object.assign(pick, {pick: 1}); S.draft.metcon = true; S.draft.mc = Object.assign(guess, S.draft.mc && S.draft.mc.min && !S.draft.mc.auto ? S.draft.mc : {}); save(); }
       else { ui.free = true; ui.freeWod = pick; ui.freeMc = true; ui.freeMcData = Object.assign(guess, ui.freeMcData && ui.freeMcData.min ? ui.freeMcData : {}); }
       ui.bank = false; ui.wod = null; ui.wodRand = false; render(); toTop(); toast(ui.bankFor === 'sx' ? 'Metcon lagt til timen' : 'Metcon valgt');
       break;
@@ -8939,8 +8983,15 @@ document.addEventListener('click', ev => {
     }
     case 'wodrm':
       // Metconen fra programmet kan byttes: da nullstilles også minuttene og typen planen fylte inn, så en ny metcon får sine egne
-      if (r[0] === 'session' && S.draft) { delete S.draft.wod; if (S.draft.mc && S.draft.mc.auto) { S.draft.mc = {}; S.draft.metcon = false; } save(); } else ui.freeWod = null;
+      // En metcon du valgte i økta, byttes uten å røre minuttene og RPE-en
+      if (r[0] === 'session' && S.draft) { const own = S.draft.wod && S.draft.wod.pick; delete S.draft.wod; if (!own && S.draft.mc && S.draft.mc.auto) { S.draft.mc = {}; S.draft.metcon = false; } save(); } else ui.freeWod = null;
       render(); break;
+    // Skriv inn metconen selv: den blir dagens metcon med klokke og resultat
+    case 'wodown':
+      if (!S.draft) break;
+      S.draft.wod = {id: 'egen-' + S.draft.started, navn: 'Egen metcon', tekst: '', resultat: '', pick: 1, edit: 1}; S.draft.metcon = true; save(); render();
+      { const t = $('#wodTxt'); if (t) t.focus(); }
+      break;
     case 'ck': ckAct(r); break;
     case 'finish': ui.confirm = null; finish(); break;
     case 'skipday': if (S.active && S.draft) skipSession(); break;
@@ -9188,6 +9239,7 @@ document.addEventListener('input', ev => {
     (S.draft.cond.res = S.draft.cond.res || {})[ev.target.dataset.axres] = ev.target.value; save();
   }
   else if (ev.target.dataset && ev.target.dataset.key) ev.target.dataset.edited = '1';
+  else if (ev.target.id === 'wodTxt' && S.draft && S.draft.wod) { S.draft.wod.tekst = ev.target.value; save(); }
   else if (ev.target.id === 'wodRes') {
     if (ev.target.dataset.ctx === 'session' && S.draft && S.draft.wod) { S.draft.wod.resultat = ev.target.value; save(); }
     else if (ui.freeWod) ui.freeWod.resultat = ev.target.value;
@@ -9200,6 +9252,8 @@ document.addEventListener('input', ev => {
 
 document.addEventListener('change', ev => {
   if (ev.target.dataset && ev.target.dataset.ckf) { ckField(ev.target); return; }
+  // Egen metcon: klokka leser teksten på nytt. Bare linja oppdateres, så et trykk på Start klokke ikke forsvinner.
+  if (ev.target.id === 'wodTxt' && S.draft && S.draft.wod) { const d = $('.wodbox .ck-go p'); if (d) d.textContent = ckDesc(ckFromWod(S.draft.wod)) + (ckCd() ? ' · ' + ckCd() + ' s nedtelling' : ''); return; }
   if (ev.target.dataset && ev.target.dataset.pw) { pwSave(ev.target); return; }
   if (ev.target.dataset && ev.target.dataset.pewd != null && ui.pe) { const v = ev.target.value; ui.pe.d.sched.wd[+ev.target.dataset.pewd] = v === '' ? null : +v; ui.pe.err = ''; return; }
   if (ev.target.dataset && ev.target.dataset.pedl && ui.pe) { if (ev.target.checked) ui.pe.d.deload = true; else delete ui.pe.d.deload; return; }

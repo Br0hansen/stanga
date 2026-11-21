@@ -587,7 +587,20 @@ test('Hybrid Hypertrophy: percent of 10RM per week, HPC by its own plan, 10RM re
   assert.deepEqual(f.state('S.draft.ex[0].sets.map(x=>[x.t,x.w])'),[[12,65],[12,65],[12,65],[12,65]]);
   assert.deepEqual(f.state('S.draft.ex[2].sets.map(x=>[x.t,x.w])'),[[5,60],[5,60],[5,60],[5,60]]);
   assert.equal(f.state('S.draft.ex[0].rest'),150);
-  assert.match(f.state('S.draft.wod.tekst'),/^20–30 min på RPE 8\nEksempel: RowErg/);
+  // Metconen er en ramme: ingen fast økt, men du kan skrive inn en selv eller velge fra øktbanken
+  assert.match(f.state('S.draft.mcPlan'),/^20–30 min på RPE 8\nEksempel: RowErg/);
+  assert.equal(f.state('!!S.draft.wod'),false);
+  f.run('S.draft.go=Date.now();');
+  let mv=f.run('vToday()');
+  assert.match(mv,/Planen for metconen/);
+  assert.match(mv,/data-a="wodown">Skriv inn</);
+  assert.match(mv,/data-a="bank:session">Øktbank</);
+  f.click('wodown');
+  assert.deepEqual(f.state('[S.draft.wod.navn,S.draft.wod.edit,S.draft.wod.pick,S.draft.mc.min]'),['Egen metcon',1,1,25]);
+  assert.match(f.run('vToday()'),/id="wodTxt"/);
+  // Bytt tar bort metconen du valgte, men beholder minuttene
+  f.click('wodrm:session');
+  assert.deepEqual(f.state('[!!S.draft.wod,S.draft.metcon,S.draft.mc.min]'),[false,true,25]);
   // Arbeidsvektene i programmet med 10RM 80 kg
   assert.deepEqual(f.state(`HH_WEEKS.map(([,pc])=>r25(80*pc/100))`),[65,65,67.5,70,70,72.5,72.5,75,75,75,75,77.5]);
   // HPC: raske og rene gir 2,5 kg mer
