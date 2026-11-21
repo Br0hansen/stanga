@@ -1,6 +1,6 @@
 # Stanga – treningsapp på hjemskjermen
 
-Styrkeprogrammer (StrongLifts 5×5, Starting Strength, GZCLP, 5/3/1 FSL og BBB, Juggernaut, Cube Method og Strength & Power), Burgener 12 uker for olympisk vektløfting, Muscle MetCon 12 uker (styrke, metcon og finisher i hver økt, sekundærløft styrt av RPE), EMOM Capacity 12 uker (styrke som E2MOM og 4-stasjons EMOM-er), Circuit EMOM 12 uker (kretser med åtte stasjoner), Cube EMOM 12 uker (tre baseløft i E4MOM hver økt), RP Hypertrofi på 3 og 5 dager (13 uker i tre mesosykluser), Knebøy, benk og RP (en tung dag med knebøy og benk og to RP-dager), Brosesh (12 uker med tre helkroppsøkter, bygd på RP Strengths hypertrofiguide), Hybrid Hypertrophy 12 uker (tre styrkeøvelser og en metcon i hver økt), et konkurranseprogram for ATHX 2027, øktbank med metcons, egne metcons, metcon-klokke og treningslogg. Alle data lagres lokalt på telefonen.
+Styrkeprogrammer (StrongLifts 5×5, Starting Strength, GZCLP, 5/3/1 FSL og BBB, Juggernaut, Cube Method og Strength & Power), Burgener 12 uker for olympisk vektløfting, Muscle MetCon 12 uker (styrke, metcon og finisher i hver økt, sekundærløft styrt av RPE), EMOM Capacity 12 uker (styrke som E2MOM og 4-stasjons EMOM-er), Circuit EMOM 12 uker (kretser med åtte stasjoner), Cube EMOM 12 uker (tre baseløft i E4MOM hver økt), RP Hypertrofi på 3 og 5 dager (13 uker i tre mesosykluser), Knebøy, benk og RP (en tung dag med knebøy og benk og to RP-dager), Brosesh (12 uker med tre helkroppsøkter, bygd på RP Strengths hypertrofiguide), Hybridprogram (3–5 dager, 8–16 uker og valgfritt muskelfokus), Hybrid Hypertrophy 12 uker (tre styrkeøvelser og en metcon i hver økt), et konkurranseprogram for ATHX 2027, øktbank med metcons, egne metcons, metcon-klokke og treningslogg. Alle data lagres lokalt på telefonen.
 
 ## Utseende: Treningsboka
 
@@ -151,6 +151,19 @@ Under **Program → Bibliotek** står **Dine programmer** øverst, med **+ Lag e
 - **Deload (uke 6 og 12):** 80 % av vekta rundet ned til nærmeste 2,5 kg, bunnen av repområdet, 2 sett der det står 3 og 1 der det står 2.
 - **Bytter og video:** Hver plass har alternativene fra RP Strength sine muskelguider (bryst, rygg, forside lår, baksida lår, sideskulder, biceps, triceps, legger og mage), 122 øvelser i alt. De kan velges under **Program → Oppsett → Øvelser og bytter** eller med **Valg → Bytt i dag**. Hver øvelse har videoen fra guiden. Videoene vises bare i Brosesh, og de andre programmene beholder videoene fra arket.
 - **Teknisk:** `BRO_CAT` (alternativene), `BRO_VID` (videoene), `BRO_DAYS` (øktene), `buildBro` og `progressBro` i `index.html`. Instansen har `bro` (vekt og reps per plass og øvelse), `sets` (sett neste gang), `lett` (lett på rad), `blk` (blokka) og `swaps`. En plass heter «dag.rad».
+
+## Hybridprogram
+
+**Eget program under Program → Bibliotek.** Programmet kombinerer muskelvekst, styrke og kondisjon. Før aktivering bygger du din variant i en kort onboarding. Sammendraget viser antall økter, blokkene, lette uker og evalueringsuka før du starter.
+
+- **Treningsdager:** 3 dager gir tre helkroppsøkter med rolig kondisjon, intervaller og kontrollert metcon. 4 dager gir to overkropps- og to underkroppsøkter. 5 dager bruker samme fire styrkeøkter og legger til 35–45 minutter rolig kondisjon som egen dag.
+- **Varighet:** Velg 8–16 uker. Syklusen deles i blokker på 3–5 uker. Siste uke i hver blokk er lett, bortsett fra siste blokk, der siste uke er en kontrollert evaluering. Dette er ikke en makstest.
+- **Muskelfokus:** Velg balansert, bryst, rygg, bein, forside lår, bakside lår, sete, skuldre, armer eller legger. Grunnprogrammet beholdes, mens seks ukentlige arbeidssett legges til det valgte området. Totalt blir det 39 styrkesett i en vanlig uke.
+- **Progresjon:** Vanlige øvelser bruker dobbel progresjon. Først øker repmålet innen området, deretter vekta når alle settene når toppen med riktig RIR. Tunge sett i knebøy og benk går fra 5–7 reps i blokk 1 til 4–6 i blokk 2 og 3–5 i senere blokker. RPE-en du logger brukes til å avgjøre neste mål.
+- **Lette uker og evaluering:** I en lett uke blir 3 sett til 2, 2 sett til 1 og vekta omtrent 10–15 % lettere, med 4–5 reps i reserve. I evalueringsuka er tunge knebøy- og benksett 2 × 5 med omtrent 2 reps i reserve, mens hjelpeøvelsene får ett lett sett. Lette uker flytter ikke arbeidsvektene.
+- **Kondisjon:** Programmet fordeler rolig arbeid, intervaller og metcon etter styrkeøktene. Intervallene bygges fra 3 × 3 til 4 × 3 og 4 × 4 minutter. Valgt muskelfokus påvirker rådet om apparat og øvelser, slik at kondisjonen ikke unødvendig dobler belastningen.
+- **Startvekter:** Onboardingen foreslår det du brukte sist, ellers forsiktige startvekter. Moderate knebøy- og benkøkter starter 15 % lettere enn den tunge varianten. Alle forslag kan justeres i økta.
+- **Teknisk:** `HY_BLOCKS`, `HY_FOCUS` og `HY_DAYS` beskriver sykluser, fokusmoduler og økter. `buildHybrid` lager økta og `progressHybrid` styrer dobbel progresjon. Instansen har `cfg` (dager, uker og fokus), `hy` (vekt og repmål per øvelsesvariant), `total` og `_hyBlock`.
 
 ## Hybrid Hypertrophy 12 uker
 

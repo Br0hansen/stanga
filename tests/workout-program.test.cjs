@@ -755,3 +755,56 @@ test('Hybrid Hypertrophy: 10RM står når du følger planen, går opp med flere 
   f.run(`S.active.idx=3;S.draft=buildSession(prog('hh12'),S.active);`);
   assert.equal(f.state('S.draft.ex[0].sets[0].w'),77.5);
 });
+
+test('Hybridprogram onboarding chooses 3–5 days, 8–16 weeks and one muscle focus',()=>{
+  const f=fixture('hybrid');
+  let view=f.run("vDetail(prog('hybrid'))");
+  for(const txt of ['Hvor mange dager vil du trene?','Hvor lang skal syklusen være?','Hva vil du prioritere?','3 dager · 12 uker · Balansert']) assert.match(view,new RegExp(txt));
+  f.click('hycfg:days:5');f.click('hycfg:weeks:16');f.click('hycfg:focus:shoulders');
+  assert.deepEqual(f.state('ui.hy'),{id:'hybrid',days:5,weeks:16,focus:'shoulders'});
+  f.run("S.active=newInstance(prog('hybrid'))");
+  assert.deepEqual(f.state('[S.active.cfg,S.active.total]'),[{days:5,weeks:16,focus:'shoulders'},80]);
+});
+
+test('Hybridprogram keeps 39 strength sets while focus redistributes six sets',()=>{
+  const f=fixture('hybrid');
+  f.run("ui.hy={id:'hybrid',days:3,weeks:12,focus:'chest'};S.active=newInstance(prog('hybrid'))");
+  const week=f.state("[0,1,2].map(i=>{const a=clone(S.active);a.idx=i;return buildSession(prog('hybrid'),a)})");
+  assert.equal(week.flatMap(s=>s.ex).reduce((n,e)=>n+e.sets.length,0),39);
+  assert.deepEqual(week.map(s=>s.ex.find(e=>e.lift==='l_cable_crossover').sets.length),[2,2,2]);
+  assert.deepEqual(week.map(s=>s.cond.title),['Rolig kondisjon','Maskinintervaller','Kontrollert EMOM 20']);
+});
+
+test('Hybridprogram uses upper/lower split and a conditioning-only fifth day',()=>{
+  const f=fixture('hybrid');
+  f.run("ui.hy={id:'hybrid',days:5,weeks:10,focus:'legs'};S.active=newInstance(prog('hybrid'))");
+  const week=f.state("[0,1,2,3,4].map(i=>{const a=clone(S.active);a.idx=i;return buildSession(prog('hybrid'),a)})");
+  assert.deepEqual(week.map(s=>s.day),['Overkropp A','Underkropp A','Overkropp B','Underkropp B','Rolig kondisjon']);
+  assert.equal(week.flatMap(s=>s.ex).reduce((n,e)=>n+e.sets.length,0),39);
+  assert.equal(week[4].ex.length,0);assert.equal(week[4].cond.min,40);
+  assert.equal(week[1].ex.find(e=>e.lift==='l_leg_extensions').sets.length,2);
+  assert.equal(week[1].ex.find(e=>e.lift==='l_seated_leg_curl').sets.length,3);
+});
+
+test('Hybridprogram maps every cycle length to deload weeks and a final evaluation week',()=>{
+  const f=fixture('hybrid');
+  for(const weeks of [8,9,10,11,12,13,14,15,16]){
+    f.run(`ui.hy={id:'hybrid',days:3,weeks:${weeks},focus:'balanced'};S.active=newInstance(prog('hybrid'))`);
+    const ends=f.state('hyCum(S.active.cfg)');
+    for(const end of ends.slice(0,-1)){
+      f.run(`S.active.idx=${(end-1)*3}`);assert.match(f.state("buildSession(prog('hybrid'),S.active).sub"),/lett uke/,`${weeks} uker, uke ${end}`);
+    }
+    f.run(`S.active.idx=${(weeks-1)*3}`);assert.match(f.state("buildSession(prog('hybrid'),S.active).sub"),/evaluering/,`${weeks} uker`);
+  }
+});
+
+test('Hybridprogram double progression builds reps before adding weight',()=>{
+  const f=fixture('hybrid');
+  f.run("ui.hy={id:'hybrid',days:3,weeks:12,focus:'balanced'};S.active=newInstance(prog('hybrid'));S.draft=buildSession(prog('hybrid'),S.active)");
+  f.run("S.draft.ex[0].sets.forEach(x=>x.d=5);S.draft.ex[0].rpe=7;globalThis.hyNotes=progressHybrid(prog('hybrid'),S.active,S.draft)");
+  assert.equal(f.state("S.active.hy['squat.heavy'].r"),6);
+  f.run("S.draft=buildSession(prog('hybrid'),S.active);S.draft.ex[0].sets.forEach(x=>x.d=7);S.draft.ex[0].rpe=7;globalThis.hyNotes=progressHybrid(prog('hybrid'),S.active,S.draft)");
+  assert.equal(f.state("S.active.hy['squat.heavy'].w"),45);
+  assert.equal(f.state("S.active.hy['squat.heavy'].r"),5);
+  assert.match(f.state("hyNotes.map(x=>x.text).join(' ')"),/40 → 45 kg/);
+});

@@ -368,6 +368,21 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .wodbox textarea.txt{min-height:120px;resize:vertical;font-weight:400;line-height:1.5}
 .selrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .selrow select{width:100%;max-width:none;font-size:16px;padding:10px 8px}
+.hy-build{display:grid;gap:18px}
+.hy-step{display:grid;gap:9px}
+.hy-step>h2{margin:0;font-size:18px}
+.hy-step>p{margin:0}
+.hy-picks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.hy-picks.weeks{grid-template-columns:repeat(5,minmax(0,1fr))}
+.hy-picks.focus{grid-template-columns:repeat(2,minmax(0,1fr))}
+.hy-pick{appearance:none;min-height:48px;padding:9px 8px;border:1px solid var(--line);border-radius:4px;background:transparent;color:var(--chalk);font:600 14px/1.2 var(--face);cursor:pointer}
+.hy-pick:active{background:var(--press)}
+.hy-pick[aria-pressed="true"]{background:var(--chalk);border-color:var(--chalk);color:var(--iron)}
+.hy-receipt{display:grid;gap:7px;border-left:3px solid var(--accent);padding-left:14px}
+.hy-receipt strong{font-size:18px}
+.hy-receipt span{color:var(--chalk-2);font-size:14px}
+.hy-weights summary{font-weight:600;cursor:pointer}
+@media(max-width:380px){.hy-picks.weeks{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .bankctl .txt,.wodbox .txt{width:100%;background:var(--iron);border:1px solid var(--line);border-radius:3px;color:var(--chalk);font:500 16px var(--face);padding:11px 12px}
 .bankitem{appearance:none;text-align:left;width:100%;padding:14px 16px;display:grid;gap:8px;cursor:pointer;font:inherit}
 .bankitem:active{background:var(--press)}
@@ -1097,7 +1112,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 118;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 119;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -2377,6 +2392,164 @@ function vHhStart(p){
     <p class="muted small">Vekta du klarer 4 × 5 med, raske og rene. Står feltet tomt, finner du vekta i første økt.</p>`;
 }
 
+/* ---------- Hybridprogram: 3–5 dager og 8–16 uker ----------
+   Forskningsprogrammet har 33 grunnsett og seks fokussett per uke. Tre dager fordeler styrken på
+   helkroppsøkter. Fire dager bruker over-/underkropp, og femte dag er bare rolig kondisjon.
+   Hver blokk slutter med en lett uke; siste uke i hele syklusen er evaluering. */
+const HY_BLOCKS = {
+  8:[4,4], 9:[4,5], 10:[5,5], 11:[4,4,3], 12:[4,4,4],
+  13:[4,4,5], 14:[5,4,5], 15:[5,5,5], 16:[4,4,4,4]
+};
+const HY_FOCUS = {
+  balanced:{n:'Balansert', three:[[['l_side_lateral_raise',2]],[['l_standing_calf_raises',2]],[['l_pallof_press',2]]],
+    four:[[['l_side_lateral_raise',2]],[],[['l_standing_calf_raises',2]],[['l_pallof_press',2]]]},
+  chest:{n:'Bryst', three:Array.from({length:3},()=>[['l_cable_crossover',2]]), four:[[['l_cable_crossover',3]],[],[['l_cable_crossover',3]],[]]},
+  back:{n:'Rygg', three:[[['pulldown',2]],[['l_seated_cable_rows',2]],[['pulldown',2]]], four:[[['pulldown',3]],[],[['l_seated_cable_rows',3]],[]]},
+  legs:{n:'Bein', three:Array.from({length:3},()=>[['l_leg_extensions',1],['l_seated_leg_curl',1]]),
+    four:[[],[['l_leg_extensions',2],['l_seated_leg_curl',1]],[],[['l_leg_extensions',1],['l_seated_leg_curl',2]]]},
+  quads:{n:'Forside lår', three:Array.from({length:3},()=>[['l_leg_extensions',2]]), four:[[],[['l_leg_extensions',3]],[],[['l_leg_extensions',3]]]},
+  hams:{n:'Bakside lår', three:Array.from({length:3},()=>[['l_seated_leg_curl',2]]), four:[[],[['l_seated_leg_curl',3]],[],[['l_seated_leg_curl',3]]]},
+  glutes:{n:'Sete', three:Array.from({length:3},()=>[['l_hip_thrust',2]]), four:[[],[['l_hip_thrust',3]],[],[['l_hip_thrust',3]]]},
+  shoulders:{n:'Skuldre', three:[[['l_side_lateral_raise',2]],[['l_reverse_flyes',2]],[['l_side_lateral_raise',2]]],
+    four:[[['l_side_lateral_raise',3]],[],[['l_reverse_flyes',3]],[]]},
+  arms:{n:'Armer', three:Array.from({length:3},()=>[['l_standing_biceps_cable_curl',1],['l_triceps_pushdown',1]]),
+    four:[[['l_standing_biceps_cable_curl',2],['l_triceps_pushdown',1]],[],[['l_standing_biceps_cable_curl',1],['l_triceps_pushdown',2]],[]]},
+  calves:{n:'Legger', three:Array.from({length:3},()=>[['l_standing_calf_raises',2]]), four:[[],[['l_standing_calf_raises',3]],[],[['l_standing_calf_raises',3]]]}
+};
+const HY_DAYS = {
+  3:[
+    {n:'Dag A · Knebøyprioritet', rows:[['squat',3,0,0,'heavy'],['bench',3,6,10,'moderate'],['csrow',3,8,12],['l_seated_leg_curl',2,10,15]]},
+    {n:'Dag B · Benkprioritet', rows:[['bench',3,0,0,'heavy'],['rdl',3,8,12],['pulldown',3,8,12],['bulgarian',2,8,12]]},
+    {n:'Dag C · Volum og metcon', rows:[['squat',3,6,10,'moderate'],['inclinedb',3,8,12],['l_seated_cable_rows',3,8,12],['l_seated_leg_curl',2,10,15]]}
+  ],
+  4:[
+    {n:'Overkropp A', rows:[['bench',3,0,0,'heavy'],['csrow',3,8,12],['pulldown',3,8,12]]},
+    {n:'Underkropp A', rows:[['squat',3,0,0,'heavy'],['rdl',3,8,12],['l_seated_leg_curl',2,10,15]]},
+    {n:'Overkropp B', rows:[['bench',3,6,10,'moderate'],['inclinedb',3,8,12],['l_seated_cable_rows',3,8,12]]},
+    {n:'Underkropp B', rows:[['squat',3,6,10,'moderate'],['bulgarian',2,8,12],['l_seated_leg_curl',2,10,15]]}
+  ]
+};
+const HY_DEFAULT_W = {squat:40,bench:30,csrow:12,l_seated_leg_curl:25,l_side_lateral_raise:6,l_standing_calf_raises:35,
+  l_pallof_press:15,l_cable_crossover:10,pulldown:30,l_seated_cable_rows:30,l_leg_extensions:25,rdl:40,bulgarian:10,
+  inclinedb:10,l_hip_thrust:40,l_reverse_flyes:5,l_standing_biceps_cable_curl:15,l_triceps_pushdown:15};
+const hyFocus = k => HY_FOCUS[k] || HY_FOCUS.balanced;
+const hyBlocks = weeks => HY_BLOCKS[weeks] || HY_BLOCKS[12];
+const hyMod = ([L,n]) => [L,n,['pulldown','l_seated_cable_rows','l_hip_thrust'].includes(L)?8:10,['pulldown','l_seated_cable_rows','l_hip_thrust'].includes(L)?12:15,'focus'];
+function hyRows(cfg, di, block=0){
+  const layout = cfg.days === 3 ? 3 : 4, day = HY_DAYS[layout][di]; if (!day) return [];
+  const hr = block < 1 ? [5,7] : block === 1 ? [4,6] : [3,5];
+  const rows = day.rows.map(r => { const x = r.slice(); if (x[4] === 'heavy') [x[2],x[3]] = hr; return x; });
+  const mods = (cfg.days === 3 ? hyFocus(cfg.focus).three : hyFocus(cfg.focus).four)[di] || [];
+  rows.push(...mods.map(hyMod));
+  const out = [];
+  rows.forEach(([L,n,lo,hi,kind]) => {
+    const slot = kind === 'heavy' ? L + '.heavy' : kind === 'moderate' && ['squat','bench'].includes(L) ? L + '.moderate' : L;
+    const old = out.find(x => x.slot === slot && x.lo === lo && x.hi === hi);
+    if (old) { old.n += n; old.focus = old.focus || kind === 'focus'; }
+    else out.push({L,n,lo,hi,kind,slot,focus:kind === 'focus'});
+  });
+  return out;
+}
+const hyAllLifts = cfg => [...new Set(Array.from({length:cfg.days === 3 ? 3 : 4},(_,di)=>hyRows(cfg,di,0)).flat().map(r=>r.L))];
+function hyCfg(p){
+  if (ui.hy && ui.hy.id === p.id) return ui.hy;
+  const a = S.active && S.active.programId === p.id ? S.active : null, c = a && a.cfg || {};
+  return ui.hy = {id:p.id, days:[3,4,5].includes(+c.days)?+c.days:3, weeks:HY_BLOCKS[c.weeks]?+c.weeks:12, focus:HY_FOCUS[c.focus]?c.focus:'balanced'};
+}
+const hyCum = cfg => { let n=0; return hyBlocks(cfg.weeks).map(x => n += x); };
+function hyPos(a){
+  const cfg=a.cfg, week=Math.min(cfg.weeks-1,Math.floor(a.idx/cfg.days)), di=a.idx%cfg.days, ends=hyCum(cfg);
+  const block=Math.max(0,ends.findIndex(x=>week<x)), start=block?ends[block-1]:0, end=ends[block], weekIn=week-start;
+  return {week,di,block,start,end,len:end-start,weekIn,deload:week===end-1&&week<cfg.weeks-1,eval:week===cfg.weeks-1};
+}
+function hyStartWeight(L, a){
+  const active = a && a.hy && Object.values(a.hy).find(x => x.L === L && /\.heavy$/.test(x.slot || '')) || a && a.hy && Object.values(a.hy).find(x => x.L === L);
+  const last = lastW(L); return active && active.w > 0 ? active.w : last != null ? last : HY_DEFAULT_W[L] || (LIFTS[L] && LIFTS[L].bar ? BAR() : 10);
+}
+function vHybridStart(p){
+  const c=hyCfg(p), a=S.active&&S.active.programId===p.id?S.active:null, blocks=hyBlocks(c.weeks), ends=hyCum(c), light=ends.slice(0,-1);
+  const pick=(key,v,l)=>`<button class="hy-pick" data-a="hycfg:${key}:${v}" aria-pressed="${String(c[key])===String(v)}">${l}</button>`;
+  return `<section class="box hy-build" aria-label="Sett opp hybridprogrammet">
+    <div class="hy-step"><h2>Hvor mange dager vil du trene?</h2><p class="small muted">Tre dager er helkropp. Fire fordeler styrken. Fem legger til en rolig kondisjonsdag.</p>
+      <div class="hy-picks">${[3,4,5].map(n=>pick('days',n,n+' dager')).join('')}</div></div>
+    <div class="hy-step"><h2>Hvor lang skal syklusen være?</h2><p class="small muted">Hver blokk avsluttes kontrollert. Siste uke er evaluering, ikke makstest.</p>
+      <div class="hy-picks weeks">${Object.keys(HY_BLOCKS).map(n=>pick('weeks',n,n)).join('')}</div></div>
+    <div class="hy-step"><h2>Hva vil du prioritere?</h2><p class="small muted">Fokuset fordeler seks ukentlige sett. Grunntreningen beholdes.</p>
+      <div class="hy-picks focus">${Object.entries(HY_FOCUS).map(([k,v])=>pick('focus',k,v.n)).join('')}</div></div>
+    <div class="hy-receipt" aria-live="polite"><strong>${c.days} dager · ${c.weeks} uker · ${hyFocus(c.focus).n}</strong>
+      <span>${c.weeks*c.days} økter. Blokker på ${blocks.join(' + ')} uker.${light.length?' Lette uker: '+light.join(', ')+'.':''} Uke ${c.weeks} er evaluering.</span>
+      <span>${c.days===3?'Tre helkroppsøkter med rolig kondisjon, intervaller og metcon.':c.days===4?'To overkropps- og to underkroppsøkter.':'Fire styrkeøkter og én rolig kondisjonsdag.'}</span></div>
+  </section>
+  <details class="box hy-weights"><summary>Startvekter</summary><p class="small muted">Forslaget er det du brukte sist, ellers en forsiktig start. Moderate knebøy- og benkøkter starter 15 % lettere. Du kan justere i selve økta.</p>
+    <div style="gap:0">${hyAllLifts(c).map(L=>`<div class="field"><label for="hy-w-${L}">${liftName(L)}${LIFTS[L]&&LIFTS[L].db?' <span class="muted">per manual</span>':''}</label>
+      <span class="inp"><input id="hy-w-${L}" data-hyw="${L}" type="text" inputmode="decimal" value="${fmt(hyStartWeight(L,a))}">kg</span></div>`).join('')}</div></details>`;
+}
+function hyCond(a,pos){
+  const c=a.cfg, easy=(min,title='Rolig kondisjon')=>({title,min,type:'M',logs:[],lines:['RPE 3–4 · snakketempo','Sykkel, roing eller SkiErg']});
+  if(pos.deload||pos.eval) return easy(c.days===5&&pos.di===4?25:15,pos.eval?'Rolig evaluering':'Rolig kondisjon i lett uke');
+  if(c.days===5&&pos.di===4) return easy(40,'Egen rolig kondisjonsdag');
+  const overlap = ['chest','shoulders'].includes(c.focus)?'Velg sykkel og unngå ekstra pressarbeid.':c.focus==='back'?'Velg sykkel i stedet for roing.':['legs','quads','hams','glutes'].includes(c.focus)?'Velg SkiErg eller rolig sykkel og dropp wall balls.':'';
+  const metcon=()=>({title:'Kontrollert EMOM 20',min:20,type:'L',logs:[],lines:['5 runder: 40 s maskin, 6–10 wall balls, 40 s maskin, 4–6 burpees','Minst 20 sekunder til pause og bytte','RPE 6–7'+(overlap?' · '+overlap:'')]});
+  const intervals=()=>{ let work,rest,min;
+    if(pos.block===0){work=pos.weekIn===0?'3 × 3 min':'4 × 3 min';rest='2 min rolig mellom';min=pos.weekIn===0?21:26;}
+    else if(pos.block===1){work=pos.weekIn===0?'4 × 3 min':'4 × 4 min';rest=pos.weekIn===0?'2 min rolig mellom':'3 min rolig mellom';min=pos.weekIn===0?26:33;}
+    else{work='4 × 4 min';rest='3 min rolig mellom';min=33;}
+    return {title:'Maskinintervaller',min,type:'M',logs:[],lines:['5 min gradvis oppvarming',work+' · '+rest,'3 min rolig nedkjøring · RPE 8–9']};};
+  if(c.days===3) return pos.di===0?easy(20):pos.di===1?intervals():metcon();
+  return pos.di===0?metcon():pos.di===1?easy(15):pos.di===2?intervals():easy(20);
+}
+const hyRound=(L,w)=>Math.max(LIFTS[L]&&LIFTS[L].bar?BAR():0,rW(L,w));
+const hyUp=(L,w)=>LIFTS[L]&&LIFTS[L].db?dbStep(w,1):w+(['squat','rdl','l_hip_thrust'].includes(L)?5:2.5);
+function hyState(a,row){
+  a.hy=a.hy||{}; let st=a.hy[row.slot];
+  if(!st){const base=HY_DEFAULT_W[row.L]||(LIFTS[row.L]&&LIFTS[row.L].bar?BAR():10);st=a.hy[row.slot]={slot:row.slot,L:row.L,w:row.kind==='moderate'?hyRound(row.L,base*.85):base,r:row.lo,block:0};}
+  if(row.kind==='heavy'&&st.block!==a._hyBlock){const est=st.est||e1(st.w,(st.r||row.lo)+2);st.w=hyRound(row.L,est/(1+(row.lo+2)/30));st.r=row.lo;st.block=a._hyBlock;}
+  st.r=Math.max(row.lo,Math.min(row.hi,st.r||row.lo)); return st;
+}
+function buildHybrid(p,a){
+  const pos=hyPos(a), cfg=a.cfg; a._hyBlock=pos.block;
+  const cond=hyCond(a,pos), sub='Uke '+(pos.week+1)+' av '+cfg.weeks+' · '+(pos.eval?'evaluering':pos.deload?'lett uke':'blokk '+(pos.block+1));
+  if(cfg.days===5&&pos.di===4) return {programId:p.id,day:'Rolig kondisjon',sub,ex:[],cond,started:Date.now()};
+  const lastLoad=pos.weekIn===pos.len-2, rows=hyRows(cfg,pos.di,pos.block), ex=rows.map((row,ri)=>{
+    const st=hyState(a,row), heavy=row.kind==='heavy', compound=heavy||row.kind==='moderate'||['rdl','csrow','pulldown','bulgarian','inclinedb','l_seated_cable_rows','l_hip_thrust'].includes(row.L);
+    let n=row.n,reps=st.r,w=st.w,rir=pos.weekIn===0?3:lastLoad&&!heavy?'1–2':2,rpeT=rir==='1–2'?8.5:10-rir, ask=true;
+    if(pos.deload){n=Math.max(1,row.n===3?2:1);reps=row.lo;w=hyRound(row.L,st.w*.875);rir='4–5';ask=false;}
+    if(pos.eval){n=heavy?2:1;reps=heavy?5:row.lo;w=heavy?st.w:hyRound(row.L,st.w*.875);rir=heavy?2:4;ask=heavy;rpeT=heavy?8:6;}
+    const focus=row.focus?'Fokus · ':'';
+    return {key:'hy.'+row.slot,lift:row.L,slot:row.L,hySlot:row.slot,hyLo:row.lo,hyHi:row.hi,hyTarget:reps,hyEval:pos.eval||undefined,
+      rest:heavy?240:compound?150:90,wu:ri?'short':null,adj:true,sp:ask?1:undefined,ask:ask||undefined,rpeT:ask?rpeT:undefined,
+      tag:focus+(pos.eval?'Evaluering':pos.deload?'Lett · 4–5 RIR':rir+' RIR'),
+      hint:pos.deload?'Omtrent 10–15 % lettere. Ingen sett nær utmattelse.':pos.eval?'Sammenlign kontrollert med starten av syklusen. Dette er ikke en makstest.':'Hold god teknikk. Øk vekta først når alle settene når '+row.hi+' reps med riktig RIR.',
+      sets:mk(n,reps,w)};
+  });
+  return {programId:p.id,day:(HY_DAYS[cfg.days===3?3:4][pos.di]||{}).n||'Hybridøkt',sub,ex,cond,started:Date.now()};
+}
+function progressHybrid(p,a,s){
+  const pos=hyPos(a), notes=[];
+  if(pos.deload){notes.push({name:'Lett uke',text:'Vektene og progresjonen står. Neste blokk starter med nytt repetisjonsområde.',kind:'same'});return notes;}
+  if(pos.eval){notes.push({name:'Evaluering',text:'Syklusen er fullført. Sammenlign femmerne, kondisjonen og restitusjonen med starten.',kind:'same'});return notes;}
+  s.ex.forEach(e=>{
+    if(!e.hySlot)return; const st=a.hy[e.hySlot],done=e.sets.filter(x=>x.d>0); if(!done.length)return;
+    const name=liftName(e.lift),used=done[done.length-1].w,oldW=st.w,oldR=st.r,r=e.rpe;
+    st.w=used; const reserve=r!=null?Math.max(0,10-r):2,last=done[done.length-1];st.est=e1(last.w,last.d+reserve);
+    const all=e.sets.every(x=>x.d!=null),low=all&&e.sets.every(x=>x.d>=e.hyLo),high=all&&e.sets.every(x=>x.d>=e.hyHi),target=all&&e.sets.every(x=>x.d>=e.hyTarget);
+    if(!low||r>=9.5){st.w=hyRound(e.lift,used*.95);st.r=e.hyLo;notes.push({name,text:fmt(used)+' → '+fmt(st.w)+' kg. Finn '+e.hyLo+'–'+e.hyHi+' reps med bedre margin.',kind:'down'});}
+    else if(high&&r!=null&&r<=e.rpeT){st.w=hyRound(e.lift,hyUp(e.lift,used));st.r=e.hyLo;notes.push({name,text:fmt(used)+' → '+fmt(st.w)+' kg. Alle sett traff '+e.hyHi+' reps med riktig RIR.',kind:'up'});}
+    else if(target&&r!=null&&r<=e.rpeT&&oldR<e.hyHi){st.r=Math.min(e.hyHi,oldR+1);notes.push({name,text:'Samme vekt. Målet går fra '+oldR+' til '+st.r+' reps per sett.',kind:'up'});}
+    else{notes.push({name,text:(used!==oldW?'Justerte til '+fmt(used)+' kg. ':'')+'Samme vekt og '+st.r+' reps som mål neste gang'+(r==null?'; legg inn RPE for automatisk progresjon':'.'),kind:'same'});}
+  });
+  if(!notes.length&&s.cond)notes.push({name:s.cond.title,text:'Kondisjonsøkta er logget. Hold samme type arbeid gjennom blokka.',kind:'same'});
+  return notes;
+}
+function hybridProg(){
+  return {id:'hybrid',name:'Hybridprogram',origin:'Forskningsbasert egen modell',level:'Middels',perWeek:'3–5',prog:'hybrid',inputs:{},
+    summary:'Bygg et hybridprogram for muskelvekst, styrke og kondisjon. Velg 3, 4 eller 5 treningsdager, 8–16 uker og ett muskelfokus. Programmet fordeler styrke, rolige økter, intervaller og kontrollert metcon.',
+    rule:'Styrken bruker dobbel progresjon og RIR. Bygg repetisjoner innen området, og øk vekta først når alle settene når toppen med riktig margin. Tung knebøy og benk går fra 5–7 til 4–6 og 3–5 reps gjennom blokkene. Hver blokk avsluttes med en lettere uke, og siste uke er kontrollert evaluering. Seks ukentlige sett flyttes til valgt fokusområde.',
+    days:[{name:'3 dager',lines:[['Helkropp','knebøy, benk, trekk og bakside'],['Kondisjon','rolig + intervaller + metcon']]},
+      {name:'4 dager',lines:[['Over-/underkropp','to av hver'],['Kondisjon','fordelt etter styrken']]},
+      {name:'5 dager',lines:[['Fire styrkeøkter','samme som 4 dager'],['Femte dag','35–45 min rolig kondisjon']]}]};
+}
+
 /* ---------- Muscle MetCon 12 uker (Jonas sitt Google-ark, inspirert av Coach Boski) ----------
    Tre økter i uka: Push (benk), Legs (knebøy), Pull & Power (power clean). Hver økt er
    styrke (ca. 24 min) → metcon (25–30 min) → finisher (6–8 min).
@@ -2783,7 +2956,7 @@ const axNum = v => { const x = parseFloat(String(v == null ? '' : v).replace(','
 // «25:00» eller «1:05:00» → sekunder
 const axTime = v => { const p = String(v || '').trim().split(':').map(x => parseFloat(x.replace(',', '.')));
   return p.length < 2 || p.length > 3 || p.some(x => !(x >= 0)) ? null : p.length === 3 ? p[0]*3600 + p[1]*60 + p[2] : p[0]*60 + p[1]; };
-const totalOf = (p, a) => p.prog === 'athx' ? a && a.total : p.total;
+const totalOf = (p, a) => ['athx','hybrid'].includes(p.prog) ? a && a.total : p.total;
 
 // Vekter og kalorier for klassen. Ved mixed bruker hver utøver vektene for sitt kjønn.
 function axSpec(X){
@@ -3198,7 +3371,7 @@ function refValue(p, a, L){
 const refLabel = p => ({linear:'Arbeidsvekt', gzclp:'T1-vekt', '531':'Treningsmaks', jugg:'Arbeidsmaks'})[p.prog] || '1RM';
 const ratio = L => LIFTS[L].r || 1;
 const estFor = (p, a, from, to) => r25(refValue(p, a, from) / ratio(from) * ratio(to));
-const slotsOf = p => p.prog === 'user' ? [] : p.prog === 'rp' ? rpSlots(p) : p.prog === 'bro' ? broSlots() :[...new Set(p.days.flatMap(d => d.ex ? d.ex.map(e => e.lift) : [d.lift]))].filter(s => s && ALTS(s).length);
+const slotsOf = p => ['user','hybrid'].includes(p.prog) ? [] : p.prog === 'rp' ? rpSlots(p) : p.prog === 'bro' ? broSlots() :[...new Set(p.days.flatMap(d => d.ex ? d.ex.map(e => e.lift) : [d.lift]))].filter(s => s && ALTS(s).length);
 
 function doSwap(slot){
   const a = S.active, p = prog(a.programId), A = sw(a, slot);
@@ -3611,6 +3784,7 @@ const PROGRAMS = [
     {origin: 'Eget program, med to dager fra RP Hypertrofi 3 dager',
      rule: 'Knebøy og benk på dag 1 går med 5 reps i Basis og Metabolitt og 3 reps i Resensitivisering. Vekta regnes fra 10RM, så den passer med repsene og reps i reserve.'}),
   broProg(),
+  hybridProg(),
   hhProg()
 ];
 
@@ -4541,6 +4715,7 @@ function buildSession(p, a){
   if (p.prog === 'rp') return buildRp(p, a);
   if (p.prog === 'bro') return buildBro(p, a);
   if (p.prog === 'hh') return buildHh(p, a);
+  if (p.prog === 'hybrid') return buildHybrid(p, a);
   if (p.prog === 'mmc') return withPw(buildMmc(p, a));
   if (p.prog === 'emc') return withPw(buildEmc(p, a));
   if (p.prog === 'cir') return withPw(buildCir(p, a));
@@ -4583,6 +4758,7 @@ function progress(p, a, s){
   if (p.prog === 'rp') return progressRp(p, a, s);
   if (p.prog === 'bro') return progressBro(p, a, s);
   if (p.prog === 'hh') return progressHh(p, a, s);
+  if (p.prog === 'hybrid') return progressHybrid(p, a, s);
   if (['mmc','emc','cir','cbe'].includes(p.prog)) return progressMmc(p, a, s);
   const notes = [];
   const hit = x => x.d != null && x.d >= x.t;
@@ -5090,6 +5266,19 @@ function newInstance(p){
   const a = {programId:p.id, startedAt:Date.now(), idx:0, lifts:{}, tm:{}};
   // Brosesh: ingen felt. Vektene finner du i økta, og appen husker dem.
   if (p.prog === 'bro') { Object.assign(a, {bro:{}, sets:{}, lett:{}, blk:0}); return a; }
+  // Hybridprogram: valgene i programbyggeren bestemmer ukeplan, varighet og fokus. Startvekter er valgfrie.
+  if (p.prog === 'hybrid') {
+    const f = hyCfg(p), cfg = {days:+f.days,weeks:+f.weeks,focus:f.focus}, num = el => parseFloat(String(el && el.value || '').replace(',', '.'));
+    Object.assign(a, {cfg, total:cfg.days*cfg.weeks, hy:{}, _hyBlock:0});
+    const base = {};
+    hyAllLifts(cfg).forEach(L => { const v=num($('#hy-w-'+L)); base[L]=v>0?v:hyStartWeight(L,null); });
+    Array.from({length:cfg.days===3?3:4},(_,di)=>hyRows(cfg,di,0)).flat().forEach(row => {
+      if (a.hy[row.slot]) return;
+      const w = row.kind === 'moderate' && ['squat','bench'].includes(row.L) ? hyRound(row.L,base[row.L]*.85) : base[row.L];
+      a.hy[row.slot] = {slot:row.slot,L:row.L,w,r:row.lo,block:0};
+    });
+    return a;
+  }
   // Hybrid Hypertrophy: 10RM i feltene som er fylt ut, og arbeidsvekta i HPC. Tomme felt finner du i økta.
   if (p.prog === 'hh') {
     const num = el => parseFloat(String(el && el.value || '').replace(',', '.'));
@@ -5134,7 +5323,7 @@ function mmcSecInputs(p){
 function activate(id){
   const p = prog(id);
   // Tomme felt fylles ikke med standardtall: da ville noen andres maksløft blitt dine startvekter
-  const empty = ['athx','rp','bro','hh'].includes(p.prog) ? [] :[...document.querySelectorAll('input[data-key]')].filter(inp => !(parseFloat(String(inp.value).replace(',', '.')) > 0) && !(inp.dataset.bw && !(parseFloat(String(inp.value).replace(',', '.')) < 0)));
+  const empty = ['athx','rp','bro','hh','hybrid'].includes(p.prog) ? [] :[...document.querySelectorAll('input[data-key]')].filter(inp => !(parseFloat(String(inp.value).replace(',', '.')) > 0) && !(inp.dataset.bw && !(parseFloat(String(inp.value).replace(',', '.')) < 0)));
   if (empty.length) { fieldErr(empty[0], p.orm ? 'Velg hvor du starter, eller skriv inn startvektene' : 'Skriv inn 1RM eller et sett du klarte for alle løftene'); return; }
   const a = newInstance(p);
   if (!a) return;
@@ -5443,6 +5632,7 @@ const PLAN_NOTE = {
   cube:'Vektene er prosent av 1RM og endres ikke underveis. Uke 10 er test, og beste løft blir ny 1RM.',
   sp12:'Planen viser vektene hvis toppsett og backoff går på RPE 7 og clean er rask og ren. Da øker vekten 2,5 kg fra uke til uke. Ved RPE 7,5–9 står vekten stille. Når en ny fase starter, regnes vektene ut fra estimert 1RM.',
   hh:'Vektene er prosent av 10RM-en din. Tar du av vekt i en økt, går 10RM ned fra neste gang. Etter uke 4 og 8 regnes 10RM ut fra settene dine, så vektene der er et anslag. Hang power clean viser vekta hvis alle løftene er raske og rene, så den er et tak.',
+  hybrid:'Planen viser dobbel progresjon: repetisjonene bygges først, deretter vekta. RPE/RIR og det du faktisk logger avgjør neste mål. Lette uker flytter ikke arbeidsvektene.',
   rp:'Vektene er prosent av 10RM-en din, 5 %, 7,5 % og 10 % over uke 1. Settene i planen er de fra arket. Vurderingen etter hver øvelse legger til eller trekker fra sett. Når en ny mesosyklus starter, regnes 10RM ut fra settene dine, så vektene der er et anslag.',
   burg:'Vektene er prosent av 1RM og endres ikke underveis. Uke 12, dag 4 er max out, og beste snatch og clean & jerk blir ny 1RM.',
   cbe:'Planen viser vektene hvis det tunge løftet går på RPE 7 hver gang. Da øker treningsmaksen 2,5 kg i benk og press og 5 kg i knebøy og markløft fra uka etter, så tallene framover er et tak. Hver uke har tre løft, og ett står over etter tur. Uke 12 bruker vektene fra uke 1, så retesten kan sammenlignes.',
@@ -5452,7 +5642,7 @@ const PLAN_NOTE = {
   user:'Planen viser vektene hvis du klarer alle reps hver gang. Med Bølge går treningsmaksen opp etter hver fjerde uke. Med Trinn går du til neste trinn med samme vekt hvis du bommer.',
   athx:'Vektene er prosent av arbeidsmaksen din i dag, og fartene følger anslaget ditt. Begge oppdateres etter hver økt, så tallene framover endrer seg. Henger du etter kalenderen, hopper planen til første økt i denne uka.'
 };
-const planPer = (p, a) => p.prog === 'athx' ? a.ax.per : ['531','jugg','cube','sp12','burg','mmc','emc','cir','cbe','rp','bro','hh'].includes(p.prog) ? p.days.length : (parseInt(p.perWeek) || 3);
+const planPer = (p, a) => p.prog === 'athx' ? a.ax.per : p.prog === 'hybrid' ? a.cfg.days : ['531','jugg','cube','sp12','burg','mmc','emc','cir','cbe','rp','bro','hh'].includes(p.prog) ? p.days.length : (parseInt(p.perWeek) || 3);
 function simulate(p, a0, n){
   const a = JSON.parse(JSON.stringify(a0)), out = [], tot = totalOf(p, a0);
   while (out.length < n && !(tot && a.idx >= tot)) {
@@ -5505,7 +5695,7 @@ function planWeeks(P, p, a, short){
   const weeks = [];
   rows.forEach(r => { const w = Math.floor(r.k / per); (weeks[w] = weeks[w] || []).push(r); });
   // Uka står i overskriften, så «Uke 9 av 12» trengs ikke på hver økt
-  const subOf = (r, w) => ax ? r.sub.replace(/^Uke \d+ av \d+ · /, '') : ['burg','mmc','emc','cir','cbe','rp','bro','hh'].includes(p.prog) ? r.sub.replace(/^Uke \d+ av \d+( · )?/, '') : r.sub !== 'Uke ' + (w + 1) ? r.sub : '';
+  const subOf = (r, w) => ax ? r.sub.replace(/^Uke \d+ av \d+ · /, '') : ['burg','mmc','emc','cir','cbe','rp','bro','hh','hybrid'].includes(p.prog) ? r.sub.replace(/^Uke \d+ av \d+( · )?/, '') : r.sub !== 'Uke ' + (w + 1) ? r.sub : '';
   const from = short ? Math.floor(Math.min(a.idx, N - 1) / per) : 0, to = short ? from + 2 : weeks.length;
   const inProgress = P.active && ownDraft() && ownDraft().ex.some(e => e.sets.some(x => x.d != null) || (e.wuDone || []).length);
   // «Dag 1 · Bryst, rygg og eksplosivitet»: dagen som liten etikett over navnet, så navnet får plass på én linje
@@ -6278,6 +6468,7 @@ const PROG_WHAT = {
   mmc12:'Styrke, metcon og finisher i hver økt', emc12:'Styrke og EMOM-er med fire stasjoner',
   cir12:'Styrke og kretser med en ny øvelse hvert minutt', cbe12:'Tre av fire baseløft per uke i rotasjon, med kondisjon',
   bro:'Muskelvekst: tre helkroppsøkter, deload i uke 6 og 12',
+  hybrid:'Velg treningsdager, 8–16 uker og muskelfokus',
   hh12:'Muskelvekst, styrke og metcon i hver økt, 36 styrkesett i uka',
   rp3:'Hypertrofi: helkropp tre dager, mesosykluser med deload', rpkb:'Tung knebøy og benk én dag, to RP-dager med volum', nf5:'Hypertrofi: fem dager delt på muskelgrupper, mesosykluser med deload'};
 // Dine egne programmer og de du har fått, øverst i biblioteket
@@ -6362,8 +6553,8 @@ function vDetail(p){
       <div class="meta" style="margin-top:8px"><span class="pill">${p.level}</span><span class="pill">${p.perWeek} økter/uke</span></div></header>
     <p>${p.summary}</p>
     <div class="box"><h2 class="sec" style="margin:0">Slik øker vekten</h2><p class="small">${p.rule}</p></div>
-    ${p.prog === 'athx' ? axSetup(other, isActive) : `${p.prog === 'user' ? vUserStart(p) : p.prog === 'rp' ? vRpStart(p) : p.prog === 'bro' ? vBroStart() : p.prog === 'hh' ? vHhStart(p) : vStart(p)}${['mmc','emc','cir'].includes(p.prog) ? mmcSecInputs(p) : ''}
-    <p class="muted small">${p.prog === 'user' ? 'Forslaget er den tyngste vekta du brukte sist i øvelsen, ellers tom stang. Endre det som ikke stemmer.' : p.orm ? p.ormNote || 'Start lett. Teknikken skal sitte før vekten blir tung.' : p.prog === '531' ? 'Appen regner ut treningsmaks som 90 % av dette.' : p.prog === 'jugg' ? 'Appen regner ut arbeidsmaks som 90 % av dette.' : p.prog === 'sp12' ? 'Startvektene regnes ut fra dette. Etter hvert styrer RPE-en din vektene.' : p.prog === 'cube' ? 'Alle vekter regnes ut som prosent av dette.' : p.prog === 'burg' ? 'Alle vekter regnes ut som prosent av dette. Trekk og shrugs ligger over 100 %, det er meningen.' : ['rp','bro','hh'].includes(p.prog) ? '' :['mmc','emc','cir','cbe'].includes(p.prog) ? 'Treningsmaksen starter på 90 % av dette, og RPE-en din flytter den etter hver uke. Bruk dagsaktuelle maksløft.' : 'Start lett. Teknikken skal sitte før vekten blir tung.'}
+    ${p.prog === 'athx' ? axSetup(other, isActive) : `${p.prog === 'user' ? vUserStart(p) : p.prog === 'rp' ? vRpStart(p) : p.prog === 'bro' ? vBroStart() : p.prog === 'hh' ? vHhStart(p) : p.prog === 'hybrid' ? vHybridStart(p) : vStart(p)}${['mmc','emc','cir'].includes(p.prog) ? mmcSecInputs(p) : ''}
+    <p class="muted small">${p.prog === 'user' ? 'Forslaget er den tyngste vekta du brukte sist i øvelsen, ellers tom stang. Endre det som ikke stemmer.' : p.orm ? p.ormNote || 'Start lett. Teknikken skal sitte før vekten blir tung.' : p.prog === '531' ? 'Appen regner ut treningsmaks som 90 % av dette.' : p.prog === 'jugg' ? 'Appen regner ut arbeidsmaks som 90 % av dette.' : p.prog === 'sp12' ? 'Startvektene regnes ut fra dette. Etter hvert styrer RPE-en din vektene.' : p.prog === 'cube' ? 'Alle vekter regnes ut som prosent av dette.' : p.prog === 'burg' ? 'Alle vekter regnes ut som prosent av dette. Trekk og shrugs ligger over 100 %, det er meningen.' : ['rp','bro','hh','hybrid'].includes(p.prog) ? '' :['mmc','emc','cir','cbe'].includes(p.prog) ? 'Treningsmaksen starter på 90 % av dette, og RPE-en din flytter den etter hver uke. Bruk dagsaktuelle maksløft.' : 'Start lett. Teknikken skal sitte før vekten blir tung.'}
       ${slotsOf(p).length ? ' Vil du bytte et løft, gjør du det under Program → Oppsett når programmet er aktivt.' : ''}
       ${other ? ' Dette erstatter '+other.name+'. Loggen din blir liggende.' : ''}${isActive ? ' Programmet er aktivt. Aktiverer du på nytt, starter det fra økt 1 med vektene over.' : ''}</p>`}
     <button class="btn" data-a="activate:${p.id}">${isActive ? 'Start på nytt' : 'Aktiver program'}</button>
@@ -8747,6 +8938,13 @@ document.addEventListener('click', ev => {
     case 'back': ui.detail = (ui.stack || []).pop() || null; ui.confirm = null; render(); toTop(); break;
     case 'activate': activate(r[0]); break;
     case 'startmode': ui.start = {id: r[0], mode: r[1]}; render(); break;
+    case 'hycfg': {
+      const p=prog('hybrid'), f=hyCfg(p), key=r[0], v=r[1];
+      if(key==='days'&&[3,4,5].includes(+v))f.days=+v;
+      if(key==='weeks'&&HY_BLOCKS[+v])f.weeks=+v;
+      if(key==='focus'&&HY_FOCUS[v])f.focus=v;
+      render(); break;
+    }
     case 'planall': ui.planAll = !ui.planAll; render(); break;
     case 'programsection':
       if (!['plan','setup','library'].includes(r[0])) break;
