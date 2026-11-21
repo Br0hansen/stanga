@@ -759,11 +759,21 @@ test('Hybrid Hypertrophy: 10RM står når du følger planen, går opp med flere 
 test('Hybridprogram onboarding chooses 3–5 days, 8–16 weeks and one muscle focus',()=>{
   const f=fixture('hybrid');
   let view=f.run("vDetail(prog('hybrid'))");
-  for(const txt of ['Hvor mange dager vil du trene?','Hvor lang skal syklusen være?','Hva vil du prioritere?','3 dager · 12 uker · Balansert']) assert.match(view,new RegExp(txt));
+  for(const txt of ['Hvor mange dager vil du trene?','Hvor lang skal syklusen være?','Hva vil du prioritere?','3 dager · 12 uker · Balansert','Arbeidsvekter i uke 1','nylig tungt sett','Uke 1: tung 3×5','Moderat 3×6','sett × 8–12 reps · ca. 3 RIR']) assert.match(view,new RegExp(txt));
   f.click('hycfg:days:5');f.click('hycfg:weeks:16');f.click('hycfg:focus:shoulders');
   assert.deepEqual(f.state('ui.hy'),{id:'hybrid',days:5,weeks:16,focus:'shoulders'});
   f.run("S.active=newInstance(prog('hybrid'))");
   assert.deepEqual(f.state('[S.active.cfg,S.active.total]'),[{days:5,weeks:16,focus:'shoulders'},80]);
+});
+
+test('Hybridprogram estimates week-one squat and bench from a recent set',()=>{
+  const f=fixture('hybrid');
+  f.run(`ui.hy={id:'hybrid',days:3,weeks:12,focus:'balanced'};
+    ui.hyStart={id:'hybrid',main:{squat:{w:'100',r:'5'},bench:{w:'80',r:'5'}},weights:{}};
+    S.active=newInstance(prog('hybrid'))`);
+  assert.deepEqual(f.state("[S.active.hy['squat.heavy'].w,S.active.hy['squat.moderate'].w,S.active.hy['bench.heavy'].w,S.active.hy['bench.moderate'].w]"),[92.5,77.5,72.5,62.5]);
+  const line=f.run("hyWeekOne('squat',ui.hyStart,S.active)");
+  assert.match(line,/tung 3×5 på 92,5 kg/);assert.match(line,/Moderat 3×6 på 77,5 kg/);assert.match(line,/beregnet fra settet/);
 });
 
 test('Hybridprogram keeps 39 strength sets while focus redistributes six sets',()=>{
@@ -807,4 +817,16 @@ test('Hybridprogram double progression builds reps before adding weight',()=>{
   assert.equal(f.state("S.active.hy['squat.heavy'].w"),45);
   assert.equal(f.state("S.active.hy['squat.heavy'].r"),5);
   assert.match(f.state("hyNotes.map(x=>x.text).join(' ')"),/40 → 45 kg/);
+});
+test('Sammen gives program sessions to times in calendar order, and a started time only takes one while you train',()=>{
+  const f=fixture('hh12'), h=3600000;
+  f.run(`S.draft=null; auth={user:{id:'me'}}; SX.part=[];
+    SX.sess=[{id:'sat',owner:'me',kind:'fixed',starts_at:new Date(Date.now()-${h}).toISOString()},
+      {id:'mon',owner:'me',kind:'fixed',starts_at:new Date(Date.now()+2*864e5).toISOString()},
+      {id:'thu',owner:'me',kind:'fixed',starts_at:new Date(Date.now()+5*864e5).toISOString()},
+      {id:'tue',owner:'me',kind:'fixed',starts_at:new Date(Date.now()+3*864e5).toISOString()}];`);
+  const days=()=>f.state(`SX.sess.map(s=>[s.id,((mySessFor(s)||{}).day||'').split(' · ')[0]])`);
+  assert.deepEqual(days(),[['sat',''],['mon','Dag 1'],['thu','Dag 3'],['tue','Dag 2']]);
+  f.run(`S.draft=buildSession(prog('hh12'),S.active);S.draft.go=Date.now();`);
+  assert.deepEqual(days(),[['sat','Dag 1'],['mon','Dag 2'],['thu','Dag 1'],['tue','Dag 3']]);
 });

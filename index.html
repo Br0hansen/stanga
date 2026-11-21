@@ -381,7 +381,18 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .hy-receipt{display:grid;gap:7px;border-left:3px solid var(--accent);padding-left:14px}
 .hy-receipt strong{font-size:18px}
 .hy-receipt span{color:var(--chalk-2);font-size:14px}
-.hy-weights summary{font-weight:600;cursor:pointer}
+.hy-weights{display:grid;gap:16px}
+.hy-weights h2,.hy-weights p{margin:0}
+.hy-main-grid{display:grid;gap:12px}
+.hy-main-lift{display:grid;gap:8px;padding-top:12px;border-top:1px solid var(--line)}
+.hy-main-lift:first-child{padding-top:0;border-top:0}
+.hy-main-lift>label{font-weight:700}
+.hy-main-lift .inp{justify-self:start}
+.hy-week-one{display:grid;gap:3px;color:var(--chalk-2);font-size:13px;line-height:1.35}
+.hy-week-one strong{color:var(--chalk);font-size:14px}
+.hy-assist summary{font-weight:700;cursor:pointer}
+.hy-assist .field label{display:grid;gap:2px}
+.hy-assist .field label small{font-weight:400}
 @media(max-width:380px){.hy-picks.weeks{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .bankctl .txt,.wodbox .txt{width:100%;background:var(--iron);border:1px solid var(--line);border-radius:3px;color:var(--chalk);font:500 16px var(--face);padding:11px 12px}
 .bankitem{appearance:none;text-align:left;width:100%;padding:14px 16px;display:grid;gap:8px;cursor:pointer;font:inherit}
@@ -1112,7 +1123,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 119;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 121;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -2466,9 +2477,42 @@ function hyStartWeight(L, a){
   const active = a && a.hy && Object.values(a.hy).find(x => x.L === L && /\.heavy$/.test(x.slot || '')) || a && a.hy && Object.values(a.hy).find(x => x.L === L);
   const last = lastW(L); return active && active.w > 0 ? active.w : last != null ? last : HY_DEFAULT_W[L] || (LIFTS[L] && LIFTS[L].bar ? BAR() : 10);
 }
+// Nylig tungt sett brukes bare som et bedre startanslag. Selve programmet styres videre av RPE/RIR.
+function hyRecentSet(L){
+  for(const h of S.history){
+    if(h.skipped||!h.ex)continue; const e=h.ex.find(x=>x.lift===L&&!x.rm&&x.sets.some(s=>s.d>0)); if(!e)continue;
+    const done=e.sets.filter(s=>s.d>0), best=done.reduce((a,x)=>x.w*(1+Math.min(x.d,12)/30)>a.w*(1+Math.min(a.d,12)/30)?x:a,done[0]);
+    return {w:String(best.w),r:String(best.d)};
+  }
+  return {w:'',r:''};
+}
+function hyInputs(p,c,a){
+  if(!ui.hyStart||ui.hyStart.id!==p.id)ui.hyStart={id:p.id,main:{squat:hyRecentSet('squat'),bench:hyRecentSet('bench')},weights:{}};
+  const f=ui.hyStart; f.main=f.main||{squat:{w:'',r:''},bench:{w:'',r:''}}; f.weights=f.weights||{};
+  hyAllLifts(c).filter(L=>!['squat','bench'].includes(L)).forEach(L=>{if(!(L in f.weights))f.weights[L]=String(hyStartWeight(L,a));});
+  return f;
+}
+function hyMainWeight(L,f,a){
+  const x=f.main[L]||{}, w=parseFloat(String(x.w||'').replace(',','.')), r=parseInt(x.r,10);
+  return w>0&&r>=1&&r<=12?hyRound(L,w*(1+Math.min(r,12)/30)*pctOf(5,7)):hyStartWeight(L,a);
+}
+function hyWeekOne(L,f,a){
+  const x=f.main[L]||{}, from=parseFloat(String(x.w||'').replace(',','.'))>0&&parseInt(x.r,10)>=1&&parseInt(x.r,10)<=12;
+  const heavy=hyMainWeight(L,f,a), moderate=hyRound(L,heavy*.85);
+  return `<strong>Uke 1: tung 3×5 på ${fmt(heavy)} kg · ca. 3 RIR</strong><span>Moderat 3×6 på ${fmt(moderate)} kg${from?' · beregnet fra settet':' · forsiktig forslag'}</span>`;
+}
+function hyAssistScheme(c,L){
+  const rows=Array.from({length:c.days===3?3:4},(_,di)=>hyRows(c,di,0)).flat().filter(r=>r.L===L), ns=rows.map(r=>r.n);
+  const sets=Math.min(...ns)===Math.max(...ns)?String(ns[0]):Math.min(...ns)+'–'+Math.max(...ns);
+  return `${sets} sett × ${[...new Set(rows.map(r=>r.lo+'–'+r.hi))].join(' / ')} reps · ca. 3 RIR`;
+}
 function vHybridStart(p){
-  const c=hyCfg(p), a=S.active&&S.active.programId===p.id?S.active:null, blocks=hyBlocks(c.weeks), ends=hyCum(c), light=ends.slice(0,-1);
+  const c=hyCfg(p), a=S.active&&S.active.programId===p.id?S.active:null, f=hyInputs(p,c,a), blocks=hyBlocks(c.weeks), ends=hyCum(c), light=ends.slice(0,-1);
   const pick=(key,v,l)=>`<button class="hy-pick" data-a="hycfg:${key}:${v}" aria-pressed="${String(c[key])===String(v)}">${l}</button>`;
+  const main=L=>{const x=f.main[L]||{};return `<div class="hy-main-lift"><label for="hy-set-${L}">${liftName(L)} · nylig tungt sett</label>
+    <span class="inp"><input id="hy-set-${L}" data-hyset="${L}:w" type="text" inputmode="decimal" placeholder="kg" value="${esc(x.w||'')}" aria-label="${liftName(L)}, kilo">×<input id="hy-reps-${L}" class="sm" data-hyset="${L}:r" type="text" inputmode="numeric" placeholder="reps" value="${esc(x.r||'')}" aria-label="${liftName(L)}, repetisjoner"></span>
+    <span class="hy-week-one" id="hy-out-${L}">${hyWeekOne(L,f,a)}</span></div>`;};
+  const assist=hyAllLifts(c).filter(L=>!['squat','bench'].includes(L));
   return `<section class="box hy-build" aria-label="Sett opp hybridprogrammet">
     <div class="hy-step"><h2>Hvor mange dager vil du trene?</h2><p class="small muted">Tre dager er helkropp. Fire fordeler styrken. Fem legger til en rolig kondisjonsdag.</p>
       <div class="hy-picks">${[3,4,5].map(n=>pick('days',n,n+' dager')).join('')}</div></div>
@@ -2480,9 +2524,13 @@ function vHybridStart(p){
       <span>${c.weeks*c.days} økter. Blokker på ${blocks.join(' + ')} uker.${light.length?' Lette uker: '+light.join(', ')+'.':''} Uke ${c.weeks} er evaluering.</span>
       <span>${c.days===3?'Tre helkroppsøkter med rolig kondisjon, intervaller og metcon.':c.days===4?'To overkropps- og to underkroppsøkter.':'Fire styrkeøkter og én rolig kondisjonsdag.'}</span></div>
   </section>
-  <details class="box hy-weights"><summary>Startvekter</summary><p class="small muted">Forslaget er det du brukte sist, ellers en forsiktig start. Moderate knebøy- og benkøkter starter 15 % lettere. Du kan justere i selve økta.</p>
-    <div style="gap:0">${hyAllLifts(c).map(L=>`<div class="field"><label for="hy-w-${L}">${liftName(L)}${LIFTS[L]&&LIFTS[L].db?' <span class="muted">per manual</span>':''}</label>
-      <span class="inp"><input id="hy-w-${L}" data-hyw="${L}" type="text" inputmode="decimal" value="${fmt(hyStartWeight(L,a))}">kg</span></div>`).join('')}</div></details>`;
+  <section class="box hy-weights" aria-label="Arbeidsvekter i uke 1"><h2>Arbeidsvekter i uke 1</h2>
+    <p class="small muted">For knebøy og benk: skriv et tungt sett fra de siste ukene som du kunne tatt høyst én rep til. Appen anslår 1RM og regner ut første uke.</p>
+    <div class="hy-main-grid">${main('squat')}${main('bench')}</div>
+    <details class="hy-assist"><summary>Hjelpeøvelser · valgfritt</summary><p class="small muted">Vekten gjelder første gang øvelsen kommer. Forslaget er det du brukte sist, ellers en forsiktig start.</p>
+      <div style="gap:0">${assist.map(L=>`<div class="field"><label for="hy-w-${L}">${liftName(L)}${LIFTS[L]&&LIFTS[L].db?' <span class="muted">per manual</span>':''}<small class="muted">${hyAssistScheme(c,L)}</small></label>
+        <span class="inp"><input id="hy-w-${L}" data-hyw="${L}" type="text" inputmode="decimal" value="${esc(f.weights[L])}">kg</span></div>`).join('')}</div></details>
+    <p class="small muted">Alle vekter kan justeres i selve økta. Etter uke 1 styrer repetisjonene og RPE/RIR progresjonen.</p></section>`;
 }
 function hyCond(a,pos){
   const c=a.cfg, easy=(min,title='Rolig kondisjon')=>({title,min,type:'M',logs:[],lines:['RPE 3–4 · snakketempo','Sykkel, roing eller SkiErg']});
@@ -5268,10 +5316,13 @@ function newInstance(p){
   if (p.prog === 'bro') { Object.assign(a, {bro:{}, sets:{}, lett:{}, blk:0}); return a; }
   // Hybridprogram: valgene i programbyggeren bestemmer ukeplan, varighet og fokus. Startvekter er valgfrie.
   if (p.prog === 'hybrid') {
-    const f = hyCfg(p), cfg = {days:+f.days,weeks:+f.weeks,focus:f.focus}, num = el => parseFloat(String(el && el.value || '').replace(',', '.'));
+    const f = hyCfg(p), cfg = {days:+f.days,weeks:+f.weeks,focus:f.focus}, old=S.active&&S.active.programId===p.id?S.active:null, inp=hyInputs(p,cfg,old);
     Object.assign(a, {cfg, total:cfg.days*cfg.weeks, hy:{}, _hyBlock:0});
     const base = {};
-    hyAllLifts(cfg).forEach(L => { const v=num($('#hy-w-'+L)); base[L]=v>0?v:hyStartWeight(L,null); });
+    hyAllLifts(cfg).forEach(L => {
+      if(['squat','bench'].includes(L)){base[L]=hyMainWeight(L,inp,old);return;}
+      const v=parseFloat(String(inp.weights[L]||'').replace(',','.')); base[L]=v>0?v:hyStartWeight(L,old);
+    });
     Array.from({length:cfg.days===3?3:4},(_,di)=>hyRows(cfg,di,0)).flat().forEach(row => {
       if (a.hy[row.slot]) return;
       const w = row.kind === 'moderate' && ['squat','bench'].includes(row.L) ? hyRound(row.L,base[row.L]*.85) : base[row.L];
@@ -8184,7 +8235,8 @@ function sharePlan(x){
 const canon = v => JSON.stringify(v, (k, x) => x && typeof x === 'object' && !Array.isArray(x) ? Object.fromEntries(Object.entries(x).sort()) : x);
 function sxSyncPlans(){
   const me = uid(), now = Date.now();
-  SX.sess.filter(s => s.owner === me && !s.cancelled_at && sxEnd(s) > now).forEach(s => {
+  // Når timen har begynt, står økta vennene ser, så de fortsatt kan kjøre den samme
+  SX.sess.filter(s => s.owner === me && !s.cancelled_at && Date.parse(s.starts_at) > now).forEach(s => {
     const plan = sharePlan(mySessFor(s));
     if (canon(plan) === canon(s.plan || null)) return;
     s.plan = plan;
@@ -8255,9 +8307,10 @@ function sxSetOther(id, on, txt){
   save(); sxSyncPlans();
 }
 function myUpcoming(){
-  const me = uid(), now = Date.now();
-  // Timer der du kjører samme økt som eieren eller noe annet, bruker ikke av øktene i programmet ditt
-  return SX.sess.filter(s => !s.cancelled_at && sxEnd(s) > now && !goesSame(s) && !sxOther(s) &&
+  const me = uid(), now = Date.now(), training = !!(S.draft && S.draft.go && !S.draft.guest);
+  // Timer der du kjører samme økt som eieren eller noe annet, bruker ikke av øktene i programmet ditt.
+  // En time som har begynt, tar bare en økt mens du trener. Ellers skyver den timene etter ett hakk.
+  return SX.sess.filter(s => !s.cancelled_at && sxEnd(s) > now && (Date.parse(s.starts_at) > now || training) && !goesSame(s) && !sxOther(s) &&
     (s.owner === me || SX.part.some(p => p.session_id === s.id && p.user_id === me)))
     .sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at)).map(s => s.id);
 }
@@ -9431,6 +9484,15 @@ document.addEventListener('input', ev => {
     const p = prog(ui.detail), l = ev.target.dataset.est;
     const w = parseFloat(String(($('#est-' + l) || {}).value || '').replace(',', '.')), r = parseInt(($('#estr-' + l) || {}).value, 10) || 1;
     if (w > 0) fillStart(p, l, e1rmOf(w, r));
+  }
+  else if (ev.target.dataset && ev.target.dataset.hyset && ui.detail==='hybrid') {
+    const [L,k]=ev.target.dataset.hyset.split(':'), p=prog('hybrid'), c=hyCfg(p), a=S.active&&S.active.programId===p.id?S.active:null, f=hyInputs(p,c,a);
+    f.main[L]=f.main[L]||{w:'',r:''}; f.main[L][k]=ev.target.value;
+    const out=$('#hy-out-'+L); if(out)out.innerHTML=hyWeekOne(L,f,a);
+  }
+  else if (ev.target.dataset && ev.target.dataset.hyw && ui.detail==='hybrid') {
+    const p=prog('hybrid'), c=hyCfg(p), a=S.active&&S.active.programId===p.id?S.active:null, f=hyInputs(p,c,a);
+    f.weights[ev.target.dataset.hyw]=ev.target.value;
   }
   else if (ev.target.dataset && ev.target.dataset.ax && ui.ax) ui.ax[ev.target.dataset.ax] = ev.target.value;
   else if (ev.target.dataset && ev.target.dataset.axres && S.draft && S.draft.cond) {
