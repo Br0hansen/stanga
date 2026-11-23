@@ -665,6 +665,9 @@ test('the overview with Start økt shows before the session is started, and logg
   const view=f.run('vToday()');
   assert.match(view,/data-a="startday"/);
   assert.match(view,/Resten av økta/);
+  assert.match(view,new RegExp('data-a="exmenu:'+f.state('S.draft.started')+'-0"'));
+  assert.match(view,/data-a="exadd"/);
+  assert.match(view,/data-a="after:mc">\+ Metcon/);
   assert.doesNotMatch(view,/id="exercise-0"|data-a="next:0"/);
   assert.match(view,new RegExp(f.state('fmt(Math.abs(S.draft.ex[0].sets[0].w-97.5))')+' kg ned siden sist'));
   f.click('startday');
@@ -673,6 +676,41 @@ test('the overview with Start økt shows before the session is started, and logg
   // En økt med et logget sett åpnes rett i økta, også uten go (eldre utkast)
   const g=fixture();g.run('delete S.draft.go;S.draft.ex[0].sets[0].d=5;');
   assert.match(g.run('vToday()'),/id="exercise-0"/);
+});
+test('the workout can be planned with exercise changes and a metcon before Start økt',()=>{
+  const f=fixture();f.run('delete S.draft.go;');
+  f.click(f.run("'exmenu:'+S.draft.started+'-0'"));
+  const menu=f.run('vExerciseOptions(S.draft,S.draft.ex[0],0)');
+  assert.match(menu,/Bytt i resten av planen/);
+  assert.match(menu,/Bytt bare i dag/);
+  assert.match(menu,/Fjern fra dagens økt/);
+  f.click('exmenuclose');
+  f.click('exrm:1');
+  assert.equal(f.state('S.draft.ex.length'),2);
+  assert.equal(f.state('S.draft.go||null'),null);
+  assert.match(f.run('vToday()'),/Fjernet fra dagens økt/);
+  f.click('exback:0');
+  assert.equal(f.state('S.draft.ex.length'),3);
+  f.click('after:mc');
+  let view=f.run('vToday()');
+  assert.match(view,/data-a="wodown"/);
+  assert.match(view,/data-a="bank:session"/);
+  f.click('wodown');view=f.run('vToday()');
+  assert.equal(f.state('S.draft.wod.navn'),'Egen metcon');
+  assert.equal(f.state('S.draft.go||null'),null);
+  assert.match(view,/Dagens metcon/);
+  f.click('startday');
+  assert.ok(f.state('S.draft.go')>0);
+  assert.equal(f.state('S.draft.wod.navn'),'Egen metcon');
+});
+test('a Burgener exercise can be changed for today or for the remaining plan before starting',()=>{
+  const f=fixture('burghq');f.run('delete S.draft.go;');
+  assert.match(f.run('vExerciseOptions(S.draft,S.draft.ex[0],0)'),/Bytt i resten av planen/);
+  f.run("exPlanSwap(0,'powersnatch',40)");
+  assert.equal(f.state('S.active.swaps.bhq_power_snatch_hang_squat_snatch_snatch'),'powersnatch');
+  assert.equal(f.state('S.draft.ex[0].lift'),'powersnatch');
+  assert.equal(f.state('Math.max(...S.draft.ex[0].sets.map(x=>x.w))'),40);
+  assert.equal(f.state("(()=>{const a=clone(S.active);a.idx=4;return buildSession(prog('burghq'),a).ex[0].lift})()"),'powersnatch');
 });
 test('reps are set with − and + before logging, for every program, and the button says what is saved',()=>{
   const f=fixture();f.warm();

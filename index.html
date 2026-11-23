@@ -1043,16 +1043,22 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 /* Oversikten før økta: ett kort med første løft og «Start økt», resten som korte linjer */
 .start-card{gap:8px}
 .start-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.start-top>div{min-width:0;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
 .start-top h2{font-size:24px;overflow-wrap:anywhere}
+.start-edit{flex:none;min-height:44px;padding:0 2px}
 .start-kg{font-size:72px;margin-top:4px}
 .start-kg small{font-size:22px}
 .start-why{margin:2px 0 6px;font-size:14px;color:var(--ink-2)}
 .start-list{gap:0}
 .start-list .lbl{margin-bottom:4px}
 .start-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--rule)}
+.start-row>div{min-width:0;display:grid;gap:2px}
 .start-row:last-of-type{border-bottom:0}
 .start-row span{color:var(--ink-2);font-size:14px;text-align:right}
 .start-list .small{margin-top:8px}
+.start-planner{display:grid;gap:12px}
+.start-plan-intro{gap:8px}
+.start-plan-intro p{margin:0}
 /* Oppvarmingen står åpen rett over arbeidssettene: først det du gjør først, ingenting å trykke opp */
 .today-warmup{padding:4px 16px 10px}
 .today-warmup .wu-grp{gap:8px 6px}
@@ -1131,7 +1137,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 123;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 124;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -1914,7 +1920,7 @@ function progressBurg(p, a, s){
 function buildBurgHq(p, a){
   const wi = Math.floor(a.idx / 4), di = a.idx % 4, week = BURGENER_HQ.weeks[wi], day = week.days[di];
   const ex = day.exercises.map((item, ei) => {
-    const fallback = lastW(item.key), start = fallback != null ? fallback : LIFTS[item.key].bar ? BAR() : 0;
+    const L = sw(a, item.key), fallback = lastW(L), start = fallback != null ? fallback : LIFTS[L].bar ? BAR() : 0;
     const sets = item.groups.flatMap(group => {
       if (!group.n || group.instruction) return [];
       const w = group.pc != null && item.base && a.e1rm[item.base] > 0 ? r25(a.e1rm[item.base] * group.pc / 100) : start;
@@ -1922,12 +1928,16 @@ function buildBurgHq(p, a){
         group.c ? {c:group.c} : {}, group.max ? {am:true} : {}));
     });
     if (!sets.length) return null;
+    if (L !== item.key) {
+      const top = Math.max(...sets.map(x => x.w)), target = (a.swapWeights || {})[item.key];
+      if (target != null) sets.forEach(x => { x.w = top > 0 ? r25(x.w * target / top) : target; });
+    }
     const pcs = item.groups.filter(group => group.pc != null).map(group => group.pc);
     const tag = pcs.length ? (Math.min(...pcs) === Math.max(...pcs) ? fmt(pcs[0]) : fmt(Math.min(...pcs)) + '–' + fmt(Math.max(...pcs))) + ' %' : '';
     const source = item.groups.map(group => group.text).filter(Boolean).join(' · ');
     const warmup = ei === 0 && day.warmup ? `<b>Oppvarming:</b> ${esc(day.warmup)}<br>` : '';
     const note = item.note ? `${esc(item.note)}<br>` : '';
-    return {key:item.key, lift:item.key, slot:item.key, part:'burghq', rest:item.base === 'squat' || item.base === 'frontsquat' ? 180 : item.base ? 120 : 90,
+    return {key:L, lift:L, slot:item.key, part:'burghq', rest:item.base === 'squat' || item.base === 'frontsquat' ? 180 : item.base ? 120 : 90,
       tag, adj:true, hint:`${warmup}${note}<b>Kildens sett:</b> ${esc(source)}`, sets};
   }).filter(Boolean);
   return {programId:p.id, day:'Dag ' + day.day, sub:week.title + ' · ' + week.date, ex, started:Date.now()};
@@ -5030,11 +5040,12 @@ function exPlanSlot(s, e){
     if (p.prog === 'bro' && o.broSlot) { const [di, ri] = o.broSlot.split('.').map(Number); return {slot: o.broSlot, def: BRO_DAYS[di][ri][4], o, why: 'Gjelder i dag og i resten av programmet.'}; }
     return null;
   }
+  if (p.prog === 'burghq') return {slot:o.slot, def:o.slot, o, burgHq:true, why:'Gjelder i dag og i alle kommende økter med denne øvelsen.'};
   // Er planen byttet alt i dag, står innbytteren i plassen
   const sl = slotsOf(p), slot = sl.find(x => sw(a, x) === o.lift) || (e.subOf && sl.find(x => sw(a, x) === e.lift));
   return slot ? {slot, def: slot, o, gen: true, why: 'Gjelder i dag og i øktene framover.'} : null;
 }
-const exPlanOK = (s, e) => !!exPlanSlot(s, e) && swapCands(s, e).fam.length > 0;
+const exPlanOK = (s, e) => { const ps = exPlanSlot(s, e); return !!ps && (ps.burgHq || swapCands(s, e).fam.length > 0); };
 function exPlanSwap(ei, T, W){
   const s = S.draft, e = s && s.ex[ei], ps = e && exPlanSlot(s, e), a = S.active; if (!ps || !LIFTS[T]) return;
   const p = prog(a.programId);
@@ -5044,6 +5055,10 @@ function exPlanSwap(ei, T, W){
   }
   a.swaps = a.swaps || {};
   if (T === ps.def) delete a.swaps[ps.slot]; else a.swaps[ps.slot] = T;
+  if (ps.burgHq) {
+    a.swapWeights = a.swapWeights || {};
+    if (T === ps.def) delete a.swapWeights[ps.slot]; else a.swapWeights[ps.slot] = W;
+  }
   if (e.subOf && T === e.subName) { exUnswap(ei); toast(liftName(T) + ' er tilbake i planen og i dag'); return; }
   exSwap(ei, T, W, liftName(T) + ' står i planen fra nå, også i dag');
 }
@@ -5130,7 +5145,7 @@ function exSwapBox(s, e, ei, touched){
   }
   const c = swapCands(s, e);
   // I planen kan bare alternativene programmet har for plassen brukes
-  if (plan) return h + `<span class="lbl">${e.cat ? 'Alternativer i programmet: ' + esc(catOf(e.cat).n.toLowerCase()) : 'Alternativer til ' + esc(liftName(swFam(from)).toLowerCase())}</span>
+  if (plan && !plan.burgHq) return h + `<span class="lbl">${e.cat ? 'Alternativer i programmet: ' + esc(catOf(e.cat).n.toLowerCase()) : 'Alternativer til ' + esc(liftName(swFam(from)).toLowerCase())}</span>
     <div class="lib-res">${(e.subOf ? [from].concat(c.fam) : c.fam).map(T => { const w = swapW(e, T); return hit(T, w != null && w > 0 ? 'Omtrent ' + fmt(w) + ' kg' : ''); }).join('')}</div>
     <div class="row"><button class="btn ghost sm" data-a="exswx">Avbryt</button></div></div>`;
   if (c.fam.length) h += `<span class="lbl">${e.cat ? 'Alternativer i programmet: ' + esc(catOf(e.cat).n.toLowerCase()) : 'Alternativer til ' + esc(liftName(swFam(from)).toLowerCase())}</span>
@@ -6331,8 +6346,30 @@ function vTodayLeave(p, s, g, tot, anyTouched){
   else if (ui.confirm !== 'skipday') h += `<div class="links"><button class="link" data-a="confirm:skipday">Hopp over økta</button></div>`;
   return h;
 }
-// Oversikten før økta: første løft med vekt og endring siden sist, resten av økta og det som er planlagt etterpå.
-// Ingen sett kan trykkes her. «Start økt» åpner økta.
+// Planlegging før økta: samme øvelsesmeny, øvelsesvelger og metconflyt som i den aktive økta.
+// Ingen sett kan trykkes her. «Start økt» låser opp selve registreringen.
+function vTodayStartAfter(p, s){
+  const af = ui.after && ui.after.k === s.started ? ui.after : (ui.after = {k:s.started});
+  const has = afterHas(s), show = k => af[k] != null ? af[k] : has[k];
+  let h = `<section class="start-planner"><div class="box start-plan-intro"><span class="lbl">Kondisjon / metcon</span>
+    <p class="small muted">Legg til eller velg det du vil gjøre etter styrken. Valget blir med når du starter økta.</p>`;
+  const add = [];
+  if ((peteOn() || s.pete) && !show('cond')) add.push(['cond','Kondisjon']);
+  if (!show('mc')) add.push(['mc','Metcon']);
+  if (add.length) h += `<div class="after-add">${add.map(([k,n]) => `<button class="tog" data-a="after:${k}">+ ${n}</button>`).join('')}</div>`;
+  h += `</div>`;
+  if (show('cond')) h += `<div class="after-top"><h3>Kondisjon</h3><button class="link" data-a="after:cond">Fjern</button></div>${peteBox('session', s.pete)}`;
+  if (show('mc')) {
+    h += `<div class="after-top"><h3>Metcon</h3><button class="link" data-a="after:mc">Fjern</button></div>${vMetconBudget(p, s)}`;
+    if (s.mcPlan) h += `<section class="box"><span class="lbl">Planen for metconen</span><p class="small" style="white-space:pre-line;margin:0">${esc(s.mcPlan)}</p></section>`;
+    if (s.wod) h += wodBox(s.wod, 'session') + `<section class="box">${mcFields('session', s.mc)}</section>`;
+    else {
+      if (!s.pete) h += quickPick('session', false);
+      h += `<section class="box">${switchRow('metcon', 'Logg en metcon jeg tok', s.metcon)}${s.metcon ? mcFields('session', s.mc) : ''}</section>`;
+    }
+  }
+  return h + `</section>`;
+}
 function vTodayStart(p, s, g, tot, info){
   const top = e => Math.max(...e.sets.map(x => x.w));
   const [e0, ...rest] = s.ex;
@@ -6343,7 +6380,7 @@ function vTodayStart(p, s, g, tot, info){
     const w = top(e0), last = w > 0 ? lastW(e0.lift) : null, d = last == null ? null : Math.round((w - last) * 100) / 100;
     const why = d == null ? '' : d > 0 ? fmt(d) + ' kg opp siden sist' : d < 0 ? fmt(-d) + ' kg ned siden sist' : 'Samme vekt som sist';
     h += `<section class="ex start-card">
-      <div class="start-top"><h2>${liftName(e0.lift)}</h2>${e0.tag ? `<span class="tag">${e0.tag}</span>` : ''}</div>
+      <div class="start-top"><div><h2>${liftName(e0.lift)}</h2>${e0.tag ? `<span class="tag">${e0.tag}</span>` : ''}</div>${g ? '' : `<button class="link start-edit" data-a="exmenu:${s.started}-0" aria-haspopup="dialog" aria-controls="exerciseSheet">Endre</button>`}</div>
       <p class="small muted">${setsLine(e0)}</p>
       ${w > 0 ? `<div class="kg start-kg">${fmt(w)}<small>kg</small></div>` : ''}
       ${w > 0 && LIFTS[e0.lift].bar ? `<div class="platesrow">${plateHTML(w)}</div>` : ''}
@@ -6351,13 +6388,15 @@ function vTodayStart(p, s, g, tot, info){
       ${start}</section>`;
   } else h += start;
   if (rest.length) h += `<section class="box start-list"><span class="lbl">Resten av økta</span>
-      ${rest.map(e => `<div class="start-row"><b>${liftName(e.lift)}</b><span>${setsLine(e)}</span></div>`).join('')}</section>`;
-  // Etter styrken: bare det som er planlagt. Metcon og notat legges til når styrken er ferdig.
-  const after = [s.cond ? s.cond.title || 'Kondisjon' : '', peteOn() || s.pete ? 'Kondisjon · Pete Plan' : '',
-    s.wod ? 'Metcon · ' + esc(s.wod.navn) : s.metcon ? 'Metcon' : '', ...(s.boxes || []).map(b => esc(b[0])), s.acc ? 'Til slutt, uten vekt' : ''].filter(Boolean);
-  h += `<section class="box start-list"><span class="lbl">${s.ex.length ? 'Etter styrken' : 'I økta'}</span>
-      ${after.map(n => `<div class="start-row"><b>${n}</b></div>`).join('')}
-      <p class="small muted">${after.length ? 'Metcon og notat kan du også legge til når styrken er ferdig.' : 'Metcon og notat kan du legge til når styrken er ferdig.'}</p></section>`;
+      ${rest.map((e, i) => `<div class="start-row"><div><b>${liftName(e.lift)}</b><span>${setsLine(e)}</span></div>${g ? '' : `<button class="link start-edit" data-a="exmenu:${s.started}-${i+1}" aria-haspopup="dialog" aria-controls="exerciseSheet">Endre</button>`}</div>`).join('')}</section>`;
+  if (!g) h += ui.exAdd && ui.exAdd.k === s.started ? exAddBox(s) : '<button class="btn ghost sm today-add" data-a="exadd">+ Legg til øvelse</button>';
+  if ((s.rmEx || []).some(e => !e.swapId)) h += `<section class="box rm-list"><span class="lbl">Fjernet fra dagens økt</span>
+      ${s.rmEx.map((e, i) => e.swapId ? '' : `<div class="rm-row"><span>${esc(liftName(e.lift))}</span><button class="link" data-a="exback:${i}">Ta tilbake</button></div>`).join('')}
+      <p class="small muted">Vekta står som den er til neste gang.</p></section>`;
+  const after = [s.cond ? s.cond.title || 'Kondisjon' : '', ...(s.boxes || []).map(b => esc(b[0])), s.acc ? 'Til slutt, uten vekt' : ''].filter(Boolean);
+  if (after.length) h += `<section class="box start-list"><span class="lbl">Planlagt etter styrken</span>
+      ${after.map(n => `<div class="start-row"><div><b>${n}</b></div></div>`).join('')}</section>`;
+  h += vTodayStartAfter(p, s);
   return h + vTodayLeave(p, s, g, tot, false) + '</section>';
 }
 function vToday(){
