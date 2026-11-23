@@ -704,6 +704,13 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 .sess-t{flex:1;display:grid;gap:2px;min-width:0}
 .sess-t b{font:700 16px/1.15 var(--face)}
 .sess-note .pill{justify-self:start}
+.ph-strip{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ph-th{appearance:none;width:72px;height:72px;padding:0;border:1px solid var(--line);border-radius:4px;background:var(--iron-2,transparent);overflow:hidden;cursor:pointer}
+.ph-th img{display:block;width:100%;height:100%;object-fit:cover}
+.ph-th.gone{cursor:default;font:12px/1.2 var(--face);color:var(--chalk-3);padding:4px}
+.ph-add{min-height:44px;display:inline-flex;align-items:center;position:relative}
+.ph-add:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.ph-big{display:block;width:100%;max-height:70vh;object-fit:contain;border-radius:4px;background:#000}
 .sess-t small{font-size:13px;color:var(--chalk-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* Sammen */
@@ -1123,7 +1130,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 121;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 122;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -3421,6 +3428,17 @@ const ratio = L => LIFTS[L].r || 1;
 const estFor = (p, a, from, to) => r25(refValue(p, a, from) / ratio(from) * ratio(to));
 const slotsOf = p => ['user','hybrid'].includes(p.prog) ? [] : p.prog === 'rp' ? rpSlots(p) : p.prog === 'bro' ? broSlots() :[...new Set(p.days.flatMap(d => d.ex ? d.ex.map(e => e.lift) : [d.lift]))].filter(s => s && ALTS(s).length);
 
+// Vektene i B når B tar plassen til A i programmet: W er vekta B skal regnes fra (samme slags tall som refValue)
+function planInit(p, a, A, B, W){
+  const k = W / refValue(p, a, A);
+  Object.keys(a.lifts || {}).forEach(key => {
+    if (key !== A && !key.startsWith(A + '.')) return;
+    const nk = B + key.slice(A.length), v = a.lifts[key];
+    if (!a.lifts[nk]) a.lifts[nk] = Object.assign({}, v, {w: r25(v.w*k), fails:0, stage:0, last: v.last != null ? r25(v.last*k) : undefined});
+  });
+  if (p.prog === '531' || p.prog === 'jugg') a.tm[B] = r25(W);
+  if (a.e1rm) { a.e1rm[B] = W; a.base[B] = W; }
+}
 function doSwap(slot){
   const a = S.active, p = prog(a.programId), A = sw(a, slot);
   let B = ui.swapSel.lift;
@@ -3438,14 +3456,7 @@ function doSwap(slot){
   }
   if (refValue(p, a, B) == null) {
     if (!(W > 0)) { fieldErr($('#swW'), 'Skriv inn en vekt for ' + liftName(B).toLowerCase()); return; }
-    const k = W / refValue(p, a, A);
-    Object.keys(a.lifts).forEach(key => {
-      if (key !== A && !key.startsWith(A + '.')) return;
-      const nk = B + key.slice(A.length), v = a.lifts[key];
-      if (!a.lifts[nk]) a.lifts[nk] = Object.assign({}, v, {w: r25(v.w*k), fails:0, stage:0, last: v.last != null ? r25(v.last*k) : undefined});
-    });
-    if (p.prog === '531' || p.prog === 'jugg') a.tm[B] = r25(W);
-    if (a.e1rm) { a.e1rm[B] = W; a.base[B] = W; }
+    planInit(p, a, A, B, W);
   }
   a.swaps = a.swaps || {};
   if (B === slot) delete a.swaps[slot]; else a.swaps[slot] = B;
@@ -4865,7 +4876,7 @@ function finish(){
   if (!g) (s.rmEx || []).forEach(e => { const by = e.swapId && s.ex.find(x => x.subOf === e.swapId);
     notes.push({name: liftName(e.lift), text: by ? 'Byttet til ' + liftName(by.lift).toLowerCase() + ' i dag. Vekta står som den er.' : 'Fjernet i dag. Økta flytter ikke vekta.', kind:'same'}); });
   const vol = s.ex.reduce((sum,e) => sum + e.sets.reduce((v,x) => v + (x.d||0)*x.w, 0), 0);
-  S.history.unshift({date:Date.now(), programId: g ? undefined : p.id, guest: g ? {sid:g.sid, who:g.who} : undefined, day:s.day, sub:s.sub, note:(s.note||'').trim(), metcon:!!(s.metcon || s.wod), mc: (s.metcon || s.wod) ? mcSaved(s.mc) : undefined,
+  S.history.unshift({date:Date.now(), programId: g ? undefined : p.id, guest: g ? {sid:g.sid, who:g.who} : undefined, day:s.day, sub:s.sub, note:(s.note||'').trim(), photos: s.photos && s.photos.length ? s.photos.slice() : undefined, metcon:!!(s.metcon || s.wod), mc: (s.metcon || s.wod) ? mcSaved(s.mc) : undefined,
     wod: s.wod ? {id:s.wod.id, navn:s.wod.navn, tekst:s.wod.tekst, resultat:(s.wod.resultat||'').trim()} : undefined,
     pete: s.pete ? peteDone(s.pete) : undefined, idx: g ? undefined : S.active.idx,
     cond: s.cond ? {title:s.cond.title, lines:s.cond.lines, res:s.cond.res || {}} : undefined,
@@ -4949,7 +4960,7 @@ function swapW(e, T){
   const l = lastW(T); if (l != null) return l;
   return LIFTS[T] && LIFTS[T].bw ? 0 : null;
 }
-function exSwap(ei, T, W){
+function exSwap(ei, T, W, msg){
   const s = S.draft, e = s && s.ex[ei]; if (!e || !LIFTS[T]) return;
   if (!(s.rmEx || []).length) s.ex.forEach((x, i) => { x.o = i; });
   const id = e.subOf || 'sw' + Date.now().toString(36), from = e.subOf ? e.subName : e.lift;
@@ -4959,7 +4970,36 @@ function exSwap(ei, T, W){
     rest: e.rest || 120, adj: true, o: e.o, cat: e.cat, rpPct: e.rpPct,
     sets: e.sets.map(x => ({t: x.t, w: Math.max(min, top > 0 ? r25(x.w * W / top) : W), d: null}))};
   ui.exSw = null; ui.confirm = null; ui.exOpen = {}; ui.fresh = null; save(); render();
-  toast(liftName(T) + ' er byttet inn i dag');
+  toast(msg || liftName(T) + ' er byttet inn i dag');
+}
+/* Bytte i resten av planen: samme bytte som under Program → Oppsett → Øvelser og bytter, og i dag byttes øvelsen
+   inn slik «Bytt bare i dag» gjør, så sett du har tatt og progresjonen for dagens økt ikke endres.
+   Plassen er der øvelsen står i programmet. Null når programmet ikke har faste bytter for den. */
+function exPlanSlot(s, e){
+  const a = S.active, p = a && prog(a.programId);
+  if (!p || s.guest || e.added) return null;
+  const o = e.subOf ? (s.rmEx || []).find(x => x.swapId === e.subOf) : e; if (!o) return null;
+  if (p.prog === 'rp' || p.prog === 'bro') {
+    if (p.prog === 'rp' && o.rpSlot) { const [mi, di, ri] = o.rpSlot.split('.').map(Number); return {slot: o.rpSlot, def: RP_DAYS[p.id][mi][di][ri][2], o, why: 'Gjelder i dag og ut mesosyklusen.'}; }
+    if (p.prog === 'bro' && o.broSlot) { const [di, ri] = o.broSlot.split('.').map(Number); return {slot: o.broSlot, def: BRO_DAYS[di][ri][4], o, why: 'Gjelder i dag og i resten av programmet.'}; }
+    return null;
+  }
+  // Er planen byttet alt i dag, står innbytteren i plassen
+  const sl = slotsOf(p), slot = sl.find(x => sw(a, x) === o.lift) || (e.subOf && sl.find(x => sw(a, x) === e.lift));
+  return slot ? {slot, def: slot, o, gen: true, why: 'Gjelder i dag og i øktene framover.'} : null;
+}
+const exPlanOK = (s, e) => !!exPlanSlot(s, e) && swapCands(s, e).fam.length > 0;
+function exPlanSwap(ei, T, W){
+  const s = S.draft, e = s && s.ex[ei], ps = e && exPlanSlot(s, e), a = S.active; if (!ps || !LIFTS[T]) return;
+  const p = prog(a.programId);
+  if (ps.gen && refValue(p, a, T) == null) {
+    const A = sw(a, ps.slot), top = Math.max(...ps.o.sets.map(x => x.w)), ref = refValue(p, a, A);
+    planInit(p, a, A, T, ref > 0 && top > 0 ? ref * W / top : W);
+  }
+  a.swaps = a.swaps || {};
+  if (T === ps.def) delete a.swaps[ps.slot]; else a.swaps[ps.slot] = T;
+  if (e.subOf && T === e.subName) { exUnswap(ei); toast(liftName(T) + ' er tilbake i planen og i dag'); return; }
+  exSwap(ei, T, W, liftName(T) + ' står i planen fra nå, også i dag');
 }
 function exUnswap(ei){
   const s = S.draft, e = s && s.ex[ei]; if (!e || !e.subOf) return;
@@ -5030,19 +5070,23 @@ function exAddRes(q){
 }
 // Velgeren i øvelseskortet: først hvilken øvelse, så vekta
 function exSwapBox(s, e, ei, touched){
-  const sel = ui.exSw.T, from = e.subOf ? e.subName : e.lift;
+  const sel = ui.exSw.T, from = e.subOf ? e.subName : e.lift, plan = ui.exSw.plan && exPlanSlot(s, e);
   const hit = (T, sub) => `<button class="lib-hit" data-a="exswpick:${ei}:${T}"><b>${esc(liftName(T))}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</button>`;
-  let h = `<div class="skipbox ex-sw" aria-live="polite"><p class="small"><b>Bytt ${esc(liftName(e.lift).toLowerCase())} i dag</b>
-    ${touched ? ` Settene du har tatt i den, lagres ikke.` : ''} Neste gang står ${esc(liftName(from).toLowerCase())} i økta igjen.</p>`;
+  let h = `<div class="skipbox ex-sw" aria-live="polite"><p class="small"><b>Bytt ${esc(liftName(e.lift).toLowerCase())} ${plan ? 'i resten av planen' : 'i dag'}</b>
+    ${touched ? ` Settene du har tatt i den, lagres ikke.` : ''} ${plan ? plan.why + ' Du kan bytte tilbake under Program → Oppsett.' : 'Neste gang står ' + esc(liftName(from).toLowerCase()) + ' i økta igjen.'}</p>`;
   if (sel && LIFTS[sel]) {
     const w = swapW(e, sel);
     h += `<div class="ex-sw-pick"><b>${esc(liftName(sel))}</b><button class="link" data-a="exswpick:${ei}:">Velg en annen</button></div>
       <label for="exSwW" class="small">${new Set(e.sets.map(x => x.w)).size > 1 ? 'Vekt i det tyngste settet' : 'Vekt'}</label>
       <span class="inp"><input id="exSwW" type="text" inputmode="decimal" value="${w == null ? '' : fmt(w)}" placeholder="kg">kg</span>
-      <div class="row"><button class="btn sm" data-a="exswgo:${ei}">Bytt inn</button><button class="btn ghost sm" data-a="exswx">Avbryt</button></div></div>`;
+      <div class="row"><button class="btn sm" data-a="exswgo:${ei}">${plan ? 'Bytt i planen' : 'Bytt inn'}</button><button class="btn ghost sm" data-a="exswx">Avbryt</button></div></div>`;
     return h;
   }
   const c = swapCands(s, e);
+  // I planen kan bare alternativene programmet har for plassen brukes
+  if (plan) return h + `<span class="lbl">${e.cat ? 'Alternativer i programmet: ' + esc(catOf(e.cat).n.toLowerCase()) : 'Alternativer til ' + esc(liftName(swFam(from)).toLowerCase())}</span>
+    <div class="lib-res">${(e.subOf ? [from].concat(c.fam) : c.fam).map(T => { const w = swapW(e, T); return hit(T, w != null && w > 0 ? 'Omtrent ' + fmt(w) + ' kg' : ''); }).join('')}</div>
+    <div class="row"><button class="btn ghost sm" data-a="exswx">Avbryt</button></div></div>`;
   if (c.fam.length) h += `<span class="lbl">${e.cat ? 'Alternativer i programmet: ' + esc(catOf(e.cat).n.toLowerCase()) : 'Alternativer til ' + esc(liftName(swFam(from)).toLowerCase())}</span>
     <div class="lib-res">${c.fam.map(T => { const w = swapW(e, T); return hit(T, w != null && w > 0 ? 'Omtrent ' + fmt(w) + ' kg' : ''); }).join('')}</div>`;
   if (c.lib.length) h += `<span class="lbl">Samme muskel: ${esc(c.row[4].split(',')[0].trim())}</span>
@@ -5081,7 +5125,7 @@ function logDelete(date){
     if (h.undo.pete && !S.history.slice(0, i).some(x => x.pete)) S.pete = h.undo.pete;
     dropOwnDraft(); ui.summary = null; ui.rest = null; updateRest();
   }
-  S.history.splice(i, 1);
+  S.history.splice(i, 1); (h.photos || []).forEach(phForget);
   ui.confirm = null; if (ui.logOpen) delete ui.logOpen[date];
   save(); render(); toast(undo ? 'Økta er slettet, og programmet er tilbake der det var' : 'Økta er slettet');
 }
@@ -5197,7 +5241,7 @@ function leSet(grp, obj, key, v){
 // Kondisjon, Metcon og Notat under styrken: av skjuler delen. Metcon og Pete Plan tas da ut av økta, så de ikke
 // lagres eller teller i budsjettet, og et nytt trykk henter dem tilbake slik de var. Notatet skjules bare.
 // En del av Etter styrken står åpen når den er planlagt eller har innhold: Pete Plan når den er på, programmets metcon, et notat
-const afterHas = s => ({cond: !!s.pete || peteOn(), mc: !!(s.wod || s.metcon), note: !!(s.note || '').trim()});
+const afterHas = s => ({cond: !!s.pete || peteOn(), mc: !!(s.wod || s.metcon), note: !!(s.note || '').trim() || !!(s.photos || []).length});
 function afterToggle(k){
   const s = S.draft, af = ui.after && ui.after.k === s.started ? ui.after : (ui.after = {k: s.started}), off = s.off = s.off || {};
   const has = afterHas(s);
@@ -5301,7 +5345,8 @@ function vLogEdit(){
       <span class="inp"><input id="leMin" type="text" inputmode="numeric" value="${h.mc && h.mc.min ? h.mc.min : ''}" placeholder="–" aria-label="Minutter"></span></div>
       <div class="rpe" style="padding-top:10px"><span>Hvor hard var den? (RPE 1–10)</span><div class="seg num" data-leg="mc">${
         [3,4,5,6,7,8,9,10].map(v => `<button data-a="lemcr:${v}" aria-pressed="${!!h.mc && h.mc.rpe === v}">${v}</button>`).join('')}</div></div></div>` : ''}
-    <div class="box notebox"><label for="leNote" class="lbl">Notat</label><textarea id="leNote">${esc(h.note || '')}</textarea></div>
+    <div class="box notebox"><label for="leNote" class="lbl">Notat</label><textarea id="leNote">${esc(h.note || '')}</textarea>
+      ${phStrip((S.history.find(x => x.date === ui.logEdit.date) || {}).photos, 'h' + ui.logEdit.date, true)}</div>
     ${h.ex.length ? `<p class="muted small">Tomt felt for reps betyr at settet ikke ble tatt. Trykk på valgt RPE en gang til for å fjerne den. ${leEditHint(S.history.find(x => x.date === ui.logEdit.date))}</p>` : ''}
     <button class="btn" data-a="logsave">Lagre endringene</button>`;
 }
@@ -6015,7 +6060,8 @@ function vExerciseOptions(s, e, ei){
           Settene du har tatt i ${esc(liftName(e.lift).toLowerCase())}, lagres ikke.</p>
           <div class="row"><button class="btn sm" data-a="exun:${ei}">Ja, bytt tilbake</button><button class="btn ghost sm" data-a="cancel">Avbryt</button></div></div>`
         : ui.exSw && ui.exSw.k === s.started && ui.exSw.ei === ei ? exSwapBox(s, e, ei, touched)
-        : `<div class="ex-acts">${e.added ? '' : `<button class="link ex-rm-l" data-a="exsw:${ei}">${e.subOf ? 'Bytt til en annen' : 'Bytt i dag'}</button>`}
+        : `<div class="ex-acts">${exPlanOK(s, e) ? `<button class="link ex-rm-l" data-a="exsw:${ei}:plan">Bytt i resten av planen</button>` : ''}
+          ${e.added ? '' : `<button class="link ex-rm-l" data-a="exsw:${ei}">${e.subOf ? 'Bytt til en annen i dag' : 'Bytt bare i dag'}</button>`}
           ${e.subOf ? `<button class="link ex-rm-l" data-a="${touched ? 'confirm:exun:' + ei : 'exun:' + ei}">Tilbake til ${esc(liftName(e.subName).toLowerCase())}</button>` : ''}
           <button class="link ex-rm-l" data-a="${touched ? 'confirm:exrm:' + ei : 'exrm:' + ei}">Fjern fra dagens økt</button></div>`}`;
 }
@@ -6061,6 +6107,95 @@ function videoOpen(L){
 function videoClose(){
   const d = $('#videoSheet'); if (!d) return;
   $('#videoSheetBody').innerHTML = '';   // stopper avspillingen
+  if (d.open) d.close();
+  const t = document.querySelector(`[data-a="${CSS.escape(d._trigger || '')}"]`); if (t) t.focus({preventScroll:true});
+}
+/* ---------- Bilder i notatet ----------
+   Bildene lagres bare på telefonen, i IndexedDB (databasen «stanga-bilder»). Økta har bare id-ene (photos), så
+   bildene er ikke med i skybackup eller i kopien av dataene. De krympes til høyst 1600 px (JPEG) før de lagres.
+   Eier: 'd' er dagens økt, 'h' + dato er en økt i loggen. */
+const PH = {db: null, url: new Map()};
+const phDb = () => PH.db || (PH.db = new Promise((ok, no) => {
+  const r = indexedDB.open('stanga-bilder', 1);
+  r.onupgradeneeded = () => r.result.createObjectStore('p');
+  r.onsuccess = () => ok(r.result); r.onerror = () => { PH.db = null; no(r.error); };
+}));
+async function phStore(mode, fn){
+  const db = await phDb();
+  return new Promise((ok, no) => { const t = db.transaction('p', mode), r = fn(t.objectStore('p'));
+    t.oncomplete = () => ok(r && r.result); t.onerror = t.onabort = () => no(t.error); });
+}
+async function phShrink(f){
+  const u = URL.createObjectURL(f);
+  try {
+    const img = new Image(); img.src = u; await img.decode();
+    const k = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight)), c = document.createElement('canvas');
+    c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    return await new Promise(ok => c.toBlob(b => ok(b || f), 'image/jpeg', .82));
+  } catch(e) { return f; } finally { URL.revokeObjectURL(u); }
+}
+const phOwner = o => o === 'd' ? S.draft : S.history.find(h => 'h' + h.date === o);
+async function phAdd(o, files){
+  const x = phOwner(o); if (!x || !files || !files.length) return;
+  let n = 0;
+  try {
+    for (const f of files) {
+      const b = await phShrink(f), id = 'ph' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      await phStore('readwrite', st => st.put(b, id));
+      (x.photos = x.photos || []).push(id); n++;
+    }
+  } catch(e) { toast('Bildet kunne ikke lagres på telefonen'); }
+  if (n) { save(); phRefresh(o); toast(n > 1 ? n + ' bilder er lagret på telefonen' : 'Bildet er lagret på telefonen'); }
+}
+// Under «Endre økt» i loggen byttes bare bilderaden, så felt du har endret og ikke lagret, blir stående
+function phRefresh(o){
+  const el = document.querySelector(`[data-phadd="${o}"]`), strip = el && el.closest('.ph-strip');
+  if (ui.logEdit && strip) { strip.outerHTML = phStrip((phOwner(o) || {}).photos, o, true); phPaint(); } else render();
+}
+const phForget = id => { const u = PH.url.get(id); if (u) URL.revokeObjectURL(u); PH.url.delete(id);
+  phStore('readwrite', st => st.delete(id)).catch(() => {}); };
+function phDel(o, id){
+  const x = phOwner(o);
+  if (x && x.photos) { x.photos = x.photos.filter(p => p !== id); if (!x.photos.length) delete x.photos; }
+  phClose(); phForget(id); save(); phRefresh(o); toast('Bildet er slettet');
+}
+// Bildene som små ruter. edit gir «+ Bilde», som åpner kameraet eller bildebiblioteket.
+const phStrip = (ids, o, edit) => (ids && ids.length) || edit ? `<div class="ph-strip">${(ids || []).map((id, i) =>
+    `<button class="ph-th" data-a="phopen:${o}:${id}:${edit ? 1 : 0}" aria-label="Vis bilde ${i + 1}" aria-haspopup="dialog"><img data-ph="${id}" alt=""></button>`).join('')}${
+    edit ? `<label class="tog ph-add">+ Bilde<input type="file" accept="image/*" multiple data-phadd="${o}" class="sr-only"></label>` : ''}</div>` : '';
+// Fyller inn bildene etter render(). Et bilde fra en annen telefon (via skybackup) finnes ikke her.
+function phPaint(){
+  document.querySelectorAll('img[data-ph]:not([data-phl])').forEach(async img => {
+    img.dataset.phl = 1; const id = img.dataset.ph; let u = PH.url.get(id);
+    if (!u) { try { const b = await phStore('readonly', st => st.get(id)); if (b) { u = URL.createObjectURL(b); PH.url.set(id, u); } } catch(e) {} }
+    if (u) img.src = u;
+    else { const t = img.closest('.ph-th'); if (t) { t.disabled = true; t.classList.add('gone'); t.textContent = 'Ikke på denne telefonen'; } }
+  });
+}
+function phOpen(o, id, edit, ask){
+  let d = $('#photoSheet');
+  if (!d) {
+    d = document.createElement('dialog'); d.id = 'photoSheet'; d.className = 'sx-sheet exercise-sheet photo-sheet';
+    d.setAttribute('aria-labelledby', 'photoSheetTitle');
+    d.innerHTML = '<div class="sx-sheet-handle" aria-hidden="true"></div><header class="sx-sheet-head"><h2 id="photoSheetTitle" tabindex="-1">Bilde</h2><button class="link" data-a="phclose" aria-label="Lukk bildet">Lukk ×</button></header><div class="sx-sheet-body" id="photoSheetBody"></div>';
+    document.querySelector('.app').append(d);
+    d.addEventListener('cancel', e => { e.preventDefault(); phClose(); });
+    d.addEventListener('click', e => {
+      const r = d.getBoundingClientRect();
+      if (e.target === d && (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom)) phClose();
+    });
+  }
+  if (!d.open) d._trigger = 'phopen:' + o + ':' + id + ':' + (edit ? 1 : 0);
+  $('#photoSheetBody').innerHTML = `<img class="ph-big" src="${PH.url.get(id) || ''}" alt="Bilde fra notatet">${!edit ? ''
+    : ask ? `<div class="skipbox" aria-live="polite"><p class="small"><b>Slette bildet?</b> Det kan ikke hentes tilbake.</p>
+        <div class="row"><button class="btn danger sm" data-a="phdel:${o}:${id}">Ja, slett</button><button class="btn ghost sm" data-a="phopen:${o}:${id}:1">Avbryt</button></div></div>`
+    : `<div class="row"><button class="btn ghost sm" data-a="phask:${o}:${id}">Slett bildet</button></div>`}`;
+  if (!d.open) d.showModal();
+  $('#photoSheetTitle').focus({preventScroll:true});
+}
+function phClose(){
+  const d = $('#photoSheet'); if (!d) return;
   if (d.open) d.close();
   const t = document.querySelector(`[data-a="${CSS.escape(d._trigger || '')}"]`); if (t) t.focus({preventScroll:true});
 }
@@ -6371,6 +6506,7 @@ function vToday(){
   if (show('note')) h += top('note', 'Notat') + `<section class="box notebox">
       <label for="note" class="sr-only">Notat</label>
       <textarea id="note" placeholder="For eksempel dagsform eller en teknikkdetalj">${esc(s.note)}</textarea>
+      ${phStrip(s.photos, 'd', true)}
     </section>`;
   const add = parts.filter(([k]) => !show(k));
   if (add.length) h += `<div class="after-add"><span class="small muted">Legg til</span>${add.map(([k, n]) => `<button class="tog" data-a="after:${k}">+ ${n}</button>`).join('')}</div>`;
@@ -6684,7 +6820,7 @@ function vLog(){
     const mcH = sess.mc && MC[sess.mc.type] ? `<span class="pill">${MC[sess.mc.type].n} · ${fmt(sess.mc.min)} min${sess.mc.rpe ? ' · RPE ' + sess.mc.rpe : ''}</span>` : '';
     const ppH = sess.pete ? `<div class="sess-wod"><p><b>Pete Plan · ${esc(sess.pete.name)}</b> · ${PETE_MACH[sess.pete.mach] || ''}${sess.pete.split ? ` · <span class="res">${paceTxt(sess.pete.split, sess.pete.bike)}</span>` : ''}</p></div>` : '';
     const axH = sess.cond ? `<div class="sess-wod"><p><b>${esc(sess.cond.title)}</b>${axResTxt(sess.cond) ? ` · <span class="res">${esc(axResTxt(sess.cond))}</span>` : ''}</p></div>` : '';
-    const noteH = (sess.metcon || sess.note || sess.wod || sess.pete || sess.cond) ? `<div class="sess-note">${sess.metcon ? '<span class="pill mc">Metcon</span>' : ''}${mcH}${axH}${ppH}${wodH}${sess.note ? `<p>${esc(sess.note)}</p>` : ''}</div>` : '';
+    const noteH = (sess.metcon || sess.note || sess.wod || sess.pete || sess.cond || sess.photos) ? `<div class="sess-note">${sess.metcon ? '<span class="pill mc">Metcon</span>' : ''}${mcH}${axH}${ppH}${wodH}${sess.note ? `<p>${esc(sess.note)}</p>` : ''}${phStrip(sess.photos, 'h' + sess.date, false)}</div>` : '';
     const d = new Date(sess.date), open = !!(ui.logOpen && ui.logOpen[sess.date]);
     const dateBox = `<span class="sess-d"><b>${d.getDate()}</b><small>${d.toLocaleDateString('nb-NO', {month:'short'}).replace('.', '')}</small></span>`;
     if (sess.skipped) { const ps = prog(sess.programId);
@@ -6924,7 +7060,7 @@ function vSettings(){
     ${vSxAccount()}
     <h2 class="sec">Kopi uten konto</h2>
     <div class="box">
-      <p class="small muted">${syncOn() ? 'Skybackup er på. Vil du i tillegg ha en egen kopi, kan du kopiere teksten under og lagre den i Notater eller iCloud Drive.' : 'Uten skybackup ligger dataene bare på denne telefonen. Kopier teksten under og lagre den i Notater eller iCloud Drive av og til.'}${S.settings.exportAt ? ' Siste kopi: ' + dateFmt(S.settings.exportAt) + '.' : ''}</p>
+      <p class="small muted">${syncOn() ? 'Skybackup er på. Vil du i tillegg ha en egen kopi, kan du kopiere teksten under og lagre den i Notater eller iCloud Drive.' : 'Uten skybackup ligger dataene bare på denne telefonen. Kopier teksten under og lagre den i Notater eller iCloud Drive av og til.'} Bilder i notatene ligger bare på denne telefonen og er ikke med i skybackup eller kopien.${S.settings.exportAt ? ' Siste kopi: ' + dateFmt(S.settings.exportAt) + '.' : ''}</p>
       ${ui.exportText ? `<textarea id="exportBox" readonly aria-label="Eksportert data">${ui.exportText.replace(/</g,'&lt;')}</textarea>
         <button class="btn ghost sm" data-a="copy">Kopier</button>` : `<button class="btn ghost sm" data-a="export">Lag eksport</button>`}
       <label for="importBox" class="small" style="margin-top:6px">Gjenopprett fra kopi</label>
@@ -6966,6 +7102,7 @@ function render(){
   paint(h);
   sxSheetPaint();
   exerciseSheetPaint();
+  phPaint();
   if (ui.whl && ui.whl.bi === 'pp') whlInit();
   const inChat = ui.tab === 'together' && /^c:/.test(ui.sxView || '');
   $('#view').classList.toggle('chat', inChat);
@@ -9010,6 +9147,10 @@ document.addEventListener('click', ev => {
     case 'exmenuclose': exerciseMenuClose(); break;
     case 'video': videoOpen(r[0]); break;
     case 'videoclose': videoClose(); break;
+    case 'phopen': phOpen(r[0], r[1], r[2] === '1'); break;
+    case 'phask': phOpen(r[0], r[1], true, true); break;
+    case 'phdel': phDel(r[0], r[1]); break;
+    case 'phclose': phClose(); break;
     case 'set': {
       if (!S.draft || !S.draft.ex[+r[0]]?.sets[+r[1]]) break;
       const before = rememberSet(+r[0]), previous = todayCurrent(S.draft);
@@ -9334,13 +9475,13 @@ document.addEventListener('click', ev => {
     case 'pe': peAct(r); break;
     case 'ps': psAct(r); break;
     case 'exback': exBack(+r[0]); break;
-    case 'exsw': ui.exSw = {k: S.draft.started, ei: +r[0], T: null}; ui.confirm = null; render(); break;
+    case 'exsw': ui.exSw = {k: S.draft.started, ei: +r[0], T: null, plan: r[1] === 'plan'}; ui.confirm = null; render(); break;
     case 'exswpick': if (ui.exSw) { ui.exSw.T = r[1] || null; render(); if (ui.exSw.T) { const w = $('#exSwW'); if (w) w.focus(); } } break;
     case 'exswx': ui.exSw = null; render(); break;
     case 'exswgo': { const T = ui.exSw && ui.exSw.T, W = parseFloat(String(($('#exSwW') || {}).value || '').replace(',', '.'));
       if (!T) break;
       if (!(W >= 0) || (W === 0 && !LIFTS[T].bw && !LIFTS[T].bar)) { fieldErr($('#exSwW'), 'Skriv inn en vekt for ' + liftName(T).toLowerCase()); break; }
-      exerciseMenuClear(); exSwap(+r[0], T, W); break; }
+      const plan = ui.exSw.plan; exerciseMenuClear(); if (plan) exPlanSwap(+r[0], T, W); else exSwap(+r[0], T, W); break; }
     case 'exun': exerciseMenuClear(); exUnswap(+r[0]); break;
     case 'exadd': if (S.draft) { ui.exAdd = {k: S.draft.started, T: null}; render(); const q = $('#exAddQ'); if (q) q.focus(); } break;
     case 'exaddx': ui.exAdd = null; render(); break;
@@ -9511,6 +9652,7 @@ document.addEventListener('input', ev => {
 });
 
 document.addEventListener('change', ev => {
+  if (ev.target.dataset && ev.target.dataset.phadd) { phAdd(ev.target.dataset.phadd, [...ev.target.files]); ev.target.value = ''; return; }
   if (ev.target.dataset && ev.target.dataset.ckf) { ckField(ev.target); return; }
   // Egen metcon: klokka leser teksten på nytt. Bare linja oppdateres, så et trykk på Start klokke ikke forsvinner.
   if (ev.target.id === 'wodTxt' && S.draft && S.draft.wod) { const d = $('.wodbox .ck-go p'); if (d) d.textContent = ckDesc(ckFromWod(S.draft.wod)) + (ckCd() ? ' · ' + ckCd() + ' s nedtelling' : ''); return; }

@@ -230,13 +230,43 @@ test('exercise actions live in the dialog rather than below the workout card',()
   assert.equal(f.state('exerciseMenuIndex()'),0);
   assert.doesNotMatch(f.run('vToday()'),/data-a="exsw:|Fjern fra dagens økt/);
   const menu=f.run('vExerciseOptions(S.draft,S.draft.ex[0],0)');
-  assert.match(menu,/Bytt i dag/);assert.match(menu,/Fjern fra dagens økt/);
+  assert.match(menu,/Bytt i resten av planen/);assert.match(menu,/Bytt bare i dag/);assert.match(menu,/Fjern fra dagens økt/);
+});
+test('swapping for the rest of the plan sets the program swap and swaps today without moving the original',()=>{
+  const f=fixture();const old=f.state('S.active.lifts.squat.w');
+  f.click(f.run("'exmenu:'+S.draft.started+'-0'"));f.click('exsw:0:plan');
+  const box=f.run('vExerciseOptions(S.draft,S.draft.ex[0],0)');
+  assert.match(box,/i resten av planen/);assert.match(box,/exswpick:0:frontsquat/);assert.doesNotMatch(box,/Søk i øvelsesbiblioteket/);
+  f.run("exPlanSwap(0,'frontsquat',80)");
+  assert.equal(f.state('S.active.swaps.squat'),'frontsquat');
+  assert.equal(f.state('S.draft.ex[0].lift'),'frontsquat');assert.equal(f.state('S.draft.ex[0].subName'),'squat');
+  assert.equal(f.state('S.active.lifts.squat.w'),old);
+  assert.equal(f.state('buildSession(prog(S.active.programId),S.active).ex[0].lift'),'frontsquat');
+  // Tilbake til knebøy i planen fjerner byttet, også fra innbytteren i dag
+  f.click('exsw:0:plan');assert.match(f.run('vExerciseOptions(S.draft,S.draft.ex[0],0)'),/exswpick:0:squat"/);
+  f.run(`exPlanSwap(0,'squat',${old})`);
+  assert.equal(f.state('S.active.swaps.squat||null'),null);
+  assert.equal(f.state('S.draft.ex[0].lift'),'squat');assert.equal(f.state('S.draft.ex[0].subOf||null'),null);
+});
+test('exercises added today and guest sessions only offer today swaps',()=>{
+  const f=fixture();f.run(`exAdd('dbbench',3,10,20);`);const i=f.state('S.draft.ex.length-1');
+  assert.doesNotMatch(f.run(`vExerciseOptions(S.draft,S.draft.ex[${i}],${i})`),/resten av planen/);
+  f.run(`S.draft.guest={sid:'x',who:'y'};`);
+  assert.doesNotMatch(f.run('vExerciseOptions(S.draft,S.draft.ex[0],0)'),/resten av planen/);
+});
+test('photo ids follow the note into the log, and the images stay out of the saved data',()=>{
+  const f=fixture();f.run(`S.draft.photos=['ph1'];`);
+  assert.equal(f.state('afterHas(S.draft).note'),true);
+  assert.match(f.run('vToday()'),/data-phadd="d"/);
+  f.run(`S.draft.ex.forEach(e=>e.sets.forEach(x=>x.d=x.t));`);f.click('finish');
+  assert.deepEqual(f.state('S.history[0].photos'),['ph1']);
+  assert.match(f.run(`ui.logOpen={[S.history[0].date]:true};vLog()`),/data-ph="ph1"/);
 });
 test('removal confirmation stays in the exercise menu and cancel preserves all sets',()=>{
   const f=fixture();f.warm();f.click('next:0');const before=f.state('S.draft');
   f.click(f.run("'exmenu:'+S.draft.started+'-0'"));f.click('confirm:exrm:0');
   assert.match(f.run('vExerciseOptions(S.draft,S.draft.ex[0],0)'),/Ja, fjern/);
-  f.click('cancel');assert.match(f.run('vExerciseOptions(S.draft,S.draft.ex[0],0)'),/Bytt i dag/);
+  f.click('cancel');assert.match(f.run('vExerciseOptions(S.draft,S.draft.ex[0],0)'),/Bytt bare i dag/);
   f.click('exmenuclose');assert.equal(f.state('exerciseMenuIndex()'),-1);
   assert.deepEqual(f.state('S.draft'),before);
 });
