@@ -1120,6 +1120,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
 </div></nav>
 </div>
 
+<script src="burgener-hq.js"></script>
 <script>
 /* =====================================================================
    STANGA – treningslogg med lokal lagring
@@ -1130,7 +1131,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 122;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 123;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -1164,6 +1165,9 @@ const LIFTS = {
   cx_pjj:{n:'Push jerk + jerk',bar:1,cx:1}, cx_clhsc:{n:'Clean + hang clean',bar:1,cx:1},
   cx_psohs:{n:'Power snatch + overhead squat',bar:1,cx:1}, cx_fsj:{n:'Frontbøy + jerk',bar:1,cx:1}, cx_pcj:{n:'Power clean + jerk',bar:1,cx:1}
 };
+// Øvelsene i det løpende Burgener HQ-programmet kommer fra den genererte kildefilen.
+// Eksisterende Stanga-nøkler beholdes, mens varianter som bare finnes i dette programmet får egne nøkler.
+Object.entries(BURGENER_HQ.lifts).forEach(([key, lift]) => { if (!LIFTS[key]) LIFTS[key] = lift; });
 const ALTS = slot => Object.keys(LIFTS).filter(k => LIFTS[k].alt === slot);
 
 /* ---------- Øvelsesbiblioteket ----------
@@ -1901,6 +1905,36 @@ function progressBurg(p, a, s){
   }
   if (s.ex.some(e => e.sets.some(x => x.d != null))) notes.push({name:s.day, text:'Vektene følger prosentplanen', kind:'same'});
   return notes;
+}
+
+/* ---------- Burgener Strength HQ (løpende ukeprogram fra burgenerstrength.com) ----------
+   Den genererte filen har de 35 publiserte ukene i kronologisk rekkefølge. Hver prosent regnes fra
+   1RM i snatch, clean & jerk, knebøy eller frontbøy. Sett uten prosent starter på sist brukte vekt,
+   ellers tom stang/0 kg, og kan justeres i økta. Kildeteksten beholdes ved hver øvelse. */
+function buildBurgHq(p, a){
+  const wi = Math.floor(a.idx / 4), di = a.idx % 4, week = BURGENER_HQ.weeks[wi], day = week.days[di];
+  const ex = day.exercises.map((item, ei) => {
+    const fallback = lastW(item.key), start = fallback != null ? fallback : LIFTS[item.key].bar ? BAR() : 0;
+    const sets = item.groups.flatMap(group => {
+      if (!group.n || group.instruction) return [];
+      const w = group.pc != null && item.base && a.e1rm[item.base] > 0 ? r25(a.e1rm[item.base] * group.pc / 100) : start;
+      return Array.from({length:group.n}, () => Object.assign({t:group.unit ? 1 : group.t, w, d:null},
+        group.c ? {c:group.c} : {}, group.max ? {am:true} : {}));
+    });
+    if (!sets.length) return null;
+    const pcs = item.groups.filter(group => group.pc != null).map(group => group.pc);
+    const tag = pcs.length ? (Math.min(...pcs) === Math.max(...pcs) ? fmt(pcs[0]) : fmt(Math.min(...pcs)) + '–' + fmt(Math.max(...pcs))) + ' %' : '';
+    const source = item.groups.map(group => group.text).filter(Boolean).join(' · ');
+    const warmup = ei === 0 && day.warmup ? `<b>Oppvarming:</b> ${esc(day.warmup)}<br>` : '';
+    const note = item.note ? `${esc(item.note)}<br>` : '';
+    return {key:item.key, lift:item.key, slot:item.key, part:'burghq', rest:item.base === 'squat' || item.base === 'frontsquat' ? 180 : item.base ? 120 : 90,
+      tag, adj:true, hint:`${warmup}${note}<b>Kildens sett:</b> ${esc(source)}`, sets};
+  }).filter(Boolean);
+  return {programId:p.id, day:'Dag ' + day.day, sub:week.title + ' · ' + week.date, ex, started:Date.now()};
+}
+function progressBurgHq(p, a, s){
+  return s.ex.some(ex => ex.sets.some(set => set.d != null))
+    ? [{name:s.day, text:'Neste økt følger den publiserte Burgener-planen', kind:'same'}] : [];
 }
 
 /* ---------- RP Hypertrofi 3 og 5 dager (Renaissance Periodization, malene i Jonas sine ark) ----------
@@ -3809,6 +3843,16 @@ const PROGRAMS = [
           {name:'Dag 4', lines:[['Snatch','opp til tung single'],['Clean & jerk','opp til tung single'],['Frontbøy','1–8 reps']]}],
     inputs:{snatch:70, cj:100, squat:140, frontsquat:115}, inputLabel:'1RM' },
 
+  { id:'burghq', name:'Burgener Strength HQ', origin:'Burgener Strength · gratis ukeprogram', level:'Middels til erfaren', perWeek:'4', prog:'burghq', total:140,
+    summary:'Alle 35 ukene som er publisert i det gratis Burgener Strength HQ-programmet, fra 28. mars til 21. november 2026. Fire økter i uka med olympiske løft, knebøy, trekk og tilbehør. Oppvarming, trenernotater og de opprinnelige settlinjene følger hver øvelse.',
+    rule:'Prosentene regnes fra 1RM i snatch, clean & jerk, knebøy eller frontbøy og endres ikke automatisk. Sett uten prosent foreslår sist brukte vekt, ellers tom stang eller 0 kg, og kan justeres i økta. Kilden hopper fra uke 9 til uke 11 i blokk 2; Stanga beholder den publiserte rekkefølgen uten å dikte inn en manglende uke.',
+    days:[
+      {name:'Dag 1', lines:[['Snatch-varianter','teknikk og styrke'],['Knebøy og trekk','prosent av 1RM'],['Tilbehør','rygg, kjerne og chin-ups']]},
+      {name:'Dag 2', lines:[['Clean-varianter','teknikk og styrke'],['Jerk og frontbøy','prosent av 1RM'],['Tilbehør','kjerne og bakside']]},
+      {name:'Dag 3', lines:[['Power-varianter','hurtighet'],['Press eller trekk','styrke'],['Tilbehør','spenst og bæring']]},
+      {name:'Dag 4', lines:[['Snatch','tung dag'],['Clean & jerk','tung dag'],['Frontbøy og tilbehør','prosent av 1RM']]}],
+    inputs:{snatch:70, cj:100, squat:140, frontsquat:115}, inputLabel:'1RM' },
+
   { id:'mmc12', name:'Muscle MetCon 12 uker', origin:'Eget program, inspirert av Coach Boski', level:'Middels', perWeek:'3', prog:'mmc', total:36,
     summary:'Tre økter i uka på 60–75 minutter: Push med benk, Legs med knebøy og Pull & Power med power clean. Hver økt er styrke, så en metcon på 25–30 minutter og en kort finisher. Uke 1, 6 og 12 har de samme tre benchmark-metconene, så du ser fremgangen.',
     rule:'Hovedløftet er prosent av treningsmaks, som starter på 90 % av 1RM. Prosentene stiger fra 60–67,5 % i uke 1 til 85 % i uke 11. I tillegg flytter RPE treningsmaksen: RPE 7 eller lavere på siste sett gir +2,5 kg i benk og +5 kg i knebøy neste uke, RPE 7,5–9 holder den, og RPE 9,5–10 eller bom gir like mye ned. Clean øker 2,5 kg når løftene er raske og rene, og går ned ved teknisk svikt. Lette uker og retesten endrer ikke treningsmaksen. Uke 4 og 10 er lette uker. Uke 12 er retest: ett sett på 5–8 reps til RPE 8 i benk og knebøy, teknisk clean og samme benchmark som uke 1. Sekundærløftene tas med 1–3 reps i reserve, og metconene på RPE 7–8 med god bevegelseskvalitet.',
@@ -4771,6 +4815,7 @@ function buildSession(p, a){
   if (p.prog === 'jugg') return buildJug(p, a);
   if (p.prog === 'athx') return buildAthx(p, a);
   if (p.prog === 'burg') return buildBurg(p, a);
+  if (p.prog === 'burghq') return buildBurgHq(p, a);
   if (p.prog === 'rp') return buildRp(p, a);
   if (p.prog === 'bro') return buildBro(p, a);
   if (p.prog === 'hh') return buildHh(p, a);
@@ -4814,6 +4859,7 @@ function progress(p, a, s){
   if (p.prog === 'jugg') return progressJug(p, a, s);
   if (p.prog === 'athx') return progressAthx(p, a, s);
   if (p.prog === 'burg') return progressBurg(p, a, s);
+  if (p.prog === 'burghq') return progressBurgHq(p, a, s);
   if (p.prog === 'rp') return progressRp(p, a, s);
   if (p.prog === 'bro') return progressBro(p, a, s);
   if (p.prog === 'hh') return progressHh(p, a, s);
@@ -5389,7 +5435,7 @@ function newInstance(p){
     Object.keys(p.inputs).forEach((k, i) => { const v = parseFloat(String(($('#in-' + i) || {}).value || '').replace(',', '.')); if (v > 0) a.rm[k] = v; });
     return a;
   }
-  if (p.prog === 'sp12' || p.prog === 'cube' || p.prog === 'burg' || ['mmc','emc','cir','cbe'].includes(p.prog)) { a.e1rm = {}; a.base = {}; }
+  if (p.prog === 'sp12' || p.prog === 'cube' || p.prog === 'burg' || p.prog === 'burghq' || ['mmc','emc','cir','cbe'].includes(p.prog)) { a.e1rm = {}; a.base = {}; }
   Object.keys(p.inputs).forEach((k,i) => {
     const el = $('#in-'+i); let v = parseFloat(String(el && el.value || '').replace(',', '.'));
     if (!isFinite(v) || v < 0) v = p.inputs[k];
@@ -5731,6 +5777,7 @@ const PLAN_NOTE = {
   hybrid:'Planen viser dobbel progresjon: repetisjonene bygges først, deretter vekta. RPE/RIR og det du faktisk logger avgjør neste mål. Lette uker flytter ikke arbeidsvektene.',
   rp:'Vektene er prosent av 10RM-en din, 5 %, 7,5 % og 10 % over uke 1. Settene i planen er de fra arket. Vurderingen etter hver øvelse legger til eller trekker fra sett. Når en ny mesosyklus starter, regnes 10RM ut fra settene dine, så vektene der er et anslag.',
   burg:'Vektene er prosent av 1RM og endres ikke underveis. Uke 12, dag 4 er max out, og beste snatch og clean & jerk blir ny 1RM.',
+  burghq:'Planen gjengir de 35 publiserte Burgener HQ-ukene i kronologisk rekkefølge. Prosentene regnes fra 1RM-ene du oppgir og endres ikke automatisk. Kilden har ingen uke 10 i blokk 2.',
   cbe:'Planen viser vektene hvis det tunge løftet går på RPE 7 hver gang. Da øker treningsmaksen 2,5 kg i benk og press og 5 kg i knebøy og markløft fra uka etter, så tallene framover er et tak. Hver uke har tre løft, og ett står over etter tur. Uke 12 bruker vektene fra uke 1, så retesten kan sammenlignes.',
   cir:'Planen viser vektene hvis benk og knebøy går på RPE 7 og clean er rask og ren hver uke. Da øker treningsmaksen 2,5 kg i benk og clean og 5 kg i knebøy per uke, så tallene framover er et tak. Uke 12 bruker vektene fra uke 1, så retesten kan sammenlignes. Hver økt viser kretsen med åtte stasjoner.',
   emc:'Planen viser vektene hvis benk og knebøy går en halv RPE under målet og clean er rask og ren hver uke. Da øker treningsmaksen 2,5 kg i benk og clean og 5 kg i knebøy per uke, så tallene framover er et tak. Uke 12 bruker vektene fra uke 1, så retesten kan sammenlignes. Hver økt viser 4-stasjons EMOM-en.',
@@ -6652,6 +6699,7 @@ const PROG_WHAT = {
   jugg:'16 uker i bølger, fra 10 reps ned til 3', '531':'Ett hovedløft per økt, vekten opp hver fjerde uke, mye volum',
   cube:'Ett løft tungt, ett eksplosivt og ett på reps hver uke', sp12:'Benk, knebøy og power clean, med metcons ved siden av',
   athx27:'Forberedelse til ATHX-stevnet, regnet baklengs fra datoen', burg12:'Olympisk vektløfting: snatch og clean & jerk',
+  burghq:'35 publiserte uker fra Burgener Strength HQ',
   mmc12:'Styrke, metcon og finisher i hver økt', emc12:'Styrke og EMOM-er med fire stasjoner',
   cir12:'Styrke og kretser med en ny øvelse hvert minutt', cbe12:'Tre av fire baseløft per uke i rotasjon, med kondisjon',
   bro:'Muskelvekst: tre helkroppsøkter, deload i uke 6 og 12',
@@ -6741,7 +6789,7 @@ function vDetail(p){
     <p>${p.summary}</p>
     <div class="box"><h2 class="sec" style="margin:0">Slik øker vekten</h2><p class="small">${p.rule}</p></div>
     ${p.prog === 'athx' ? axSetup(other, isActive) : `${p.prog === 'user' ? vUserStart(p) : p.prog === 'rp' ? vRpStart(p) : p.prog === 'bro' ? vBroStart() : p.prog === 'hh' ? vHhStart(p) : p.prog === 'hybrid' ? vHybridStart(p) : vStart(p)}${['mmc','emc','cir'].includes(p.prog) ? mmcSecInputs(p) : ''}
-    <p class="muted small">${p.prog === 'user' ? 'Forslaget er den tyngste vekta du brukte sist i øvelsen, ellers tom stang. Endre det som ikke stemmer.' : p.orm ? p.ormNote || 'Start lett. Teknikken skal sitte før vekten blir tung.' : p.prog === '531' ? 'Appen regner ut treningsmaks som 90 % av dette.' : p.prog === 'jugg' ? 'Appen regner ut arbeidsmaks som 90 % av dette.' : p.prog === 'sp12' ? 'Startvektene regnes ut fra dette. Etter hvert styrer RPE-en din vektene.' : p.prog === 'cube' ? 'Alle vekter regnes ut som prosent av dette.' : p.prog === 'burg' ? 'Alle vekter regnes ut som prosent av dette. Trekk og shrugs ligger over 100 %, det er meningen.' : ['rp','bro','hh','hybrid'].includes(p.prog) ? '' :['mmc','emc','cir','cbe'].includes(p.prog) ? 'Treningsmaksen starter på 90 % av dette, og RPE-en din flytter den etter hver uke. Bruk dagsaktuelle maksløft.' : 'Start lett. Teknikken skal sitte før vekten blir tung.'}
+    <p class="muted small">${p.prog === 'user' ? 'Forslaget er den tyngste vekta du brukte sist i øvelsen, ellers tom stang. Endre det som ikke stemmer.' : p.orm ? p.ormNote || 'Start lett. Teknikken skal sitte før vekten blir tung.' : p.prog === '531' ? 'Appen regner ut treningsmaks som 90 % av dette.' : p.prog === 'jugg' ? 'Appen regner ut arbeidsmaks som 90 % av dette.' : p.prog === 'sp12' ? 'Startvektene regnes ut fra dette. Etter hvert styrer RPE-en din vektene.' : p.prog === 'cube' ? 'Alle vekter regnes ut som prosent av dette.' : p.prog === 'burg' ? 'Alle vekter regnes ut som prosent av dette. Trekk og shrugs ligger over 100 %, det er meningen.' : p.prog === 'burghq' ? 'Prosentene regnes fra disse fire 1RM-ene. Andre øvelser starter på sist brukte vekt og kan justeres i økta.' : ['rp','bro','hh','hybrid'].includes(p.prog) ? '' :['mmc','emc','cir','cbe'].includes(p.prog) ? 'Treningsmaksen starter på 90 % av dette, og RPE-en din flytter den etter hver uke. Bruk dagsaktuelle maksløft.' : 'Start lett. Teknikken skal sitte før vekten blir tung.'}
       ${slotsOf(p).length ? ' Vil du bytte et løft, gjør du det under Program → Oppsett når programmet er aktivt.' : ''}
       ${other ? ' Dette erstatter '+other.name+'. Loggen din blir liggende.' : ''}${isActive ? ' Programmet er aktivt. Aktiverer du på nytt, starter det fra økt 1 med vektene over.' : ''}</p>`}
     <button class="btn" data-a="activate:${p.id}">${isActive ? 'Start på nytt' : 'Aktiver program'}</button>

@@ -1,6 +1,6 @@
 # Stanga – treningsapp på hjemskjermen
 
-Styrkeprogrammer (StrongLifts 5×5, Starting Strength, GZCLP, 5/3/1 FSL og BBB, Juggernaut, Cube Method og Strength & Power), Burgener 12 uker for olympisk vektløfting, Muscle MetCon 12 uker (styrke, metcon og finisher i hver økt, sekundærløft styrt av RPE), EMOM Capacity 12 uker (styrke som E2MOM og 4-stasjons EMOM-er), Circuit EMOM 12 uker (kretser med åtte stasjoner), Cube EMOM 12 uker (tre baseløft i E4MOM hver økt), RP Hypertrofi på 3 og 5 dager (13 uker i tre mesosykluser), Knebøy, benk og RP (en tung dag med knebøy og benk og to RP-dager), Brosesh (12 uker med tre helkroppsøkter, bygd på RP Strengths hypertrofiguide), Hybridprogram (3–5 dager, 8–16 uker og valgfritt muskelfokus), Hybrid Hypertrophy 12 uker (tre styrkeøvelser og en metcon i hver økt), et konkurranseprogram for ATHX 2027, øktbank med metcons, egne metcons, metcon-klokke og treningslogg. Alle data lagres lokalt på telefonen.
+Styrkeprogrammer (StrongLifts 5×5, Starting Strength, GZCLP, 5/3/1 FSL og BBB, Juggernaut, Cube Method og Strength & Power), Burgener 12 uker og Burgener Strength HQ for olympisk vektløfting, Muscle MetCon 12 uker (styrke, metcon og finisher i hver økt, sekundærløft styrt av RPE), EMOM Capacity 12 uker (styrke som E2MOM og 4-stasjons EMOM-er), Circuit EMOM 12 uker (kretser med åtte stasjoner), Cube EMOM 12 uker (tre baseløft i E4MOM hver økt), RP Hypertrofi på 3 og 5 dager (13 uker i tre mesosykluser), Knebøy, benk og RP (en tung dag med knebøy og benk og to RP-dager), Brosesh (12 uker med tre helkroppsøkter, bygd på RP Strengths hypertrofiguide), Hybridprogram (3–5 dager, 8–16 uker og valgfritt muskelfokus), Hybrid Hypertrophy 12 uker (tre styrkeøvelser og en metcon i hver økt), et konkurranseprogram for ATHX 2027, øktbank med metcons, egne metcons, metcon-klokke og treningslogg. Alle data lagres lokalt på telefonen.
 
 ## Utseende: Treningsboka
 
@@ -272,6 +272,8 @@ Når du slår på «Logg en metcon jeg tok», velger en økt fra øktbanken elle
 | Fil | Hva den gjør |
 |---|---|
 | `index.html` | Hele appen: utseende, programmer og logikk |
+| `burgener-hq.js` | 35 publiserte Burgener Strength HQ-uker i Stangas programformat |
+| `scripts/import-burgener-program.mjs` | Henter Burgener-arkivet på nytt og bygger `burgener-hq.js` |
 | `manifest.json` | Navn, ikon og at appen skal åpne i fullskjerm |
 | `sw.js` | Service worker: lagrer filene så appen virker uten nett. Svar fra Supabase lagres aldri. |
 | `supabase/migrations/` | Databasen for Sammen og skybackup: tabeller, tilgangsregler og funksjoner |
@@ -298,6 +300,8 @@ Når du slår på «Logg en metcon jeg tok», velger en økt fra øktbanken elle
 ## Tester
 
 Kjør regresjonstestene for Sammen med `node --test tests/sammen.test.cjs` (Node.js, ingen ekstra pakker). De dekker telling av venner, datogrenser og sommertid, filtrering, tekstescaping, privat øktinformasjon og navigasjon. Påmelding, tidsforslag, ny time, øktbanken, chat og mobilvisning er også kontrollert i nettleser med lokale testdata.
+
+Oppdater Burgener Strength HQ-dataene med `node scripts/import-burgener-program.mjs`. Importen leser det offentlige WordPress-endepunktet, krever fire dager per uke og skriver en deterministisk programfil.
 
 ## Når du endrer koden
 

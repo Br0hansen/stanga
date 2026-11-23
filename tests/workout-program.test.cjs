@@ -5,7 +5,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 // Git på Windows sjekker ut med CRLF. Uten dette finner ikke split under oppstarten, og hele appen kjører.
 const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8').replace(/\r\n/g, '\n');
-const app = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].at(-1)[1].split('\nrender();\nckRender();')[0];
+const burgenerHq = fs.readFileSync(path.join(__dirname, '..', 'burgener-hq.js'), 'utf8');
+const app = burgenerHq + '\n' + [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].at(-1)[1].split('\nrender();\nckRender();')[0];
 
 // Run the real app and click handler; only browser services are replaced.
 function fixture(program = 'sl5x5') {
@@ -847,6 +848,28 @@ test('Hybridprogram double progression builds reps before adding weight',()=>{
   assert.equal(f.state("S.active.hy['squat.heavy'].w"),45);
   assert.equal(f.state("S.active.hy['squat.heavy'].r"),5);
   assert.match(f.state("hyNotes.map(x=>x.text).join(' ')"),/40 → 45 kg/);
+});
+
+test('Burgener Strength HQ is a 35-week program, not part of the workout bank',()=>{
+  const f=fixture('burghq');
+  assert.equal(f.state("prog('burghq').total"),140);
+  assert.equal(f.state('BURGENER_HQ.weeks.length'),35);
+  assert.equal(f.state('BURGENER_HQ.weeks.flatMap(w=>w.days).length'),140);
+  assert.equal(f.state("(BANK||[]).filter(w=>w.t==='Burgener Strength').length"),0);
+});
+
+test('Burgener Strength HQ builds source sets from the four entered 1RMs',()=>{
+  const f=fixture('burghq');
+  assert.equal(f.state('S.draft.day'),'Dag 1');
+  assert.equal(f.state('S.draft.sub'),'WEEK 1 · 2026-03-28');
+  assert.equal(f.state('S.draft.ex[0].sets.length'),5);
+  assert.deepEqual(f.state('S.draft.ex[0].sets.map(x=>[x.t,x.w])'),[[3,45],[3,45],[3,50],[3,50],[3,50]]);
+  assert.match(f.run('S.draft.ex[0].hint'),/Daily warm-up for the snatch/);
+  f.run('S.active.idx=139;S.draft=buildSession(prog(\'burghq\'),S.active)');
+  assert.equal(f.state('S.draft.sub'),'WEEK 24 – BLOCK #3 · 2026-11-21');
+  assert.equal(f.state('S.draft.day'),'Dag 4');
+  assert.equal(f.state(`Array.from({length:140},(_,idx)=>{const a=clone(S.active);a.idx=idx;const s=buildSession(prog('burghq'),a);
+    return s.ex.length>0&&s.ex.every(e=>e.sets.length>0&&e.sets.every(x=>Number.isFinite(x.t)&&Number.isFinite(x.w))) }).every(Boolean)`),true);
 });
 test('Sammen gives program sessions to times in calendar order, and a started time only takes one while you train',()=>{
   const f=fixture('hh12'), h=3600000;
