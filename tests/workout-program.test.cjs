@@ -208,6 +208,34 @@ test('swapping for the rest of the plan sets the program swap and swaps today wi
   assert.equal(f.state('S.active.swaps.squat||null'),null);
   assert.equal(f.state('S.draft.ex[0].lift'),'squat');assert.equal(f.state('S.draft.ex[0].subOf||null'),null);
 });
+test('every built-in strength program offers a change for today or the rest of the plan',()=>{
+  const f=fixture();const programs=f.state("PROGRAMS.filter(p=>p.prog!=='athx').map(p=>p.id)");
+  for(const id of programs){
+    f.run(`S=fresh();S.settings.pete.on=false;S.active=newInstance(prog(${JSON.stringify(id)}));S.draft=buildSession(prog(S.active.programId),S.active);delete S.draft.go;`);
+    for(let i=0;i<f.state('S.draft.ex.length');i++){
+      const menu=f.run(`vExerciseOptions(S.draft,S.draft.ex[${i}],${i})`);
+      assert.match(menu,/Bytt i resten av planen/,id+' øvelse '+i);
+      assert.match(menu,/Bytt bare i dag/,id+' øvelse '+i);
+    }
+  }
+});
+test('generic plan changes persist, preserve the original progression and can be reversed',()=>{
+  const f=fixture('burg12');const old=f.state('S.active.e1rm.squat');
+  f.run('delete S.draft.go');
+  assert.equal(f.state('exPlanSlot(S.draft,S.draft.ex[2]).fallback'),true);
+  f.run("exPlanSwap(2,'frontsquat',80)");
+  assert.equal(f.state('S.draft.ex[2].lift'),'frontsquat');
+  assert.equal(f.state('S.active.planSwaps.squat.lift'),'frontsquat');
+  assert.equal(f.state('S.draft.go||null'),null);
+  f.run("S.draft=buildSession(prog('burg12'),S.active)");
+  assert.equal(f.state('S.draft.ex[2].lift'),'frontsquat');
+  assert.equal(f.state('S.draft.ex[2].sets.length'),5);
+  assert.equal(f.state('S.draft.rmEx.find(e=>e.planSwapKey===\'squat\').lift'),'squat');
+  assert.equal(f.state('S.active.e1rm.squat'),old);
+  f.run("exPlanSwap(2,'squat',80)");
+  assert.equal(f.state('S.active.planSwaps.squat||null'),null);
+  assert.equal(f.state('S.draft.ex[2].lift'),'squat');
+});
 test('exercises added today and guest sessions only offer today swaps',()=>{
   const f=fixture();f.run(`exAdd('dbbench',3,10,20);`);const i=f.state('S.draft.ex.length-1');
   assert.doesNotMatch(f.run(`vExerciseOptions(S.draft,S.draft.ex[${i}],${i})`),/resten av planen/);
@@ -790,6 +818,13 @@ function ownProgram(f, ex, extra = '') {
     S.userProgs={u_t:up};UDEF.clear();S.active=newInstance(userDef(up));
     globalThis.runOwn=(miss)=>{const p=prog('u_t'),s=buildSession(p,S.active);s.ex.forEach(e=>e.sets.forEach(x=>x.d=miss?x.t-1:x.t));const n=progress(p,S.active,s);S.active.idx++;return {s,n};};`);
 }
+test('custom programs also keep a plan change on later sessions',()=>{
+  const f=fixture();
+  ownProgram(f,[{lift:'squat',sets:3,reps:5,hi:9,rule:'linear',inc:2.5,rest:180}]);
+  f.run("S.draft=buildSession(prog('u_t'),S.active);exPlanSwap(0,'frontsquat',60)");
+  assert.equal(f.state('S.active.planSwaps[\'squat.l5\'].lift'),'frontsquat');
+  assert.equal(f.state("buildSession(prog('u_t'),S.active).ex[0].lift"),'frontsquat');
+});
 const sw = s => s.ex.map(e => e.sets.map(x => x.t + 'x' + x.w).join(' '));
 test('Trinn deler opp repsene ved bom og starter på 85 % etter siste trinn',()=>{
   const f=fixture();

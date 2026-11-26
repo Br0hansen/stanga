@@ -1140,7 +1140,7 @@ select{background:var(--iron);border:1px solid var(--line);border-radius:3px;col
    ===================================================================== */
 
 const KEY = 'stanga.v1';
-const APP_VERSION = 126;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
+const APP_VERSION = 127;   // øk ved hver endring. Appen oppdaterer seg selv når tallet på GitHub er høyere.
 
 const LIFTS = {
   squat:{n:'Knebøy',bar:1}, bench:{n:'Benkpress',bar:1}, row:{n:'Stangroing',bar:1},
@@ -4821,7 +4821,7 @@ function mk(n, reps, w, lastAm){
 }
 // Husker planlagt vekt på hovedløftene, så progresjonen ser om du tok av vekt i økta
 const withPw = s => (s.ex.forEach(e => { if (e.part === 'mmc' && e.pw == null) e.pw = e.sets[0].w; }), s);
-function buildSession(p, a){
+function buildSessionRaw(p, a){
   if (p.prog === 'user') return buildUser(p, a);
   if (p.prog === 'sp12') return buildSP(p, a);
   if (p.prog === 'cube') return buildCube(p, a);
@@ -4863,6 +4863,26 @@ function buildSession(p, a){
   }
   return {programId:p.id, day:day.name, sub, ex, started:Date.now()};
 }
+
+// Fallback for programplasser uten en egen byttemotor. Den samme innbytteren legges inn hver gang
+// plassen kommer tilbake. Originalens progresjon står, mens innbytteren husker sist brukte vekt.
+const persistentSwapKey = e => e.planSwapKey || e.hySlot || e.rpSlot || e.broSlot || e.key || e.slot;
+function applyPersistentSwaps(s,a){
+  const swaps=a&&a.planSwaps;if(!s||!swaps||!s.ex)return s;
+  s.ex=s.ex.map(e=>{
+    const key=persistentSwapKey(e),cfg=swaps[key];if(!cfg||!LIFTS[cfg.lift]||cfg.lift===e.lift)return e;
+    const original=e,id='plan.'+key,top=Math.max(...e.sets.map(x=>x.w));
+    original.swapId=id;original.planSwapKey=key;
+    s.rmEx=(s.rmEx||[]).concat(original);
+    const recent=lastW(cfg.lift),W=recent!=null?recent:cfg.weight,min=LIFTS[cfg.lift].bar?BAR():0;
+    return {key:'sub.'+cfg.lift,lift:cfg.lift,slot:cfg.lift,subOf:id,subName:cfg.from||original.lift,
+      planSwapKey:key,tag:'I stedet for '+liftName(cfg.from||original.lift).toLowerCase(),rest:original.rest||120,
+      adj:true,o:original.o,cat:original.cat,rpPct:original.rpPct,
+      sets:original.sets.map(x=>({t:x.t,w:Math.max(min,top>0?r25(x.w*W/top):W),d:null}))};
+  });
+  return s;
+}
+function buildSession(p,a){return applyPersistentSwaps(buildSessionRaw(p,a),a);}
 
 /* ---------- Motor: oppdater instansen etter en økt ---------- */
 function progress(p, a, s){
@@ -5047,12 +5067,20 @@ function exPlanSlot(s, e){
   if (p.prog === 'burghq') return {slot:o.slot, def:o.slot, o, burgHq:true, why:'Gjelder i dag og i alle kommende økter med denne øvelsen.'};
   // Er planen byttet alt i dag, står innbytteren i plassen
   const sl = slotsOf(p), slot = sl.find(x => sw(a, x) === o.lift) || (e.subOf && sl.find(x => sw(a, x) === e.lift));
-  return slot ? {slot, def: slot, o, gen: true, why: 'Gjelder i dag og i øktene framover.'} : null;
+  if(slot)return {slot,def:slot,o,gen:true,why:'Gjelder i dag og i øktene framover.'};
+  const key=persistentSwapKey(o),saved=(a.planSwaps||{})[key];
+  return key?{slot:key,def:saved&&saved.from||o.lift,o,fallback:true,why:'Gjelder i dag og hver gang denne plassen kommer tilbake. Originaløvelsens progresjon står mens den er byttet ut.'}:null;
 }
-const exPlanOK = (s, e) => { const ps = exPlanSlot(s, e); return !!ps && (ps.burgHq || swapCands(s, e).fam.length > 0); };
+const exPlanOK = (s, e) => !!exPlanSlot(s,e);
 function exPlanSwap(ei, T, W){
   const s = S.draft, e = s && s.ex[ei], ps = e && exPlanSlot(s, e), a = S.active; if (!ps || !LIFTS[T]) return;
   const p = prog(a.programId);
+  if(ps.fallback){
+    a.planSwaps=a.planSwaps||{};
+    if(T===ps.def){delete a.planSwaps[ps.slot];if(e.subOf){exUnswap(ei);toast(liftName(T)+' er tilbake i planen og i dag');}return;}
+    a.planSwaps[ps.slot]={lift:T,weight:W,from:ps.def};
+    exSwap(ei,T,W,liftName(T)+' står i planen fra nå, også i dag');return;
+  }
   if (ps.gen && refValue(p, a, T) == null) {
     const A = sw(a, ps.slot), top = Math.max(...ps.o.sets.map(x => x.w)), ref = refValue(p, a, A);
     planInit(p, a, A, T, ref > 0 && top > 0 ? ref * W / top : W);
@@ -5138,7 +5166,7 @@ function exSwapBox(s, e, ei, touched){
   const sel = ui.exSw.T, from = e.subOf ? e.subName : e.lift, plan = ui.exSw.plan && exPlanSlot(s, e);
   const hit = (T, sub) => `<button class="lib-hit" data-a="exswpick:${ei}:${T}"><b>${esc(liftName(T))}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</button>`;
   let h = `<div class="skipbox ex-sw" aria-live="polite"><p class="small"><b>Bytt ${esc(liftName(e.lift).toLowerCase())} ${plan ? 'i resten av planen' : 'i dag'}</b>
-    ${touched ? ` Settene du har tatt i den, lagres ikke.` : ''} ${plan ? plan.why + ' Du kan bytte tilbake under Program → Oppsett.' : 'Neste gang står ' + esc(liftName(from).toLowerCase()) + ' i økta igjen.'}</p>`;
+    ${touched ? ` Settene du har tatt i den, lagres ikke.` : ''} ${plan ? plan.why + (plan.fallback?' Du kan bytte tilbake med Endre øvelse neste gang plassen vises.':' Du kan bytte tilbake under Program → Oppsett.') : 'Neste gang står ' + esc(liftName(from).toLowerCase()) + ' i økta igjen.'}</p>`;
   if (sel && LIFTS[sel]) {
     const w = swapW(e, sel);
     h += `<div class="ex-sw-pick"><b>${esc(liftName(sel))}</b><button class="link" data-a="exswpick:${ei}:">Velg en annen</button></div>
@@ -5149,7 +5177,7 @@ function exSwapBox(s, e, ei, touched){
   }
   const c = swapCands(s, e);
   // I planen kan bare alternativene programmet har for plassen brukes
-  if (plan && !plan.burgHq) return h + `<span class="lbl">${e.cat ? 'Alternativer i programmet: ' + esc(catOf(e.cat).n.toLowerCase()) : 'Alternativer til ' + esc(liftName(swFam(from)).toLowerCase())}</span>
+  if (plan && !plan.burgHq && !plan.fallback) return h + `<span class="lbl">${e.cat ? 'Alternativer i programmet: ' + esc(catOf(e.cat).n.toLowerCase()) : 'Alternativer til ' + esc(liftName(swFam(from)).toLowerCase())}</span>
     <div class="lib-res">${(e.subOf ? [from].concat(c.fam) : c.fam).map(T => { const w = swapW(e, T); return hit(T, w != null && w > 0 ? 'Omtrent ' + fmt(w) + ' kg' : ''); }).join('')}</div>
     <div class="row"><button class="btn ghost sm" data-a="exswx">Avbryt</button></div></div>`;
   if (c.fam.length) h += `<span class="lbl">${e.cat ? 'Alternativer i programmet: ' + esc(catOf(e.cat).n.toLowerCase()) : 'Alternativer til ' + esc(liftName(swFam(from)).toLowerCase())}</span>
