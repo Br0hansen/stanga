@@ -1,47 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const vm = require('node:vm');
-const fs = require('node:fs');
-const path = require('node:path');
-// Git på Windows sjekker ut med CRLF. Uten dette finner ikke split under oppstarten, og hele appen kjører.
-const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8').replace(/\r\n/g, '\n');
-const burgenerHq = fs.readFileSync(path.join(__dirname, '..', 'burgener-hq.js'), 'utf8');
-const app = burgenerHq + '\n' + [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].at(-1)[1].split('\nrender();\nckRender();')[0];
-
-// Run the real app and click handler; only browser services are replaced.
-function fixture(program = 'sl5x5') {
-  const listeners = {}, storage = new Map(), nodes = new Map(), followed = [];
-  let now = Date.now();
-  class Clock extends Date { constructor(...args) { super(...(args.length ? args : [now])); } static now() { return now; } }
-  function node(selector) {
-    return {dataset:{},style:{setProperty(){}},classList:{add(){},remove(){},toggle(){}},
-      hidden:false,textContent:'',innerHTML:'',tagName:'SECTION',
-      querySelector:()=>null,hasAttribute:()=>false,focus(){},
-      scrollIntoView(){followed.push(selector);}};
-  }
-  for (const id of ['.stage','#rest','#restB','#restL','#restFlash','#toast','#exercise-0','#exercise-1','#exercise-2','#today-after']) nodes.set(id,node(id));
-  const c = vm.createContext({console,URL,URLSearchParams,Map,Set,Date:Clock,JSON,Math,Number,String,Promise,
-    setTimeout:()=>0,clearTimeout(){},setInterval:()=>0,clearInterval(){},addEventListener(){},
-    localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},
-    sessionStorage:{getItem:()=>null,setItem(){},removeItem(){}},
-    document:{querySelector:s=>nodes.get(s)||null,querySelectorAll:()=>[],
-      addEventListener:(name,fn)=>(listeners[name] ||= []).push(fn),documentElement:{dataset:{},style:{setProperty(){}}}},
-    navigator:{},location:{protocol:'http:',origin:'http://test.invalid',hash:'',search:''},
-    matchMedia:()=>({matches:false}),CSS:{escape:s=>s},fetch:()=>{throw Error('Unexpected network call');}});
-  c.window=c;
-  vm.runInContext(app,c);
-  const run = code => vm.runInContext(code,c);
-  run(`render=()=>{};wake=()=>{};say=()=>{};toTop=()=>{};
-    S=fresh(); S.settings.pete.on=false; S.active=newInstance(prog(${JSON.stringify(program)}));
-    S.draft=buildSession(prog(S.active.programId),S.active);S.draft.go=Date.now();`);
-  const click = action => {
-    const b={dataset:{a:action},type:'button',disabled:false};
-    for(const fn of listeners.click) fn({target:{closest:()=>b},preventDefault(){}});
-  };
-  const state = expression => JSON.parse(run(`JSON.stringify(${expression})`));
-  const warm = () => run(`S.draft.ex.forEach((e,i)=>{const k=wuKind(S.draft,i);e.wuDone=k?warmups(e.slot,e.sets[0].w,e.sets[0].t,k).map(([w,r])=>w+'x'+r):[];});`);
-  return {run,click,state,warm,followed,storage,nodes,advance:ms=>{now+=ms;}};
-}
+const {fixture} = require('./helpers/app-fixture.cjs');
 
 test('one tap logs a set, starts the real program pause and persists it',()=>{
   const f=fixture();f.warm();f.click('next:0');
@@ -666,6 +625,8 @@ test('the overview with Start økt shows before the session is started, and logg
   assert.match(view,/data-a="startday"/);
   assert.match(view,/Resten av økta/);
   assert.match(view,new RegExp('data-a="exmenu:'+f.state('S.draft.started')+'-0"'));
+  assert.match(view,/Planlegg økta før du starter/);
+  assert.match(view,/Endre øvelse/);
   assert.match(view,/data-a="exadd"/);
   assert.match(view,/data-a="after:mc">\+ Metcon/);
   assert.doesNotMatch(view,/id="exercise-0"|data-a="next:0"/);
@@ -747,6 +708,74 @@ test('after the strength: planned parts are open, the rest is added, and Fjern t
   f.click('after:cond');assert.equal(f.state('!!S.draft.pete'),false);
   assert.match(f.run('vToday()'),/data-a="after:cond">\+ Kondisjon</);
   f.click('after:cond');assert.ok(f.state('!!S.draft.pete'));
+});
+test('Pete beginner has 24 source weeks with 72 core and 48 optional sessions',()=>{
+  const f=fixture();
+  assert.equal(f.state('PB_WEEKS.length'),24);
+  assert.equal(f.state('Array.from({length:120},(_,i)=>pbSession(i,"row")).filter(s=>s.optional).length'),48);
+  assert.deepEqual(f.state('[0,1,2,3,4].map(i=>pbSession(i,"row").name)'),['5000 m','6 × 500 m','5000 m','20 min','2 × 10 min']);
+  assert.deepEqual(f.state('[pbSession(1,"row").rests,pbSession(56,"row").rests]'),[Array(5).fill(120),Array(3).fill(180)]);
+  assert.equal(f.state('pbSession(57,"row").minutes'),30);
+  assert.deepEqual(f.state('[115,116,117].map(i=>pbSession(i,"row").name)'),['12 000 m','5 × 1500 m','30 min']);
+  assert.equal(f.state('pbSession(120,"row")'),null);
+  for(const mach of ['row','ski','bike']){
+    f.run(`S=fresh();for(let i=0;i<72;i++){S.settings.pete.mach='${mach}';petePick('free');ui.freePete.split='2:20';peteDone(ui.freePete);}`);
+    assert.equal(f.state(`pbState('${mach}').idx`),72);
+    assert.match(f.run("peteBox('session')"),/24 uker fullført/);
+  }
+});
+test('Pete pace and program positions stay independent across apparatus and reload',()=>{
+  const f=fixture();f.run("S.settings.pete.startPaceByKind={row:{steady:140},ski:{steady:150},bike:{steady:70}};petePick('session');S.draft.pete.split='2:20';peteDone(S.draft.pete);save();S=load();");
+  assert.deepEqual(f.state('[pbState("row").idx,pbState("ski").idx,pbState("bike").idx]'),[1,0,0]);
+  f.run("petePick('session')");f.click('pp:mach:ski:session');
+  assert.deepEqual(f.state('[S.draft.pete.idx,S.draft.pete.mach,S.draft.pete.split]'),[0,'ski','']);
+  assert.equal(f.state('pbTarget(pbSession(2,"row"),"row").sec'),140);
+  assert.equal(f.state('pbTarget(pbSession(2,"ski"),"ski").sec'),150);
+});
+test('Pete first pace is separate for steady, speed and endurance work',()=>{
+  const f=fixture();
+  f.run("S.settings.pete.startPaceByKind={row:{steady:125,speed:107,endur:123}};");
+  assert.equal(f.state('pbTarget(pbSession(0,"row"),"row").sec'),125);
+  assert.equal(f.state('pbTarget(pbSession(1,"row"),"row").sec'),107);
+  assert.match(f.run('pbBox("free")'),/din valgte startfart for rolig og sammenhengende arbeid/);
+});
+test('Pete beginner uses prescribed reference sessions and pace differences',()=>{
+  const f=fixture();
+  f.run(`pbDone({idx:0,mach:'row',split:'2:20'});pbDone({idx:1,mach:'row',split:'2:10'});pbDone({idx:10,mach:'row',split:'2:19'});pbDone({idx:11,mach:'row',split:'2:16'});pbDone({idx:26,mach:'row',split:'2:15'});`);
+  assert.equal(f.state('pbTarget(pbSession(5,"row"),"row").sec'),140);
+  assert.equal(f.state('pbTarget(pbSession(6,"row"),"row").sec'),130);
+  assert.equal(f.state('pbTarget(pbSession(11,"row"),"row").sec'),137);
+  assert.equal(f.state('pbTarget(pbSession(26,"row"),"row").sec'),136);
+  assert.equal(f.state('pbTarget(pbSession(46,"row"),"row").sec'),134);
+  assert.match(f.state('pbTarget(pbSession(46,"row"),"row").src'),/uke 6, økt 2/);
+});
+test('Pete bike scales distance, not time or displayed pace adjustments',()=>{
+  const f=fixture();
+  f.run("pbDone({idx:10,mach:'bike',split:'2:20'});pbDone({idx:10,mach:'row',split:'2:20'});");
+  assert.equal(f.state('pbSession(0,"bike").meters'),10000);
+  assert.equal(f.state('peteWorkMin(pbSession(57,"bike"),{sec:null})'),30);
+  assert.equal(f.state('pbTarget(pbSession(11,"bike"),"bike").sec*2'),138);
+  assert.equal(f.state('pbTarget(pbSession(11,"row"),"row").sec'),138);
+  assert.equal(f.state('peteResultSec(pbSession(0,"bike"),{unit:"drag",split:"20:00"})'),60);
+  assert.equal(f.state('dragMeters(pbSession(57,"row"))'),null);
+});
+test('Pete optional sessions do not advance the core plan and invalid results cannot advance it',()=>{
+  const f=fixture();f.run("petePick('session',3);S.draft.pete.split='2:30';peteDone(S.draft.pete)");
+  assert.equal(f.state('pbState("row").idx'),0);
+  assert.equal(f.state('pbState("row").results[3].sec'),150);
+  f.run("petePick('session');S.draft.pete.split='2:99'");f.click('finish');
+  assert.equal(f.state('S.history.length'),0);
+  assert.equal(f.state('pbState("row").idx'),0);
+  assert.equal(f.state('parseSplit("2:99")'),null);
+  f.run("S.draft.pete.split='';");assert.equal(f.state('pbValid(S.draft.pete)'),false);
+});
+test('Pete keeps legacy drafts isolated and restores only the relevant apparatus when deleting a new log',()=>{
+  const f=fixture();f.run("S.pete.idx=8;const old={idx:8,ver:'orig',mach:'row',split:'2:10',unit:'split'};peteDone(old)");
+  assert.equal(f.state('S.pete.idx'),9);assert.equal(f.state('pbState("row").idx'),0);
+  f.run("petePick('free');ui.freePete.split='2:20'");f.click('freesave');
+  f.run("pbDone({idx:0,mach:'ski',split:'2:40'})");
+  f.run('logDelete(S.history[0].date)');
+  assert.deepEqual(f.state('[pbState("row").idx,pbState("ski").idx]'),[0,1]);
 });
 test('Redesign is the default look, and a theme chosen earlier is kept',()=>{
   const f=fixture();

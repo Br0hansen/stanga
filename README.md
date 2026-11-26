@@ -182,14 +182,14 @@ Et fast kondisjonsvalg ved siden av øktbanken, på romaskin, ski eller sykkel. 
 
 **Vekter i programmet** (under Løft og vekter): tallene programmet du kjører regner vektene ut fra, som treningsmaks, 1RM, toppsett, backoff og arbeidsvekter, kan rettes for hånd. Appen prøver hvert tall og viser hvilke som styrer de neste øktene og fra hvilken økt ("Brukes i neste økt", "Brukes fra Dag 1 (uke 5 av 12)"). Tall som ikke brukes de neste 9 øktene, ligger under «Andre tall i programmet». Neste økt bygges på nytt med en gang, med mindre den er påbegynt. Programmet fortsetter med vanlig progresjon fra de nye tallene, og loggen endres ikke.
 
-- Planen er Pete Marstons tre-ukers rotasjon med seks økter per uke, kontrollert mot hans egen tabell. Appen husker hvor du er og går videre én økt om gangen.
-- Målfarten regnes ut fra referansetiden din: 2000 m på romaskin og ski, 4000 m på sykkel.
-- **Testet tid** stilles på et hjul, som tiden på metcon-klokka: minutter og sekunder som rulles og snapper, og raden i midten er valgt. Hjulet starter på tiden som brukes nå og lagres når du trykker «Ferdig» eller utenfor. Lukker du uten å rulle, står tiden som før, også med tideler.
-- Appen regner også baklengs: snittfarten fra intervalløkter og hard distanse, minus tillegget for økta, gir et anslag på 2K-tiden din nå. Medianen av de tre siste anslagene fra seks uker brukes, så de rolige øktene følger utviklingen din. En ny testet tid går foran til nyere økter gir et nytt anslag.
-- Resultatet kan skrives inn som snittfart eller som tid per drag (total tid for ett drag). Kortet viser målet på begge måter.
-- Progresjon fra planen: snittfarten fra en intervalløkt blir målet neste gang samme økt kommer. Hard distanse viser din beste tid.
-- På sykkel dobles distansen, og farten vises per 1000 m.
-- **Tilpasset styrke** er vår egen tilpasning, ikke en del av Pete Plan: samme intervaller, men rolige økter på 6 km og hard distanse på 5 km. **Original** har 15 km og 8 km rolig og 10 km hardt.
+- [Pete Marstons nybegynnerprogram](https://thepeteplan.wordpress.com/beginner-training/): 24 uker, 72 hovedøkter og 48 valgfrie ekstraøkter. Tabell og fartsmål ligger i `pete-beginner.js`. Uke 14 valgfri økt 5 følger oversiktstabellen (7 × 500 m); kildens forklaring sier 8 × 500 m.
+- Ro, ski og sykkel har hver sin øktteller og sine egne resultater. Valgfrie økter flytter ikke hovedprogrammet. Programmet avsluttes etter 24 uker og kan startes på nytt per apparat.
+- Målfarten viser hvilken tidligere økt på samme apparat den bygger på. Henvisningene følger programmets forklaringer; når et relevant resultat mangler, merkes et alternativt startforslag som Stangas forslag. Valg om å øke på slutten står som veiledning, ikke en automatisk økning etter hver økt.
+- Første startfart kan settes manuelt og lagres separat for rolig arbeid, korte intervaller og lange intervaller. Dermed kan for eksempel 6 × 500 m starte på 1:47 uten at 5000 m får samme mål. En allerede lagret testtid kan gi et tydelig merket startanslag (+15 sekunder i vist fart). Nybegynnerøktene brukes ikke til å anslå nye makstider.
+- Resultatet registreres som snittfart uten pauser, tid per drag / total tid for distanseøkter, eller fart for hvert enkelt drag. Alle drag må være gyldige i dragmodus. Like lange distansedrag bruker vanlig snitt; like lange tidsdrag bruker total arbeidstid delt på total distanse. Innsats kan registreres som Kontrollert, Hard eller Maksimal, og vises sammen med dragene i loggen. Valgt innsats kan fjernes ved å trykke igjen.
+- Stangas forsiktige tillegg til fartsmålene: Hard innsats hindrer raskere mål fra den aktuelle referansen. Maksimal innsats eller minst 3 % økning i splittid fra første til siste halvdel av dragene gir minst 2 viste sekunder roligere mål enn resultatet; et allerede roligere mål beholdes. Også en nyere vanskelig økt av samme type på samme apparat kan bremse et gammelt mål. Tersklene er produktvalg, ikke forskningsvaliderte fysiologiske grenser. Uten innsatsdata eller drag beholdes programreglene. Mengden i originalplanen endres ikke.
+- Ski bruker rooppsettet, og sykkel dobler meter med fart per 1000 m. Tidsøkter og pauser beholdes. Ski og sykkel er uttrykkelig Stanga-tilpasninger.
+- Overgangen starter nybegynnerprogrammet på uke 1 per apparat. Eldre logg og påbegynte utkast fra treukersrotasjonen beholdes. Sletting av den sist gjeldende Pete-økta gjenoppretter bare det aktuelle apparatets tilstand.
 - Økta teller som kondisjon i metcon-budsjettet, med beregnede minutter som forslag.
 
 ## Programguide
@@ -223,7 +223,7 @@ Under **Program → Bibliotek → Programguide** står det hva hvert program fok
 - **Kalenderen:** Uka følger kalenderen. Henger brukeren etter, hopper planen til første økt i denne uka, så taperen treffer stevnet.
 - **Øktene:** Økt 1 er S2OH og knebøy med ski. Økt 2 er løp rett over på ski. Økt 3 er markløft, DB-benk og Metcon X-trening. Økt 4 er rolig løp og S2OH-teknikk. Med tre økter faller økt 4 bort, og teknikken flyttes til markløftdagen. Kondisjonsdelen står i et eget kort med fart, vekter for klassen og felt for resultatet. Den teller i metcon-budsjettet.
 - **Arbeidsmaks:** RPE på siste sett mot målet justerer arbeidsmaksen: +2,5 %, +1 %, −1 % eller −2,5 %. Bom gir −2,5 %. Tunge sett (RPE 8 eller mer, 5 reps eller færre) kan heve den til medianen av de tre siste anslagene fra seks uker. De senker den aldri, fordi siste sett etter flere sett er preget av tretthet. Én økt flytter arbeidsmaksen høyst +2,5 % eller −5 %. To tunge økter på rad flytter den lette uka fram.
-- **Løp og ski:** Snittfarten fra intervallene, minus et fast tillegg per økttype, gir et anslag på 3 km-farten og skifarten. Appen bruker medianen av de tre siste fra seks uker, slik Pete Plan gjør. Tre rolige turer på rad gjør de rolige turene 5 minutter lengre, opp til 45.
+- **Løp og ski:** Snittfarten fra intervallene, minus et fast tillegg per økttype, gir et anslag på 3 km-farten og skifarten. Appen bruker medianen av de tre siste fra seks uker, i ATHX-tilpasningen. Tre rolige turer på rad gjør de rolige turene 5 minutter lengre, opp til 45.
 - **Metcon X:** Den tregeste stasjonen brukeren markerer, får dobbelt så mange reps i mini-Metcon X.
 - **Hele planen:** Visningen viser en anslått stevnescore: kilo i Strength, meter ski etter løpet og siste tid på hele Metcon X.
 
@@ -344,3 +344,7 @@ Vil du legge til et nytt program som bruker en eksisterende regel, holder det å
 ## Kontroll av endringer
 
 Kjør `node --test tests/*.test.cjs`. Testene dekker Sammen, settlogging, automatisk overgang mellom øvelser og EMOM-runder, pause, angring, AMRAP/RPE, programnavigasjon og lagring/progresjon ved fullført økt. Versjon 95, 96 og 99 ble i tillegg kontrollert i nettleser ved 320 × 740 og 390 × 844 med lokale eksempeldata. Popupen for øvelsesvalg er kontrollert med bytte, retur til originalen, bekreftelse/avbryt, Escape og tilbakeført fokus.
+
+### Simulering av Pete Plan
+
+Kjør `node scripts/simulate-pete.cjs`. Rapporten skrives til `output/pete-simulation/report.html`, med alle input og mål i `results.json`. Den kjører 24 forløp / 2304 økter: fire scenarioer, tre apparater, med og uten alle ekstraøkter. Ro starter med 6 × 500 m på 1:47. Rolig fart 2:05 og lange intervaller 2:03 er separate antakelser, ikke utledet kapasitet. Ski og sykkel har egne syntetiske testverdier. Resultatene genereres uavhengig av målfarten. Rapporten markerer mål over antatt kapasitet og økning i arbeid eller draglengde. Dette tester beregninger og respons på input, ikke om en utøver fysisk tåler programmet. `node --test tests/*.test.cjs` inkluderer hele simuleringen og tester registrering, fartsfall, apparatbytte, lagring og angring.
